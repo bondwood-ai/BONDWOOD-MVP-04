@@ -1123,11 +1123,22 @@
            ======================================== */
         let brandDistrictData = []; // Store full district metadata for brand
 
-        async function loadBrandData() {
+        async function loadBrandData(retries = 2) {
             try {
                 const response = await fetch('https://benchmarking.bondwood.ai/api/district_metadata?limit=10000');
-                if (!response.ok) return;
-                const data = await response.json();
+                if (!response.ok) {
+                    console.warn('Brand API returned', response.status);
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+                    return;
+                }
+                const raw = await response.json();
+                // Handle both array and { data: [...] } formats
+                const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);
+                if (!data.length) {
+                    console.warn('Brand API returned empty data, raw:', typeof raw, Object.keys(raw || {}));
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+                    return;
+                }
                 brandDistrictData = data.filter(d => d.District_Name && d.Primary_Hex);
 
                 // Build member org lookup to identify AMSD districts
@@ -1150,6 +1161,10 @@
 
                 const menuSelect = document.getElementById('brandSelectorMenu');
                 const hiddenSelect = document.getElementById('brandSelector');
+
+                // Clear existing options (except default) for retry safety
+                while (menuSelect.options.length > 1) menuSelect.remove(1);
+                while (hiddenSelect.options.length > 1) hiddenSelect.remove(1);
 
                 function addOption(d, select) {
                     const opt = new Option(`${d.District_Name} (${d.District_Number})`, d.District_Number);
@@ -1189,6 +1204,7 @@
                 }
             } catch (e) {
                 console.warn('Brand data load failed:', e);
+                if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
             }
         }
 
