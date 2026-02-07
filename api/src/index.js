@@ -6,6 +6,7 @@
  *   dashboard_data  – RFP header/status (one row per request)
  *   form_data       – Line items (many rows per RFP, linked by rfp_number)
  *   vendor_data     – Vendor lookup (1,616 vendors)
+ *   district_metadata – District brand data (513 districts)
  */
 
 // ---------------------------------------------------------------------------
@@ -98,6 +99,11 @@ export default {
         return handleStats(env, request);
       }
 
+      // ── Districts (brand data) ────────────────────────────────────
+      if (path === '/api/districts' && method === 'GET') {
+        return handleDistricts(url, env, request);
+      }
+
       // ── Health ──────────────────────────────────────────────────
       if (path === '/api/health') {
         return json({ status: 'ok', timestamp: new Date().toISOString() }, 200, request);
@@ -145,6 +151,43 @@ async function handleVendorSearch(url, env, request) {
 
   const { results } = await env.DB.prepare(query).bind(...params).all();
   return json({ vendors: results, count: results.length }, 200, request);
+}
+
+// ===========================================================================
+// DISTRICT METADATA (BRAND DATA)
+// ===========================================================================
+
+/**
+ * GET /api/districts?member_org=AMSD&search=term
+ * Returns all districts or filtered by member_org / search term
+ */
+async function handleDistricts(url, env, request) {
+  const memberOrg = url.searchParams.get('member_org');
+  const search = (url.searchParams.get('search') || '').trim();
+
+  let query = 'SELECT * FROM district_metadata';
+  let params = [];
+  let clauses = [];
+
+  if (memberOrg) {
+    clauses.push('Member_Org = ?');
+    params.push(memberOrg);
+  }
+
+  if (search) {
+    clauses.push('(District_Name LIKE ? OR CAST(District_Number AS TEXT) LIKE ?)');
+    const wildcard = `%${search}%`;
+    params.push(wildcard, wildcard);
+  }
+
+  if (clauses.length) {
+    query += ' WHERE ' + clauses.join(' AND ');
+  }
+
+  query += ' ORDER BY District_Name';
+
+  const { results } = await env.DB.prepare(query).bind(...params).all();
+  return json(results, 200, request);
 }
 
 // ===========================================================================

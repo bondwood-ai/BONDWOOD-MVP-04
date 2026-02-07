@@ -1433,8 +1433,8 @@
             const brand = params.get('brand') || localStorage.getItem('bondwood-brand');
             if (!brand) return;
             // Load brand data and apply
-            fetch('https://benchmarking.bondwood.ai/api/district_metadata?limit=500')
-                .then(r => { if (!r.ok) return fetch('https://benchmarking.bondwood.ai/api/district_metadata'); return r; })
+            fetch('https://bondwood-api.bondwood.workers.dev/api/districts')
+                .then(r => r)
                 .then(r => r.json())
                 .then(raw => {
                     const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);

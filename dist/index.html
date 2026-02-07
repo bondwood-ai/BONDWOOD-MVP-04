@@ -1125,11 +1125,7 @@
 
         async function loadBrandData(retries = 2) {
             try {
-                // Try with smaller limit first, then without limit as fallback
-                let response = await fetch('https://benchmarking.bondwood.ai/api/district_metadata?limit=500');
-                if (!response.ok) {
-                    response = await fetch('https://benchmarking.bondwood.ai/api/district_metadata');
-                }
+                let response = await fetch('https://bondwood-api.bondwood.workers.dev/api/districts');
                 if (!response.ok) {
                     console.warn('Brand API returned', response.status);
                     if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 3000); }
