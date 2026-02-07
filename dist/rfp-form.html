@@ -180,6 +180,14 @@
         .vendor-dropdown-item .vd-name { font-weight: 500; color: var(--text-primary); }
         .vendor-dropdown-item .vd-code { font-size: 0.72rem; color: var(--text-secondary); font-family: 'Metropolis', sans-serif; }
         .vendor-dropdown-empty { padding: 0.6rem 0.75rem; font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
+        .input-error { border-color: #dc2626 !important; box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important; }
+        .vendor-error-msg {
+            grid-column: 1 / -1; padding: 0.5rem 1rem; font-size: 0.78rem; color: #dc2626;
+            background: rgba(220, 38, 38, 0.06); display: none;
+            font-weight: 500; font-family: 'Metropolis', sans-serif;
+        }
+        body.dark-mode .vendor-error-msg { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+        body.dark-mode .input-error { border-color: #f87171 !important; box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15) !important; }
         .vendor-section {
             display: grid; grid-template-columns: 1fr 1fr;
             border: 1px solid var(--border-color); border-radius: 12px;
@@ -792,6 +800,7 @@
 
         let vendorActiveIndex = -1;
         let vendorActiveField = null;
+        let selectedVendor = null; // Tracks valid vendor selection
 
         function setupVendorAutocomplete() {
             const nameInput = document.getElementById('vendorName');
@@ -802,6 +811,8 @@
             nameInput.addEventListener('input', () => {
                 vendorActiveField = 'name';
                 vendorActiveIndex = -1;
+                selectedVendor = null;
+                clearVendorError();
                 const q = nameInput.value.trim().toUpperCase();
                 if (q.length < 1) { nameDrop.classList.remove('open'); return; }
                 const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 30);
@@ -811,11 +822,17 @@
             numInput.addEventListener('input', () => {
                 vendorActiveField = 'number';
                 vendorActiveIndex = -1;
+                selectedVendor = null;
+                clearVendorError();
                 const q = numInput.value.trim();
                 if (q.length < 1) { numDrop.classList.remove('open'); return; }
                 const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 30);
                 renderVendorDropdown(numDrop, matches, q, 'number');
             });
+
+            // Validate on blur
+            nameInput.addEventListener('blur', () => { setTimeout(validateVendorFields, 200); });
+            numInput.addEventListener('blur', () => { setTimeout(validateVendorFields, 200); });
 
             [nameInput, numInput].forEach(input => {
                 input.addEventListener('keydown', (e) => {
@@ -845,6 +862,72 @@
                     numDrop.classList.remove('open');
                 }
             });
+        }
+
+        function validateVendorFields() {
+            if (currentRequestType !== 'vendor') return true;
+            const nameVal = document.getElementById('vendorName').value.trim();
+            const numVal = document.getElementById('vendorNumber').value.trim();
+
+            // Both empty — no error yet
+            if (!nameVal && !numVal) { clearVendorError(); return true; }
+
+            // If a vendor was selected from dropdown, verify fields still match
+            if (selectedVendor) {
+                if (nameVal.toUpperCase() !== selectedVendor.n.toUpperCase() || numVal !== selectedVendor.c) {
+                    showVendorError('Vendor name and number do not match. Please select a vendor from the dropdown.');
+                    return false;
+                }
+                clearVendorError();
+                return true;
+            }
+
+            // No vendor selected — try exact match
+            const exactByName = VENDOR_DATA.find(v => v.n.toUpperCase() === nameVal.toUpperCase());
+            const exactByNum = VENDOR_DATA.find(v => v.c === numVal);
+
+            if (nameVal && numVal) {
+                if (exactByName && exactByNum && exactByName.c === exactByNum.c) {
+                    selectedVendor = exactByName;
+                    clearVendorError();
+                    return true;
+                }
+                showVendorError('Vendor name and number do not match. Please select a vendor from the dropdown.');
+                return false;
+            }
+
+            if (nameVal && !exactByName) {
+                showVendorError('Vendor not found. Please select a vendor from the dropdown.');
+                return false;
+            }
+            if (numVal && !exactByNum) {
+                showVendorError('Vendor number not found. Please select a vendor from the dropdown.');
+                return false;
+            }
+
+            clearVendorError();
+            return true;
+        }
+
+        function showVendorError(msg) {
+            document.getElementById('vendorName').classList.add('input-error');
+            document.getElementById('vendorNumber').classList.add('input-error');
+            let el = document.getElementById('vendorErrorMsg');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'vendorErrorMsg';
+                el.className = 'vendor-error-msg';
+                document.getElementById('vendorSection').appendChild(el);
+            }
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function clearVendorError() {
+            document.getElementById('vendorName').classList.remove('input-error');
+            document.getElementById('vendorNumber').classList.remove('input-error');
+            const el = document.getElementById('vendorErrorMsg');
+            if (el) el.style.display = 'none';
         }
 
         function updateActiveItem(items) {
@@ -878,11 +961,13 @@
 
         function selectVendor(idx) {
             const v = VENDOR_DATA[idx];
+            selectedVendor = v;
             document.getElementById('vendorName').value = v.n;
             document.getElementById('vendorNumber').value = v.c;
             document.getElementById('vendorAddress').value = v.a + '\n' + v.ci + ', ' + v.st + ' ' + v.z;
             document.getElementById('vendorNameDropdown').classList.remove('open');
             document.getElementById('vendorNumberDropdown').classList.remove('open');
+            clearVendorError();
         }
 
         /* ========================================
@@ -1202,9 +1287,10 @@
         }
 
         function submitForm() {
-            // Basic validation
+            // Vendor validation
             if (currentRequestType === 'vendor') {
                 if (!document.getElementById('vendorName').value.trim()) { alert('Please enter vendor name.'); return; }
+                if (!validateVendorFields()) return;
             }
 
             // Check line items
