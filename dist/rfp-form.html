@@ -55,8 +55,6 @@
         }
         body.dark-mode .form-container { background: var(--card-bg); border-color: var(--border-color); }
         body.dark-mode .section-header { background: var(--primary-hex); }
-        body.dark-mode .info-grid .cell { border-color: var(--border-color); }
-        body.dark-mode .info-grid .cell.header-cell { background: var(--primary-hex); }
         body.dark-mode input, body.dark-mode select, body.dark-mode textarea { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
         body.dark-mode input[readonly], body.dark-mode .readonly-field { background: var(--readonly-bg); }
         body.dark-mode select option { background: var(--card-bg); }
@@ -132,40 +130,10 @@
         .rfp-number-row label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); font-family: 'Metropolis', sans-serif; }
         .rfp-number-row span {
             font-family: 'Metropolis', sans-serif; font-size: 1rem;
-            color: var(--text-primary); font-weight: 700;
+            color: var(--text-primary); font-weight: 400;
             letter-spacing: 0.05em;
             background: var(--readonly-bg); padding: 0.45rem 0.85rem;
             border: 1px solid var(--border-color); border-radius: 6px;
-        }
-
-        /* ============ INFO GRID ============ */
-        .info-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            border: 1px solid var(--border-color); border-radius: 12px;
-            overflow: hidden; margin-bottom: 1.5rem;
-            background: var(--card-bg);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-        .info-grid .cell {
-            padding: 0.75rem 1rem;
-        }
-        .info-grid .cell.header-cell {
-            background: var(--primary-hex); color: var(--accent-text-color);
-            font-weight: 600; font-size: 0.85rem; font-family: 'Metropolis', sans-serif;
-        }
-        .info-grid .cell input,
-        .info-grid .cell select {
-            width: 100%; padding: 0.45rem 0.5rem; border: none;
-            border-bottom: 1px solid var(--border-color);
-            font-family: inherit; font-size: 0.9rem; background: transparent;
-            color: var(--text-primary);
-        }
-        .info-grid .cell input[readonly] {
-            background: var(--readonly-bg); cursor: not-allowed;
-            border-radius: 4px; border-bottom: none;
-        }
-        .info-grid .cell input:focus, .info-grid .cell select:focus {
-            outline: none; border-bottom-color: var(--secondary-hex);
         }
 
         /* ============ REQUEST TYPE ============ */
@@ -397,24 +365,6 @@
         .attachment-actions .remove-btn { color: var(--negative-color); }
         .attachment-actions .remove-btn:hover { background: rgba(220, 38, 38, 0.1); }
 
-        /* ============ APPROVAL NOTES ============ */
-        .approval-section { margin-bottom: 1.5rem; }
-        .approval-note {
-            display: flex; gap: 0.75rem; padding: 0.75rem; margin-bottom: 0.5rem;
-            background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);
-        }
-        .approval-note .note-avatar {
-            width: 32px; height: 32px; border-radius: 50%;
-            background: var(--secondary-hex); color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
-        }
-        .approval-note .note-content { flex: 1; }
-        .approval-note .note-header { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
-        .approval-note .note-name { font-weight: 600; font-size: 0.8rem; }
-        .approval-note .note-date { font-size: 0.7rem; color: var(--text-secondary); }
-        .approval-note .note-text { font-size: 0.8rem; color: var(--text-secondary); }
-
         /* ============ BUTTONS ============ */
         .button-container {
             display: flex; gap: 0.75rem; justify-content: center;
@@ -518,7 +468,6 @@
 
         /* ============ RESPONSIVE ============ */
         @media (max-width: 768px) {
-            .info-grid { grid-template-columns: 1fr; }
             .vendor-section { grid-template-columns: 1fr; }
             .type-selector { flex-direction: column; }
             .workflow-tracker { flex-direction: column; }
@@ -533,7 +482,7 @@
             .checkbox-col, .checkbox-cell, .attachments-section, .footer,
             .table-actions-bar .btn-primary-sm, #headerBanner { display: none !important; }
             .form-container { box-shadow: none; border: none; }
-            .section-header, .info-grid .cell.header-cell, .vendor-section .cell.header-cell,
+            .section-header, .vendor-section .cell.header-cell,
             .items-table th, .mileage-table th {
                 print-color-adjust: exact; -webkit-print-color-adjust: exact;
             }
@@ -565,28 +514,6 @@
                 <div class="rfp-number-row">
                     <label>RFP No.</label>
                     <span id="rfpNumber">2025001</span>
-                </div>
-
-                <!-- Info Grid -->
-                <div class="info-grid">
-                    <div class="cell header-cell">Submitter</div>
-                    <div class="cell header-cell">Budget Approver</div>
-                    <div class="cell header-cell">Submission Date</div>
-                    <div class="cell">
-                        <input type="text" id="submitter" value="" placeholder="Your name">
-                    </div>
-                    <div class="cell">
-                        <select id="budgetApprover">
-                            <option value="">Select budget approver</option>
-                            <option value="Sarah Williams">Sarah Williams</option>
-                            <option value="Mike Johnson">Mike Johnson</option>
-                            <option value="Tom Anderson">Tom Anderson</option>
-                            <option value="Lisa Chen">Lisa Chen</option>
-                        </select>
-                    </div>
-                    <div class="cell">
-                        <input type="date" id="submissionDate" readonly style="text-align:right;">
-                    </div>
                 </div>
 
                 <!-- Request Type -->
@@ -762,15 +689,6 @@
             <div class="attachments-list" id="attachmentsList"></div>
         </div>
 
-        <!-- Approval Notes -->
-        <div class="form-container" id="approvalNotesContainer" style="display:none;">
-            <div class="section-header">
-                <span>Approval Notes</span>
-            </div>
-            <div class="form-body approval-section" id="approvalNotes">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
 
         <!-- Submit Buttons -->
         <div class="button-container">
@@ -856,9 +774,6 @@
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
             loadBrandFromURL();
-
-            // Set today's date
-            document.getElementById('submissionDate').value = new Date().toISOString().split('T')[0];
 
             // Initialize with 5 line items
             for (let i = 0; i < 5; i++) addLineItem();
@@ -1151,11 +1066,6 @@
 
         function submitForm() {
             // Basic validation
-            const submitter = document.getElementById('submitter').value.trim();
-            const approver = document.getElementById('budgetApprover').value;
-            if (!submitter) { alert('Please enter your name.'); return; }
-            if (!approver) { alert('Please select a budget approver.'); return; }
-
             if (currentRequestType === 'vendor') {
                 if (!document.getElementById('vendorName').value.trim()) { alert('Please enter vendor name.'); return; }
             }
@@ -1231,8 +1141,6 @@
         function loadExistingForm(id) {
             // Placeholder: Load form data from API by ID
             console.log('Loading form:', id);
-            // Show approval notes section for existing forms
-            document.getElementById('approvalNotesContainer').style.display = '';
         }
 
         /* ========================================
