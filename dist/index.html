@@ -1039,7 +1039,7 @@
 
             body.innerHTML = `
                 <div class="preview-grid">
-                    <div class="pg-cell"><div class="pg-label">RFP No.</div><div class="pg-value" style="color:var(--secondary-hex);font-weight:700;">${rfp.rfpNumber}</div></div>
+                    <div class="pg-cell"><div class="pg-label">RFP No.</div><div class="pg-value" style="font-weight:700;">${rfp.rfpNumber}</div></div>
                     <div class="pg-cell"><div class="pg-label">Submitted</div><div class="pg-value">${formatDate(rfp.submissionDate)}</div></div>
                     <div class="pg-cell"><div class="pg-label">Days Open</div><div class="pg-value">${rfp.daysSinceSubmission}d</div></div>
                     <div class="pg-cell"><div class="pg-label">Submitter</div><div class="pg-value">${rfp.submitter}</div></div>
