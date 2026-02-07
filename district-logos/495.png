@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Grand Meadow ISD 495</title>
+
+        <!-- JQUERY  -->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://code.jquery.com/jquery-migrate-3.5.2.min.js"></script>
+        <!-- BOOTSTRAP -->
+        <link rel="stylesheet" href="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/bootstrap-3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/css/main.css?v=1766956239">
+        
+       <!-- For icon -> 76187 Upgrade fontawesome to 4.7.0 -->
+        <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <!-- End 76187 -->
+    
+        <link href="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/rangeslider/css/bootstrap-slider.css" rel="stylesheet" type="text/css">
+
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/bootstrap-3.3.5/js/bootstrap.js"></script>
+
+        <!-- CUSTOM -->
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/custom.js?t=1766956239"></script>
+
+        <!-- REVOLUTION SLIDER -->
+        <link rel="stylesheet" type="text/css" href="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/css/revolution-slider/css/settings.css" media="screen">
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/revolution-slider/js/jquery.themepunch.revolution.min.js"></script>
+
+        <!-- RST -->       
+        <link rel="stylesheet" type="text/css" href="https://rst6-livesite.rschooltoday.com/sites/all/themes/rstadmin/rst.css">
+        <script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/sites/all/modules/custom/adminfunctions/dwcmenu.js"></script>
+        <script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/misc/browser_detect.js"></script>
+
+        
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=7,7.5,8,9,10" ><![endif]-->
+
+<script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/sites/all/modules/custom/dwebsite/ajax.js"></script>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-155389907-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-155389907-2');
+</script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+        <script src="https://rst6-livesite.rschooltoday.com/misc/jstz.min.js"></script>
+        <script type="text/javascript">
+            //$(document).ready(function(){
+                var date = new Date();
+                date.setTime(date.getTime()+(365*24*60*60*1000));
+                var expiration = date.toUTCString();
+                var timezone = jstz.determine();
+                var utz = timezone.name();
+                //var utz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                document.cookie = "usertz=" + utz + ";path=/;expires=" + expiration + ";SameSite=Lax";
+            //});
+        </script>
+        
+<!--[if lte IE 8]>
+        <link type="text/css" rel="stylesheet" href="https://rst6-livesite.rschooltoday.com/misc/oldiealert/iealert/iealert_style.css" />
+        <script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/misc/oldiealert/oldiealert.js"></script>
+        <![endif]-->
+<!--[if lte IE 6]>
+        <script type="text/javascript">
+            $(document).ready(function(){
+              $.ajax({
+                url: "/misc/oldiealert/DD_belatedPNG-min.js",
+                dataType: "script",
+                cache: true
+              })
+              .done(function(){
+                var slct = "#ie-alert-overlay, .ie-r-b-c, .ie-r-t-c, .ie-r-t-c:hover, .ie-l-t-c, .ie-l-b-c, .ie-l, .ie-r, .ie-b, .ie-t, .ie-u-l, .ie-u-r";
+                DD_belatedPNG.fix(slct);
+              });
+            });
+        </script>
+            <![endif]-->
+
+            <script src="https://rst6-livesite.rschooltoday.com/misc/jstz.min.js"></script>
+            <script type="text/javascript">
+                //$(document).ready(function(){
+                    var date = new Date();
+                    date.setTime(date.getTime()+(365*24*60*60*1000));
+                    var expiration = date.toUTCString();
+                    //var utz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    var timezone = jstz.determine();
+                    var utz = timezone.name();
+                   document.cookie = "usertz=" + utz + ";path=/;expires=" + expiration + ";SameSite=Lax";
+                //});
+            </script>
+            
+
+                <style>
+                    .collapsible-item{
+                        background-color: #fff;
+                        border: 1px solid transparent;
+                        border-color: #ddd;
+                        border-radius: 3px;
+                        margin-bottom: 10px;
+                    }
+                    .collapsible-item>.collapsible-item-heading{
+                        background-color: #f5f5f5;
+                        padding: 10px 15px;
+                        border-radius: 3px;
+                    }
+                    .collapsible-item-body{
+                        padding: 15px;
+                        border-top: 1px solid #ddd;
+                    }
+                    .icon-chevron-down{
+                        text-decoration:none !important;
+                        float: right;
+                    }
+                    .glyphicon-chevron-down{
+                        float: right;
+                    }
+                    .fa-chevron-down{
+                        float: right;
+                    }
+                    .collapsible-item-title-link-icon .fa{
+                        margin: 0;
+                    }
+                </style>
+            
+<script>
+                                    console.log(document.cookie);
+                                    console.log($.fn.typeahead);
+                                    console.log($.fn.jquery);
+                                    console.log($.ui);
+                                </script>
+
+                
+<style>
+                                    .embed-240p
+                                    {
+                                        max-width: 426px;
+                                        max-height: 240px;
+                                        margin:0 auto;
+                                    }
+                                    .embed-360p
+                                    {
+                                        max-width: 640px;
+                                        max-height: 360px;
+                                        margin:0 auto;
+                                    }
+                                    .embed-480p
+                                    {
+                                        max-width: 854px;
+                                        max-height: 480px;
+                                        margin:0 auto;
+                                    }
+                                    .embed-720p
+                                    {
+                                        max-width: 1280px;
+                                        max-height: 720px;
+                                        margin:0 auto;
+                                    }
+                                    .embed-1080p
+                                    {
+                                        max-width: 1920px;
+                                        max-height: 1080px;
+                                        margin:0 auto;
+                                    }
+                                </style>
+                
+
+            
+                <style>
+                    @media screen and (min-width: 768px) {
+                        .bottom-header nav#main_nav li.dropdown ul.dropdown-menu {
+                            display: block !important;
+                            visibility: hidden;
+                            opacity: 0;
+                            -webkit-transition: all 0.3s ease-in-out;
+                            -moz-transition: all 0.3s ease-in-out;
+                            -o-transition: all 0.3s ease-in-out;
+                            -ms-transition: all 0.3s ease-in-out;
+                            transition: all 0.3s ease-in-out;
+                        }
+                        .bottom-header nav#main_nav li.dropdown:hover > ul.dropdown-menu {
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        } 
+                    }
+                </style>
+            
+                <style>
+                    @media screen and (min-width: 768px) {
+                        .bottom-header nav#main_nav li.dropdown:hover > ul.dropdown-menu {
+                            width: max-content;
+                        }
+                    }
+                </style>
+            
+            <style>
+                @media only screen and (max-width: 768px) {
+                    .navbar-collapse.in {
+                        max-height: 500px;
+                    }
+                }
+            </style>
+        
+            <script>
+                $(document).ready(function(){
+                    
+                // For screen reader
+                // $('ul.navbar-nav').attr('role','menu'); bypass related 103571
+                $('ul.navbar-nav > li > a').attr({
+                    role:'menuitem'
+                });
+
+                // press enter key to open dropdown menu
+                var toggled = false;
+                $('ul.navbar-nav > li > a').keydown(function(e) {
+                    if(e.keyCode == 13 && $(this).siblings('.dropdown-menu').hasClass('sub-menu') !== false ) { // enter key
+                        toggled = !toggled;
+                        e.preventDefault();
+                        $('ul.navbar-nav > li').not($(this).parent()).removeClass('force-show');
+                        $('ul.navbar-nav > li > a').siblings('.dropdown-menu').not($(this).siblings('.dropdown-menu')).css({
+                                                                                            display: 'none',
+                                                                                            visibility: 'hidden',
+                                                                                            opacity: '0'
+                                                                                        });
+                        // $(this).parent().attr('class', toggled ? 'force-show':'');
+                        $(this).parent().addClass('force-show');
+                        $(this).siblings('.dropdown-menu').css({
+                                                        display: 'block',
+                                                        visibility: 'visible',
+                                                        opacity: '1'
+                                                        });
+                        $(this).attr('aria-expanded', toggled ? 'true':'false');
+                    }
+                    if(e.keyCode == 40) { // down arrow, focus to first link
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $(this).siblings('.dropdown-menu').find('a').first().focus();
+                    }
+                });
+
+                // For menu level 1
+                $('ul.navbar-nav > li.dropdown > ul.dropdown-menu > li.dropdown > a').keydown(function(e){
+                    if($(this).attr('href') === '#' || $(this).attr('href') === 'javascript:void(0);' || $(this).siblings('.dropdown-menu').hasClass('sub-menu') !== false){
+
+                        if(e.keyCode == 13 ){ // enter key
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $('ul.navbar-nav > li.dropdown > ul.dropdown-menu > li.dropdown').removeClass('force-show');
+                            $('ul.navbar-nav > li.dropdown > ul.dropdown-menu > li.dropdown').find('.dropdown-menu').not($(this).siblings('.dropdown-menu')).css({
+                                                                                            display: 'none',
+                                                                                            visibility: 'hidden',
+                                                                                            opacity: '0'
+                                                                                        });
+
+                            $(this).parent().addClass('force-show');
+                            $(this).siblings('.dropdown-menu').css({
+                                                        display: 'block',
+                                                        visibility: 'visible',
+                                                        opacity: '1'
+                                                        });
+                        }
+                        if(e.keyCode == 39) { // right arrow, focus to first link
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $(this).siblings('.dropdown-menu').find('a').first().focus();
+                        }
+                    }
+
+                    if(e.keyCode == 37) { // left arrow, collapse submenu
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $(this).parent().parent().prev().prev().focus();
+                        $(this).parent().parent().css({
+                                                    display: 'none',
+                                                    visibility: 'hidden',
+                                                    opacity: '0'
+                                                });
+                    }
+                });
+
+                // For menu level > 1
+                $('ul.dropdown-menu li.dropdown a').keydown(function(e){
+                    if($(this).attr('href') === '#' || $(this).attr('href') === 'javascript:void(0);' || $(this).siblings('.dropdown-menu').hasClass('sub-menu') !== false){
+                        if(e.keyCode == 13){ // enter key
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $('ul.dropdown-menu li.dropdown').removeClass('force-show');
+                            $(this).parent().addClass('force-show');
+                            $(this).siblings('.dropdown-menu').css({
+                                                        display: 'block',
+                                                        visibility: 'visible',
+                                                        opacity: '1'
+                                                        });
+                        }
+                        if(e.keyCode == 39) { // right arrow, focus to first link
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $(this).siblings('.dropdown-menu').find('a').first().focus();
+                        }
+                    }
+
+                    if(e.keyCode == 37) { // left arrow, collapse submenu
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $(this).parent().parent().prev().prev().focus();
+                        $(this).parent().parent().css({
+                                                    display: 'none',
+                                                    visibility: 'hidden',
+                                                    opacity: '0'
+                                                });
+                    }
+                });
+
+                // Bug 101179
+                var desktopView = window.matchMedia('(min-width: 768px)');
+                if(desktopView.matches){
+                    $('body').click(function(){
+                        $('ul.navbar-nav').find('.dropdown-menu').css({
+                                                       display: 'none',
+                                                       visibility: 'hidden',
+                                                       opacity: '0'
+                        })
+                    });
+                }
+
+                // Bug 84403
+                var mediaQuery = window.matchMedia('(max-width: 767px)');
+                if(mediaQuery.matches){
+                    $('ul.navbar-nav > li.dropdown > a').attr('href','#');
+                    $('ul.navbar-nav li.dropdown a[style~="underline"]').removeAttr('data-toggle', 'dropdown');
+                }
+            
+                $('.dropdown-menu > li.dropdown > a').mouseover(function() {
+                    var el = $(this).next('.dropdown-menu');
+                    var offset = el.offset();
+
+                    var val = parseInt($(this).outerWidth()) + parseInt($(this).position().left);
+
+                    if(parseInt($(this).offset().left) + parseInt($(this).outerWidth()) + parseInt(el.outerWidth()) > $(window).width() || parseInt(el.css('left')) < 0 ) {
+                        el.css({
+                            right: val,
+                            left: 'auto'
+                        });
+                    } else {
+                        el.css({
+                            right: 'auto',
+                            left: val
+                        });
+                    }
+
+                });
+            
+                    // access search input
+                    $('#search-form').keypress(function(e){
+                        if(e.keyCode == 13){ // enter key
+                            e.preventDefault();
+                            $(this).addClass('openclick');
+                        }
+                    });
+                    // add href attribute to all nav menu
+                    $('ul.navbar-nav a:not([href])').attr('href','#');
+                    // press shift+tab key focus to previous link
+                    $('body').keypress(function (e){
+                        if(e.shiftKey && e.keyCode == 9) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $(this).closest('li').prev().find('a').focus();
+                        }
+                    })
+                    // press enter key to open dropdown menu
+                    var toggled = false;
+                    $('ul.navbar-nav > li > a').keydown(function(e) {
+                        if(e.keyCode == 13 && $(this).next().hasClass('sub-menu') !== false ) { // enter key
+                            toggled = !toggled;
+                            e.preventDefault();
+                            $('ul.navbar-nav > li').not($(this).parent()).removeClass('force-show');
+                            // $(this).parent().attr('class', toggled ? 'force-show':'');
+                            $(this).parent().addClass('force-show');
+                            $(this).attr('aria-expanded', toggled ? 'true':'false');
+                        }
+                        if(e.keyCode == 40) { // down arrow, focus to first link
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $(this).next().find('a').first().focus();
+                        }
+                    });
+                    // press up/down & end/home key to access submenu
+                    $('.dropdown-menu > li > a').keydown(function(e){
+                        if(e.keyCode == 40) { // down arrow
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $(this).closest('li').next().find('a').focus();
+                        }
+                        if(e.keyCode == 38) { // up arrow
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $(this).closest('li').prev().find('a').focus();
+                        }
+                        if(e.keyCode == 36) { // home key
+                            e.preventDefault();
+                            $(this).closest('.dropdown-menu').find('a:first').focus();
+                        }
+                        if(e.keyCode == 35) { // end key
+                            e.preventDefault();
+                            $(this).closest('.dropdown-menu').find('a:last').focus();
+                        }
+                        // For sub menu level 2
+                        if($(this).attr('href') === '#'){
+                            if(e.keyCode == 13){ // enter key
+                                e.preventDefault();
+                                e.stopPropagation();
+                                $('.dropdown-menu > li').removeClass('force-show');
+                                $(this).parent().addClass('force-show');
+                            }
+                            if(e.keyCode == 40) { // down arrow, focus to first link
+                                e.preventDefault();
+                                e.stopPropagation();
+                                $(this).next().find('a').first().focus();
+                            }
+                        }
+                    })
+                    $('body').click(function () {
+                        $('*').removeClass('force-show');
+
+                    });
+                });
+            </script>
+        
+
+                <script type='text/javascript'>
+                    $(document).ready(function(){
+                        var skipId = $('div.block-hs section').first().attr('id');;
+
+                        if(skipId==undefined){
+                            skipId = $('.bottom2-header').attr('id');
+                        }else{
+                            skipId = skipId; 
+                        }
+
+                        $('body').prepend('<div class="skip-content"><a href="#'+skipId+'" class="skip-nav"><strong>Skip to main content</strong></a></div>');
+
+                        $('a.skip-nav').click(function(event) {
+                            var height = parseInt($('.sticky-hs').outerHeight());
+                            if(isNaN(height) || height === null){
+                                height = 0;
+                            }else{
+                                height = height;
+                            }
+                            if (this.hash !== '') {
+                                event.preventDefault();
+                                var hash = this.hash;
+                                $('html, body').animate({
+                                  scrollTop: $(hash).offset().top - height
+                                }, 500, function(){
+                                  window.location.hash = hash;
+                                });
+                                console.log(height);
+                            }
+
+                        });
+                    });
+                </script>
+            
+        <style>
+            a.skip-nav{
+                position: relative;
+                top: -150px;
+                left: -150px;
+                overflow: hidden;
+            }
+            a.skip-nav:focus{
+                left: 0;
+                top: 0;
+                display: block;
+                width: 100%;
+                overflow: visible;
+                background-color: white;
+                padding: 5px;
+                text-align: center;
+            }
+            .skip-content:focus-within{
+                width: 100%
+            }
+            .skip-content{
+                position: fixed;
+                width: 75%;
+                z-index: 20;
+                top:0;
+                height: 20px;
+            }
+            
+            *:focus{
+                outline-style: solid !important;
+                outline-width: 4px !important;
+                outline-color: #337ab7 !important;
+            }
+            .waves-button-input:focus{
+                border: 4px solid #337ab7 !important;
+            }
+        
+        </style>
+    
+<style>
+                    @media only screen and (max-device-width: 767px) {
+                        body {
+                            padding-top: 0px !important;
+                        }
+                        .top-heder.for-urgentnotice {
+                            margin-top: 49px !important;
+                        }
+                    }
+                  </style>
+<style>
+                li.dropdown .fa-caret-down{
+                    float:right;
+                    margin-right:20px;
+                    display:none;
+                    margin-top: 7px;
+                }
+                @media only screen and (max-width: 768px) {
+                    .nav li a {
+                        display: inline-block;
+                    }
+                    li.dropdown .fa-caret-down {
+                        display: block;
+                    }
+                }
+            </style>
+
+            <script>
+                $(document).ready(function(){
+                    $(".fa-caret-down").click(function(e){
+                        e.preventDefault(); 
+                        e.stopPropagation();
+
+                        var dataToggle = $(this).prev().attr("data-toggle");
+
+                        if (typeof dataToggle !== typeof undefined && dataToggle !== false) {
+                            $(this).closest("li.dropdown").addClass("open");
+                            $(this).prev().removeAttr("data-toggle");
+                            $(this).prev().attr("aria-expanded","true");
+                        }else{
+                            $(this).closest("li.dropdown").removeClass("open");
+                            $(this).prev().attr("data-toggle", "dropdown");
+                            $(this).prev().attr("aria-expanded","false");
+                        }
+                        $(this).next().css("margin-left","10px");
+
+                        var thisParent = $(this).parent();
+                        $(this).parent().siblings().not(thisParent).removeClass("open");
+                    });
+
+                    $("ul.dropdown-menu li a").click(function(){
+                        $(this).siblings(".dropdown-menu").css("margin-left","10px");
+                    })
+                });
+            </script>
+
+                <script type="text/javascript" >
+                    $(window).load(function(){
+
+                        var waitForEl = function(selector, callback) {
+                          if ($(selector).length) {
+                            callback();
+                          } else {
+                            setTimeout(function() {
+                              waitForEl(selector, callback);
+                            }, 100);
+                          }
+                        };
+
+                        waitForEl(".owl-nav", function() {
+                            $(".owl-next, .owl-prev").append("<p style=display:none>Arrow</p>");
+                        });
+
+                        waitForEl(".owl-dots", function() {
+                            $(".owl-dot").append("<p style=display:none>Dots</p>");
+                        });
+                    });
+                </script>
+
+            
+<!--[if IE]>
+  <script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/misc/drupal.js"></script>
+  <script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/sites/all/modules/nice_menus/nice_menus.js"></script>
+  <![endif]-->
+<link rel="shortcut icon" href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/images/superlark favicon.png" type="image/x-icon" />
+<script type="text/javascript">
+		    function trackThis(mlid){
+		      $.ajax({
+		          url:"http://www.gm.k12.mn.us/page/"+mlid
+   	      });
+		    }
+		    </script>
+        <link type="text/css" rel="stylesheet" media="all" href="https://rst6-livesite.rschooltoday.com/modules/node/node.css?z" />
+<link type="text/css" rel="stylesheet" media="all" href="https://rst6-livesite.rschooltoday.com/modules/system/defaults.css?z" />
+<link type="text/css" rel="stylesheet" media="all" href="https://rst6-livesite.rschooltoday.com/modules/system/system.css?z" />
+<link type="text/css" rel="stylesheet" media="all" href="https://rst6-livesite.rschooltoday.com/modules/system/system-menus.css?z" />
+<link type="text/css" rel="stylesheet" media="all" href="https://rst6-livesite.rschooltoday.com/modules/user/user.css?z" />
+<link type="text/css" rel="stylesheet" media="all" href="https://rst6-livesite.rschooltoday.com/sites/all/modules/nice_menus/nice_menus.css?z" />
+        <script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/misc/drupal.js?z"></script>
+<script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/misc/jquery.treeTable.js?z"></script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+jQuery.extend(Drupal.settings, { "basePath": "/" });
+//--><!]]>
+</script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+
+        function OpenUrl(url,file) {
+           if (!(url.match(/^http:\/\//i) || url.match(/^https:\/\//i) || url.match(/^ftp:\/\//i) || url.match(/^mailto:/i)))
+            {
+                url = "http://"+url;
+            }
+            var newurl=new String(url);
+            window.open(newurl);
+        }
+        
+//--><!]]>
+</script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+
+//--><!]]>
+</script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+function open_Calendar(newtab) {
+            var calendar_url = "http://southeastconference.org/public/genie/3/school/5/";
+            var new_tab = "_blank";
+            if(newtab) { new_tab = newtab; }
+            window.open(calendar_url, new_tab);
+                window.focus();
+    }
+//--><!]]>
+</script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+var arrowimages = {right:['rightarrowclass', '/sites/all/modules/custom/adminfunctions/arrow-right.gif']}
+//--><!]]>
+</script>
+ 
+    
+                  <link rel="stylesheet" type="text/css" href="https://rst6-livesite.rschooltoday.com/sites/all/modules/custom/dwcmaps/themes/base/jquery.ui.all.css">
+       
+        <script>
+            $(document).ready(function() {
+                console.log("on ready trigerred");
+                $(".defaultimg").attr("style","width:100% !important; height:auto !important;");
+            });
+        </script>
+
+        <script>
+        //This scipt for Bootstrap 3 sub-menu dropdown on mobile view//
+        (function($){
+            $(document).ready(function(){
+                $(window).on("load",function() { 
+                  $(".preloading").fadeOut("slow"); 
+                });
+                $('ul.dropdown-menu [data-toggle=dropdown]').on('click', function(event) {
+                event.preventDefault(); 
+                event.stopPropagation(); 
+                $(this).parent().siblings().removeClass('open');
+                $(this).parent().toggleClass('open');
+                });
+              });
+         })(jQuery);
+        </script>
+        <!-- togle Menu -->
+        <script> 
+        jQuery(function(){ 
+             jQuery('.bottom-header .navbar-toggle').removeAttr('href').css('cursor','pointer'); 
+             jQuery('a.navbar-toggle').click(function() { 
+                 jQuery('.bottom-header nav.collapse').toggleClass('openmenu');    
+            });
+        }); 
+        </script>
+
+        <style>
+	 	#emergency_notices .bcopy, #emergency_notices{
+			color: ;
+		}
+		.drag_highlight {
+		    height:300px;
+		    border:0.1em dashed rgb(2,158,222);
+		}
+		.preloading {width: 100%; 
+			text-align: center;
+			height: 100%;
+			position: fixed;
+			background: #000000;
+			z-index: 999999;
+			top: 0px; 
+			display: table; 
+			left:0;
+			opacity: 0.8;}
+		.preloading .textpreload {
+			display: table-cell; 
+			text-align: center; 
+			vertical-align: middle;}
+	</style><script>
+			$( document ).ready(function() {
+         		$("footer a, footer .copyright").css("color","");
+      		});
+      		$('#TB_iframeContent').ready(function(){
+			    setTimeout(function(){
+			        $(window).keyup(function(e){
+			                  if(e.keyCode == 27){
+			                    $('#TB_closeWindowButton').click();
+			          }
+			            });
+			        }, 50);
+
+			});
+	</script><link rel="stylesheet" href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/themes/cssjs/vav.css">         
+
+        <!-- ads top header fixed -->
+        <script>
+          jQuery(function(){
+ 
+            // after100px
+               jQuery(window) .scroll(function() {
+                  if(jQuery(this).scrollTop() > 50) {
+                     jQuery('body').addClass('fixedheaderad');
+                  } else {
+                     jQuery('body').removeClass('fixedheaderad'); 
+                  }
+               });
+
+        });
+        </script>
+       <!-- end ads top header fixed -->
+    </head>
+    <body id="homepage" class="homepage-view " style="background:#fbf9ff; background-size:">
+        
+        <!-- Accessibility Tools related Bug 73032 and 76187-->
+                <!-- End 73032 & 76187-->
+
+        <header>
+
+            <!-- Leaderboard ads -->
+            <div class="container">
+              <div class="row">
+                <div class="col-md-12">
+                  
+				<style>
+					.top-ad-header {
+					    display: none;
+					}
+				</style>
+			
+				<style>
+					@media (max-width: 768px) {
+						.top-ad-header {
+						    display: none;
+						}
+					}
+				</style>
+			
+			<style>
+			@media (min-width: 768px) {
+			    .top-ad-header .banner-ad-top {
+			    	margin: 0 auto;
+				    width: auto;
+				    height: 90px;
+				}
+				.top-ad-header .school-support {
+				    margin: 0 auto;
+				    width: auto;
+				    height: 90px;
+				    cursor: pointer;
+				}
+			}
+			</style>
+		
+			<style>
+				@media (min-width: 1024px) {
+				    .banner-ad-top-mobile {
+				        display: none;
+					}
+				}
+				@media (max-width: 1023px) {	
+				    .banner-ad-top-mobile {
+			    		margin: 0 auto 0;
+				    }
+				    .banner-ad-top, .school-support {
+				        display: none;
+					}
+					#inner_ads {
+				        display: none;
+					}				
+				    .rst-powered {
+				        display: none;
+					}
+				}
+			</style>
+		
+                                  </div>
+              </div>
+            </div>
+            <!-- end Leaderboard ads -->
+
+            <style>
+                  #homepage_hs_9, #homepage_hs9 { min-height: 110px; }
+                @media only screen and (max-device-width: 767px){
+                    #homepage_hs_9, #homepage_hs9 { min-height: 200px !important; }
+                }
+            </style>                        <div class="top-heder for-urgentnotice"  id="homepage_hs_1" style="background:#ffffff; background-size:"> 
+                <div class="contbg contbg_1">
+                                    </div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-10">
+                                  <div class="newsflashz">
+                               <div class="enc"></div>
+                            </div>
+                              </div>
+                        <div class="col-md-2">
+                            <div class="translete">
+                                <!-- TRANSLATOR -->
+                                                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                  #homepage_hs_9, #homepage_hs9 { min-height: 110px; }
+                @media only screen and (max-device-width: 767px){
+                    #homepage_hs_9, #homepage_hs9 { min-height: 200px !important; }
+                }
+            </style>                        <div class="mid-headaer" id="homepage_hs_2" style="background:#410e58; background-size:"> 
+                <div class="contbg contbg_2">
+                                    </div>   
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-6">
+                          <div class="logo-row">                            
+                            <a href="/">   
+                              <div class="logo">
+                                  <div class="main_logo"> </div>
+                                  <div class="logo_img"><img src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2FPrivate_User%2Flpetzel%2FMy+Post.jpg&w=960&h=182" alt="&quot;&quot;" title="&quot;&quot;"/></div>
+                                  <div style ="clear:both"></div>
+                              </div>
+                            </a>
+                                
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="sosmed-row">
+                            <!-- TOP SOCIAL MEDIA ICONS -->
+                             <div class="sosmed-wrap">
+            <style>
+		header .mid-headaer .sosmed-row .sosmed{
+			font-size: 16px !important;
+			padding-left:1px !important;
+			padding-right:1px !important;
+		}
+
+		header .mid-headaer .icon-sm{
+			height: 33px !important;
+			width : 33px !important;
+			color: #89051a;
+			border: 3px solid #89051a ;
+			border-radius: 100% !important;
+			padding: 0px !important;
+
+		}
+		header #search-form #vav-dwcsearch-renderMain {
+			display: table;
+		}
+
+		header .mid-headaer .icon-sm .fa{
+			font-size: 16px !important;
+			margin:5px !important;
+		}
+
+		header .mid-headaer .sosmed-row .sosmed #searchtext{
+			height: 31px !important;
+			display: table-cell;
+			font-size: 16px !important;
+			margin-left: 14px !important;
+			margin-top: 4px !important;
+		    line-height: normal;
+		    top: 50%;
+		    vertical-align: middle;
+		}
+		div.newicons-row { float:left; width:100%;}
+		ul.icon-sets li {     display: inline;  padding: 5px;}
+	</style>
+			        <div class="sosmed" tabindex="0">
+			            <a href="https://www.facebook.com/GMSuperlarks" target="_blank" tabindex="-1" aria-label="Facebook icon">
+			                <div class="icon-sm">
+			                    <span class="fa fa-facebook "></span>
+			                    <span style="display:none">Social icon</span>
+			                </div>
+			            </a>
+			      	</div>
+		      	
+			        <div class="sosmed" tabindex="0">
+			            <a href="https://twitter.com/MeadowGrand" target="_blank" tabindex="-1" aria-label="Twitter icon">
+			                <div class="icon-sm">
+			                    <span class="fa fa-twitter "></span>
+			                    <span style="display:none">Social icon</span>
+			                </div>
+			            </a>
+			      	</div>
+		      	
+	      	  <script>
+	      	  	$(document).ready(function() {
+				    $("#searchtext").keyup(function(event) {
+				        if (event.keyCode == 13) {
+				        	if($("#searchtext").val().length === 0){
+				        		$(this).focus();
+				        	}else{
+				        		$("#vav-dwcsearch-renderMain").submit();
+				        	}
+				        }
+				    })
+				});
+	      	  </script>
+	        <div class="icon-search sosmed">
+	            <div class="" id="search-form">
+	            	<div class="icon-sm" style="background-color: #410e58;"> <span class="fa fa-search" style="top:-1px"></span>  </div>
+	                <form action="/page/1030/search-results/0" accept-charset="UTF-8" method="post" id="vav-dwcsearch-renderMain">
+	                        <input name="form_id" id="edit-dwcsearch-renderMain2" value="dwcsearch_renderMain" type="hidden">
+	                        <label for="searchtext" style="display: none;">Search</label>
+							<input id="searchtext" name="searchtext2" class="search-text-box" type="text" aria-label="Enter search text">
+	                        <input value="1" name="searchsection_all" type="hidden">
+	                        <input value="20" name="searchresultsperpage" type="hidden">
+	                        <input value="associated_sites" name="search_type" type="hidden">
+	                </form>
+	            </div>
+	        </div>
+	        
+        </div>    
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        <div class="clear"></div>
+        </header>
+
+        <div class="block-hs">
+          <style>
+                  #homepage_hs_9, #homepage_hs9 { min-height: 110px; }
+                @media only screen and (max-device-width: 767px){
+                    #homepage_hs_9, #homepage_hs9 { min-height: 200px !important; }
+                }
+            </style>                                
+        <style>
+            header .bottom-header .navbar ul.navbar-nav li a, .block-hs .bottom-header .navbar ul.navbar-nav li a {
+                color: ;
+            }
+            header .bottom-header .navbar ul.navbar-nav li a:hover, .block-hs .bottom-header .navbar ul.navbar-nav li a:hover {
+                color: ;
+            }
+            header .bottom-header .navbar ul.navbar-nav li:hover, .block-hs .bottom-header .navbar ul.navbar-nav li:hover {
+                background-color: ;
+            }
+            header .bottom-header .navbar ul.navbar-nav li ul.sub-menu li a:hover, .block-hs .bottom-header .navbar ul.navbar-nav li ul.sub-menu li a {
+                color: ;
+            }
+            header .bottom-header .navbar ul.navbar-nav li  ul.sub-menu li a:hover, .block-hs .bottom-header .navbar ul.navbar-nav li ul.sub-menu li a:hover {
+                color: ;
+            }
+            header .bottom-header .navbar ul.navbar-nav li ul.sub-menu li, .block-hs .bottom-header .navbar ul.navbar-nav li ul.sub-menu li {
+                background-color: ;
+            }
+            header .bottom-header .navbar ul.navbar-nav li ul.sub-menu li:hover, .block-hs .bottom-header .navbar ul.navbar-nav li ul.sub-menu li:hover {
+                background-color: ;
+            }
+        </style>
+              <div class="bottom-header" id="homepage_hs_3" style="background:#410e58; background-size:"> 
+               <div class="contbg contbg_3">
+                                  </div> 
+                                <div class="container">
+                  <div class="row">
+                    <div class="col-md-12">    
+                        <div class="nav-header">
+                          <nav id="main_nav" class="navbar">
+                            <!-- Brand and toggle get grouped for better mobile display -->
+                            <div class="navbar-header">
+                                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                                <span class="menubtn">MENU</span>
+                                <span class="sr-only">Toggle navigation</span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                </button>
+                            </div>
+                            <!-- Collect the nav links, forms, and other content for toggling -->
+                            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                                <ul class="nav navbar-nav menu">                                    
+                                    <li id="el0_1026" ><a href="/" >Home</a><li id="el1_5624" ><a href="https://youtu.be/k_m0g9JD3lk" onClick="javascript:trackThis(5624)">Welcome Video</a><li class="dropdown"  id="el2_4230" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="District">District</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_4302" ><a href="/page/4317" >Board of Education</a><li id="el1_4377" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/GM Application for Employment.pdf" >Employment Application</a><li id="el2_4380" ><a href="/page/4383" >Employment Opportunities</a><li id="el3_4350" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/Background Check 2021.pdf" >Background Check Forms</a><li class="dropdown"  id="el4_4344" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Reports & Policies">Reports & Policies</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_4347" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026_Annual Notifications.pdf" >Annual Notifications</a><li id="el1_4368" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/20Site Goal Update Form Grand Meadow 2020-2021.pdf" >Annual Q-Comp Goals</a><li id="el2_4353" ><a href="javascript:OpenUrl('https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/Literacy Plan- 2024.pdf')" >GM School Literacy Plan</a><li id="el3_4365" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/Lead in Water Initial 072018_0.pdf" >Lead in Water Report</a><li id="el4_4371" ><a href="https://rc.education.mn.gov/#mySchool/p--3" >Minnesota Report Card</a><li id="el5_4356" ><a href="https://rst6-livesite.rschooltoday.com//page/4356" >Volunteer Policy</a><li id="el6_4359" ><a href="javascript:OpenUrl('https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/533 Wellness.pdf')" >Wellness Policy</a><li id="el7_4374" ><a href="javascript:OpenUrl('https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/GM 2024-25 Comprehensive Achievement and Civic Readiness (CACR) Annual Summary Report.pdf')" >World's Best Work Force</a><li id="el8_5625" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/SMEC Restrictive Procedures Plan.pdf" >Restrictive Procedures Plan</a></ul><li id="el5_5578" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/GM_Language Instruction Educational Program Plan_2024-2025 .pdf" >Multilingual Learner Program Plan</a></ul><li class="dropdown"  id="el3_2446" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="GM Staff    ">GM Staff    </a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li class="dropdown"  id="el0_2455" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2455'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Administration">Administration</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2454" ><a href="/page/2571" >Paul Besel-Superintendent, Pre-4 Principal</a><li id="el1_5553" ><a href="/page/5554" >Philip Strong - Interim MS/HS Principal</a><li id="el2_3123" ><a href="/page/3124" >Dan Armagost-Special Education Director</a></ul><li class="dropdown"  id="el1_5461" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Administrative Assistants">Administrative Assistants</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5466" ><a href="/page/5467" >Tonya Klapperick - Elementary</a><li id="el1_5468" ><a href="/page/5469" >Trudy Swanson - MS/High School</a><li id="el2_5470" ><a href="/page/5471" >Elizabeth Rice - District/Registrar</a><li id="el3_5472" ><a href="/page/5473" >Leslie Hendrickson - Human Resources</a><li id="el4_5474" ><a href="/page/5475" >Cathy Paul - Community Education</a></ul><li class="dropdown"  id="el2_2483" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Pre K -Grade 4">Pre K -Grade 4</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5037" ><a href="/page/5040" >Paige Ulwelling-Preschool & ECFE</a><li id="el1_2539" ><a href="/page/2651" >Kristi Johnson-Kindergarten</a><li id="el2_5592" ><a href="/page/5593" >Erin Twernbold-Kindergarten</a><li id="el3_2467" ><a href="/page/2581" >Lynn Baldus-First Grade</a><li id="el4_5594" ><a href="/page/5595" >Hannah Simon-First Grade</a><li id="el5_5598" ><a href="/page/5599" >Sheila Pitzen-Second Grade</a><li id="el6_5596" ><a href="/page/5597" >Alex Wilson-Second Grade</a><li id="el7_2513" ><a href="/page/3726" >Lori Arndorfer-Third Grade</a><li id="el8_2473" ><a href="/page/3729" >Makenna Theobald - Third Grade</a><li id="el9_5229" ><a href="/page/5232" >Nora Marzolf-Fourth Grade</a><li id="el10_2560" ><a href="/page/2722" >Rachel Hanson-Fourth Grade</a></ul><li class="dropdown"  id="el3_2485" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2485'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Middle School">Middle School</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_3801" ><a href="/page/3807" >Dylan Gowlland-5th Grade Math & Science</a><li id="el1_3366" ><a href="/page/3578" >Faith Gehling- 5th Grade Reading & Social Studies</a><li id="el2_5600" ><a href="/page/5601" >Ben Kraft-6th Grade Math & Science</a><li id="el3_3519" ><a href="/page/3520" >Jodi Munson-6th Grade Reading & Social Studies</a><li id="el4_5352" ><a href="/page/5355" >Kandise Drinkall-MS/HS Language Arts</a><li id="el5_4023" ><a href="/page/4086" >Tyler Hoch-MS/HS Social Studies</a><li id="el6_5358" ><a href="/page/5361" >Allison Oian-MS/HS Social Studies</a><li id="el7_5049" ><a href="/page/5136" >Seth Stettler-Science</a></ul><li class="dropdown"  id="el4_2486" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2486'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="High School">High School</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2458" ><a href="/page/2574" >Wyatt Garten-Ag Science</a><li id="el1_2561" ><a href="/page/2723" >Lisa Glynn-Social Studies</a><li id="el2_2459" ><a href="/page/2575" >Michael Keefe-Science</a><li id="el3_2462" ><a href="/page/2578" >Ben Pischke-Math</a><li id="el4_3368" ><a href="/page/3369" >Stephanie Rohl-Math</a><li id="el5_3287" ><a href="/page/3288" >Christina Swanek-Ag Science</a><li id="el6_5388" ><a href="/page/5391" >Leigh Swanson-Student Services</a><li id="el7_5151" ><a href="/page/5154" >Sue Wilson-English</a></ul><li class="dropdown"  id="el5_2484" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2484'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Special Education">Special Education</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_3525" ><a href="/page/3526" >SMEC K-6 Enrich - Megan Hughes</a><li id="el1_3418" ><a href="/page/3419" >Diane Jacobsen-ECSE</a><li id="el2_5364" ><a href="/page/5367" >Alyssa Severtson-Elem. SPED</a><li id="el3_5370" ><a href="/page/5373" >Tera Schmitt-Elem/MS Sped</a><li id="el4_5590" ><a href="/page/5591" >McKenna Wheeler - Elem. SPED</a><li id="el5_4029" ><a href="/page/4032" >Rebecca Young-HS SPED</a></ul><li class="dropdown"  id="el6_2512" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2512'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Media Center">Media Center</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2464" ><a href="/page/2579" >Terri Nordeng</a></ul><li class="dropdown"  id="el7_2482" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2482'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Specialists">Specialists</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_3523" ><a href="/page/3524" >Joshua Bain-PE/DAPE</a><li id="el1_2451" ><a href="/page/2568" >Chad Burmester-PE</a><li id="el2_3364" ><a href="/page/3365" >Jessie Christian-Band</a><li id="el3_5604" ><a href="/page/5605" >Kieran Sween-Vocal Music</a><li id="el4_3521" ><a href="/page/3522" >Sonja Johnson-Art</a></ul><li class="dropdown"  id="el8_3396" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Technology">Technology</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_3474" ><a href="/page/3475" >Jeff Oian, Outsourced Technology Director</a></ul><li class="dropdown"  id="el9_2481" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='https://'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="School Social Worker">School Social Worker</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5602" ><a href="/page/5603" >Kyleigh Doering</a></ul><li class="dropdown"  id="el10_2480" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2480'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="School Nurse">School Nurse</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2477" ><a href="/page/2591" >Kathi Himebaugh</a></ul><li id="el11_2537" ><a href="https://www.gm.k12.mn.us/page/4005" >K-12 504 Coordinator</a><li id="el12_2535" ><a href="https://www.gm.k12.mn.us/page/4029" >Title IX Coordinator</a></ul><li class="dropdown"  id="el4_3049" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Calendars">Calendars</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5579" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 Academic Calendar.pdf" >2025-2026 Master Calendar</a><li id="el1_3050" ><a href="javascript:openUrl('southeastconference.org/public/genie/3/school/5/')" >Activities Calendar</a><li id="el2_3052" ><a href="javascript:openUrl('http://fs-gm.rschooltoday.com/calendar/index/index/viewtype/1')" >Facilities Calendar</a><li id="el3_5547" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/Testing Rationales.pdf" >District Testing Plan</a><li id="el4_4242" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/25-26 Testing Calendar.pdf" >Testing Schedule</a><li id="el5_5534" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2024-2025 Master Calendar_0.pdf" >2024-2025 Master Calendar</a></ul><li class="dropdown"  id="el5_2448" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Community Ed">Community Ed</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2520" ><a href="/page/2662" >Community Education</a><li id="el1_4167" ><a href="/page/4170" >ECFE </a></ul><li class="dropdown"  id="el6_2447" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Activities">Activities</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2500" ><a href="/page/2627" >Activities Director</a><li class="dropdown"  id="el1_2487" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2487'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Fall Sports">Fall Sports</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2552" ><a href="/page/4833" >Cross Country</a><li id="el1_5178" ><a href="/page/5181" >Football</a><li id="el2_2492" ><a href="/page/3239" >Volleyball</a></ul><li class="dropdown"  id="el2_2488" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2488'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Winter Sports">Winter Sports</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_2493" ><a href="/page/2596" >Boys Basketball</a><li id="el1_2494" ><a href="/page/2597" >Girls Basketball</a><li id="el2_2558" ><a href="/page/2719" >Wrestling</a></ul><li class="dropdown"  id="el3_2489" ><a href="#" style='text-decoration: underline;' onclick="window.location.href='/page/2489'"  data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Spring Sports">Spring Sports</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_3353" ><a href="/page/3354" >Baseball</a><li id="el1_3351" ><a href="/page/3352" >Softball</a><li id="el2_3335" ><a href="/page/3336" >Clay Target League</a><li id="el3_2495" ><a href="/page/2598" >Golf</a><li id="el4_2496" ><a href="/page/2599" >Track</a></ul></ul><li class="dropdown"  id="el7_2449" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Parents">Parents</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_3199" ><a href="/page/3200" >K-6 Academic Brochures</a><li id="el1_4362" ><a href="javascript:OpenUrl('https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/Parent Guide_Course of Study .pdf')" >7-12 Course of Study Brochure</a><li id="el2_5533" ><a href="javascript:OpenUrl('https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 Registration Guide .pdf')" >2025-26 High School Registration Guide</a><li id="el3_5439" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/Digital Resources.pdf" >Digital Resources</a><li id="el4_4245" ><a href="https://ptcfast.com/schools/Grand_Meadow_Public_Schools" >Parent Teacher Conference Scheduler</a><li id="el5_4329" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/ala carte_0.docx" >Healthy Snacks</a><li id="el6_4332" ><a href="https://grandmeadowmn.infinitecampus.org/campus/portal/parents/grand_meadow.jsp" >Infinite Campus Parent Portal</a><li id="el7_4335" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/Parent%20Guardian%20Guide%20to%20Statewide%20Testing%20and%20Refusal%20to%20Test%20Form.pdf" >Parent/Guardian Guide to State Testing</a><li class="dropdown"  id="el8_5477" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="District Complaint Procedures">District Complaint Procedures</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5484" ><a href="/page/5485" >District Complaint Flow Chart</a><li id="el1_5486" ><a href="javascript:openUrl('https://docs.google.com/forms/d/e/1FAIpQLSdhPLQt8ARlmp1F6Q0u3IIEK1sU4ReQbHESwEJMr-5fL81FnA/viewform?usp=sf_link')" >District Discipline Complaint Form</a></ul></ul><li class="dropdown"  id="el8_4173" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Students">Students</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5532" ><a href="https://grandmeadowmn.infinitecampus.org/campus/portal/students/grand_meadow.jsp" >Infinite Campus Student Portal</a><li id="el1_4608" ><a href="https://mail.google.com/a/superlarks.com" >Google Account Log In</a><li id="el2_4176" ><a href="javascript:OpenUrl('https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 Registration Guide _0.pdf')" >2025-26 High School Registration Guide</a><li id="el3_4179" ><a href="javascript:OpenUrl('https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 MS.HS Student Handbook.pdf')" >5-12 Student Handbook</a><li id="el4_4188" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 Elem Student Handbook.pdf" >K-4 Student Handbook</a><li id="el5_4779" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 Extra-Curricular Handbook.pdf" >Extra-Curricular Handbook</a><li class="dropdown"  id="el6_5582" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="School Supply Lists">School Supply Lists</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5586" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/Elementary School Supplies_25-26_0.pdf" >Elementary Supply List</a><li id="el1_5587" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/5th and 6th Grade Supply List_2025-26.pdf" >5-6 Supply List</a><li id="el2_5588" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/7th and 8th Supply List_0.pdf" >7-8 Supply List</a><li id="el3_5589" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/9-12 School Supply List.pdf" >9-12 Supply List</a></ul><li id="el7_4203" ><a href="/page/4206" >PSEO Information</a><li id="el8_4218" ><a href="/page/4221" >Scholarship Information</a><li id="el9_5346" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/Discipline Referral Process Flowchart.docx" >Discipline Referral Process</a><li id="el10_4209" ><a href="https://global-zone05.renaissance-go.com/welcomeportal/714507" >AR Accelerated Reader</a><li id="el11_4182" ><a href="https://www.arbookfind.com/UserType.aspx?RedirectURL=%2fdefault.aspx" >AR Bookfinder</a><li id="el12_5280" ><a href="https://docs.google.com/forms/d/1Sob8jKmaU3GCSmFbUZQLp80WeTpaWeVr-xdsTlxpDOU/edit" >Jingle Bell Jog Movies</a><li id="el13_4185" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/files/Private_User/lpetzel/GMiPadPolicy.docx" >iPad Policy</a><li id="el14_4194" ><a href="https://minnesota.pearsonaccessnext.com/item-samplers/" >MCA Practice Tests</a><li id="el15_4395" ><a href="/page/4398" >MCA Resources</a><li id="el16_4197" ><a href="https://legacy.mshsl.org/mshsl/index.asp" >MSHSL</a><li id="el17_5449" ><a href="https://www.parchment.com/u/registration/14827/account" >Official Transcript Requests</a><li id="el18_5058" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/Social Media 2023-2024.pdf" >Social Media Guidelines</a><li id="el19_4224" ><a href="https://app.studyisland.com/cfw/login/" >Study Island</a><li id="el20_4749" ><a href="/page/4752" >Superlark Volunteer Cord Program</a></ul><li class="dropdown"  id="el9_2450" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Staff">Staff</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5343" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 Faculty Handbook.pdf" >Faculty Handbook</a><li id="el1_5349" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2025-2026 Paraprofessional Handbook.pdf" >Paraprofessional Handbook</a><li id="el2_3346" ><a href="https://leroy.supportsystem.com/" >Helpdesk Ticket</a><li id="el3_3286" ><a href="https://grandmeadowmn.infinitecampus.org/campus/grand_meadow.jsp" >Infinite Campus Staff Portal</a><li id="el4_4155" ><a href="https://www.myinfinitec.org/" >Infinitec</a><li id="el5_3464" ><a href="/page/3465" >Intervention Resources</a><li id="el6_3452" ><a href="https://smarter.regionv.k12.mn.us/Login.aspx?dn=0495" >SMART ER</a><li id="el7_3707" ><a href="javascript:openUrl('http://www.office.com')" >Webmail</a><li id="el8_3186" ><a href="/page/3187" >Wellness Activities</a><li id="el9_2514" ><a href="/page/2634" >Testing Schedule</a></ul><li class="dropdown"  id="el10_5513" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Health Office">Health Office</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5517" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/2024-25_COVID protocols and safe learning.pdf" >2024-2025 COVID Protocals and Safe Learning Plan</a><li id="el1_5518" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/GM Decision Tree.pdf" >GM Decision Tree</a><li id="el2_5531" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/COVID-19-parent fact sheet MDH.pdf" >COVID-19 Parent Fact Sheet</a><li class="dropdown"  id="el3_5519" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="COVID Resource Websites">COVID Resource Websites</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5520" ><a href="https://www.health.state.mn.us/diseases/coronavirus/index.html" >Minnesota Department of Health</a><li id="el1_5521" ><a href="https://www.cdc.gov/coronavirus/2019-ncov/index.html" >Centers for Disease Control and Prevention</a><li id="el2_5522" ><a href="https://rst6-livesite.rschooltoday.com/" >Department of Homeland Security</a></ul></ul><li class="dropdown"  id="el11_5569" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Registration Information">Registration Information</a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_5570" ><a href="https://rst6-livesite.rschooltoday.com/sites/gm.k12.mn.us/files/Registration Process.pdf" >New Student Registration Guide</a></ul><li class="dropdown"  id="el12_3504" ><a href="#"   data-toggle="dropdown" data-hover="dropdown" class="dropdown-toggle" aria-label="Facebook ">Facebook </a><span class="fa fa-caret-down" aria-hidden="true"></span><ul class="dropdown-menu sub-menu"><li id="el0_3514" ><a href="https://www.facebook.com/Grand-Meadow-Public-School-100970189318782" >GM School</a><li id="el1_3512" ><a href="https://www.facebook.com/Grand-Meadow-Boys-Basketball-487005241424605/?fref=ts" >Boys Basketball</a><li id="el2_3505" ><a href="https://www.facebook.com/groups/682736335128009/" >Community Education</a><li id="el3_3507" ><a href="https://www.facebook.com/groups/162970997539729/" >ECFE</a><li id="el4_3508" ><a href="https://www.facebook.com/Grand-Meadow-Football-136998629680165/?fref=ts" >Football</a><li id="el5_3515" ><a href="https://www.facebook.com/Grand-Meadow-Girls-Basketball-667048609992749/?fref=ts" >Girls Basketball</a><li id="el6_3506" ><a href="https://www.facebook.com/grandmeadoweducation/?fref=ts" >GM Education Foundation</a><li id="el7_3516" ><a href="https://www.facebook.com/Gmloks-187651271314085/" >GMLOKS Wrestling</a><li id="el8_3603" ><a href="https://fb.me/SouthernMinnesotaEducationConsortium" >SMEC</a><li id="el9_3517" ><a href="https://www.facebook.com/Grand-Meadow-Student-Council-258857437636802/?fref=ts" >Student Council</a></ul>                                </ul>
+                            </div>
+                            <!-- /.navbar-collapse -->
+                          </nav>
+                        </div>
+                    </div>
+                  </div>
+              </div>
+
+                        </div>            
+          
+
+            
+          <style>
+                            header {z-index: 3 !important;}
+                        </style> <section id="homepage_hs_10" >
+                    <div class="contbg contbg_10">
+                        
+                        
+                    </div>
+                    <div class="gridpaddx">
+                        <div class="">
+                            <div class="row">
+                                
+                                <div class"clear"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <style>
+                            header {z-index: 3 !important;}
+                        </style><script type="text/javascript">
+                               $(window).load(function() {
+                                    var he = 478;
+                                    var sheight = window.screen.height;
+                                    var swidth = window.screen.width;
+                                    if(he == 478 || he == 600){
+                                        var h = 478;
+                                    }else{
+                                        var h = 478;
+                                    }
+                                    var w = 1200;
+                                    var h_img = h;
+                                    if(swidth > w){
+                                        if(swidth < 768)
+                                            w = $("img.defaultimg").css("width").replace("px", "");
+                                        h_img = Math.round(h*(swidth/w));
+                                    }
+                                    if($("img.defaultimg").length){
+                                        var hp = $("img.defaultimg").css("height").replace("px", "");
+                                    }
+                                    if(he == 478 && hp < he){
+                                        var img = document.getElementById("defaultimg");
+                                        var wids = img.naturalWidth;
+                                        var wid = img.clientWidth;
+                                        var hgts = img.naturalHeight;
+                                        var top_img = $(img).css("top").replace("px", "");
+                                        hp = (hgts*(wid/wids) - top_img).toFixed(1);
+                                        h_img = hp;
+                                    }
+                                    if(swidth > 768){
+                                        $("#homepage_hs_4").css("max-height", h_img+"px");
+                                        $("#homepage_hs_4 .fullwidthbanner #slide_img_list img").css("top", "0px !important");
+                                        $("#homepage_hs_4 .fullwidthbanner").css("height", h_img+"px");
+                                        $("#homepage_hs_4 .fullwidthbanner #slide_img_list").css("height", h_img+"px");
+                                        $("#homepage_hs_4 .fullwidthbanner").attr("style", function(i,s){
+                                            var ss = s.split(";");
+                                            $.each(ss,function(q,style){
+                                                if (/^\s?height:\s?[0-9a-zA-Z]+/.test(style)){
+                                                    ss[q] = "height: "+h_img+"px";
+                                                }
+                                            });
+                                            return ss.join(";");
+                                        });
+                                        $("#homepage_hs_4 .fullwidthbanner #slide_img_list").attr("style", function(i,s){
+                                            var ss = s.split(";");
+                                            $.each(ss,function(q,style){
+                                                if (/^\s?height:\s?[0-9a-zA-Z]+/.test(style)){
+                                                    ss[q] = "height: "+h_img+"px";
+                                                }
+                                            });
+                                            return ss.join(";");
+                                        });
+                                        $("#homepage_hs_4 .fullwidthbanner #slide_img_list .slotholder").css({"height": "100%","display":"block","align-items":"center","justify-content":"center"});
+                                    }
+                                });
+                            </script> <section id="homepage_hs_4" class="img-hero"  style="background:; background-size:;">
+                            <div class="contbg contbg_4">
+                                
+                                
+                            </div>
+                            <div class="gridpadd">
+                                <div class="">
+                                    <div class=""><div class="slide_vav"><div class="in-image-herp">
+		<style>
+			li.load {
+				display: none;
+				display: none\9;/* for IE */
+				*display: none;/* for IE */
+				_display: none;/* for IE */
+			}
+	    </style>
+	    <script type="text/javascript">
+		    $(window).on("load", function(){
+		      jQuery("li.not_1st").removeClass("load");
+	      	});
+
+	       	$(".tx").on("load", function(){
+		      	jQuery("#slide_img_list").show();
+	      	});
+	    </script>
+						<style>
+							section.img-hero img.defaultimg {
+							    width: 100% !important;
+							    height: auto !important;
+							}
+		      	</style><div class="fullwidthbanner-container" >
+	<div class="fullwidthbanner rslider">
+		<ul id="slide_img_list">
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="2" data-transition="fade" >
+          <img  id="defaultimg" class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2FThe+Grand+Meadow+way.png&w=1500&h=597.5" data-fullwidthcentering="on" style="width:100%;">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="4" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2Fariel2.png&w=1500&h=477.27272727273" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="5" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FAriel.png&w=1500&h=477.27272727273" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="6" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="7" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="8" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="9" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="10" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="11" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="12" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="13" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2FWebsite+Template.png&w=1500&h=496.55172413793" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="14" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2Fginger.png&w=1500&h=477.27272727273" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="15" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2Fginger2.png&w=1500&h=477.27272727273" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="16" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2F1st+vet.png&w=1500&h=477.27272727273" data-fullwidthcentering="on">
+			</li>
+			<li  style="" data-waitforimages="1" data-masterspeed="300" data-slotamount="17" data-transition="fade"  class="not_1st load">
+          <img  class="tx" alt="" src="https://www.gm.k12.mn.us/img_aws.php?f=sites%2Fgm.k12.mn.us%2Ffiles%2Fimages%2F2025-2026%2FDecember%2F1st+ornamnents.png&w=1500&h=477.27272727273" data-fullwidthcentering="on">
+			</li>
+		</ul>
+	</div>
+</div></div></div> <div class="clear"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <style>
+			@media only screen and (min-width: 991px) {
+				section#homepage_hs_30{
+					height: 654px;
+				}
+				section#homepage_hs_30 .gridpadd{
+					padding-top: 70px;
+					padding-bottom: 70px;
+				}
+				section#homepage_hs_30 .gridpadd .container{
+					height: 514px;
+				}
+			}
+			</style>
+			<style>
+                            header {z-index: 3 !important;}
+                        </style> <section id="homepage_hs_30" class="welcome-text"  style="background:#ffffff; background-size:;">
+                            <div class="contbg contbg_30">
+                                
+                                
+                            </div>
+                            <div class="gridpadd">
+                                <div class="container">
+                                    <div class="row"><div class="col-md-3 colcont_66" ><style>
+			#homepage_hs_30 #widquick_15 #ftquicklinks66.ul-quicklink ul li a, #homepage_hs_30 #widquick_3 #ftquicklinks66.ul-quicklink ul li a{
+				color: ;
+			}
+
+			#homepage_hs_30 #widquick_12 ul li a::before{
+				color:#135788;
+			}
+			
+				#homepage_hs_30 .bc-content.ul-quicklink ul li.lay0 {
+					border-bottom: 1px solid #000000 !important;
+				}
+
+				#homepage_hs_30 .bc-content.ul-quicklink ul li.lay1 {
+					border-bottom: 1px solid #000000 !important;
+				}
+				#homepage_hs_30 .bc-content.ul-quicklink ul li.lay3 {
+					border-bottom: 1px solid #000000 !important;
+				}
+				#homepage_hs_30 .bc-content.ul-quicklink ul li.lay4 {
+					border-bottom: 1px solid #000000 !important;
+				}
+				i.fa.spacelay {padding-left:13px;}
+				#homepage_hs_30 #ql66,#homepage_hs_30 .ql_class_66  {
+					overflow: hidden;min-height:50px;height:444px;
+					position:relative;
+				}
+
+				#homepage_hs_30 #ql66:hover,#homepage_hs_30 .ql_class_66:hover {
+					overflow-y:auto;
+				}
+				
+			
+
+			#homepage_hs_30 .ul-quicklink ul li a {
+				color:;
+			}
+			#homepage_hs_30 .ul-quicklink ul li a:hover {
+				//color:#23527c;text-decoration:underline;
+				color:;text-decoration:underline;
+			}
+			</style>
+    	<style>
+			#ftquicklinks66 ul {
+			  	list-style-type: none;
+			  	padding: 0 10px !important;
+			}
+			#ftquicklinks66 ul li { margin-bottom: 10px; padding-bottom: 10px;}
+			
+				#ftquicklinks66 ul.collay_3,#ftquicklinks66 ul.collay_4{
+				 -webkit-column-count: 2;
+				 3--0px-moz-column-count: 2;
+				 column-count: 2;
+				}
+
+				#ftquicklinks66 ul.collay_3 li.lay3,#ftquicklinks66 ul.collay_4 li.lay4{
+					-webkit-column-break-inside: avoid; / Chrome, Safari, Opera /
+					page-break-inside: avoid; / Firefox /
+					break-inside: avoid; / IE 10+ /
+				}
+
+				
+		</style><div class="for_cust_title" style="color: #660099 !important;border-bottom-color: #000000;" tabindex="0">Quicklinks</div>
+		<style>	#ftquicklinks66 ul li i{
+						display:none;
+					}
+					#ftquicklinks66 ul li span{
+						display:none;
+					}
+					</style>
+	    		<div id="ql66" class="adj_hg1_30">
+		        <div class="bc-content ul-quicklink" id="ftquicklinks66">
+		            <ul class="collay_0">
+		               <li class="lay0" id="66_el0_4986" > <span class='fa fa-play'></span> <a href="javascript:openUrl('www.gm.k12.mn.us/page/4317')" onClick="javascript:trackThis(4986)">Agendas for Board Meetings</a></li><li class="sep"></li><li class="lay0" id="66_el0_1025" ><i class='fa fa-folder-open'></i> <a href="/page/members" target="_blank">Directory</a></li><li class="sep"></li><li class="lay0" id="66_el0_2445" > <span class='fa fa-play'></span> <a href="javascript:open_Calendar('_blank')">Events Calendar</a></li><li class="sep"></li><li class="lay0" id="66_el0_3459" > <span class='fa fa-play'></span> <a href="javascript:openUrl('www.gm.k12.mn.us/page/2515')" onClick="javascript:trackThis(3459)">GM Education Foundation</a></li><li class="sep"></li><li class="lay0" id="66_el0_5244" > <span class='fa fa-play'></span> <a href="javascript:openUrl('fan.hudl.com/usa/mn/grand-meadow/organization/14876/grand-meadow-high-school')" onClick="javascript:trackThis(5244)">Livestream Link</a></li><li class="sep"></li><li class="lay0" id="66_el0_2121" ><i class="fa fa-cutlery"></i> <a href="/page/lunchmenus" target="_blank">Lunch Menu</a></li><li class="sep"></li><li class="lay0" id="66_el0_3411" ><i class='fa fa-paperclip'></i> <a href="/page/3411" target="_blank">Mission and Vision</a></li><li class="sep"></li><li class="lay0" id="66_el0_3458" > <span class='fa fa-play'></span> <a href="javascript:openUrl('www.smec.k12.mn.us/')" onClick="javascript:trackThis(3458)">Southern Minnesota Education Consortium</a></li><li class="sep"></li><li class="lay0" id="66_el0_3462" ><i class='fa fa-paperclip'></i> <a href="/page/3462" target="_blank">Yearbook Information</a></li><li class="sep"></li><li class="lay0" id="66_el0_1028" > <span class='fa fa-play'></span> <a href="/user" target="_blank">Staff Login</a></li>
+		            </ul>
+		        </div>
+		        </div></div><div class="col-md-3 colcont_69" ><script type="text/javascript">
+				$(document).ready(function() {
+				    /*$("#newstype_69 .click-edit-title_69").each(function(edd69){
+				    	$(this).click(function() {
+			    			$(".widget_69").addClass("open-area");
+				    		$(".intitshow").show();
+					        $(".intitedit").hide();
+				    		$(".title69").hide();
+					        $(".inttl69").show();
+					        $(".inputtitle69").focus();
+				    		edd69.stopImmediatePropagation();
+						});
+			    	}); */
+				});
+			</script>
+    		<style>
+			.more-buttons-news30 a{
+				color:#000000 !important;
+				background:rgb(255, 255, 255) !important;
+				border:rgba(0, 0, 0, 0) 1px solid !important;
+				padding: 0 5px;
+			}
+
+			#homepage_hs_30 .w24-icon-news_ttl{
+				background:#125789;
+			}
+			#homepage_hs_30 .w27-button a.btn27{
+				color: #125789;
+				border-bottom:none;
+			}
+    	</style>
+    	<style>
+			.list-news30 .ul-news { padding-left: 0 !important; list-style: none; margin: 20px 0 0; }
+
+			.ul-news li {
+				 list-style-image: none !important;
+				 list-style: none !important;
+			}
+
+			#homepage_hs_30 .ttl_news_h2 .headhs30 h2::after {
+				background:none;
+			}
+
+		</style>
+        <div class="ttl_news_h2 ftnews_69"  id="widnews_2_69" >
+            <div class="for_cust_title title69 headhs30" style=" color:#660099;border-bottom-color:border-bottom-color: #000000;;   border-bottom-color: #000000;" tabindex="0"> News </div>
+            <div id="inputtitle69" class="inttl69 mid-content-title" style="display: none;">
+            	<label for="w_title69" style="display: none;">Widget title</label>
+                <input id="w_title69" class="inputtitle69" type="text" value="News" aria-labelledby="inputtitle69">
+                <button type="submit" id="bsave69" class="btn btn-primary btn-xs"><span class="fa fa-check ps_tooltip"><span class="pstooltip">Save</span></span><span style="display: none;">Submit</span></button>
+                <button type="button" id="bcancel69" class="btn btn-xs"><span class="fa fa-times ps_tooltip"><span class="pstooltip">Cancel</span></span><span style="display: none;">Cancel</span></button>
+            </div>
+       		<div class="list-news30 list_news_carousel"  id="widnews_69" style="overflow-y: auto;min-height:50px;height:444px;"><ul class="ul-news"></ul></div></div></div><div class="col-md-3 colcont_72" ><style>
+			.upcoming-event-box ul:not(.ul-lists) li{
+				border-bottom: 1px solid #000000;
+				list-style-type: none;
+				padding-bottom: 5px;
+			}
+			.upcoming-event-box ul li a strong{
+				color:;
+			}
+			.upcoming-event-box ul li a{
+				color:;
+			}
+			.more-buttons-event30 {
+				margin-top: 10px;
+			}
+			.more-buttons-event30 a{
+				color:#000000;
+				background:rgb(255, 255, 255);
+				border:1px solid rgba(0, 0, 0, 0);
+				padding: 0 5px;
+			}
+			#upevents_72 {
+			   padding-bottom: 20px;
+			}
+			#upevents_72 ul{
+			   padding-left: 10px;
+			}
+			.events #events_list ul, .events #events_list4 ul { list-style: outside none none; padding: 0 !important; }
+			</style>
+   			<div class="for_cust_title" style="color: #660099;border-bottom-color: #000000;" tabindex="0">Upcoming Events</div><div class="bc-content upcoming-event-box" style="overflow-y: auto;min-height:50px;height:444px;">
+		        <div class="events">
+		            <div id="events_list4"><ul><img src="https://rst6-livesite.rschooltoday.com/sites/all/themes/rstadmin/images/loading.gif" alt=""/> Loading Events...</ul></div><script>$(function(){ load_events_list4(0); });
+function load_events_list4(num){
+	$.getJSON(window.location.protocol+'//'+window.location.host+'/calendar/json/5/'+num, function(data) {
+		if(data.code==200){
+			var htmlist='';
+			var strArray=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+			for(key in data.response){
+				sdate=new Date(data.response[key].start_date);
+				day=("0" + sdate.getDate()).slice(-2);
+				month=strArray[sdate.getMonth()];
+				var style='';
+				if(data.response[key].status){
+					if(data.response[key].status.indexOf('Cancelled')>-1 || data.response[key].status.indexOf('Rescheduled')>-1 || data.response[key].status.indexOf('Postponed')>-1 || data.response[key].status.indexOf('Date Changed')>-1 || data.response[key].status.indexOf('Date & Time Changed')>-1){
+						/*if(data.response[key].status.indexOf('Postponed')>-1){
+							data.response[key].status=data.response[key].status.substring(0,data.response[key].status.indexOf(' '));
+						}*/
+						if(data.response[key].status.indexOf('from')==-1) style=';text-decoration:line-through';
+						data.response[key].status='<span style="color:red">'+data.response[key].status+'</span>';
+					}
+				}
+                var icons="";
+                if(data.response[key].online_ticket_url!="" || data.response[key].live_video_url!="" || data.response[key].live_audio_url!=""){
+                    icons+='<object>';
+                    if(data.response[key].online_ticket_url!=""){
+                        icons+='<a href="'+data.response[key].online_ticket_url+'" target="_blank"><img src="https://rst6-livesite.rschooltoday.com/misc/icon-ticket.png"></a>';
+                    }
+                    if(data.response[key].live_video_url!=""){
+                        var margin='';
+                        if(data.response[key].online_ticket_url!=""){
+                            margin=' style="margin-left:8px;"';
+                        }
+                        icons+='<a href="'+data.response[key].live_video_url+'" target="_blank"><img src="https://rst6-livesite.rschooltoday.com/misc/icon-video.png"'+margin+'></a>';
+                    }
+                    if(data.response[key].live_audio_url!=""){
+                        var margin='';
+                        if(data.response[key].online_ticket_url!="" || data.response[key].live_video_url!=""){
+                            margin=' style="margin-left:8px;"';
+                        }
+                        icons+='<a href="'+data.response[key].live_audio_url+'" target="_blank"><img src="https://rst6-livesite.rschooltoday.com/misc/icon-sound.png"'+margin+'></a>';
+                    }
+                    icons+='</object><br/>';
+                }
+				if(data.response[key].status==null){
+					htmlist+='<li><a href="'+data.response[key].permalink+'" target="_blank"><span style="'+style+'">'
+							+'<strong style="'+style+'">'
+									+data.response[key].start_date+'</strong><br><p class="time_events"><i class="fa fa-clock-o"></i>'
+											+data.response[key].start_time+'</p>'
+                                            +icons
+													+data.response[key].event
+													+((data.response[key].opponent)?' vs. '+data.response[key].opponent.replace('Away vs.',''):'')
+													+((data.response[key].location)?' <br/>@ '+data.response[key].location:'')
+													+'</span></a></li>';
+				}
+				else{
+					htmlist+='<li><table><tr><td style="color: #000; vertical-align: top; padding-top:5px;width:70px;font-familly: verdana black;text-transform:uppercase;text-align:center;padding-right:10px;"><div style="background-color:orange;padding: 0 5px; font-size: 18px; border: #cccccc 1px solid;border-bottom: none;">'+month+'</div><div style="font-size: 24px; background-color: #e0e0e0; border: #cccccc 1px solid;"><strong>'+day+'</strong></div></td><td style="color: ;"><a href="'+data.response[key].permalink+'" target="_blank"><span style="color: ;">'
+                                            +icons
+											+data.response[key].event
+											+((data.response[key].opponent)?' vs. '+data.response[key].opponent.replace('Away vs.',''):'')
+											+((data.response[key].location)?'<br/> @ '+data.response[key].location:'')
+											+'</span> '+data.response[key].status+'</a><br />'
+											+data.response[key].start_date+'</td></tr></table></li>';
+				}
+			}
+			$("#events_list4 ul").html(htmlist);
+		}else{
+			num++;
+			if(num%5==0){
+				var htmlist='Calendar Service Response '+ data.code;
+				htmlist+=' <button id="reloading_event_info">Reload</button>';
+				$("#events_list4 ul").html(htmlist);
+				$("#reloading_event_info").click(function(){
+					$("#events_list4 ul").html('<img src="https://rst6-livesite.rschooltoday.com/sites/all/themes/rstadmin/images/loading.gif" alt=""/> Loading Events...');
+					num++;
+					load_events_list4(num);
+					return false;
+				});
+			}else
+				setTimeout('load_events_list4('+num+')',1500);
+		}
+	});
+}
+</script></div>
+		        <div class="more-buttons-event30"> <a href="https://southeastconference.org/public/genie/3/school/5/" target="_blank" >More events </a></div>
+		    </div></div><div class="col-md-3 colcont_75" ><style>
+				#homepage_hs_30 .calendar-cont .ui-widget-header{
+					color:#fff !important;
+				}
+				#homepage_hs_30 .ui-datepicker-calendar a.ui-state-active{
+					color:#ffffff !important;
+				}
+
+				#homepage_hs_30 .calendar-cont tbody tr{
+					border-top:1px solid #000000 !important;
+					border-bottom:1px solid #000000 !important;
+				}
+				#homepage_hs_30 .calendar-cont .ui-datepicker .ui-datepicker-prev, #homepage_hs_30 .calendar-cont .ui-datepicker .ui-datepicker-next{
+					background: !important;
+				}
+				.ui-datepicker { width: 100% !important; }
+			</style><div class="wcalendar_75" id="cal_30">
+    			<div class="for_cust_title" style="color: #660099 !important;border-bottom-color: #000000;" tabindex="0">Calendar</div>
+    	<div class="bc-content grid-calendar" id="" style="overflow-y: auto;min-height:50px;height:444px;"><div class="calendar-cont" style="font-size:11px; clear:both;">
+<link type='text/css' rel='stylesheet' media='all' href='https://rst6-livesite.rschooltoday.com/misc/jquery-ui-1.8.15.custom.css' />
+<img id="cal_loadimg2" style="height:13px!important;max-width:100%!important;" src="https://rst6-livesite.rschooltoday.com/misc/images/loadingAnimation.gif" alt="Calendar">
+<div id="datepicker2"></div>
+<style>.call-bold a{font-weight: bold !important; color: red !important;}</style>
+<script type='text/javascript'>
+// Bug 76422
+
+
+		$(window).on('load', function() {
+
+			var waitForEl = function(selector, callback) {
+			  if (jQuery(selector).length) {
+			    callback();
+			  } else {
+			    setTimeout(function() {
+			      waitForEl(selector, callback);
+			    }, 100);
+			  }
+			};
+
+			waitForEl('#datepicker2 a', function() {
+				
+		$('#datepicker2 a.ui-datepicker-prev').keydown(function(e){
+	    	if(e.which == 13){ // enter key
+	    		e.preventDefault();
+	    		$('#datepicker2 a.ui-datepicker-prev').click();
+	    		handlePrevClick2();
+	    	}
+	    });
+	    $('#datepicker2 a.ui-datepicker-next').keydown(function(e){
+	    	if(e.which == 13){ // enter key
+	    		e.preventDefault();
+	    		$('#datepicker2 a.ui-datepicker-next').click();
+	    		handleNextClick2();
+	    	}
+	    });
+	
+				
+		function handlePrevClick2(){
+			setTimeout(function () {
+				triggerClick2();
+			    $('#datepicker2').find('.ui-datepicker-prev').focus();
+			}, 0);
+		}
+		function handleNextClick2(){
+			setTimeout(function () {
+				triggerClick2();
+			    $('#datepicker2').find('.ui-datepicker-next').focus();
+			}, 0);
+		}
+		function triggerClick2(){
+			prev = $('#datepicker2').find('.ui-datepicker-prev');
+			next = $('#datepicker2').find('.ui-datepicker-next');
+			prev.attr('tabindex','0');
+			next.attr('tabindex','0');
+
+			$(next).on('click', handleNextClick2);
+			$(prev).on('click', handlePrevClick2);
+		}
+	
+			});
+
+		});
+			
+	
+
+$(document).ready(function() {
+var server = 'no';
+if (server=='yes') {
+	var firstLoad2 = true;
+}else{
+var firstLoad2 = ($.fn.jquery.split('.')[1])<6?true:false;
+}
+var doe=[];
+var load_doe2=function(y,m,callback){
+  if(y.length!=4||m.length!=2) return;
+  $.getJSON(window.location.protocol+'//'+window.location.host+'/calendar/doe/'+y+'/'+m, callback);
+}
+var proc_doe2=function(y,m,callback){
+  var s=y+'-'+m;
+  if(doe.indexOf(s)==-1){
+    doe.push(s);
+    load_doe2(y,m, function(data){
+      if(data.code==200){
+        for(key in data.response){
+          var s=data.response[key].game_date;
+          doe.indexOf(s)==-1&&doe.push(s);
+        }
+      }
+      callback();
+    });
+  }else callback();
+}
+
+var cal_init2=function(){
+  proc_doe2('2025','12',function(){
+    $('#cal_loadimg2').hide();
+    jQuery('#datepicker2').datepicker({
+      prevText: '&nbsp;',
+      nextText: '&nbsp;',
+      onSelect: function(dateText, inst) {
+//       	inst.inline = false;
+        if (!firstLoad2) {
+          var calendar_url = 'http://southeastconference.org/public/genie/3/school/5/';
+          if(calendar_url.length<3)return;
+          var selected_date = new Date(dateText);
+          var additional_url = 'date/' +selected_date.getFullYear()+'-'+ (parseInt(selected_date.getMonth()) + 1) +'-' + selected_date.getDate() + '/view/week/';
+calendar_url += additional_url;
+          window.open(calendar_url,'_blank');
+        }
+        firstLoad2 = false;
+      },
+      onChangeMonthYear: function(y,m,obj){
+        y+='';m=(m<10?'0':'')+m;
+        doe.indexOf(y+'-'+m)==-1&&proc_doe2(y,m,function(){
+          console.log(doe);
+          jQuery('#datepicker2').datepicker();
+        });
+        setTimeout(function () {
+			
+		$('#datepicker2 a.ui-datepicker-prev').keydown(function(e){
+	    	if(e.which == 13){ // enter key
+	    		e.preventDefault();
+	    		$('#datepicker2 a.ui-datepicker-prev').click();
+	    		handlePrevClick2();
+	    	}
+	    });
+	    $('#datepicker2 a.ui-datepicker-next').keydown(function(e){
+	    	if(e.which == 13){ // enter key
+	    		e.preventDefault();
+	    		$('#datepicker2 a.ui-datepicker-next').click();
+	    		handleNextClick2();
+	    	}
+	    });
+	
+		    
+		function handlePrevClick2(){
+			setTimeout(function () {
+				triggerClick2();
+			    $('#datepicker2').find('.ui-datepicker-prev').focus();
+			}, 0);
+		}
+		function handleNextClick2(){
+			setTimeout(function () {
+				triggerClick2();
+			    $('#datepicker2').find('.ui-datepicker-next').focus();
+			}, 0);
+		}
+		function triggerClick2(){
+			prev = $('#datepicker2').find('.ui-datepicker-prev');
+			next = $('#datepicker2').find('.ui-datepicker-next');
+			prev.attr('tabindex','0');
+			next.attr('tabindex','0');
+
+			$(next).on('click', handleNextClick2);
+			$(prev).on('click', handlePrevClick2);
+		}
+	
+        }, 50);
+      },
+      beforeShowDay : function(date) {
+        var y=date.getFullYear()+'',m=date.getMonth()+1,d=date.getDate();
+        m=(m<10?'0':'')+m;d=(d<10?'0':'')+d;
+        return [ true, doe.indexOf(y+'-'+m+'-'+d)>0?'call-bold':'', '' ];
+      },
+    });
+  });
+}
+if(!jQuery.fn.datepicker){
+  var scr=parseInt($.fn.jquery.split('.')[1])<6?'jquery-ui.min.js':'jquery-ui-1.9.2.min.js';
+  $.getScript('/misc/'+scr, function(){cal_init2();});
+}else{cal_init2();}
+});</script>
+	</div></div></div></div> <div class="clear"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <style>
+			@media only screen and (min-width: 991px) {
+				section#homepage_hs_33{
+					height: 358px;
+				}
+				section#homepage_hs_33 .gridpadd{
+					padding-top: 70px;
+					padding-bottom: 70px;
+				}
+				section#homepage_hs_33 .gridpadd .container{
+					height: 218px;
+				}
+			}
+			</style>
+			<style>
+                            header {z-index: 3 !important;}
+                        </style> <section id="homepage_hs_33" class="welcome-text"  style="background:linear-gradient(rgb(255, 255, 255), rgb(136, 136, 136)) no-repeat center center fixed; background-size:;">
+                            <div class="contbg contbg_33">
+                                
+                                
+                            </div>
+                            <div class="gridpadd">
+                                <div class="container">
+                                    <div class="row"><div class="col-md-12 colcont_78" ><style>
+				#homepage_hs_33.address a span {
+					color: ;
+				}
+				.tcolbody33 span {
+					color: ;
+				}
+
+				.tcolbody33 .box-list-for .content-for .for-title {
+					border-bottom: none;
+					margin-bottom: 0px;
+				}
+
+				#homepage_hs_33.address a{
+					color:;
+				}
+				.tcolbody33 a, .tcolbody33 a span {
+					color:;
+				}
+				#homepage_hs_33 .widtype_20, #homepage_hs_33 .w43-description {
+					background-color:;
+				}
+	    		#botcustom_78 { padding-bottom: 20px; }
+				section.schoollink .cust_title{float:right;width:50%;padding-left:20px;font-family:;font-size:22px; color:;}
+    			.cust_content{float:left;width:50%;}
+    			.cust_content img{border:3px solid #fff;max-width:100%!important;height:100%!important;}
+    			#homepage_hs_33 .widtype_20 .btn_more, #homepage_hs_33 .widtype_21 .btn_more {
+    				color:  ;
+    				background-color:  ;
+    				border: 1px solid ;
+    				padding: 5px 15px;
+    				border-radius: 5px !important;
+    			}
+
+				#bbutton input{
+					background-color:#F6F6F6 !important;
+					border-radius : 3px !important	;
+					padding:5px 15px 5px 15px !important;
+					box-shadow:0px 0px 0px 0px rgba(50, 50, 50, 0);
+					border:1px solid #cccccc;
+				}
+				#homepage_hs_33 .widget_78 iframe { width: 100%; }
+			</style>
+	       		<style>
+					#homepage_hs_33.address a span {
+						color: ;
+					}
+					.tcolbody33 {
+						color:  !important;
+					}
+	       		</style>
+	       		<div class="widget_78">
+		            <span class="for_cust_title title78 headhs33 " style="color: #660099;border-bottom-color: #000000; display: block;" tabindex="0">Contact Information</span>
+		           
+		            <div id="" class="bc-content tcolbody33" style="color:  !important; height: 218px; overflow-y: auto; margin-top: 20px; overflow-y: auto;min-height:50px;height:148px;">
+		            <span style="font-size:16px"><strong>710 4th Ave NE PO Box 68&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br />
+Grand Meadow, MN 55936<br />
+<br />
+Phone: 507-857-1120<br />
+Fax: 507-754-5608</strong></span>
+		            </div>
+
+	            </div>
+	        </div> <div class="clear"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <style>
+                  #homepage_hs_9, #homepage_hs9 { min-height: 110px; }
+                @media only screen and (max-device-width: 767px){
+                    #homepage_hs_9, #homepage_hs9 { min-height: 200px !important; }
+                }
+            </style>          
+          <input type="hidden" name="stat_id" class="stat_id">
+        </div>
+
+                <footer id="homepage_hs_9" style="background:#410e58; background-size:"> 
+             <div class="contbg contbg_9">
+                            </div>        
+             
+            <div class="container footer-container">
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="footer-translator" style="width: 154px;margin: 0 auto;">
+                                          </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 col-footerlink">
+                        <div class="footerlink">
+                            <ul>
+                                <li id="el0_3023" ><a href="/page/3023" onClick="javascript:trackThis(3023)">Annual Public Notification</a></li><li class="sep"></li><li id="el0_3024" ><a href="/page/3024" onClick="javascript:trackThis(3024)">Nondiscrimination Statement</a></li><script>
+                    var d = new Date();
+                    var lt = "%3C";
+                    var gt = "%3E";
+                    d.setTime(d.getTime() + (365 * 24 * 60 * 60 * 1000));
+                    if( typeof $.fn.typeahead !== "undefined"){
+                        document.cookie = "bsversion=version2; expires="+d.toUTCString();
+                    }else if(typeof $.fn.typeahead === "undefined"){
+                        document.cookie = "bsversion=version3; expires="+d.toUTCString();
+                    }else if(typeof $.fn.typeahead === ""){
+                        document.cookie = "bsversion=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+                    }
+                    var jsvernum = $.fn.jquery.split(".");
+                    if(parseInt(jsvernum[0])==1 && parseInt(jsvernum[1]) +lt+ 9){
+                        document.cookie = "jsversion=under19; expires="+d.toUTCString();
+                    }else if((parseInt(jsvernum[0])==1 && parseInt(jsvernum[1]) +gt+ 9) || parseInt(jsvernum[0])==2){
+                        document.cookie = "jsversion=higher19; expires="+d.toUTCString();
+                    }else if(jsvernum == ""){
+                        document.cookie = "jsversion=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+                    }
+                    </script><script>
+                        $(".collapsible-item-collapse").css("height","0px");
+                    </script>                            </ul>
+                        </div> 
+                    </div>
+                    <div class="col-md-6 col-copyright"><div class="copyright"> </div><div id="new_translator" style="width: 100%;float: left;margin: 25px 0;"></div></div><div class="col-md-12 col-mbl" align="center" style="margin-top: 15px;"><span id="powerby" style="color:#FFFFFF;font-family:verdana,arial,geneva,sans-serif;"><strong>&copy; 2025<span class="conn"> - </span><span class="pby">Powered by <a id="rst_link" href="https://arbiter.io" target="_blank">arbiter.io</a></span></strong></span><span class="conn"id="conn" style="color:#000000;font-family:verdana,arial,geneva,sans-serif;"> | </span><a id="policies" href="https://rschooltoday.com/policies.html" target="_blank"><span style="color:#FFFFFF;font-family:verdana,arial,geneva,sans-serif;"><strong>Policies</strong></span></a><script>
+                    var d = new Date();
+                    var lt = "%3C";
+                    var gt = "%3E";
+                    d.setTime(d.getTime() + (365 * 24 * 60 * 60 * 1000));
+                    if( typeof $.fn.typeahead !== "undefined"){
+                        document.cookie = "bsversion=version2; expires="+d.toUTCString();
+                    }else if(typeof $.fn.typeahead === "undefined"){
+                        document.cookie = "bsversion=version3; expires="+d.toUTCString();
+                    }else if(typeof $.fn.typeahead === ""){
+                        document.cookie = "bsversion=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+                    }
+                    var jsvernum = $.fn.jquery.split(".");
+                    if(parseInt(jsvernum[0])==1 && parseInt(jsvernum[1]) +lt+ 9){
+                        document.cookie = "jsversion=under19; expires="+d.toUTCString();
+                    }else if((parseInt(jsvernum[0])==1 && parseInt(jsvernum[1]) +gt+ 9) || parseInt(jsvernum[0])==2){
+                        document.cookie = "jsversion=higher19; expires="+d.toUTCString();;
+                    }else if(jsvernum == ""){
+                        document.cookie = "jsversion=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+                    }
+                    /*fix 82965*/
+                    if (typeof jQuery.ui !== "undefined") {
+                        document.cookie = "jsuiversion="+jQuery.ui.version+"; expires="+d.toUTCString();
+                    }else{
+                        document.cookie = "jsuiversion=undefined; expires="+d.toUTCString();
+                    }
+                    </script><script>
+                        $(".collapsible-item-collapse").css("height","0px");
+                    </script>
+            <script src="https://rst6-livesite.rschooltoday.com/misc/tinycolor.js"></script>
+            <script>
+                var bgcolor = "transparent";
+                var theme = "newpixma";
+                if(theme == "rstbasic") {
+                    $("#powerby,#powerby strong,#conn").css("color","#373737");
+                    $("footer a,.pby a#rst_link,#powerby a strong,#policies strong").css("color","#78a5cc");
+                }else{
+                    var col = $("#footer, footer").css("background-color");
+                    if(!bgcolor && theme == "bootstrap_unity") col = "#ffffff";
+                    if(col == null) col = "#ffffff";
+                    var c = tinycolor(col);
+                    if (c.isDark()) {
+                        $("#powerby,.pby,#powerby strong,#conn").css("color","#ffffff");
+                        $("footer a,.pby a#rst_link,#powerby a strong,#policies strong").css("color","#78a5cc");
+                    } else {
+                        $("#powerby,.pby,#powerby strong,#conn").css("color","#373737");
+                        $("footer a,.pby a#rst_link,#powerby a strong,#policies strong").css("color","#000099");
+                    }
+                }
+            </script><style>
+                    .col-copyright, .col-mbl { z-index: 0; }
+                    .col-footerlink { z-index: 1; }
+                    #new_translator { z-index: 3; position: relative; }
+                    
+                    
+                    @media (max-width: 767px) {
+                        .conn { display: none; }
+                        .pby { width: 100%; display: block; }
+                    }
+                    @media (max-width: 1199px) {
+                        .col-mbl { width: 100% !important; position: relative !important; top: -10px !important; }
+                    }
+                </style><script>
+        $( document ).ready(function() {
+            $(".col-mbl").css("margin-bottom","10px");
+        });
+        </script></div></div>
+                </div> 
+            </div>
+                      </footer>     
+                
+        <!-- BEGIN AD BOTTOM MOBILE--> 
+                <!-- END AD BOTTOM MOBILE--> 
+
+        <!-- BEGIN AD BOTTOM --> 
+                <!-- END AD BOTTOM --> 
+
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/jquery.parallax.js"></script> 
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/modernizr-2.6.2.min.js"></script> 
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/revolution-slider/js/jquery.themepunch.revolution.min.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/jquery.nivo.slider.pack.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/jquery.prettyPhoto.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/superfish.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/tytabs.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/jquery.gmap.min.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/circularnav.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/jquery.sticky.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/imagesloaded.pkgd.min.js"></script>
+        <script src="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/js/waypoints.min.js"></script>
+        
+        <!-- Use thickbox on PV 76187 -->
+        <script type="text/javascript" src="https://rst6-livesite.rschooltoday.com/misc/thickbox-compressed-vav.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://rst6-livesite.rschooltoday.com/misc/thickbox.css">
+        <!-- End 76187 -->
+       
+                    <!-- CALENDAR -->
+            <link rel="stylesheet" type="text/css" href="https://rst6-livesite.rschooltoday.com/sites/central/themes/newpixma/css/jquery-ui-1.8.15.custom.css">
+        
+        <!-- Text accessibility 76187 -->
+                    </body>
+</html>
