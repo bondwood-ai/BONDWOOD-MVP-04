@@ -265,8 +265,8 @@
         }
         .items-table input:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
-        .items-table td:has(.line-desc) { max-width: 200px; }
-        .items-table .line-desc { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        .items-table .line-desc { width: 100%; resize: none; overflow: hidden; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 0.85rem; background: var(--field-bg); color: var(--text-primary); line-height: 1.4; box-sizing: border-box; }
+        .items-table .line-desc:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[type="number"], .items-table input.text-right { text-align: right; }
         .items-table tr.selected { background: var(--pale-accent) !important; }
         .items-table th.checkbox-col, .items-table td.checkbox-cell { text-align: center; width: 36px; }
@@ -1071,7 +1071,7 @@
             tr.innerHTML = `
                 <td class="checkbox-cell"><input type="checkbox" class="line-checkbox" onchange="updateLineSelection()"></td>
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
-                <td><input type="text" class="line-desc" value="${data.description || ''}"></td>
+                <td><textarea class="line-desc" rows="1" cols="25" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
                 <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:100px;"></td>
                 <td><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;"></td>
                 <td><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;"></td>
@@ -1094,6 +1094,11 @@
                 total += parseFormattedNumber(row.querySelector('.line-amount').value);
             });
             document.getElementById('grandTotal').value = formatCurrency(total);
+        }
+
+        function autoResizeLineDesc(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
         }
 
         function toggleSelectAllItems() {
