@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request for Payment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --accent-color: #000000;
+            --accent-text-color: #ffffff;
+            --primary-hex: #000000;
+            --secondary-hex: #0728eb;
+            --positive-color: #16a34a;
+            --negative-color: #dc2626;
+            --warning-color: #d97706;
+            --border-color: #e0e0e0;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #555555;
+            --pale-accent: rgba(7, 40, 235, 0.05);
+            --field-bg: #ffffff;
+            --readonly-bg: #f0f2f5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            padding: 1rem;
+        }
+
+        /* ============ DARK MODE ============ */
+        body.dark-mode {
+            --bg-color: #121517;
+            --card-bg: #1a1a1a;
+            --border-color: #404040;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a0a0a0;
+            --field-bg: #222;
+            --readonly-bg: #2a2d30;
+            --pale-accent: rgba(91, 122, 255, 0.08);
+        }
+        body.dark-mode .form-container { background: var(--card-bg); border-color: var(--border-color); }
+        body.dark-mode .section-header { background: var(--primary-hex); }
+        body.dark-mode .info-grid .cell { border-color: var(--border-color); }
+        body.dark-mode .info-grid .cell.header-cell { background: var(--primary-hex); }
+        body.dark-mode input, body.dark-mode select, body.dark-mode textarea { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode input[readonly], body.dark-mode .readonly-field { background: var(--readonly-bg); }
+        body.dark-mode select option { background: var(--card-bg); }
+        body.dark-mode .items-table th { background: var(--primary-hex); }
+        body.dark-mode .items-table td { border-color: var(--border-color); }
+        body.dark-mode .items-table input { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .items-table input[readonly] { background: var(--readonly-bg); }
+        body.dark-mode .items-table tr.selected { background: rgba(91, 122, 255, 0.15) !important; }
+        body.dark-mode .workflow-step.active { background: rgba(91, 122, 255, 0.15); border-color: #5b7aff; }
+        body.dark-mode .workflow-step.completed { background: rgba(74, 222, 128, 0.15); border-color: #4ade80; }
+        body.dark-mode .attachment-item { background: var(--readonly-bg); border-color: var(--border-color); }
+        body.dark-mode .attachment-icon { background: var(--card-bg); }
+        body.dark-mode .mileage-table th { background: var(--primary-hex); }
+        body.dark-mode .mileage-table td { border-color: var(--border-color); }
+        body.dark-mode .mileage-table input { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .row-actions-toolbar { background: #3d3200; border-color: #665500; }
+        body.dark-mode .row-actions-toolbar .selected-count { color: #ffd700; }
+        body.dark-mode .total-row input { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .total-row input[readonly] { background: var(--readonly-bg); }
+        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #404040; }
+        body.dark-mode .theme-toggle svg { fill: #5b7aff; }
+        body.dark-mode .type-option.selected { border-color: #5b7aff; background: rgba(91, 122, 255, 0.12); }
+
+        /* ============ LOGO ============ */
+        .bondwood-logo {
+            height: 100px; max-height: 100px; width: auto; flex-shrink: 0;
+            margin-top: -40px; margin-bottom: -40px; object-fit: contain;
+        }
+
+        /* ============ MAIN LAYOUT ============ */
+        .main-content { max-width: 1100px; margin: 0 auto; }
+
+        /* ============ FORM CONTAINER ============ */
+        .form-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            background: var(--primary-hex);
+            color: var(--accent-text-color);
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-body { padding: 1.25rem; }
+
+        /* ============ BACK BUTTON ============ */
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 0.45rem 0.85rem; background: var(--card-bg); color: var(--text-primary);
+            border: 1px solid var(--border-color); border-radius: 6px;
+            font-size: 0.8rem; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: all 0.15s; margin-bottom: 1rem;
+        }
+        .back-btn:hover { background: var(--bg-color); }
+        .back-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+        /* ============ RFP NUMBER ROW ============ */
+        .rfp-number-row {
+            display: flex; justify-content: flex-end; align-items: center;
+            margin-bottom: 1.25rem; gap: 0.75rem;
+        }
+        .rfp-number-row label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
+        .rfp-number-row input {
+            width: 180px; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 6px; font-family: inherit; font-size: 1rem;
+            background: var(--readonly-bg); color: var(--text-primary);
+            font-weight: 700; cursor: not-allowed; text-align: center;
+            letter-spacing: 0.05em;
+        }
+
+        /* ============ INFO GRID ============ */
+        .info-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            border: 1px solid var(--text-primary); border-radius: 8px;
+            overflow: hidden; margin-bottom: 1.25rem;
+        }
+        .info-grid .cell {
+            padding: 0.75rem 1rem; border: 1px solid var(--border-color);
+        }
+        .info-grid .cell.header-cell {
+            background: var(--primary-hex); color: var(--accent-text-color);
+            font-weight: 600; font-size: 0.85rem;
+        }
+        .info-grid .cell input,
+        .info-grid .cell select {
+            width: 100%; padding: 0.45rem 0.5rem; border: none;
+            border-bottom: 1px solid var(--border-color);
+            font-family: inherit; font-size: 0.9rem; background: transparent;
+            color: var(--text-primary);
+        }
+        .info-grid .cell input[readonly] {
+            background: var(--readonly-bg); cursor: not-allowed;
+            border-radius: 4px; border-bottom: none;
+        }
+        .info-grid .cell input:focus, .info-grid .cell select:focus {
+            outline: none; border-bottom-color: var(--secondary-hex);
+        }
+
+        /* ============ REQUEST TYPE ============ */
+        .type-selector { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
+        .type-option {
+            flex: 1; display: flex; align-items: center; gap: 0.75rem;
+            padding: 1rem 1.25rem; border: 2px solid var(--border-color);
+            border-radius: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .type-option:hover { border-color: var(--text-secondary); }
+        .type-option.selected { border-color: var(--secondary-hex); background: var(--pale-accent); }
+        .type-option .type-radio {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid var(--border-color); display: flex;
+            align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .type-option.selected .type-radio {
+            border-color: var(--secondary-hex);
+        }
+        .type-option.selected .type-radio::after {
+            content: ''; width: 10px; height: 10px; border-radius: 50%;
+            background: var(--secondary-hex);
+        }
+        .type-option .type-label { font-weight: 600; font-size: 0.9rem; }
+        .type-option .type-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; }
+
+        /* ============ VENDOR INFO ============ */
+        .vendor-section {
+            display: grid; grid-template-columns: 1fr 1fr;
+            border: 1px solid var(--text-primary); border-radius: 8px;
+            overflow: hidden; margin-bottom: 1.25rem;
+        }
+        .vendor-section .cell { padding: 0.75rem 1rem; border: 1px solid var(--border-color); }
+        .vendor-section .cell.header-cell {
+            background: var(--primary-hex); color: var(--accent-text-color);
+            font-weight: 600; font-size: 0.85rem;
+        }
+        .vendor-section input, .vendor-section select, .vendor-section textarea {
+            width: 100%; padding: 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 6px; font-family: inherit; font-size: 0.9rem;
+            background: var(--field-bg); color: var(--text-primary);
+        }
+        .vendor-section textarea { min-height: 60px; resize: vertical; }
+        .vendor-section input:focus, .vendor-section select:focus, .vendor-section textarea:focus {
+            outline: none; border-color: var(--secondary-hex);
+        }
+
+        /* ============ FULL-WIDTH SECTION ============ */
+        .full-section {
+            border: 1px solid var(--text-primary); border-radius: 8px;
+            overflow: hidden; margin-bottom: 1.25rem;
+        }
+        .full-section .section-header { font-size: 0.85rem; }
+        .full-section .section-body { padding: 1rem; }
+        .full-section input, .full-section textarea, .full-section select {
+            width: 100%; padding: 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 6px; font-family: inherit; font-size: 0.9rem;
+            background: var(--field-bg); color: var(--text-primary);
+        }
+        .full-section textarea { min-height: 50px; resize: none; overflow: hidden; }
+        .full-section input:focus, .full-section textarea:focus, .full-section select:focus {
+            outline: none; border-color: var(--secondary-hex);
+        }
+
+        /* ============ ITEMS TABLE ============ */
+        .table-actions-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .table-actions-bar .label { font-weight: 600; font-size: 0.9rem; }
+
+        .items-table-scroll { overflow-x: auto; margin-bottom: 0.75rem; }
+        .items-table {
+            width: 100%; border-collapse: collapse; min-width: 900px;
+        }
+        .items-table th {
+            background: var(--primary-hex); color: var(--accent-text-color);
+            padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
+            font-size: 0.75rem; letter-spacing: 0.03em; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .items-table td {
+            padding: 0.35rem 0.35rem; border-bottom: 1px solid var(--border-color);
+        }
+        .items-table input {
+            width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 4px; font-family: inherit; font-size: 0.85rem;
+            background: var(--field-bg); color: var(--text-primary);
+        }
+        .items-table input:focus { outline: none; border-color: var(--secondary-hex); }
+        .items-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
+        .items-table input[type="number"], .items-table input.text-right { text-align: right; }
+        .items-table tr.selected { background: var(--pale-accent) !important; }
+        .items-table th.checkbox-col, .items-table td.checkbox-cell { text-align: center; width: 36px; }
+        .items-table input[type="checkbox"] {
+            width: 16px; height: 16px; cursor: pointer; accent-color: var(--secondary-hex);
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        /* ============ ROW ACTIONS TOOLBAR ============ */
+        .row-actions-toolbar {
+            display: none; background: #fff3cd; border: 1px solid #ffc107;
+            border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 0.75rem;
+        }
+        .row-actions-toolbar.visible { display: flex; align-items: center; justify-content: space-between; }
+        .row-actions-toolbar .selected-count { font-weight: 600; color: #856404; font-size: 0.85rem; }
+        .delete-rows-btn {
+            display: flex; align-items: center; gap: 0.4rem;
+            background: var(--negative-color); color: #fff; border: none;
+            padding: 0.4rem 0.85rem; border-radius: 6px; font-family: inherit;
+            font-weight: 600; font-size: 0.8rem; cursor: pointer;
+        }
+        .delete-rows-btn:hover { background: #b91c1c; }
+
+        /* ============ ADD ROW / TOTALS ============ */
+        .add-row-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--positive-color); color: #fff; border: none;
+            padding: 0.45rem 1rem; border-radius: 6px; font-family: inherit;
+            font-weight: 600; font-size: 0.8rem; cursor: pointer;
+        }
+        .add-row-btn:hover { background: #15803d; }
+        .totals-section { display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 1.5rem; }
+        .total-row {
+            display: grid; grid-template-columns: 140px 160px;
+            gap: 0.5rem; margin-bottom: 0.35rem; align-items: center;
+        }
+        .total-row label { text-align: right; font-weight: 600; font-size: 0.85rem; }
+        .total-row input {
+            padding: 0.4rem 0.6rem; border: 1px solid var(--border-color);
+            border-radius: 6px; font-family: inherit; font-size: 0.9rem;
+            text-align: right; background: var(--field-bg); color: var(--text-primary);
+        }
+        .total-row input[readonly] { background: var(--readonly-bg); font-weight: 700; }
+
+        /* ============ MILEAGE TABLE ============ */
+        .mileage-section { display: none; }
+        .mileage-section.visible { display: block; }
+        .mileage-check-row {
+            display: flex; align-items: center; gap: 0.5rem;
+            margin-bottom: 1rem; padding: 0.6rem 0;
+        }
+        .mileage-check-row input[type="checkbox"] {
+            width: 18px; height: 18px; accent-color: var(--secondary-hex); cursor: pointer;
+        }
+        .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+        .mileage-table-scroll { overflow-x: auto; margin-bottom: 0.75rem; }
+        .mileage-table {
+            width: 100%; border-collapse: collapse; min-width: 700px;
+        }
+        .mileage-table th {
+            background: var(--primary-hex); color: var(--accent-text-color);
+            padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
+            font-size: 0.75rem; letter-spacing: 0.03em; text-transform: uppercase;
+        }
+        .mileage-table td {
+            padding: 0.35rem; border-bottom: 1px solid var(--border-color);
+        }
+        .mileage-table input, .mileage-table select {
+            width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 4px; font-family: inherit; font-size: 0.85rem;
+            background: var(--field-bg); color: var(--text-primary);
+        }
+        .mileage-table input:focus, .mileage-table select:focus { outline: none; border-color: var(--secondary-hex); }
+        .mileage-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
+
+        /* ============ WORKFLOW TRACKER ============ */
+        .workflow-tracker {
+            display: flex; gap: 0; margin-bottom: 1.25rem; border-radius: 8px;
+            overflow: hidden; border: 1px solid var(--border-color);
+        }
+        .workflow-step {
+            flex: 1; padding: 0.6rem 0.75rem; text-align: center;
+            border-right: 1px solid var(--border-color);
+            background: var(--bg-color); position: relative;
+            transition: all 0.3s;
+        }
+        .workflow-step:last-child { border-right: none; }
+        .workflow-step .step-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); }
+        .workflow-step .step-status { font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.15rem; }
+        .workflow-step.active { background: var(--pale-accent); border-color: var(--secondary-hex); }
+        .workflow-step.active .step-label { color: var(--secondary-hex); }
+        .workflow-step.active .step-status { color: var(--secondary-hex); font-weight: 600; }
+        .workflow-step.completed { background: rgba(22, 163, 74, 0.08); }
+        .workflow-step.completed .step-label { color: var(--positive-color); }
+        .workflow-step.completed .step-status { color: var(--positive-color); }
+
+        /* ============ ATTACHMENTS ============ */
+        .attachments-section { margin-bottom: 1.5rem; }
+        .upload-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+            width: 100%; padding: 1rem; background: var(--primary-hex);
+            color: var(--accent-text-color); border: 2px dashed rgba(255,255,255,0.35);
+            border-radius: 8px; font-family: inherit; font-size: 1rem;
+            font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .upload-btn:hover { opacity: 0.9; border-color: rgba(255,255,255,0.55); }
+        .upload-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .attachments-list { margin-top: 0.75rem; }
+        .attachment-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.6rem 0.85rem; background: var(--readonly-bg);
+            border: 1px solid var(--border-color); border-radius: 6px;
+            margin-bottom: 0.4rem;
+        }
+        .attachment-info { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; }
+        .attachment-icon {
+            flex-shrink: 0; width: 30px; height: 30px; display: flex;
+            align-items: center; justify-content: center; background: var(--card-bg);
+            border-radius: 6px; color: var(--secondary-hex);
+        }
+        .attachment-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .attachment-name { font-weight: 500; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .attachment-size { font-size: 0.7rem; color: var(--text-secondary); }
+        .attachment-actions { display: flex; gap: 0.25rem; }
+        .attachment-actions button {
+            background: none; border: none; cursor: pointer; padding: 0.25rem;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .attachment-actions button svg { width: 16px; height: 16px; stroke-width: 2; fill: none; }
+        .attachment-actions .view-btn { color: var(--secondary-hex); }
+        .attachment-actions .view-btn:hover { background: var(--pale-accent); }
+        .attachment-actions .remove-btn { color: var(--negative-color); }
+        .attachment-actions .remove-btn:hover { background: rgba(220, 38, 38, 0.1); }
+
+        /* ============ APPROVAL NOTES ============ */
+        .approval-section { margin-bottom: 1.5rem; }
+        .approval-note {
+            display: flex; gap: 0.75rem; padding: 0.75rem; margin-bottom: 0.5rem;
+            background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);
+        }
+        .approval-note .note-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--secondary-hex); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+        }
+        .approval-note .note-content { flex: 1; }
+        .approval-note .note-header { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
+        .approval-note .note-name { font-weight: 600; font-size: 0.8rem; }
+        .approval-note .note-date { font-size: 0.7rem; color: var(--text-secondary); }
+        .approval-note .note-text { font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* ============ BUTTONS ============ */
+        .button-container {
+            display: flex; gap: 0.75rem; justify-content: center;
+            margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color);
+        }
+        .btn {
+            padding: 0.65rem 1.5rem; border: none; border-radius: 6px;
+            font-family: inherit; font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.2s; display: inline-flex;
+            align-items: center; gap: 6px;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-submit { background: var(--primary-hex); color: var(--accent-text-color); padding: 0.75rem 2.5rem; font-size: 1rem; }
+        .btn-submit:hover { opacity: 0.9; }
+        .btn-save { background: #d1d5db; color: #000; }
+        .btn-save:hover { background: #9ca3af; }
+        .btn-print { background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-print:hover { background: var(--bg-color); }
+        .btn-primary-sm {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.2);
+            color: var(--accent-text-color); border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px; font-size: 0.75rem; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .btn-primary-sm:hover { background: rgba(255,255,255,0.3); }
+        .btn-primary-sm svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+        /* ============ FOOTER ============ */
+        .footer { padding: 1rem 0 0.5rem; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; }
+        .theme-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+        .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
+
+        /* ============ PDF POPUP OVERLAY ============ */
+        .pdf-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 3000; }
+        .pdf-overlay.open { display: flex; }
+        .pdf-viewer { width: 90vw; height: 90vh; background: var(--card-bg); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 16px 48px rgba(0,0,0,0.3); }
+        .pdf-viewer-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+        .pdf-viewer-header h3 { font-size: 0.9rem; font-weight: 600; }
+        .pdf-viewer-header button { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 0.25rem; border-radius: 4px; }
+        .pdf-viewer-header button:hover { background: var(--bg-color); color: var(--text-primary); }
+        .pdf-viewer-header button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .pdf-viewer-body { flex: 1; }
+        .pdf-viewer-body iframe, .pdf-viewer-body embed { width: 100%; height: 100%; border: none; }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .vendor-section { grid-template-columns: 1fr; }
+            .type-selector { flex-direction: column; }
+            .workflow-tracker { flex-direction: column; }
+            .total-row { grid-template-columns: 1fr; gap: 0.2rem; }
+            .total-row label { text-align: left; }
+        }
+
+        /* ============ PRINT ============ */
+        @media print {
+            body { background: white !important; color: #000 !important; padding: 0; }
+            .back-btn, .button-container, .add-row-container, .row-actions-toolbar,
+            .checkbox-col, .checkbox-cell, .attachments-section, .footer,
+            .table-actions-bar .btn-primary-sm, #headerBanner { display: none !important; }
+            .form-container { box-shadow: none; border: none; }
+            .section-header, .info-grid .cell.header-cell, .vendor-section .cell.header-cell,
+            .items-table th, .mileage-table th {
+                print-color-adjust: exact; -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============ HEADER BANNER ============ -->
+    <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
+        <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
+            <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Spline Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Request for Payment</h1>
+            </div>
+            <img id="bannerLogo" src="dist/bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
+        </div>
+        <div id="bannerAccent" style="height:4px;background:#0728eb;margin:0 -2rem;"></div>
+    </div>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="main-content">
+        <!-- Back to Dashboard -->
+        <button class="back-btn" onclick="window.location.href='dashboard.html'">
+            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to Dashboard
+        </button>
+
+        <!-- Workflow Tracker -->
+        <div class="workflow-tracker" id="workflowTracker">
+            <div class="workflow-step completed" data-step="submitted">
+                <div class="step-label">Submitted</div>
+                <div class="step-status">✓ Complete</div>
+            </div>
+            <div class="workflow-step active" data-step="budget">
+                <div class="step-label">Budget Approver</div>
+                <div class="step-status">● In Review</div>
+            </div>
+            <div class="workflow-step" data-step="compliance">
+                <div class="step-label">Compliance</div>
+                <div class="step-status">Pending</div>
+            </div>
+            <div class="workflow-step" data-step="ap">
+                <div class="step-label">Accounts Payable</div>
+                <div class="step-status">Pending</div>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <div class="form-container">
+            <div class="section-header">
+                <span>Request Details</span>
+            </div>
+            <div class="form-body">
+                <!-- RFP Number -->
+                <div class="rfp-number-row">
+                    <label for="rfpNumber">RFP No.</label>
+                    <input type="text" id="rfpNumber" readonly value="2025001" tabindex="-1">
+                </div>
+
+                <!-- Info Grid -->
+                <div class="info-grid">
+                    <div class="cell header-cell">Submitter</div>
+                    <div class="cell header-cell">Budget Approver</div>
+                    <div class="cell header-cell">Submission Date</div>
+                    <div class="cell">
+                        <input type="text" id="submitter" value="" placeholder="Your name">
+                    </div>
+                    <div class="cell">
+                        <select id="budgetApprover">
+                            <option value="">Select budget approver</option>
+                            <option value="Sarah Williams">Sarah Williams</option>
+                            <option value="Mike Johnson">Mike Johnson</option>
+                            <option value="Tom Anderson">Tom Anderson</option>
+                            <option value="Lisa Chen">Lisa Chen</option>
+                        </select>
+                    </div>
+                    <div class="cell">
+                        <input type="date" id="submissionDate" readonly>
+                    </div>
+                </div>
+
+                <!-- Request Type -->
+                <div class="type-selector">
+                    <div class="type-option selected" data-type="vendor" onclick="selectType('vendor')">
+                        <div class="type-radio"></div>
+                        <div>
+                            <div class="type-label">Vendor Payment</div>
+                            <div class="type-desc">Pay an external vendor or supplier</div>
+                        </div>
+                    </div>
+                    <div class="type-option" data-type="reimbursement" onclick="selectType('reimbursement')">
+                        <div class="type-radio"></div>
+                        <div>
+                            <div class="type-label">Employee Reimbursement</div>
+                            <div class="type-desc">Reimburse an employee for expenses or mileage</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vendor Section -->
+                <div class="vendor-section" id="vendorSection">
+                    <div class="cell header-cell">Vendor Name</div>
+                    <div class="cell header-cell">Vendor Number</div>
+                    <div class="cell">
+                        <input type="text" id="vendorName" placeholder="Enter vendor name">
+                    </div>
+                    <div class="cell">
+                        <input type="text" id="vendorNumber" placeholder="e.g. V-10042">
+                    </div>
+                    <div class="cell header-cell">Remit-To Address</div>
+                    <div class="cell header-cell">Invoice Number</div>
+                    <div class="cell">
+                        <textarea id="vendorAddress" placeholder="Vendor address"></textarea>
+                    </div>
+                    <div class="cell">
+                        <input type="text" id="invoiceNumber" placeholder="Vendor invoice #">
+                    </div>
+                </div>
+
+                <!-- Employee Reimbursement Section (hidden by default) -->
+                <div class="vendor-section" id="employeeSection" style="display:none;">
+                    <div class="cell header-cell">Employee Name</div>
+                    <div class="cell header-cell">Employee ID</div>
+                    <div class="cell">
+                        <input type="text" id="employeeName" placeholder="Employee name">
+                    </div>
+                    <div class="cell">
+                        <input type="text" id="employeeId" placeholder="e.g. EMP-1234">
+                    </div>
+                </div>
+
+                <!-- Description / Notes -->
+                <div class="full-section">
+                    <div class="section-header">Description / Notes</div>
+                    <div class="section-body">
+                        <textarea id="description" placeholder="Enter a description or notes about this payment..." oninput="autoResize(this)"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Items Container -->
+        <div class="form-container" id="lineItemsContainer">
+            <div class="section-header">
+                <span>Line Item Detail</span>
+                <button class="btn-primary-sm" onclick="importLineItems()">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    Import XLSX
+                </button>
+            </div>
+            <div class="form-body">
+                <input type="file" id="lineItemFileInput" accept=".xlsx" style="display:none;" onchange="handleLineItemImport(this)">
+
+                <!-- Row Actions -->
+                <div class="row-actions-toolbar" id="rowActionsToolbar">
+                    <span class="selected-count"><span id="selectedCount">0</span> row(s) selected</span>
+                    <button class="delete-rows-btn" onclick="deleteSelectedRows()">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Delete
+                    </button>
+                </div>
+
+                <!-- Items Table -->
+                <div class="items-table-scroll">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-col"><input type="checkbox" id="selectAllItems" onclick="toggleSelectAllItems()"></th>
+                                <th style="width:50px;">Line</th>
+                                <th>Description</th>
+                                <th style="width:65px;">Fund</th>
+                                <th style="width:65px;">Org</th>
+                                <th style="width:65px;">Prog</th>
+                                <th style="width:60px;">Fin</th>
+                                <th style="width:65px;">Object</th>
+                                <th style="width:80px;">Quantity</th>
+                                <th style="width:100px;">Unit Price</th>
+                                <th style="width:110px;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lineItemsBody"></tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:0.75rem;">
+                    <button class="add-row-btn" onclick="addLineItem()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                        Add Row
+                    </button>
+                    <div class="totals-section">
+                        <div class="total-row">
+                            <label>Subtotal:</label>
+                            <input type="text" id="subtotal" readonly value="$0.00">
+                        </div>
+                        <div class="total-row" style="margin-top:0.25rem;">
+                            <label style="font-size:1rem;">Grand Total:</label>
+                            <input type="text" id="grandTotal" readonly value="$0.00" style="font-size:1rem;border:2px solid var(--text-primary);">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mileage Reimbursement Section -->
+        <div class="form-container mileage-section" id="mileageSection">
+            <div class="section-header">
+                <span>Business Mileage Reimbursement</span>
+            </div>
+            <div class="form-body">
+                <div class="mileage-check-row">
+                    <input type="checkbox" id="mileageCheck" onchange="toggleMileageTable()">
+                    <label for="mileageCheck">Submit Business Mileage</label>
+                </div>
+                <div id="mileageTableWrapper" style="display:none;">
+                    <div class="mileage-table-scroll">
+                        <table class="mileage-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:50px;">Trip</th>
+                                    <th style="width:110px;">Date</th>
+                                    <th>From Location</th>
+                                    <th>To Location</th>
+                                    <th style="width:90px;">Miles</th>
+                                    <th style="width:85px;">Rate</th>
+                                    <th style="width:100px;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mileageBody"></tbody>
+                        </table>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:0.75rem;">
+                        <button class="add-row-btn" onclick="addMileageRow()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                            Add Trip
+                        </button>
+                        <div class="totals-section">
+                            <div class="total-row">
+                                <label>Total Miles:</label>
+                                <input type="text" id="totalMiles" readonly value="0">
+                            </div>
+                            <div class="total-row">
+                                <label>Mileage Total:</label>
+                                <input type="text" id="mileageTotal" readonly value="$0.00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attachments -->
+        <div class="form-container">
+            <div class="section-header">
+                <span>Attachments</span>
+            </div>
+            <div class="form-body">
+                <div class="attachments-section">
+                    <button class="upload-btn" onclick="document.getElementById('attachmentInput').click()">
+                        <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        Attach Invoice / Supporting Documents
+                    </button>
+                    <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" style="display:none;" onchange="handleAttachments(this)">
+                    <div class="attachments-list" id="attachmentsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval Notes -->
+        <div class="form-container" id="approvalNotesContainer" style="display:none;">
+            <div class="section-header">
+                <span>Approval Notes</span>
+            </div>
+            <div class="form-body approval-section" id="approvalNotes">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="button-container">
+            <button class="btn btn-print" onclick="window.print()">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print
+            </button>
+            <button class="btn btn-save" onclick="saveDraft()">Save Draft</button>
+            <button class="btn btn-submit" onclick="submitForm()">Submit for Approval</button>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="ownership-text">
+                <span>POWERED BY BONDWOOD</span>
+                <button class="theme-toggle" onclick="toggleDarkMode()">
+                    <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============ PDF POPUP VIEWER ============ -->
+    <div class="pdf-overlay" id="pdfOverlay" onclick="if(event.target===this)closePdfViewer()">
+        <div class="pdf-viewer">
+            <div class="pdf-viewer-header">
+                <h3 id="pdfViewerTitle">Document Preview</h3>
+                <button onclick="closePdfViewer()">
+                    <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="pdf-viewer-body" id="pdfViewerBody"></div>
+        </div>
+    </div>
+
+    <script>
+        /* ========================================
+           STATE
+           ======================================== */
+        let lineItemCounter = 0;
+        let mileageCounter = 0;
+        let attachments = [];
+        let currentRequestType = 'vendor';
+        const MILEAGE_RATE = 0.70; // IRS 2025 rate
+
+        // District mileage table (sample - replace with actual district data)
+        const DISTRICT_MILEAGE = {
+            'District Office|Concord Elementary': 3.2,
+            'District Office|South View MS': 4.1,
+            'District Office|Edina HS': 5.8,
+            'Concord Elementary|South View MS': 2.4,
+            'Concord Elementary|Edina HS': 3.6,
+            'South View MS|Edina HS': 1.7,
+        };
+
+        /* ========================================
+           INITIALIZATION
+           ======================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadBrandFromURL();
+
+            // Set today's date
+            document.getElementById('submissionDate').value = new Date().toISOString().split('T')[0];
+
+            // Initialize with 5 line items
+            for (let i = 0; i < 5; i++) addLineItem();
+
+            // Check if editing existing form
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('id')) {
+                loadExistingForm(params.get('id'));
+            }
+        });
+
+        /* ========================================
+           REQUEST TYPE
+           ======================================== */
+        function selectType(type) {
+            currentRequestType = type;
+            document.querySelectorAll('.type-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.type === type);
+            });
+            document.getElementById('vendorSection').style.display = type === 'vendor' ? '' : 'none';
+            document.getElementById('employeeSection').style.display = type === 'reimbursement' ? '' : 'none';
+            document.getElementById('mileageSection').classList.toggle('visible', type === 'reimbursement');
+        }
+
+        /* ========================================
+           LINE ITEMS
+           ======================================== */
+        function addLineItem(data = {}) {
+            lineItemCounter++;
+            const num = lineItemCounter;
+            const tbody = document.getElementById('lineItemsBody');
+            const tr = document.createElement('tr');
+            tr.dataset.lineNum = num;
+            tr.innerHTML = `
+                <td class="checkbox-cell"><input type="checkbox" class="line-checkbox" onchange="updateLineSelection()"></td>
+                <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
+                <td><input type="text" class="line-desc" value="${data.description || ''}"></td>
+                <td><input type="text" class="line-fund" value="${data.fund || ''}" maxlength="2" style="width:55px;text-align:center;"></td>
+                <td><input type="text" class="line-org" value="${data.org || ''}" maxlength="3" style="width:55px;text-align:center;"></td>
+                <td><input type="text" class="line-prog" value="${data.program || ''}" maxlength="3" style="width:55px;text-align:center;"></td>
+                <td><input type="text" class="line-fin" value="${data.finance || ''}" maxlength="2" style="width:50px;text-align:center;"></td>
+                <td><input type="text" class="line-obj" value="${data.object || ''}" maxlength="3" style="width:55px;text-align:center;"></td>
+                <td><input type="text" class="line-qty text-right" value="${data.quantity || ''}" style="width:70px;"></td>
+                <td><input type="text" class="line-price text-right" value="${data.unitPrice || ''}" style="width:90px;"></td>
+                <td><input type="text" class="line-total text-right" readonly value="${data.total || ''}" style="width:100px;"></td>
+            `;
+            tbody.appendChild(tr);
+
+            // Bind events
+            const qtyInput = tr.querySelector('.line-qty');
+            const priceInput = tr.querySelector('.line-price');
+            qtyInput.addEventListener('input', () => calcLineTotal(tr));
+            qtyInput.addEventListener('blur', function() {
+                const v = parseInt(this.value.replace(/,/g, '')) || 0;
+                if (v > 0) this.value = v.toLocaleString();
+            });
+            priceInput.addEventListener('input', () => calcLineTotal(tr));
+            priceInput.addEventListener('blur', function() {
+                const v = parseFormattedNumber(this.value);
+                if (v > 0) this.value = formatNumber(v);
+            });
+        }
+
+        function calcLineTotal(row) {
+            const qty = parseInt(row.querySelector('.line-qty').value.replace(/,/g, '')) || 0;
+            const price = parseFormattedNumber(row.querySelector('.line-price').value);
+            const total = qty * price;
+            row.querySelector('.line-total').value = total > 0 ? formatCurrency(total) : '';
+            recalcTotals();
+        }
+
+        function recalcTotals() {
+            let subtotal = 0;
+            document.querySelectorAll('#lineItemsBody tr').forEach(row => {
+                subtotal += parseFormattedNumber(row.querySelector('.line-total').value);
+            });
+            document.getElementById('subtotal').value = formatCurrency(subtotal);
+            document.getElementById('grandTotal').value = formatCurrency(subtotal);
+        }
+
+        function toggleSelectAllItems() {
+            const cb = document.getElementById('selectAllItems');
+            document.querySelectorAll('.line-checkbox').forEach(c => c.checked = cb.checked);
+            updateLineSelection();
+        }
+
+        function updateLineSelection() {
+            const checkboxes = document.querySelectorAll('.line-checkbox');
+            let count = 0;
+            checkboxes.forEach((cb, i) => {
+                const row = cb.closest('tr');
+                if (cb.checked) { row.classList.add('selected'); count++; }
+                else row.classList.remove('selected');
+            });
+            document.getElementById('selectedCount').textContent = count;
+            const toolbar = document.getElementById('rowActionsToolbar');
+            toolbar.classList.toggle('visible', count > 0);
+
+            const selectAll = document.getElementById('selectAllItems');
+            selectAll.checked = checkboxes.length > 0 && count === checkboxes.length;
+            selectAll.indeterminate = count > 0 && count < checkboxes.length;
+        }
+
+        function deleteSelectedRows() {
+            document.querySelectorAll('.line-checkbox:checked').forEach(cb => cb.closest('tr').remove());
+            // Renumber
+            let n = 0;
+            document.querySelectorAll('#lineItemsBody tr').forEach(tr => {
+                n++;
+                tr.querySelector('.text-right').value = n;
+                tr.dataset.lineNum = n;
+            });
+            lineItemCounter = n;
+            updateLineSelection();
+            recalcTotals();
+        }
+
+        /* ========================================
+           LINE ITEM IMPORT
+           ======================================== */
+        function importLineItems() {
+            document.getElementById('lineItemFileInput').click();
+        }
+
+        function handleLineItemImport(input) {
+            if (!input.files.length) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const wb = XLSX.read(e.target.result, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const data = XLSX.utils.sheet_to_json(ws);
+                    if (data.length === 0) { alert('No data found in file.'); return; }
+
+                    // Clear existing rows
+                    document.getElementById('lineItemsBody').innerHTML = '';
+                    lineItemCounter = 0;
+
+                    data.forEach(row => {
+                        addLineItem({
+                            description: row['Description'] || row['description'] || '',
+                            fund: row['Fund'] || row['fund'] || '',
+                            org: row['Org'] || row['Organization'] || row['org'] || '',
+                            program: row['Program'] || row['Prog'] || row['program'] || '',
+                            finance: row['Finance'] || row['Fin'] || row['finance'] || '',
+                            object: row['Object'] || row['Obj'] || row['object'] || '',
+                            quantity: row['Quantity'] || row['Qty'] || row['quantity'] || '',
+                            unitPrice: row['Unit Price'] || row['Price'] || row['unitPrice'] || '',
+                            total: ''
+                        });
+                    });
+
+                    // Recalculate all rows
+                    document.querySelectorAll('#lineItemsBody tr').forEach(tr => calcLineTotal(tr));
+                    alert(`Imported ${data.length} line items.`);
+                } catch (err) {
+                    alert('Error reading file: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(input.files[0]);
+            input.value = '';
+        }
+
+        /* ========================================
+           MILEAGE
+           ======================================== */
+        function toggleMileageTable() {
+            const wrapper = document.getElementById('mileageTableWrapper');
+            const checked = document.getElementById('mileageCheck').checked;
+            wrapper.style.display = checked ? '' : 'none';
+            if (checked && document.getElementById('mileageBody').children.length === 0) {
+                for (let i = 0; i < 3; i++) addMileageRow();
+            }
+        }
+
+        function addMileageRow() {
+            mileageCounter++;
+            const tbody = document.getElementById('mileageBody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="text-right" value="${mileageCounter}" readonly style="width:40px;"></td>
+                <td><input type="date" class="trip-date"></td>
+                <td><select class="trip-from" onchange="calcMileage(this.closest('tr'))">
+                    <option value="">Select location</option>
+                    <option>District Office</option>
+                    <option>Concord Elementary</option>
+                    <option>South View MS</option>
+                    <option>Edina HS</option>
+                </select></td>
+                <td><select class="trip-to" onchange="calcMileage(this.closest('tr'))">
+                    <option value="">Select location</option>
+                    <option>District Office</option>
+                    <option>Concord Elementary</option>
+                    <option>South View MS</option>
+                    <option>Edina HS</option>
+                </select></td>
+                <td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>
+                <td><input type="text" class="trip-rate text-right" readonly value="${formatCurrency(MILEAGE_RATE)}" style="width:70px;"></td>
+                <td><input type="text" class="trip-amount text-right" readonly value="" style="width:85px;"></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function calcMileage(row) {
+            const from = row.querySelector('.trip-from').value;
+            const to = row.querySelector('.trip-to').value;
+            if (!from || !to || from === to) {
+                row.querySelector('.trip-miles').value = '';
+                row.querySelector('.trip-amount').value = '';
+                recalcMileageTotals();
+                return;
+            }
+            // Look up distance (check both directions)
+            const key1 = `${from}|${to}`;
+            const key2 = `${to}|${from}`;
+            const miles = DISTRICT_MILEAGE[key1] || DISTRICT_MILEAGE[key2] || 0;
+            row.querySelector('.trip-miles').value = miles > 0 ? miles.toFixed(1) : '—';
+            const amount = miles * MILEAGE_RATE;
+            row.querySelector('.trip-amount').value = amount > 0 ? formatCurrency(amount) : '';
+            recalcMileageTotals();
+        }
+
+        function recalcMileageTotals() {
+            let totalMiles = 0, totalAmount = 0;
+            document.querySelectorAll('#mileageBody tr').forEach(row => {
+                const m = parseFloat(row.querySelector('.trip-miles').value) || 0;
+                totalMiles += m;
+                totalAmount += m * MILEAGE_RATE;
+            });
+            document.getElementById('totalMiles').value = totalMiles.toFixed(1);
+            document.getElementById('mileageTotal').value = formatCurrency(totalAmount);
+        }
+
+        /* ========================================
+           ATTACHMENTS
+           ======================================== */
+        function handleAttachments(input) {
+            Array.from(input.files).forEach(file => {
+                const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                const blobUrl = URL.createObjectURL(file);
+                attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file });
+                renderAttachment({ id, name: file.name, size: file.size, type: file.type, blobUrl });
+            });
+            input.value = '';
+        }
+
+        function renderAttachment(att) {
+            const list = document.getElementById('attachmentsList');
+            const item = document.createElement('div');
+            item.className = 'attachment-item';
+            item.id = att.id;
+            const isPdf = att.type === 'application/pdf' || att.name.endsWith('.pdf');
+            const isImage = att.type.startsWith('image/');
+            item.innerHTML = `
+                <div class="attachment-info">
+                    <div class="attachment-icon">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" stroke="currentColor"/><path d="M14 2v6h6" stroke="currentColor"/></svg>
+                    </div>
+                    <div>
+                        <div class="attachment-name">${att.name}</div>
+                        <div class="attachment-size">${(att.size / 1024).toFixed(1)} KB</div>
+                    </div>
+                </div>
+                <div class="attachment-actions">
+                    ${isPdf || isImage ? `<button class="view-btn" onclick="viewAttachment('${att.id}')" title="Preview"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>` : ''}
+                    <button class="remove-btn" onclick="removeAttachment('${att.id}')" title="Remove"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+                </div>
+            `;
+            list.appendChild(item);
+        }
+
+        function removeAttachment(id) {
+            const att = attachments.find(a => a.id === id);
+            if (att) URL.revokeObjectURL(att.blobUrl);
+            attachments = attachments.filter(a => a.id !== id);
+            document.getElementById(id)?.remove();
+        }
+
+        function viewAttachment(id) {
+            const att = attachments.find(a => a.id === id);
+            if (!att) return;
+            const overlay = document.getElementById('pdfOverlay');
+            const body = document.getElementById('pdfViewerBody');
+            document.getElementById('pdfViewerTitle').textContent = att.name;
+
+            if (att.type === 'application/pdf' || att.name.endsWith('.pdf')) {
+                body.innerHTML = `<embed src="${att.blobUrl}" type="application/pdf" style="width:100%;height:100%;">`;
+            } else if (att.type.startsWith('image/')) {
+                body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f0f0f0;"><img src="${att.blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`;
+            }
+            overlay.classList.add('open');
+        }
+
+        function closePdfViewer() {
+            document.getElementById('pdfOverlay').classList.remove('open');
+            document.getElementById('pdfViewerBody').innerHTML = '';
+        }
+
+        /* ========================================
+           FORM ACTIONS
+           ======================================== */
+        function saveDraft() {
+            alert('Draft saved. (API integration pending)');
+        }
+
+        function submitForm() {
+            // Basic validation
+            const submitter = document.getElementById('submitter').value.trim();
+            const approver = document.getElementById('budgetApprover').value;
+            if (!submitter) { alert('Please enter your name.'); return; }
+            if (!approver) { alert('Please select a budget approver.'); return; }
+
+            if (currentRequestType === 'vendor') {
+                if (!document.getElementById('vendorName').value.trim()) { alert('Please enter vendor name.'); return; }
+            }
+
+            // Check line items
+            const rows = document.querySelectorAll('#lineItemsBody tr');
+            let hasItems = false;
+            rows.forEach(r => {
+                if (r.querySelector('.line-desc').value.trim()) hasItems = true;
+            });
+            if (!hasItems) { alert('Please add at least one line item.'); return; }
+
+            if (confirm('Submit this Request for Payment for approval?')) {
+                alert('Submitted successfully! (API integration pending)');
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        function loadExistingForm(id) {
+            // Placeholder: Load form data from API by ID
+            console.log('Loading form:', id);
+            // Show approval notes section for existing forms
+            document.getElementById('approvalNotesContainer').style.display = '';
+        }
+
+        /* ========================================
+           UTILITIES
+           ======================================== */
+        function formatNumber(num) { return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+        function formatCurrency(num) { return '$' + formatNumber(num); }
+        function parseFormattedNumber(str) { return parseFloat(String(str).replace(/[$,]/g, '')) || 0; }
+        function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+
+        /* ========================================
+           THEME
+           ======================================== */
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+        function initTheme() {
+            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const saved = localStorage.getItem('theme');
+            if (sys) document.body.classList.add('dark-mode');
+            if (saved === 'dark' && !sys) document.body.classList.add('dark-mode');
+            else if (saved === 'light' && sys) document.body.classList.remove('dark-mode');
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) document.body.classList.toggle('dark-mode', e.matches);
+            });
+        }
+
+        /* ========================================
+           BRAND
+           ======================================== */
+        function loadBrandFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const brand = params.get('brand');
+            if (!brand) return;
+            // Load brand data and apply
+            fetch('https://benchmarking.bondwood.ai/api/district_metadata?limit=10000')
+                .then(r => r.json())
+                .then(data => {
+                    const district = data.find(d => String(d.District_Number) === brand);
+                    if (district && district.Primary_Hex) {
+                        document.getElementById('headerBanner').style.background = district.Primary_Hex;
+                        document.getElementById('bannerAccent').style.background = district.Secondary_Hex || district.Primary_Hex;
+                        document.documentElement.style.setProperty('--primary-hex', district.Primary_Hex);
+                        document.documentElement.style.setProperty('--secondary-hex', district.Secondary_Hex || district.Primary_Hex);
+                        document.getElementById('bannerLogo').src = `dist/district-logos/${brand}.png`;
+                        document.getElementById('bannerLogo').onerror = () => {
+                            document.getElementById('bannerLogo').src = 'dist/bondwood-logo-modern-dark.png';
+                        };
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // Keyboard shortcut: Escape to close PDF viewer
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closePdfViewer();
+        });
+    </script>
+</body>
+</html>

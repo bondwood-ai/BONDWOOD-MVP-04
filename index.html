@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request for Payment Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --accent-color: #000000;
+            --accent-color-hover: #333333;
+            --accent-color-light: rgba(0, 0, 0, 0.08);
+            --accent-text-color: #ffffff;
+            --primary-hex: #000000;
+            --secondary-hex: #0728eb;
+            --checkbox-color: #034694;
+            --positive-color: #16a34a;
+            --negative-color: #dc2626;
+            --warning-color: #d97706;
+            --border-color: #e0e0e0;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #555555;
+            --pale-accent: rgba(7, 40, 235, 0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            padding: 1rem;
+        }
+
+        /* ============ DARK MODE ============ */
+        body.dark-mode {
+            --bg-color: #121517;
+            --card-bg: #1a1a1a;
+            --border-color: #404040;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a0a0a0;
+            --accent-color-light: rgba(255, 255, 255, 0.1);
+            --pale-accent: rgba(91, 122, 255, 0.12);
+        }
+        body.dark-mode .stat-icon { background: rgba(255, 255, 255, 0.1); }
+        body.dark-mode .stat-icon svg { stroke: #e5e5e5; }
+        body.dark-mode .stat-icon.blue { background: rgba(91, 122, 255, 0.2); }
+        body.dark-mode .stat-icon.blue svg { stroke: #5b7aff; }
+        body.dark-mode .stat-icon.green { background: rgba(74, 222, 128, 0.2); }
+        body.dark-mode .stat-icon.green svg { stroke: #4ade80; }
+        body.dark-mode .stat-icon.red { background: rgba(248, 113, 113, 0.2); }
+        body.dark-mode .stat-icon.red svg { stroke: #f87171; }
+        body.dark-mode .stat-icon.amber { background: rgba(251, 191, 36, 0.2); }
+        body.dark-mode .stat-icon.amber svg { stroke: #fbbf24; }
+        body.dark-mode .positive { color: #4ade80; }
+        body.dark-mode .negative { color: #f87171; }
+        body.dark-mode th { background: var(--card-bg); }
+        body.dark-mode th:hover { background: #252525; }
+        body.dark-mode tbody tr:hover { background: #252525; }
+        body.dark-mode tbody tr.selected { background: rgba(91, 122, 255, 0.15); }
+        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #404040; }
+        body.dark-mode .theme-toggle svg { fill: #5b7aff; }
+        body.dark-mode .btn-primary { background: #333; color: #fff; }
+        body.dark-mode .btn-primary:hover { background: #444; }
+        body.dark-mode .status-badge.submitted { background: rgba(91, 122, 255, 0.2); color: #5b7aff; }
+        body.dark-mode .status-badge.budget-review { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        body.dark-mode .status-badge.compliance-review { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+        body.dark-mode .status-badge.ap-review { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+        body.dark-mode .status-badge.approved { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        body.dark-mode .status-badge.rejected { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+        body.dark-mode .status-badge.archived { background: rgba(255,255,255,0.1); color: #a0a0a0; }
+        body.dark-mode .invoice-age.overdue { color: #f87171; }
+        body.dark-mode .invoice-age.warning { color: #fbbf24; }
+        body.dark-mode .column-selector-dropdown { background: var(--card-bg); border-color: var(--border-color); }
+        body.dark-mode .column-option:hover { background: #252525; }
+
+        /* ============ HAMBURGER MENU ============ */
+        .hamburger-menu-item {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.65rem 0.75rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            transition: all 0.15s ease;
+        }
+        .hamburger-menu-item:hover { background: rgba(255,255,255,0.12); }
+        .hamburger-menu-item.active { background: rgba(255,255,255,0.18); color: #ffffff; font-weight: 600; }
+        .hamburger-menu-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* ============ HEADER BANNER ============ */
+        .bondwood-logo {
+            height: 100px;
+            max-height: 100px;
+            width: auto;
+            flex-shrink: 0;
+            margin-top: -40px;
+            margin-bottom: -40px;
+            object-fit: contain;
+        }
+
+        /* ============ MAIN LAYOUT ============ */
+        .main-content { padding: 0; min-height: calc(100vh - 160px); }
+        .module-container { max-width: 100%; margin: 0 auto; }
+        .module-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+        .module-title { font-family: 'Spline Sans', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+        .module-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+        /* ============ BUTTONS ============ */
+        .btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1rem; background: #d1d5db; color: #000; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+        .btn-primary:hover { background: #9ca3af; }
+        .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
+        .btn-primary.accent:hover { opacity: 0.85; }
+        .btn-primary.green { background: var(--positive-color); color: #fff; }
+        .btn-primary.green:hover { background: #15803d; }
+        .btn-primary.danger { background: var(--negative-color); color: #fff; }
+        .btn-primary.danger:hover { background: #b91c1c; }
+        .btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1rem; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+        .btn-secondary:hover { background: var(--bg-color); }
+        .btn-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: transparent; border: none; border-radius: 6px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s ease; }
+        .btn-icon:hover { background: var(--bg-color); color: var(--text-primary); }
+        .btn-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .header-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+        /* ============ STATS GRID ============ */
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
+        .stat-card { background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.06); padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.875rem; }
+        .stat-icon { width: 40px; height: 40px; border-radius: 8px; background: var(--accent-color-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .stat-icon svg { width: 20px; height: 20px; stroke: var(--accent-color); stroke-width: 2; fill: none; }
+        .stat-icon.blue { background: rgba(3, 70, 148, 0.1); }
+        .stat-icon.blue svg { stroke: var(--checkbox-color); }
+        .stat-icon.green { background: rgba(22, 163, 74, 0.1); }
+        .stat-icon.green svg { stroke: var(--positive-color); }
+        .stat-icon.red { background: rgba(220, 38, 38, 0.1); }
+        .stat-icon.red svg { stroke: var(--negative-color); }
+        .stat-icon.amber { background: rgba(217, 119, 6, 0.1); }
+        .stat-icon.amber svg { stroke: var(--warning-color); }
+        .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); }
+
+        /* ============ FILTER BAR ============ */
+        .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .search-box { display: flex; align-items: center; gap: 8px; padding: 0.45rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; flex: 1; min-width: 200px; max-width: 360px; }
+        .search-box svg { width: 16px; height: 16px; stroke: var(--text-secondary); stroke-width: 2; fill: none; flex-shrink: 0; }
+        .search-box input { flex: 1; border: none; outline: none; font-size: 0.8rem; background: transparent; font-family: inherit; color: var(--text-primary); }
+        .filter-select { padding: 0.45rem 0.6rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; min-width: 130px; font-family: inherit; }
+        .filter-select:focus { outline: none; border-color: var(--secondary-hex); }
+
+        /* ============ COLUMN SELECTOR ============ */
+        .column-selector { position: relative; }
+        .column-selector-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 500;
+            min-width: 240px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+        }
+        .column-selector-dropdown.open { display: block; }
+        .column-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .column-option:hover { background: var(--bg-color); }
+        .column-option input[type="checkbox"] {
+            width: 16px; height: 16px; cursor: pointer;
+            accent-color: var(--secondary-hex);
+        }
+        .column-option label { cursor: pointer; flex: 1; color: var(--text-primary); font-weight: 500; }
+
+        /* ============ TABLE ============ */
+        .table-card { background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.06); overflow: hidden; }
+        .table-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-bottom: 1px solid var(--border-color); min-height: 44px; }
+        .table-toolbar .selected-info { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
+        .bulk-actions { display: none; align-items: center; gap: 0.4rem; margin-left: auto; }
+        .bulk-actions.visible { display: flex; }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th {
+            text-align: left; padding: 0.6rem 0.75rem; background: var(--card-bg);
+            font-weight: 600; color: var(--text-primary); border-bottom: 2px solid var(--border-color);
+            cursor: pointer; user-select: none; position: sticky; top: 0; z-index: 2;
+            white-space: nowrap; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        th:hover { background: var(--bg-color); }
+        th .sort-arrow { display: inline-block; margin-left: 4px; font-size: 0.65rem; opacity: 0.4; }
+        th.sorted .sort-arrow { opacity: 1; }
+        th.no-sort { cursor: default; }
+        th.no-sort:hover { background: var(--card-bg); }
+        tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
+        tbody tr:hover { background: var(--bg-color); }
+        tbody tr.selected { background: var(--pale-accent); }
+        td { padding: 0.5rem 0.75rem; color: var(--text-primary); white-space: nowrap; }
+        td.rfp-number { font-weight: 700; font-variant-numeric: tabular-nums; }
+        td.amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+        td .submitter-name { font-weight: 500; }
+
+        /* Status badges */
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+        .status-badge.submitted { background: rgba(3, 70, 148, 0.12); color: #034694; }
+        .status-badge.budget-review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
+        .status-badge.compliance-review { background: rgba(147, 51, 234, 0.12); color: #7c3aed; }
+        .status-badge.ap-review { background: rgba(14, 165, 233, 0.12); color: #0284c7; }
+        .status-badge.approved { background: rgba(22, 163, 74, 0.12); color: #15803d; }
+        .status-badge.rejected { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+        .status-badge.archived { background: rgba(0,0,0,0.06); color: #6b7280; }
+
+        /* Invoice age coloring */
+        .invoice-age { font-variant-numeric: tabular-nums; font-weight: 600; }
+        .invoice-age.ok { color: var(--positive-color); }
+        .invoice-age.warning { color: var(--warning-color); }
+        .invoice-age.overdue { color: var(--negative-color); }
+
+        /* ============ PAGINATION ============ */
+        .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; border-top: 1px solid var(--border-color); }
+        .pagination-info { font-size: 0.8rem; color: var(--text-secondary); }
+        .pagination-controls { display: flex; gap: 0.25rem; }
+        .pagination-btn { display: flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 0.4rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-primary); font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.12s ease; font-family: inherit; }
+        .pagination-btn:hover:not(:disabled):not(.active) { background: var(--bg-color); }
+        .pagination-btn.active { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); font-weight: 600; }
+        .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ============ FOOTER ============ */
+        .footer { padding: 1.5rem 0 0.5rem; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; }
+        .theme-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: all 0.3s ease; }
+        .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
+
+        /* ============ EMPTY STATE ============ */
+        .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-secondary); }
+        .empty-state svg { width: 48px; height: 48px; stroke: var(--border-color); stroke-width: 1.5; fill: none; margin-bottom: 1rem; }
+        .empty-state p { font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .empty-state .hint { font-size: 0.8rem; opacity: 0.7; }
+
+        /* ============ MODAL ============ */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: var(--card-bg); border-radius: 12px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); }
+        .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+        .modal-body { padding: 1.25rem; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
+
+        /* Import drop zone */
+        .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: var(--secondary-hex); background: var(--pale-accent); }
+        .drop-zone svg { width: 36px; height: 36px; stroke: var(--text-secondary); stroke-width: 1.5; fill: none; margin-bottom: 0.75rem; }
+        .drop-zone p { font-size: 0.85rem; color: var(--text-secondary); }
+        .drop-zone .browse-link { color: var(--secondary-hex); font-weight: 600; cursor: pointer; }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .module-header { flex-direction: column; }
+            .header-actions { width: 100%; }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ============ CUSTOM CHECKBOX ============ */
+        table input[type="checkbox"] {
+            width: 16px; height: 16px; cursor: pointer;
+            accent-color: var(--secondary-hex);
+        }
+    </style>
+</head>
+<body>
+    <!-- Hamburger Overlay -->
+    <div id="hamburgerOverlay" onclick="closeHamburgerMenu()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
+
+    <!-- Hamburger Slide-out Menu -->
+    <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
+        <div style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Spline Sans',sans-serif;">Menu</h3>
+                <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+                </button>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item active" onclick="selectModuleFromMenu('dashboard')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                        Dashboard
+                    </button>
+                    <button class="hamburger-menu-item" onclick="window.location.href='rfp-form.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                        New Request
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item" onclick="toggleUserRole()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span id="roleToggleLabel">Switch to Admin</span>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Brand</div>
+                <select id="brandSelectorMenu" onchange="updateBrandColorsFromMenu()" style="width:100%;padding:0.5rem;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:0.85rem;background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;">
+                    <option value="">-- Bondwood Default --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Brand Selector -->
+    <select id="brandSelector" onchange="updateBrandColors()" style="display:none;">
+        <option value="">-- Default --</option>
+    </select>
+
+    <!-- ============ HEADER BANNER ============ -->
+    <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
+        <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
+            <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
+                <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Spline Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Request for Payment</h1>
+            </div>
+            <img id="bannerLogo" src="dist/bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
+        </div>
+        <div id="bannerAccent" style="height:4px;background:#0728eb;margin:0 -2rem;"></div>
+    </div>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="main-content">
+        <div class="module-container">
+            <!-- Module Header -->
+            <header class="module-header">
+                <div>
+                    <h2 class="module-title">Dashboard</h2>
+                    <p class="module-subtitle" id="dashboardSubtitle">Viewing your submissions</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary accent" onclick="window.location.href='rfp-form.html'">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                        New Request
+                    </button>
+                    <button class="btn-secondary" onclick="openImportModal()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                        Import
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Tiles -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+                    </div>
+                    <div><div class="stat-label">Total RFPs</div><div class="stat-value" id="statTotal">0</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon amber">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <div><div class="stat-label">In Progress</div><div class="stat-value" id="statInProgress">0</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                    </div>
+                    <div><div class="stat-label">Approved</div><div class="stat-value" id="statApproved">0</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">
+                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div><div class="stat-label">Overdue (>35 days)</div><div class="stat-value" id="statOverdue">0</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <div><div class="stat-label">Total Amount</div><div class="stat-value" id="statAmount">$0</div></div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input type="text" id="searchInput" placeholder="Search RFPs, vendors, submitters..." oninput="filterTable()">
+                </div>
+                <select id="statusFilter" class="filter-select" onchange="filterTable()">
+                    <option value="all">All Statuses</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="budget-review">Budget Review</option>
+                    <option value="compliance-review">Compliance Review</option>
+                    <option value="ap-review">A/P Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="archived">Archived</option>
+                </select>
+                <select id="fundFilter" class="filter-select" onchange="filterTable()">
+                    <option value="all">All Funds</option>
+                    <option value="01">01 - General</option>
+                    <option value="02">02 - Food Service</option>
+                    <option value="04">04 - Community Service</option>
+                    <option value="06">06 - Building Construction</option>
+                    <option value="07">07 - Debt Service</option>
+                    <option value="08">08 - Trust</option>
+                    <option value="20">20 - Internal Service</option>
+                    <option value="25">25 - OPEB Revocable Trust</option>
+                    <option value="45">45 - OPEB Irrevocable Trust</option>
+                    <option value="47">47 - Scholarships</option>
+                </select>
+
+                <!-- Column Selector -->
+                <div class="column-selector" style="margin-left:auto;">
+                    <button class="btn-secondary" onclick="toggleColumnSelector()" id="colSelectorBtn">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/></svg>
+                        Columns
+                    </button>
+                    <div class="column-selector-dropdown" id="columnDropdown"></div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-card">
+                <div class="table-toolbar">
+                    <span class="selected-info" id="selectedInfo">0 selected</span>
+                    <div class="bulk-actions" id="bulkActions">
+                        <button class="btn-primary" onclick="exportSelectedToXLSX()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                            Export XLSX
+                        </button>
+                        <button class="btn-primary" onclick="archiveSelected()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                            Archive
+                        </button>
+                        <button class="btn-primary danger" onclick="deleteSelected()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table id="rfpTable">
+                        <thead>
+                            <tr id="tableHeader"></tr>
+                        </thead>
+                        <tbody id="rfpTableBody">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-bar">
+                    <div class="pagination-info" id="paginationInfo">Showing 0 of 0</div>
+                    <div class="pagination-controls" id="paginationControls"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="ownership-text">
+                <span>POWERED BY BONDWOOD</span>
+                <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">
+                    <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============ IMPORT MODAL ============ -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Import Requests from XLSX</h3>
+                <button class="btn-icon" onclick="closeImportModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Upload an XLSX file to create multiple Requests for Payment at once. The file must follow the standard import template.</p>
+                <div class="drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    <p>Drop your XLSX file here or <span class="browse-link">browse</span></p>
+                    <p style="font-size:0.75rem;margin-top:0.5rem;opacity:0.6;">.xlsx files only</p>
+                </div>
+                <input type="file" id="importFileInput" accept=".xlsx" style="display:none;" onchange="handleImportFile(this)">
+                <div id="importPreview" style="display:none;margin-top:1rem;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeImportModal()">Cancel</button>
+                <button class="btn-primary accent" id="importConfirmBtn" onclick="confirmImport()" disabled>Import</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ========================================
+           CONFIGURATION & STATE
+           ======================================== */
+        const API_BASE_URL = 'https://rfp-api.bondwood.workers.dev'; // Future Cloudflare Worker endpoint
+
+        let currentUserRole = 'admin'; // 'user' or 'admin'
+        let currentUserId = 'user-001';
+        let currentUserName = 'Jane Doe';
+
+        let allRFPs = []; // Full dataset
+        let filteredRFPs = []; // After filters
+        let selectedRFPIds = new Set();
+        let currentSort = { column: 'rfpNumber', direction: 'desc' };
+        let currentPage = 1;
+        const PAGE_SIZE = 25;
+
+        // Column definitions
+        const COLUMNS = [
+            { key: 'checkbox', label: '', width: '40px', alwaysVisible: true, noSort: true },
+            { key: 'rfpNumber', label: 'RFP No.', width: '80px', visible: true },
+            { key: 'submitter', label: 'Submitter', width: '130px', visible: true, adminOnly: true },
+            { key: 'submissionDate', label: 'Submitted', width: '95px', visible: true },
+            { key: 'daysSinceSubmission', label: 'Days Open', width: '80px', visible: true },
+            { key: 'invoiceAge', label: 'Invoice Age', width: '90px', visible: true },
+            { key: 'assignedTo', label: 'Assigned To', width: '120px', visible: true },
+            { key: 'fund', label: 'Fund', width: '55px', visible: true },
+            { key: 'organization', label: 'Org', width: '55px', visible: true },
+            { key: 'program', label: 'Prog', width: '55px', visible: true },
+            { key: 'finance', label: 'Fin', width: '55px', visible: true },
+            { key: 'object', label: 'Object', width: '60px', visible: true },
+            { key: 'apBatch', label: 'A/P Batch', width: '85px', visible: false },
+            { key: 'status', label: 'Status', width: '120px', visible: true },
+            { key: 'vendor', label: 'Vendor', width: '160px', visible: true },
+            { key: 'amount', label: 'Amount', width: '100px', visible: true },
+        ];
+
+        /* ========================================
+           SAMPLE DATA (replace with API calls)
+           ======================================== */
+        function generateSampleData() {
+            const vendors = ['Minnesota Supply Co.', 'Northern Lights Services', 'School Specialty', 'Pearson Education', 'Office Depot', 'CDW Government', 'Xcel Energy', 'Metro Transit', 'Apple Inc.', 'Amazon Business', 'Staples', 'Home Depot Pro', 'Lakeshore Learning', 'Scholastic', 'Grainger'];
+            const submitters = ['Jane Doe', 'Mike Johnson', 'Sarah Williams', 'Tom Anderson', 'Lisa Chen', 'David Park', 'Amy Nguyen'];
+            const assignees = ['Budget: S. Williams', 'Compliance: T. Anderson', 'A/P: L. Chen', 'Budget: M. Johnson'];
+            const statuses = ['submitted', 'budget-review', 'compliance-review', 'ap-review', 'approved', 'rejected'];
+            const funds = ['01', '02', '04', '06', '07'];
+            const orgs = ['100', '200', '300', '400', '500', '600'];
+            const programs = ['010', '020', '030', '050', '310', '640'];
+            const finances = ['00', '41', '42', '43', '44'];
+            const objects = ['305', '329', '366', '401', '430', '460', '530', '555'];
+            const data = [];
+
+            for (let i = 1; i <= 68; i++) {
+                const submittedDaysAgo = Math.floor(Math.random() * 60);
+                const submissionDate = new Date();
+                submissionDate.setDate(submissionDate.getDate() - submittedDaysAgo);
+                const status = statuses[Math.floor(Math.random() * statuses.length)];
+
+                data.push({
+                    id: `rfp-${String(i).padStart(4, '0')}`,
+                    rfpNumber: 2025000 + i,
+                    submitter: submitters[Math.floor(Math.random() * submitters.length)],
+                    submitterId: `user-${String(Math.floor(Math.random() * 7) + 1).padStart(3, '0')}`,
+                    submissionDate: submissionDate.toISOString().split('T')[0],
+                    daysSinceSubmission: submittedDaysAgo,
+                    invoiceAge: submittedDaysAgo + Math.floor(Math.random() * 10),
+                    assignedTo: status === 'approved' || status === 'rejected' ? '—' : assignees[Math.floor(Math.random() * assignees.length)],
+                    fund: funds[Math.floor(Math.random() * funds.length)],
+                    organization: orgs[Math.floor(Math.random() * orgs.length)],
+                    program: programs[Math.floor(Math.random() * programs.length)],
+                    finance: finances[Math.floor(Math.random() * finances.length)],
+                    object: objects[Math.floor(Math.random() * objects.length)],
+                    apBatch: status === 'approved' ? `AP-${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}` : '',
+                    status: status,
+                    vendor: vendors[Math.floor(Math.random() * vendors.length)],
+                    amount: Math.round((Math.random() * 25000 + 50) * 100) / 100,
+                    type: Math.random() > 0.15 ? 'vendor' : 'reimbursement',
+                });
+            }
+            return data;
+        }
+
+        /* ========================================
+           COLUMN MANAGEMENT
+           ======================================== */
+        function getVisibleColumns() {
+            return COLUMNS.filter(col => {
+                if (col.alwaysVisible) return true;
+                if (col.adminOnly && currentUserRole !== 'admin') return false;
+                return col.visible;
+            });
+        }
+
+        function buildColumnSelector() {
+            const dropdown = document.getElementById('columnDropdown');
+            dropdown.innerHTML = '';
+            COLUMNS.forEach(col => {
+                if (col.alwaysVisible) return;
+                if (col.adminOnly && currentUserRole !== 'admin') return;
+                const opt = document.createElement('div');
+                opt.className = 'column-option';
+                opt.innerHTML = `
+                    <input type="checkbox" id="col-${col.key}" ${col.visible ? 'checked' : ''} onchange="toggleColumn('${col.key}', this.checked)">
+                    <label for="col-${col.key}">${col.label}</label>
+                `;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        function toggleColumn(key, visible) {
+            const col = COLUMNS.find(c => c.key === key);
+            if (col) {
+                col.visible = visible;
+                renderTable();
+            }
+        }
+
+        function toggleColumnSelector() {
+            document.getElementById('columnDropdown').classList.toggle('open');
+        }
+
+        /* ========================================
+           TABLE RENDERING
+           ======================================== */
+        function renderTableHeader() {
+            const headerRow = document.getElementById('tableHeader');
+            headerRow.innerHTML = '';
+            const visibleCols = getVisibleColumns();
+            visibleCols.forEach(col => {
+                const th = document.createElement('th');
+                th.style.width = col.width || 'auto';
+                if (col.key === 'checkbox') {
+                    th.className = 'no-sort';
+                    th.style.textAlign = 'center';
+                    th.innerHTML = `<input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)">`;
+                } else if (col.key === 'amount') {
+                    th.style.textAlign = 'right';
+                    th.innerHTML = `${col.label}<span class="sort-arrow">${currentSort.column === col.key ? (currentSort.direction === 'asc' ? '▲' : '▼') : '▽'}</span>`;
+                    th.onclick = () => sortTable(col.key);
+                    if (currentSort.column === col.key) th.classList.add('sorted');
+                } else if (col.noSort) {
+                    th.className = 'no-sort';
+                    th.textContent = col.label;
+                } else {
+                    th.innerHTML = `${col.label}<span class="sort-arrow">${currentSort.column === col.key ? (currentSort.direction === 'asc' ? '▲' : '▼') : '▽'}</span>`;
+                    th.onclick = () => sortTable(col.key);
+                    if (currentSort.column === col.key) th.classList.add('sorted');
+                }
+                headerRow.appendChild(th);
+            });
+        }
+
+        function renderTableBody() {
+            const tbody = document.getElementById('rfpTableBody');
+            tbody.innerHTML = '';
+
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, filteredRFPs.length);
+            const pageData = filteredRFPs.slice(start, end);
+            const visibleCols = getVisibleColumns();
+
+            if (pageData.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `<td colspan="${visibleCols.length}" style="text-align:center;padding:3rem;color:var(--text-secondary);">No requests found</td>`;
+                tbody.appendChild(emptyRow);
+                return;
+            }
+
+            pageData.forEach(rfp => {
+                const tr = document.createElement('tr');
+                if (selectedRFPIds.has(rfp.id)) tr.classList.add('selected');
+                tr.onclick = (e) => {
+                    if (e.target.type === 'checkbox') return;
+                    window.location.href = `rfp-form.html?id=${rfp.id}`;
+                };
+
+                visibleCols.forEach(col => {
+                    const td = document.createElement('td');
+                    switch (col.key) {
+                        case 'checkbox':
+                            td.style.textAlign = 'center';
+                            td.innerHTML = `<input type="checkbox" ${selectedRFPIds.has(rfp.id) ? 'checked' : ''} onchange="toggleSelect('${rfp.id}', this.checked)" onclick="event.stopPropagation()">`;
+                            break;
+                        case 'rfpNumber':
+                            td.className = 'rfp-number';
+                            td.textContent = rfp.rfpNumber;
+                            break;
+                        case 'submitter':
+                            td.innerHTML = `<span class="submitter-name">${rfp.submitter}</span>`;
+                            break;
+                        case 'submissionDate':
+                            td.textContent = formatDate(rfp.submissionDate);
+                            break;
+                        case 'daysSinceSubmission':
+                            td.textContent = rfp.daysSinceSubmission + 'd';
+                            td.style.fontVariantNumeric = 'tabular-nums';
+                            break;
+                        case 'invoiceAge':
+                            const age = rfp.invoiceAge;
+                            const cls = age > 35 ? 'overdue' : age > 25 ? 'warning' : 'ok';
+                            td.innerHTML = `<span class="invoice-age ${cls}">${age}d / 35d</span>`;
+                            break;
+                        case 'assignedTo':
+                            td.textContent = rfp.assignedTo;
+                            td.style.fontSize = '0.75rem';
+                            break;
+                        case 'status':
+                            td.innerHTML = `<span class="status-badge ${rfp.status}">${formatStatus(rfp.status)}</span>`;
+                            break;
+                        case 'vendor':
+                            td.textContent = rfp.vendor;
+                            td.style.maxWidth = '160px';
+                            td.style.overflow = 'hidden';
+                            td.style.textOverflow = 'ellipsis';
+                            break;
+                        case 'amount':
+                            td.className = 'amount';
+                            td.textContent = formatCurrency(rfp.amount);
+                            break;
+                        case 'apBatch':
+                            td.textContent = rfp.apBatch || '—';
+                            td.style.fontWeight = rfp.apBatch ? '600' : '400';
+                            td.style.color = rfp.apBatch ? 'var(--text-primary)' : 'var(--text-secondary)';
+                            break;
+                        default:
+                            td.textContent = rfp[col.key] || '';
+                            break;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderPagination() {
+            const total = filteredRFPs.length;
+            const totalPages = Math.ceil(total / PAGE_SIZE);
+            const start = (currentPage - 1) * PAGE_SIZE + 1;
+            const end = Math.min(currentPage * PAGE_SIZE, total);
+            document.getElementById('paginationInfo').textContent = total > 0 ? `Showing ${start}–${end} of ${total}` : 'No results';
+
+            const controls = document.getElementById('paginationControls');
+            controls.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            const prevBtn = createPageBtn('‹', currentPage > 1, () => { currentPage--; renderTable(); });
+            controls.appendChild(prevBtn);
+
+            for (let p = 1; p <= totalPages; p++) {
+                if (totalPages > 7 && p > 2 && p < totalPages - 1 && Math.abs(p - currentPage) > 1) {
+                    if (p === 3 || p === totalPages - 2) {
+                        const ell = document.createElement('span');
+                        ell.style.cssText = 'display:flex;align-items:center;padding:0 4px;color:var(--text-secondary);font-size:0.8rem;';
+                        ell.textContent = '…';
+                        controls.appendChild(ell);
+                    }
+                    continue;
+                }
+                const btn = createPageBtn(String(p), true, () => { currentPage = p; renderTable(); });
+                if (p === currentPage) btn.classList.add('active');
+                controls.appendChild(btn);
+            }
+
+            const nextBtn = createPageBtn('›', currentPage < totalPages, () => { currentPage++; renderTable(); });
+            controls.appendChild(nextBtn);
+        }
+
+        function createPageBtn(label, enabled, onClick) {
+            const btn = document.createElement('button');
+            btn.className = 'pagination-btn';
+            btn.textContent = label;
+            btn.disabled = !enabled;
+            if (enabled) btn.onclick = onClick;
+            return btn;
+        }
+
+        function renderTable() {
+            renderTableHeader();
+            renderTableBody();
+            renderPagination();
+            updateSelectionUI();
+        }
+
+        /* ========================================
+           FILTERING & SORTING
+           ======================================== */
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const fundFilter = document.getElementById('fundFilter').value;
+
+            filteredRFPs = allRFPs.filter(rfp => {
+                if (currentUserRole !== 'admin' && rfp.submitterId !== currentUserId) return false;
+                if (statusFilter !== 'all' && rfp.status !== statusFilter) return false;
+                if (fundFilter !== 'all' && rfp.fund !== fundFilter) return false;
+                if (searchTerm) {
+                    const searchable = [
+                        String(rfp.rfpNumber), rfp.submitter, rfp.vendor,
+                        rfp.fund, rfp.organization, rfp.program, rfp.object,
+                        rfp.assignedTo, rfp.apBatch
+                    ].join(' ').toLowerCase();
+                    if (!searchable.includes(searchTerm)) return false;
+                }
+                return true;
+            });
+
+            applySorting();
+            currentPage = 1;
+            renderTable();
+            updateStats();
+        }
+
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = column === 'amount' || column === 'rfpNumber' ? 'desc' : 'asc';
+            }
+            applySorting();
+            renderTable();
+        }
+
+        function applySorting() {
+            const col = currentSort.column;
+            const dir = currentSort.direction === 'asc' ? 1 : -1;
+            filteredRFPs.sort((a, b) => {
+                let valA = a[col], valB = b[col];
+                if (typeof valA === 'number') return (valA - valB) * dir;
+                if (typeof valA === 'string') return valA.localeCompare(valB) * dir;
+                return 0;
+            });
+        }
+
+        /* ========================================
+           SELECTION
+           ======================================== */
+        function toggleSelect(id, checked) {
+            if (checked) selectedRFPIds.add(id);
+            else selectedRFPIds.delete(id);
+            updateSelectionUI();
+        }
+
+        function toggleSelectAll(checked) {
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, filteredRFPs.length);
+            const pageData = filteredRFPs.slice(start, end);
+            pageData.forEach(rfp => {
+                if (checked) selectedRFPIds.add(rfp.id);
+                else selectedRFPIds.delete(rfp.id);
+            });
+            renderTableBody();
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const count = selectedRFPIds.size;
+            document.getElementById('selectedInfo').textContent = `${count} selected`;
+            const bulkActions = document.getElementById('bulkActions');
+            if (count > 0) bulkActions.classList.add('visible');
+            else bulkActions.classList.remove('visible');
+
+            // Update header checkbox state
+            const headerCb = document.getElementById('selectAllCheckbox');
+            if (headerCb) {
+                const start = (currentPage - 1) * PAGE_SIZE;
+                const end = Math.min(start + PAGE_SIZE, filteredRFPs.length);
+                const pageData = filteredRFPs.slice(start, end);
+                const pageSelected = pageData.filter(r => selectedRFPIds.has(r.id)).length;
+                headerCb.checked = pageData.length > 0 && pageSelected === pageData.length;
+                headerCb.indeterminate = pageSelected > 0 && pageSelected < pageData.length;
+            }
+        }
+
+        /* ========================================
+           STATS
+           ======================================== */
+        function updateStats() {
+            const data = filteredRFPs;
+            document.getElementById('statTotal').textContent = data.length;
+            document.getElementById('statInProgress').textContent = data.filter(r => ['submitted', 'budget-review', 'compliance-review', 'ap-review'].includes(r.status)).length;
+            document.getElementById('statApproved').textContent = data.filter(r => r.status === 'approved').length;
+            document.getElementById('statOverdue').textContent = data.filter(r => r.invoiceAge > 35 && r.status !== 'approved').length;
+            const totalAmt = data.reduce((sum, r) => sum + r.amount, 0);
+            document.getElementById('statAmount').textContent = formatCurrency(totalAmt);
+        }
+
+        /* ========================================
+           BULK ACTIONS
+           ======================================== */
+        function exportSelectedToXLSX() {
+            const selected = allRFPs.filter(r => selectedRFPIds.has(r.id));
+            if (selected.length === 0) return;
+            const wsData = [
+                ['RFP No.', 'Submitter', 'Date', 'Vendor', 'Amount', 'Fund', 'Org', 'Program', 'Finance', 'Object', 'Status', 'A/P Batch']
+            ];
+            selected.forEach(r => {
+                wsData.push([r.rfpNumber, r.submitter, r.submissionDate, r.vendor, r.amount, r.fund, r.organization, r.program, r.finance, r.object, formatStatus(r.status), r.apBatch]);
+            });
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, 'RFP Export');
+            XLSX.writeFile(wb, `rfp-export-${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function archiveSelected() {
+            selectedRFPIds.forEach(id => {
+                const rfp = allRFPs.find(r => r.id === id);
+                if (rfp) rfp.status = 'archived';
+            });
+            selectedRFPIds.clear();
+            filterTable();
+        }
+
+        function deleteSelected() {
+            if (!confirm(`Delete ${selectedRFPIds.size} request(s)? This cannot be undone.`)) return;
+            allRFPs = allRFPs.filter(r => !selectedRFPIds.has(r.id));
+            selectedRFPIds.clear();
+            filterTable();
+        }
+
+        /* ========================================
+           IMPORT
+           ======================================== */
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('open');
+        }
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('open');
+            document.getElementById('importFileInput').value = '';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importConfirmBtn').disabled = true;
+        }
+        function handleImportFile(input) {
+            if (!input.files.length) return;
+            const file = input.files[0];
+            const preview = document.getElementById('importPreview');
+            preview.style.display = 'block';
+            preview.innerHTML = `<p style="font-size:0.85rem;color:var(--positive-color);font-weight:600;">✓ ${file.name} ready (${(file.size / 1024).toFixed(1)} KB)</p>`;
+            document.getElementById('importConfirmBtn').disabled = false;
+        }
+        function confirmImport() {
+            // Placeholder: parse XLSX and create RFPs via API
+            alert('Import processing… (API integration pending)');
+            closeImportModal();
+        }
+
+        /* ========================================
+           USER ROLE
+           ======================================== */
+        function toggleUserRole() {
+            currentUserRole = currentUserRole === 'admin' ? 'user' : 'admin';
+            document.getElementById('roleToggleLabel').textContent = currentUserRole === 'admin' ? 'Switch to User' : 'Switch to Admin';
+            document.getElementById('dashboardSubtitle').textContent = currentUserRole === 'admin' ? 'Viewing all submissions' : 'Viewing your submissions';
+            buildColumnSelector();
+            filterTable();
+        }
+
+        /* ========================================
+           BRAND MODE
+           ======================================== */
+        async function loadBrandData() {
+            try {
+                const response = await fetch('https://benchmarking.bondwood.ai/api/district_metadata?limit=10000');
+                if (!response.ok) return;
+                const data = await response.json();
+                const menuSelect = document.getElementById('brandSelectorMenu');
+                const hiddenSelect = document.getElementById('brandSelector');
+                data.sort((a, b) => (a.District_Name || '').localeCompare(b.District_Name || ''));
+                data.forEach(d => {
+                    if (!d.District_Name || !d.Primary_Hex) return;
+                    const opt1 = new Option(d.District_Name, d.District_Number);
+                    const opt2 = new Option(d.District_Name, d.District_Number);
+                    opt1.dataset.primaryHex = d.Primary_Hex;
+                    opt1.dataset.secondaryHex = d.Secondary_Hex || d.Primary_Hex;
+                    opt2.dataset.primaryHex = d.Primary_Hex;
+                    opt2.dataset.secondaryHex = d.Secondary_Hex || d.Primary_Hex;
+                    menuSelect.appendChild(opt1);
+                    hiddenSelect.appendChild(opt2);
+                });
+            } catch (e) {
+                console.warn('Brand data load failed:', e);
+            }
+        }
+
+        function updateBrandColorsFromMenu() {
+            const sel = document.getElementById('brandSelectorMenu');
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
+        }
+
+        function updateBrandColors() {
+            const sel = document.getElementById('brandSelector');
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
+        }
+
+        function applyBrand(primaryHex, secondaryHex, districtNumber) {
+            const banner = document.getElementById('headerBanner');
+            const accent = document.getElementById('bannerAccent');
+            const logo = document.getElementById('bannerLogo');
+
+            if (!primaryHex) {
+                banner.style.background = '#000000';
+                accent.style.background = '#0728eb';
+                logo.src = 'dist/bondwood-logo-modern-dark.png';
+                document.documentElement.style.setProperty('--primary-hex', '#000000');
+                document.documentElement.style.setProperty('--secondary-hex', '#0728eb');
+                return;
+            }
+
+            banner.style.background = primaryHex;
+            accent.style.background = secondaryHex || primaryHex;
+            document.documentElement.style.setProperty('--primary-hex', primaryHex);
+            document.documentElement.style.setProperty('--secondary-hex', secondaryHex || primaryHex);
+
+            if (districtNumber) {
+                logo.src = `dist/district-logos/${districtNumber}.png`;
+                logo.onerror = () => { logo.src = 'dist/bondwood-logo-modern-dark.png'; };
+            }
+        }
+
+        /* ========================================
+           UTILITIES
+           ======================================== */
+        function formatCurrency(num) {
+            return '$' + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        function formatDate(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+        }
+        function formatStatus(status) {
+            const map = {
+                'submitted': 'Submitted',
+                'budget-review': 'Budget Review',
+                'compliance-review': 'Compliance Review',
+                'ap-review': 'A/P Review',
+                'approved': 'Approved',
+                'rejected': 'Rejected',
+                'archived': 'Archived'
+            };
+            return map[status] || status;
+        }
+
+        /* ========================================
+           DARK MODE
+           ======================================== */
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function initTheme() {
+            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const savedTheme = localStorage.getItem('theme');
+            if (systemPrefersDark) document.body.classList.add('dark-mode');
+            if (savedTheme === 'dark' && !systemPrefersDark) document.body.classList.add('dark-mode');
+            else if (savedTheme === 'light' && systemPrefersDark) document.body.classList.remove('dark-mode');
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    document.body.classList.toggle('dark-mode', e.matches);
+                }
+            });
+        }
+
+        /* ========================================
+           HAMBURGER MENU
+           ======================================== */
+        function toggleHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            const overlay = document.getElementById('hamburgerOverlay');
+            if (menu.classList.contains('open')) {
+                closeHamburgerMenu();
+            } else {
+                menu.style.display = 'block';
+                overlay.style.display = 'block';
+                menu.offsetHeight; // force reflow
+                menu.classList.add('open');
+                menu.style.transform = 'translateX(0)';
+            }
+        }
+        function closeHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            const overlay = document.getElementById('hamburgerOverlay');
+            menu.style.transform = 'translateX(-100%)';
+            menu.classList.remove('open');
+            setTimeout(() => { menu.style.display = 'none'; overlay.style.display = 'none'; }, 200);
+        }
+
+        /* ========================================
+           DROP ZONE
+           ======================================== */
+        function initDropZone() {
+            const dz = document.getElementById('importDropZone');
+            if (!dz) return;
+            dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('dragover'); });
+            dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+            dz.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dz.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file && file.name.endsWith('.xlsx')) {
+                    const input = document.getElementById('importFileInput');
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    input.files = dt.files;
+                    handleImportFile(input);
+                }
+            });
+        }
+
+        // Close column selector on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.column-selector')) {
+                document.getElementById('columnDropdown').classList.remove('open');
+            }
+        });
+
+        /* ========================================
+           INITIALIZATION
+           ======================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadBrandData();
+            buildColumnSelector();
+            initDropZone();
+
+            // Check URL for brand parameter
+            const params = new URLSearchParams(window.location.search);
+            const brandParam = params.get('brand');
+            if (brandParam) {
+                // Will apply after brand data loads
+                setTimeout(() => {
+                    const sel = document.getElementById('brandSelectorMenu');
+                    for (let i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].value === brandParam) {
+                            sel.selectedIndex = i;
+                            updateBrandColorsFromMenu();
+                            break;
+                        }
+                    }
+                }, 1500);
+            }
+
+            // Load sample data (replace with API call)
+            allRFPs = generateSampleData();
+            filterTable();
+        });
+    </script>
+</body>
+</html>
