@@ -134,16 +134,20 @@
             font-family: 'Metropolis', sans-serif; font-size: 1rem;
             color: var(--text-primary); font-weight: 700;
             letter-spacing: 0.05em;
+            background: var(--readonly-bg); padding: 0.45rem 0.85rem;
+            border: 1px solid var(--border-color); border-radius: 6px;
         }
 
         /* ============ INFO GRID ============ */
         .info-grid {
             display: grid; grid-template-columns: repeat(3, 1fr);
-            border: 1px solid var(--text-primary); border-radius: 8px;
-            overflow: hidden; margin-bottom: 1.25rem;
+            border: 1px solid var(--border-color); border-radius: 12px;
+            overflow: hidden; margin-bottom: 1.5rem;
+            background: var(--card-bg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         .info-grid .cell {
-            padding: 0.75rem 1rem; border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
         }
         .info-grid .cell.header-cell {
             background: var(--primary-hex); color: var(--accent-text-color);
@@ -191,10 +195,12 @@
         /* ============ VENDOR INFO ============ */
         .vendor-section {
             display: grid; grid-template-columns: 1fr 1fr;
-            border: 1px solid var(--text-primary); border-radius: 8px;
-            overflow: hidden; margin-bottom: 1.25rem;
+            border: 1px solid var(--border-color); border-radius: 12px;
+            overflow: hidden; margin-bottom: 1.5rem;
+            background: var(--card-bg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-        .vendor-section .cell { padding: 0.75rem 1rem; border: 1px solid var(--border-color); }
+        .vendor-section .cell { padding: 0.75rem 1rem; }
         .vendor-section .cell.header-cell {
             background: var(--primary-hex); color: var(--accent-text-color);
             font-weight: 600; font-size: 0.85rem; font-family: 'Metropolis', sans-serif;
@@ -429,12 +435,12 @@
         .btn-audit:hover { background: var(--bg-color); }
         .btn-primary-sm {
             display: inline-flex; align-items: center; gap: 5px;
-            padding: 0.35rem 0.75rem; background: var(--primary-hex);
-            color: var(--accent-text-color); border: 1px solid var(--primary-hex);
+            padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.2);
+            color: var(--accent-text-color); border: 1px solid rgba(255,255,255,0.3);
             border-radius: 5px; font-size: 0.75rem; font-weight: 600;
             cursor: pointer; font-family: 'Metropolis', sans-serif; transition: all 0.15s;
         }
-        .btn-primary-sm:hover { opacity: 0.85; }
+        .btn-primary-sm:hover { background: rgba(255,255,255,0.3); }
         .btn-primary-sm svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ============ FOOTER ============ */
@@ -579,7 +585,7 @@
                         </select>
                     </div>
                     <div class="cell">
-                        <input type="date" id="submissionDate" readonly>
+                        <input type="date" id="submissionDate" readonly style="text-align:right;">
                     </div>
                 </div>
 
@@ -634,14 +640,15 @@
                 </div>
 
         <!-- Line Items -->
-        <div style="margin-bottom:1.5rem;" id="lineItemsContainer">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-                <h3 style="font-family:'Metropolis',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Item Detail</h3>
+        <div class="form-container" id="lineItemsContainer">
+            <div class="section-header">
+                <span>Item Detail</span>
                 <button class="btn-primary-sm" onclick="importLineItems()">
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                     Import XLSX
                 </button>
             </div>
+            <div class="form-body">
                 <input type="file" id="lineItemFileInput" accept=".xlsx" style="display:none;" onchange="handleLineItemImport(this)">
 
                 <!-- Row Actions -->
@@ -685,6 +692,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
         </div>
 
         <!-- Mileage Reimbursement Section -->
