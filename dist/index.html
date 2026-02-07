@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request for Payment Dashboard</title>
+    <title>Payment Management Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -363,7 +363,7 @@
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Spline Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Request for Payment</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Spline Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
             <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
         </div>
@@ -440,19 +440,6 @@
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
                     <option value="archived">Archived</option>
-                </select>
-                <select id="fundFilter" class="filter-select" onchange="filterTable()">
-                    <option value="all">All Funds</option>
-                    <option value="01">01 - General</option>
-                    <option value="02">02 - Food Service</option>
-                    <option value="04">04 - Community Service</option>
-                    <option value="06">06 - Building Construction</option>
-                    <option value="07">07 - Debt Service</option>
-                    <option value="08">08 - Trust</option>
-                    <option value="20">20 - Internal Service</option>
-                    <option value="25">25 - OPEB Revocable Trust</option>
-                    <option value="45">45 - OPEB Irrevocable Trust</option>
-                    <option value="47">47 - Scholarships</option>
                 </select>
 
                 <!-- Column Selector -->
@@ -562,11 +549,6 @@
             { key: 'daysSinceSubmission', label: 'Days Open', width: '80px', visible: true },
             { key: 'invoiceAge', label: 'Invoice Age', width: '90px', visible: true },
             { key: 'assignedTo', label: 'Assigned To', width: '120px', visible: true },
-            { key: 'fund', label: 'Fund', width: '55px', visible: true },
-            { key: 'organization', label: 'Org', width: '55px', visible: true },
-            { key: 'program', label: 'Prog', width: '55px', visible: true },
-            { key: 'finance', label: 'Fin', width: '55px', visible: true },
-            { key: 'object', label: 'Object', width: '60px', visible: true },
             { key: 'apBatch', label: 'A/P Batch', width: '85px', visible: false },
             { key: 'status', label: 'Status', width: '120px', visible: true },
             { key: 'vendor', label: 'Vendor', width: '160px', visible: true },
@@ -581,11 +563,6 @@
             const submitters = ['Jane Doe', 'Mike Johnson', 'Sarah Williams', 'Tom Anderson', 'Lisa Chen', 'David Park', 'Amy Nguyen'];
             const assignees = ['Budget: S. Williams', 'Compliance: T. Anderson', 'A/P: L. Chen', 'Budget: M. Johnson'];
             const statuses = ['submitted', 'budget-review', 'compliance-review', 'ap-review', 'approved', 'rejected'];
-            const funds = ['01', '02', '04', '06', '07'];
-            const orgs = ['100', '200', '300', '400', '500', '600'];
-            const programs = ['010', '020', '030', '050', '310', '640'];
-            const finances = ['00', '41', '42', '43', '44'];
-            const objects = ['305', '329', '366', '401', '430', '460', '530', '555'];
             const data = [];
 
             for (let i = 1; i <= 68; i++) {
@@ -603,11 +580,6 @@
                     daysSinceSubmission: submittedDaysAgo,
                     invoiceAge: submittedDaysAgo + Math.floor(Math.random() * 10),
                     assignedTo: status === 'approved' || status === 'rejected' ? '—' : assignees[Math.floor(Math.random() * assignees.length)],
-                    fund: funds[Math.floor(Math.random() * funds.length)],
-                    organization: orgs[Math.floor(Math.random() * orgs.length)],
-                    program: programs[Math.floor(Math.random() * programs.length)],
-                    finance: finances[Math.floor(Math.random() * finances.length)],
-                    object: objects[Math.floor(Math.random() * objects.length)],
                     apBatch: status === 'approved' ? `AP-${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}` : '',
                     status: status,
                     vendor: vendors[Math.floor(Math.random() * vendors.length)],
@@ -825,16 +797,13 @@
         function filterTable() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
-            const fundFilter = document.getElementById('fundFilter').value;
 
             filteredRFPs = allRFPs.filter(rfp => {
                 if (currentUserRole !== 'admin' && rfp.submitterId !== currentUserId) return false;
                 if (statusFilter !== 'all' && rfp.status !== statusFilter) return false;
-                if (fundFilter !== 'all' && rfp.fund !== fundFilter) return false;
                 if (searchTerm) {
                     const searchable = [
                         String(rfp.rfpNumber), rfp.submitter, rfp.vendor,
-                        rfp.fund, rfp.organization, rfp.program, rfp.object,
                         rfp.assignedTo, rfp.apBatch
                     ].join(' ').toLowerCase();
                     if (!searchable.includes(searchTerm)) return false;
