@@ -213,7 +213,14 @@
         .bulk-actions { display: none; align-items: center; gap: 0.4rem; margin-left: auto; }
         .bulk-actions.visible { display: flex; }
         .table-scroll { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 340px); }
-        .table-scroll thead th { position: sticky; top: -1px; z-index: 2; background: var(--card-bg); box-shadow: 0 1px 0 var(--border-color), 0 -2px 0 var(--card-bg); }
+        .table-scroll thead th {
+            position: sticky; top: -1px; z-index: 2; background: var(--card-bg);
+            box-shadow: 0 1px 0 var(--border-color);
+        }
+        .table-scroll thead th::before {
+            content: ''; position: absolute; top: -5px; left: 0; right: 0; height: 6px;
+            background: var(--card-bg);
+        }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th {
             text-align: left; padding: 0.6rem 0.75rem; background: var(--card-bg);
@@ -969,10 +976,10 @@
             const selected = allRFPs.filter(r => selectedRFPIds.has(r.id));
             if (selected.length === 0) return;
             const wsData = [
-                ['RFP No.', 'Submitter', 'Date', 'Vendor', 'Amount', 'Fund', 'Org', 'Program', 'Finance', 'Object', 'Status', 'A/P Batch']
+                ['RFP No.', 'Submitter', 'Date', 'Vendor', 'Amount', 'Status', 'A/P Batch']
             ];
             selected.forEach(r => {
-                wsData.push([r.rfpNumber, r.submitter, r.submissionDate, r.vendor, r.amount, r.fund, r.organization, r.program, r.finance, r.object, formatStatus(r.status), r.apBatch]);
+                wsData.push([r.rfpNumber, r.submitter, r.submissionDate, r.vendor, r.amount, formatStatus(r.status), r.apBatch]);
             });
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -1019,8 +1026,9 @@
             // Generate dummy line items for preview
             const lineCount = Math.floor(Math.random() * 4) + 1;
             const descriptions = ['Office supplies', 'Curriculum materials', 'Technology equipment', 'Consulting services', 'Facility maintenance', 'Professional development', 'Student resources', 'Lab equipment'];
-            const funds = ['01', '02', '04', '06'];
-            const objects = ['340', '430', '530', '350', '460', '555'];
+            const invoiceNums = ['INV-2025-001', 'INV-2025-002', 'INV-2025-003', 'INV-4488', 'INV-7721', '90125-A'];
+            const budgetCodes = ['01110051000000', '02310062000000', '04120053000000', '06410071000000', '01210041000000'];
+            const accounts = ['6411000', '6321000', '6151000', '6239000', '6110000'];
             let lineItemsHtml = '';
             let runningTotal = 0;
 
@@ -1031,8 +1039,9 @@
                 lineItemsHtml += `<tr>
                     <td>${i}</td>
                     <td>${descriptions[Math.floor(Math.random() * descriptions.length)]}</td>
-                    <td style="text-align:center;">${funds[Math.floor(Math.random() * funds.length)]}</td>
-                    <td style="text-align:center;">${objects[Math.floor(Math.random() * objects.length)]}</td>
+                    <td>${invoiceNums[Math.floor(Math.random() * invoiceNums.length)]}</td>
+                    <td style="text-align:center;">${budgetCodes[Math.floor(Math.random() * budgetCodes.length)]}</td>
+                    <td style="text-align:center;">${accounts[Math.floor(Math.random() * accounts.length)]}</td>
                     <td class="text-right">${formatCurrency(lineAmt)}</td>
                 </tr>`;
             }
@@ -1053,7 +1062,7 @@
                 <div class="preview-line-items">
                     <h4>Line Items</h4>
                     <table>
-                        <thead><tr><th style="width:40px;">#</th><th>Description</th><th style="width:50px;text-align:center;">Fund</th><th style="width:55px;text-align:center;">Object</th><th class="text-right" style="width:100px;">Amount</th></tr></thead>
+                        <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:100px;">Invoice #</th><th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th class="text-right" style="width:90px;">Amount</th></tr></thead>
                         <tbody>${lineItemsHtml}</tbody>
                     </table>
                     <div class="preview-total-row">

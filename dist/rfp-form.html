@@ -169,6 +169,15 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none;
             margin-top: 2px;
         }
+        .vendor-dropdown.has-overflow::after {
+            content: '▼ scroll for more';
+            display: block; position: sticky; bottom: 0; left: 0; right: 0;
+            text-align: center; font-size: 0.65rem; font-family: 'Metropolis', sans-serif;
+            font-weight: 600; letter-spacing: 0.03em; color: var(--text-secondary);
+            padding: 0.3rem 0; background: linear-gradient(transparent, var(--card-bg) 35%);
+            pointer-events: none;
+        }
+        .vendor-dropdown.scrolled-bottom::after { display: none; }
         .vendor-dropdown.open { display: block; }
         .vendor-dropdown-item {
             padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.82rem;
@@ -176,7 +185,7 @@
             border-bottom: 1px solid var(--border-color);
         }
         .vendor-dropdown-item:last-child { border-bottom: none; }
-        .vendor-dropdown-item:hover, .vendor-dropdown-item.active { background: var(--bg-color); }
+        .vendor-dropdown-item:hover, .vendor-dropdown-item.active { background: var(--bg-color); outline: 2px solid var(--primary-hex); outline-offset: -2px; border-radius: 3px; }
         .vendor-dropdown-item .vd-name { font-weight: 500; color: var(--text-primary); }
         .vendor-dropdown-item .vd-code { font-size: 0.72rem; color: var(--text-secondary); font-family: 'Metropolis', sans-serif; }
         .vendor-dropdown-empty { padding: 0.6rem 0.75rem; font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
@@ -236,7 +245,7 @@
 
         .items-table-scroll { overflow-x: auto; margin-bottom: 0.75rem; }
         .items-table {
-            width: 100%; border-collapse: collapse; min-width: 900px;
+            width: 100%; border-collapse: collapse; min-width: 700px;
         }
         .items-table th {
             background: var(--primary-hex); color: var(--accent-text-color);
@@ -588,13 +597,9 @@
                             <div class="vendor-dropdown" id="vendorNumberDropdown"></div>
                         </div>
                     </div>
-                    <div class="cell header-cell">Remit-To Address</div>
-                    <div class="cell header-cell">Invoice Number</div>
-                    <div class="cell">
+                    <div class="cell header-cell" style="grid-column:1/-1;">Remit-To Address</div>
+                    <div class="cell" style="grid-column:1/-1;">
                         <textarea id="vendorAddress" placeholder="Vendor address"></textarea>
-                    </div>
-                    <div class="cell">
-                        <input type="text" id="invoiceNumber" placeholder="Vendor invoice #">
                     </div>
                 </div>
 
@@ -634,11 +639,9 @@
                                 <th class="checkbox-col"><input type="checkbox" id="selectAllItems" onclick="toggleSelectAllItems()"></th>
                                 <th style="width:50px;">Line</th>
                                 <th>Description</th>
-                                <th style="width:65px;">Fund</th>
-                                <th style="width:65px;">Org</th>
-                                <th style="width:65px;">Prog</th>
-                                <th style="width:60px;">Fin</th>
-                                <th style="width:65px;">Object</th>
+                                <th style="width:110px;">Invoice #</th>
+                                <th style="width:135px;">Budget Code</th>
+                                <th style="width:85px;">Account</th>
                                 <th style="width:120px;">Amount</th>
                             </tr>
                         </thead>
@@ -837,21 +840,43 @@
             [nameInput, numInput].forEach(input => {
                 input.addEventListener('keydown', (e) => {
                     const drop = input === nameInput ? nameDrop : numDrop;
-                    const items = drop.querySelectorAll('.vendor-dropdown-item');
-                    if (!items.length) return;
+                    const isOpen = drop.classList.contains('open');
+
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
+                        // If dropdown not open, trigger a search first
+                        if (!isOpen) {
+                            const q = input.value.trim();
+                            if (q.length >= 1) {
+                                if (input === nameInput) {
+                                    const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 30);
+                                    renderVendorDropdown(nameDrop, matches, q.toUpperCase(), 'name');
+                                } else {
+                                    const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 30);
+                                    renderVendorDropdown(numDrop, matches, q, 'number');
+                                }
+                            }
+                            vendorActiveIndex = -1;
+                        }
+                        const items = drop.querySelectorAll('.vendor-dropdown-item');
+                        if (!items.length) return;
                         vendorActiveIndex = Math.min(vendorActiveIndex + 1, items.length - 1);
                         updateActiveItem(items);
                     } else if (e.key === 'ArrowUp') {
                         e.preventDefault();
+                        const items = drop.querySelectorAll('.vendor-dropdown-item');
+                        if (!items.length) return;
                         vendorActiveIndex = Math.max(vendorActiveIndex - 1, 0);
                         updateActiveItem(items);
-                    } else if (e.key === 'Enter' && vendorActiveIndex >= 0) {
-                        e.preventDefault();
-                        items[vendorActiveIndex].click();
+                    } else if (e.key === 'Enter') {
+                        const items = drop.querySelectorAll('.vendor-dropdown-item');
+                        if (isOpen && vendorActiveIndex >= 0 && items[vendorActiveIndex]) {
+                            e.preventDefault();
+                            items[vendorActiveIndex].click();
+                        }
                     } else if (e.key === 'Escape') {
                         drop.classList.remove('open');
+                        vendorActiveIndex = -1;
                     }
                 });
             });
@@ -938,6 +963,7 @@
         function renderVendorDropdown(dropdown, matches, query, mode) {
             if (matches.length === 0) {
                 dropdown.innerHTML = '<div class="vendor-dropdown-empty">No vendors found</div>';
+                dropdown.classList.remove('has-overflow', 'scrolled-bottom');
                 dropdown.classList.add('open');
                 return;
             }
@@ -951,6 +977,17 @@
                 return `<div class="vendor-dropdown-item" data-idx="${i}" onclick="selectVendor(${VENDOR_DATA.indexOf(v)})"><span class="vd-name">${highlight}</span><span class="vd-code">${codeDisplay}</span></div>`;
             }).join('');
             dropdown.classList.add('open');
+            dropdown.classList.remove('scrolled-bottom');
+            // Check overflow after render
+            requestAnimationFrame(() => {
+                dropdown.classList.toggle('has-overflow', dropdown.scrollHeight > dropdown.clientHeight);
+                dropdown.scrollTop = 0;
+            });
+            // Track scroll position
+            dropdown.onscroll = () => {
+                const atBottom = dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight - 8;
+                dropdown.classList.toggle('scrolled-bottom', atBottom);
+            };
         }
 
         function highlightMatch(text, query) {
@@ -1033,11 +1070,9 @@
                 <td class="checkbox-cell"><input type="checkbox" class="line-checkbox" onchange="updateLineSelection()"></td>
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><input type="text" class="line-desc" value="${data.description || ''}"></td>
-                <td><input type="text" class="line-fund" value="${data.fund || ''}" maxlength="2" style="width:55px;text-align:center;"></td>
-                <td><input type="text" class="line-org" value="${data.org || ''}" maxlength="3" style="width:55px;text-align:center;"></td>
-                <td><input type="text" class="line-prog" value="${data.program || ''}" maxlength="3" style="width:55px;text-align:center;"></td>
-                <td><input type="text" class="line-fin" value="${data.finance || ''}" maxlength="2" style="width:50px;text-align:center;"></td>
-                <td><input type="text" class="line-obj" value="${data.object || ''}" maxlength="3" style="width:55px;text-align:center;"></td>
+                <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:100px;"></td>
+                <td><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:125px;text-align:center;"></td>
+                <td><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
             `;
             tbody.appendChild(tr);
@@ -1120,11 +1155,9 @@
                     data.forEach(row => {
                         addLineItem({
                             description: row['Description'] || row['description'] || '',
-                            fund: row['Fund'] || row['fund'] || '',
-                            org: row['Org'] || row['Organization'] || row['org'] || '',
-                            program: row['Program'] || row['Prog'] || row['program'] || '',
-                            finance: row['Finance'] || row['Fin'] || row['finance'] || '',
-                            object: row['Object'] || row['Obj'] || row['object'] || '',
+                            invoice: row['Invoice'] || row['Invoice #'] || row['Invoice Number'] || row['invoice'] || '',
+                            budgetCode: row['Budget Code'] || row['Budget_Code'] || row['budget_code'] || '',
+                            account: row['Account'] || row['account'] || '',
                             amount: row['Amount'] || row['Total'] || row['amount'] || ''
                         });
                     });
