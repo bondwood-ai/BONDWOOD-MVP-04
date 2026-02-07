@@ -165,7 +165,7 @@
         .vendor-dropdown {
             position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
             background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: 6px; max-height: 200px; overflow-y: auto;
+            border-radius: 6px; max-height: 220px; overflow-y: auto;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none;
             margin-top: 2px;
         }
@@ -180,14 +180,14 @@
         .vendor-dropdown.scrolled-bottom::after { display: none; }
         .vendor-dropdown.open { display: block; }
         .vendor-dropdown-item {
-            padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.82rem;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            padding: 0.55rem 0.75rem; cursor: pointer; font-size: 0.82rem;
+            display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+            border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
         }
         .vendor-dropdown-item:last-child { border-bottom: none; }
-        .vendor-dropdown-item:hover, .vendor-dropdown-item.active { background: var(--bg-color); outline: 2px solid var(--primary-hex); outline-offset: -2px; border-radius: 3px; }
-        .vendor-dropdown-item .vd-name { font-weight: 500; color: var(--text-primary); }
-        .vendor-dropdown-item .vd-code { font-size: 0.72rem; color: var(--text-secondary); font-family: 'Metropolis', sans-serif; }
+        .vendor-dropdown-item:hover, .vendor-dropdown-item.active { background: color-mix(in srgb, var(--primary-hex) 8%, var(--card-bg)); }
+        .vendor-dropdown-item .vd-name { font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+        .vendor-dropdown-item .vd-code { font-size: 0.72rem; color: var(--text-secondary); font-family: 'Metropolis', sans-serif; flex-shrink: 0; background: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.02em; }
         .vendor-dropdown-empty { padding: 0.6rem 0.75rem; font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
         .input-error { border-color: #dc2626 !important; box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important; }
         .vendor-error-msg {
@@ -265,6 +265,8 @@
         }
         .items-table input:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
+        .items-table td:has(.line-desc) { max-width: 200px; }
+        .items-table .line-desc { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
         .items-table input[type="number"], .items-table input.text-right { text-align: right; }
         .items-table tr.selected { background: var(--pale-accent) !important; }
         .items-table th.checkbox-col, .items-table td.checkbox-cell { text-align: center; width: 36px; }
@@ -640,7 +642,7 @@
                                 <th style="width:50px;">Line</th>
                                 <th>Description</th>
                                 <th style="width:110px;">Invoice #</th>
-                                <th style="width:135px;">Budget Code</th>
+                                <th style="width:155px;">Budget Code</th>
                                 <th style="width:85px;">Account</th>
                                 <th style="width:120px;">Amount</th>
                             </tr>
@@ -1071,7 +1073,7 @@
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><input type="text" class="line-desc" value="${data.description || ''}"></td>
                 <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:100px;"></td>
-                <td><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:125px;text-align:center;"></td>
+                <td><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;"></td>
                 <td><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
             `;
