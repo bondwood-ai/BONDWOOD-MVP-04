@@ -641,7 +641,7 @@
                                 <th class="checkbox-col"><input type="checkbox" id="selectAllItems" onclick="toggleSelectAllItems()"></th>
                                 <th style="width:50px;">Line</th>
                                 <th>Description</th>
-                                <th style="width:110px;">Invoice #</th>
+                                <th style="width:155px;">Invoice #</th>
                                 <th style="width:155px;">Budget Code</th>
                                 <th style="width:85px;">Account</th>
                                 <th style="width:120px;">Amount</th>
@@ -1072,7 +1072,7 @@
                 <td class="checkbox-cell"><input type="checkbox" class="line-checkbox" onchange="updateLineSelection()"></td>
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><textarea class="line-desc" rows="1" cols="25" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
-                <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:100px;"></td>
+                <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:145px;"></td>
                 <td><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;"></td>
                 <td><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
