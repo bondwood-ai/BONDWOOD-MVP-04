@@ -1,0 +1,11 @@
+name = "bondwood-api"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bondwood-payment-management"
+database_id = "3f38ad36-36c9-4d05-935e-3070096152c5"
