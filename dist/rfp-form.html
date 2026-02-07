@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Alex+Brush&display=swap');
+
         :root {
             --accent-color: #000000;
             --accent-text-color: #ffffff;
@@ -486,11 +488,11 @@
         }
         body.dark-mode .sig-preview { background: #1e1d18; }
         .sig-preview-text {
-            font-family: 'Alex Brush', cursive; font-size: 2.5rem; color: #1a1a6e;
+            font-family: 'Alex Brush', 'Brush Script MT', 'Segoe Script', 'Apple Chancery', cursive; font-size: 2.5rem; color: #0728eb;
             opacity: 0; transition: opacity 0.3s;
         }
         .sig-preview-text.visible { opacity: 1; }
-        body.dark-mode .sig-preview-text { color: #a0a0ff; }
+        body.dark-mode .sig-preview-text { color: #5b7aff; }
         .sig-preview-placeholder { font-size: 0.85rem; color: var(--text-secondary); font-style: italic; }
         .sig-modal-footer {
             display: flex; justify-content: flex-end; gap: 0.75rem;
@@ -1204,8 +1206,19 @@
             text.classList.remove('visible');
             placeholder.style.display = '';
             confirmBtn.disabled = true;
-            modal.classList.add('open');
-            setTimeout(() => input.focus(), 100);
+            // Ensure Alex Brush loads before showing
+            if (document.fonts && document.fonts.load) {
+                document.fonts.load('1em "Alex Brush"').then(() => {
+                    modal.classList.add('open');
+                    setTimeout(() => input.focus(), 100);
+                }).catch(() => {
+                    modal.classList.add('open');
+                    setTimeout(() => input.focus(), 100);
+                });
+            } else {
+                modal.classList.add('open');
+                setTimeout(() => input.focus(), 100);
+            }
         }
 
         function closeSignatureModal() {
