@@ -228,6 +228,7 @@
         th.no-sort { cursor: default; }
         th.no-sort:hover { background: var(--card-bg); }
         tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
+        tbody tr:last-child { border-bottom: none; }
         tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
         tbody tr.selected { background: var(--pale-accent); }
         td { padding: 0.5rem 0.75rem; color: var(--text-primary); white-space: nowrap; }
@@ -253,7 +254,7 @@
         .invoice-age.overdue { color: var(--negative-color); }
 
         /* ============ PAGINATION ============ */
-        .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; border-top: 1px solid var(--border-color); }
+        .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; }
         .pagination-info { font-size: 0.8rem; color: var(--text-secondary); }
         .pagination-controls { display: flex; gap: 0.25rem; }
         .pagination-btn { display: flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 0.4rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-primary); font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.12s ease; font-family: inherit; }
