@@ -6,7 +6,8 @@
     <title>Payment Management</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/metropolis-2" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -104,6 +105,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-family: 'Metropolis', sans-serif;
         }
 
         .form-body { padding: 1.25rem; }
@@ -114,7 +116,7 @@
             padding: 0.45rem 0.85rem; background: var(--card-bg); color: var(--text-primary);
             border: 1px solid var(--border-color); border-radius: 6px;
             font-size: 0.8rem; font-weight: 500; cursor: pointer;
-            font-family: inherit; transition: all 0.15s; margin-bottom: 1rem;
+            font-family: 'Metropolis', sans-serif; transition: all 0.15s; margin-bottom: 1rem;
         }
         .back-btn:hover { background: var(--bg-color); }
         .back-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
@@ -124,7 +126,7 @@
             display: flex; justify-content: flex-end; align-items: center;
             margin-bottom: 1.25rem; gap: 0.75rem;
         }
-        .rfp-number-row label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
+        .rfp-number-row label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); font-family: 'Metropolis', sans-serif; }
         .rfp-number-row input {
             width: 180px; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color);
             border-radius: 6px; font-family: inherit; font-size: 1rem;
@@ -144,7 +146,7 @@
         }
         .info-grid .cell.header-cell {
             background: var(--primary-hex); color: var(--accent-text-color);
-            font-weight: 600; font-size: 0.85rem;
+            font-weight: 600; font-size: 0.85rem; font-family: 'Metropolis', sans-serif;
         }
         .info-grid .cell input,
         .info-grid .cell select {
@@ -182,7 +184,7 @@
             content: ''; width: 10px; height: 10px; border-radius: 50%;
             background: var(--secondary-hex);
         }
-        .type-option .type-label { font-weight: 600; font-size: 0.9rem; }
+        .type-option .type-label { font-weight: 600; font-size: 0.9rem; font-family: 'Metropolis', sans-serif; }
         .type-option .type-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; }
 
         /* ============ VENDOR INFO ============ */
@@ -194,7 +196,7 @@
         .vendor-section .cell { padding: 0.75rem 1rem; border: 1px solid var(--border-color); }
         .vendor-section .cell.header-cell {
             background: var(--primary-hex); color: var(--accent-text-color);
-            font-weight: 600; font-size: 0.85rem;
+            font-weight: 600; font-size: 0.85rem; font-family: 'Metropolis', sans-serif;
         }
         .vendor-section input, .vendor-section select, .vendor-section textarea {
             width: 100%; padding: 0.5rem; border: 1px solid var(--border-color);
@@ -237,8 +239,8 @@
         .items-table th {
             background: var(--primary-hex); color: var(--accent-text-color);
             padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
-            font-size: 0.75rem; letter-spacing: 0.03em; text-transform: uppercase;
-            white-space: nowrap;
+            font-size: 0.8rem; letter-spacing: 0.01em;
+            white-space: nowrap; font-family: 'Metropolis', sans-serif;
         }
         .items-table td {
             padding: 0.35rem 0.35rem; border-bottom: 1px solid var(--border-color);
@@ -278,17 +280,17 @@
         /* ============ ADD ROW / TOTALS ============ */
         .add-row-btn {
             display: inline-flex; align-items: center; gap: 6px;
-            background: var(--positive-color); color: #fff; border: none;
-            padding: 0.45rem 1rem; border-radius: 6px; font-family: inherit;
+            background: var(--primary-hex); color: var(--accent-text-color); border: none;
+            padding: 0.45rem 1rem; border-radius: 6px; font-family: 'Metropolis', sans-serif;
             font-weight: 600; font-size: 0.8rem; cursor: pointer;
         }
-        .add-row-btn:hover { background: #15803d; }
+        .add-row-btn:hover { opacity: 0.85; }
         .totals-section { display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 1.5rem; }
         .total-row {
             display: grid; grid-template-columns: 140px 160px;
             gap: 0.5rem; margin-bottom: 0.35rem; align-items: center;
         }
-        .total-row label { text-align: right; font-weight: 600; font-size: 0.85rem; }
+        .total-row label { text-align: right; font-weight: 600; font-size: 0.85rem; font-family: 'Metropolis', sans-serif; }
         .total-row input {
             padding: 0.4rem 0.6rem; border: 1px solid var(--border-color);
             border-radius: 6px; font-family: inherit; font-size: 0.9rem;
@@ -306,7 +308,7 @@
         .mileage-check-row input[type="checkbox"] {
             width: 18px; height: 18px; accent-color: var(--secondary-hex); cursor: pointer;
         }
-        .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+        .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Metropolis', sans-serif; }
         .mileage-table-scroll { overflow-x: auto; margin-bottom: 0.75rem; }
         .mileage-table {
             width: 100%; border-collapse: collapse; min-width: 700px;
@@ -314,7 +316,8 @@
         .mileage-table th {
             background: var(--primary-hex); color: var(--accent-text-color);
             padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
-            font-size: 0.75rem; letter-spacing: 0.03em; text-transform: uppercase;
+            font-size: 0.8rem; letter-spacing: 0.01em;
+            font-family: 'Metropolis', sans-serif;
         }
         .mileage-table td {
             padding: 0.35rem; border-bottom: 1px solid var(--border-color);
@@ -354,7 +357,7 @@
             display: flex; align-items: center; justify-content: center; gap: 0.75rem;
             width: 100%; padding: 1rem; background: var(--primary-hex);
             color: var(--accent-text-color); border: none;
-            border-radius: 8px; font-family: inherit; font-size: 1rem;
+            border-radius: 8px; font-family: 'Metropolis', sans-serif; font-size: 1rem;
             font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
         .upload-btn:hover { opacity: 0.9; }
@@ -412,7 +415,7 @@
         }
         .btn {
             padding: 0.65rem 1.5rem; border: none; border-radius: 6px;
-            font-family: inherit; font-weight: 600; font-size: 0.9rem;
+            font-family: 'Metropolis', sans-serif; font-weight: 600; font-size: 0.9rem;
             cursor: pointer; transition: all 0.2s; display: inline-flex;
             align-items: center; gap: 6px;
         }
@@ -428,14 +431,14 @@
             padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.2);
             color: var(--accent-text-color); border: 1px solid rgba(255,255,255,0.3);
             border-radius: 5px; font-size: 0.75rem; font-weight: 600;
-            cursor: pointer; font-family: inherit; transition: all 0.15s;
+            cursor: pointer; font-family: 'Metropolis', sans-serif; transition: all 0.15s;
         }
         .btn-primary-sm:hover { background: rgba(255,255,255,0.3); }
         .btn-primary-sm svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ============ FOOTER ============ */
         .footer { padding: 1rem 0 0.5rem; }
-        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Metropolis', sans-serif; }
         .theme-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
@@ -481,7 +484,7 @@
     <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
         <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
             <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Spline Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Metropolis',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
             <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
         </div>
@@ -586,7 +589,7 @@
         <!-- Line Items -->
         <div style="margin-bottom:1.5rem;" id="lineItemsContainer">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-                <h3 style="font-family:'Spline Sans',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Line Item Detail</h3>
+                <h3 style="font-family:'Metropolis',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Item Detail</h3>
                 <button class="btn-primary-sm" onclick="importLineItems()">
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                     Import XLSX
@@ -616,8 +619,8 @@
                                 <th style="width:65px;">Prog</th>
                                 <th style="width:60px;">Fin</th>
                                 <th style="width:65px;">Object</th>
-                                <th style="width:80px;">Quantity</th>
-                                <th style="width:100px;">Unit Price</th>
+                                <th style="width:80px;">Qty</th>
+                                <th style="width:100px;">Unit price</th>
                                 <th style="width:110px;">Total</th>
                             </tr>
                         </thead>
@@ -701,20 +704,13 @@
         </div>
 
         <!-- Attachments -->
-        <div class="form-container">
-            <div class="section-header">
-                <span>Attachments</span>
-            </div>
-            <div class="form-body">
-                <div class="attachments-section">
-                    <button class="upload-btn" onclick="document.getElementById('attachmentInput').click()">
-                        <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                        Attachments
-                    </button>
-                    <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" style="display:none;" onchange="handleAttachments(this)">
-                    <div class="attachments-list" id="attachmentsList"></div>
-                </div>
-            </div>
+        <div style="margin-bottom:1.5rem;">
+            <button class="upload-btn" onclick="document.getElementById('attachmentInput').click()">
+                <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                Attachments
+            </button>
+            <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" style="display:none;" onchange="handleAttachments(this)">
+            <div class="attachments-list" id="attachmentsList"></div>
         </div>
 
         <!-- Approval Notes -->
