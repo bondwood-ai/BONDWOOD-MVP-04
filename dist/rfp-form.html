@@ -139,8 +139,8 @@
         /* ============ INFO GRID ============ */
         .info-grid {
             display: grid; grid-template-columns: repeat(3, 1fr);
-            border: 1px solid var(--text-primary); overflow: hidden;
-            margin: 0 -1.25rem 1.25rem -1.25rem; border-left: none; border-right: none;
+            border: 1px solid var(--text-primary); border-radius: 8px;
+            overflow: hidden; margin-bottom: 1.25rem;
         }
         .info-grid .cell {
             padding: 0.75rem 1rem; border: 1px solid var(--border-color);
@@ -191,8 +191,8 @@
         /* ============ VENDOR INFO ============ */
         .vendor-section {
             display: grid; grid-template-columns: 1fr 1fr;
-            border: 1px solid var(--text-primary); overflow: hidden;
-            margin: 0 -1.25rem 1.25rem -1.25rem; border-left: none; border-right: none;
+            border: 1px solid var(--text-primary); border-radius: 8px;
+            overflow: hidden; margin-bottom: 1.25rem;
         }
         .vendor-section .cell { padding: 0.75rem 1rem; border: 1px solid var(--border-color); }
         .vendor-section .cell.header-cell {
@@ -554,12 +554,7 @@
             Back to Dashboard
         </button>
 
-        <!-- Form Container -->
-        <div class="form-container">
-            <div class="section-header">
-                <span>Request Details</span>
-            </div>
-            <div class="form-body">
+        <!-- Request Details -->
                 <!-- RFP Number -->
                 <div class="rfp-number-row">
                     <label>RFP No.</label>
@@ -637,9 +632,6 @@
                         <input type="text" id="employeeId" placeholder="e.g. EMP-1234">
                     </div>
                 </div>
-
-            </div>
-        </div>
 
         <!-- Line Items -->
         <div style="margin-bottom:1.5rem;" id="lineItemsContainer">
