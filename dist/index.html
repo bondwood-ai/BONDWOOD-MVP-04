@@ -44,7 +44,7 @@
         body.dark-mode {
             --bg-color: #121517;
             --card-bg: #1a1a1a;
-            --border-color: #404040;
+            --border-color: #2c2c2c;
             --text-primary: #e5e5e5;
             --text-secondary: #a0a0a0;
             --accent-color-light: rgba(255, 255, 255, 0.1);
@@ -66,7 +66,7 @@
         body.dark-mode th:hover { background: #252525; }
         body.dark-mode tbody tr:hover { background: #252525; }
         body.dark-mode tbody tr.selected { background: rgba(91, 122, 255, 0.15); }
-        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #404040; }
+        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
         body.dark-mode .theme-toggle svg { fill: #5b7aff; }
         body.dark-mode .btn-primary { background: #333; color: #fff; }
         body.dark-mode .btn-primary:hover { background: #444; }
@@ -210,7 +210,8 @@
         .table-toolbar .selected-info { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
         .bulk-actions { display: none; align-items: center; gap: 0.4rem; margin-left: auto; }
         .bulk-actions.visible { display: flex; }
-        .table-scroll { overflow-x: auto; }
+        .table-scroll { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 340px); }
+        .table-scroll thead th { position: sticky; top: 0; z-index: 2; background: var(--card-bg); box-shadow: 0 1px 0 var(--border-color); }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th {
             text-align: left; padding: 0.6rem 0.75rem; background: var(--card-bg);
@@ -540,7 +541,7 @@
         let selectedRFPIds = new Set();
         let currentSort = { column: 'rfpNumber', direction: 'desc' };
         let currentPage = 1;
-        const PAGE_SIZE = 25;
+        const PAGE_SIZE = 250;
 
         // Column definitions
         const COLUMNS = [
@@ -561,14 +562,14 @@
            SAMPLE DATA (replace with API calls)
            ======================================== */
         function generateSampleData() {
-            const vendors = ['Minnesota Supply Co.', 'Northern Lights Services', 'School Specialty', 'Pearson Education', 'Office Depot', 'CDW Government', 'Xcel Energy', 'Metro Transit', 'Apple Inc.', 'Amazon Business', 'Staples', 'Home Depot Pro', 'Lakeshore Learning', 'Scholastic', 'Grainger'];
-            const submitters = ['Jane Doe', 'Mike Johnson', 'Sarah Williams', 'Tom Anderson', 'Lisa Chen', 'David Park', 'Amy Nguyen'];
-            const assignees = ['Budget: S. Williams', 'Compliance: T. Anderson', 'A/P: L. Chen', 'Budget: M. Johnson'];
+            const vendors = ['Minnesota Supply Co.', 'Northern Lights Services', 'School Specialty', 'Pearson Education', 'Office Depot', 'CDW Government', 'Xcel Energy', 'Metro Transit', 'Apple Inc.', 'Amazon Business', 'Staples', 'Home Depot Pro', 'Lakeshore Learning', 'Scholastic', 'Grainger', 'Dell Technologies', 'Menards', 'CenturyLink', 'Waste Management', 'Cintas', 'Sysco Foods', 'US Foods', 'Fastenal', 'W.W. Grainger', 'Ferguson Enterprises', 'Gopher Sport', 'Kaplan Early Learning', 'Nasco Education', 'Quill Corporation', 'Flinn Scientific'];
+            const submitters = ['Jane Doe', 'Mike Johnson', 'Sarah Williams', 'Tom Anderson', 'Lisa Chen', 'David Park', 'Amy Nguyen', 'Robert Kim', 'Maria Garcia', 'Kevin O\'Brien', 'Rachel Adams', 'James Wilson', 'Emily Thompson', 'Chris Martinez', 'Nicole Brown'];
+            const assignees = ['Budget: S. Williams', 'Compliance: T. Anderson', 'A/P: L. Chen', 'Budget: M. Johnson', 'Budget: R. Adams', 'Compliance: J. Wilson', 'A/P: K. O\'Brien'];
             const statuses = ['submitted', 'budget-review', 'compliance-review', 'ap-review', 'approved', 'rejected'];
             const data = [];
 
-            for (let i = 1; i <= 68; i++) {
-                const submittedDaysAgo = Math.floor(Math.random() * 60);
+            for (let i = 1; i <= 250; i++) {
+                const submittedDaysAgo = Math.floor(Math.random() * 90);
                 const submissionDate = new Date();
                 submissionDate.setDate(submissionDate.getDate() - submittedDaysAgo);
                 const status = statuses[Math.floor(Math.random() * statuses.length)];
@@ -577,7 +578,7 @@
                     id: `rfp-${String(i).padStart(4, '0')}`,
                     rfpNumber: 2025000 + i,
                     submitter: submitters[Math.floor(Math.random() * submitters.length)],
-                    submitterId: `user-${String(Math.floor(Math.random() * 7) + 1).padStart(3, '0')}`,
+                    submitterId: `user-${String(Math.floor(Math.random() * 15) + 1).padStart(3, '0')}`,
                     submissionDate: submissionDate.toISOString().split('T')[0],
                     daysSinceSubmission: submittedDaysAgo,
                     invoiceAge: submittedDaysAgo + Math.floor(Math.random() * 10),
@@ -585,7 +586,7 @@
                     apBatch: status === 'approved' ? `AP-${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}` : '',
                     status: status,
                     vendor: vendors[Math.floor(Math.random() * vendors.length)],
-                    amount: Math.round((Math.random() * 25000 + 50) * 100) / 100,
+                    amount: Math.round((Math.random() * 45000 + 50) * 100) / 100,
                     type: Math.random() > 0.15 ? 'vendor' : 'reimbursement',
                 });
             }
