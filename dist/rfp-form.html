@@ -217,6 +217,8 @@
             font-size: 0.8rem; letter-spacing: 0.01em;
             white-space: nowrap; font-family: 'Metropolis', sans-serif;
         }
+        .items-table thead tr th:first-child { border-radius: 8px 0 0 0; }
+        .items-table thead tr th:last-child { border-radius: 0 8px 0 0; }
         .items-table td {
             padding: 0.35rem 0.35rem; border-bottom: 1px solid var(--border-color);
         }
@@ -392,6 +394,15 @@
         }
         .btn-primary-sm:hover { background: rgba(255,255,255,0.3); }
         .btn-primary-sm svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .btn-primary-sm-alt {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 0.35rem 0.75rem; background: var(--primary-hex);
+            color: var(--accent-text-color); border: 1px solid var(--primary-hex);
+            border-radius: 5px; font-size: 0.75rem; font-weight: 600;
+            cursor: pointer; font-family: 'Metropolis', sans-serif; transition: all 0.15s;
+        }
+        .btn-primary-sm-alt:hover { opacity: 0.85; }
+        .btn-primary-sm-alt svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ============ FOOTER ============ */
         .footer { padding: 1rem 0 0.5rem; }
@@ -567,15 +578,10 @@
                 </div>
 
         <!-- Line Items -->
-        <div class="form-container" id="lineItemsContainer">
-            <div class="section-header">
-                <span>Item Detail</span>
-                <button class="btn-primary-sm" onclick="importLineItems()">
-                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-                    Import XLSX
-                </button>
+        <div style="margin-bottom:1.5rem;" id="lineItemsContainer">
+            <div style="margin-bottom:0.75rem;">
+                <h3 style="font-family:'Metropolis',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Item Detail</h3>
             </div>
-            <div class="form-body">
                 <input type="file" id="lineItemFileInput" accept=".xlsx" style="display:none;" onchange="handleLineItemImport(this)">
 
                 <!-- Row Actions -->
@@ -608,10 +614,16 @@
                 </div>
 
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:0.75rem;">
-                    <button class="add-row-btn" onclick="addLineItem()">
-                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
-                        Add Row
-                    </button>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button class="add-row-btn" onclick="addLineItem()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                            Add Row
+                        </button>
+                        <button class="btn-primary-sm-alt" onclick="importLineItems()">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                            Import XLSX
+                        </button>
+                    </div>
                     <div class="totals-section">
                         <div class="total-row">
                             <label style="font-size:1rem;">Total:</label>
@@ -619,7 +631,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
 
         <!-- Mileage Reimbursement Section -->
