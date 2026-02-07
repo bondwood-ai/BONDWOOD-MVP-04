@@ -27,6 +27,7 @@
             --text-primary: #000000;
             --text-secondary: #555555;
             --pale-accent: rgba(7, 40, 235, 0.06);
+            --row-hover-bg: rgba(7, 40, 235, 0.08);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -64,12 +65,13 @@
         body.dark-mode .negative { color: #f87171; }
         body.dark-mode th { background: var(--card-bg); }
         body.dark-mode th:hover { background: #252525; }
-        body.dark-mode tbody tr:hover { background: #252525; }
+        body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
         body.dark-mode tbody tr.selected { background: rgba(91, 122, 255, 0.15); }
         body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
         body.dark-mode .theme-toggle svg { fill: #5b7aff; }
         body.dark-mode .btn-primary { background: #333; color: #fff; }
         body.dark-mode .btn-primary:hover { background: #444; }
+        body.dark-mode .status-badge.draft { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
         body.dark-mode .status-badge.submitted { background: rgba(91, 122, 255, 0.2); color: #5b7aff; }
         body.dark-mode .status-badge.budget-review { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
         body.dark-mode .status-badge.compliance-review { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
@@ -226,7 +228,7 @@
         th.no-sort { cursor: default; }
         th.no-sort:hover { background: var(--card-bg); }
         tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
-        tbody tr:hover { background: var(--bg-color); }
+        tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
         tbody tr.selected { background: var(--pale-accent); }
         td { padding: 0.5rem 0.75rem; color: var(--text-primary); white-space: nowrap; }
         td.rfp-number { font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -235,6 +237,7 @@
 
         /* Status badges */
         .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; font-family: 'Metropolis', sans-serif; }
+        .status-badge.draft { background: rgba(107, 114, 128, 0.12); color: #4b5563; }
         .status-badge.submitted { background: rgba(3, 70, 148, 0.12); color: #034694; }
         .status-badge.budget-review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
         .status-badge.compliance-review { background: rgba(147, 51, 234, 0.12); color: #7c3aed; }
@@ -436,6 +439,7 @@
                 </div>
                 <select id="statusFilter" class="filter-select" onchange="filterTable()">
                     <option value="all">All Statuses</option>
+                    <option value="draft">Draft</option>
                     <option value="submitted">Submitted</option>
                     <option value="budget-review">Budget Review</option>
                     <option value="compliance-review">Compliance Review</option>
@@ -444,6 +448,10 @@
                     <option value="rejected">Rejected</option>
                     <option value="archived">Archived</option>
                 </select>
+                <button class="btn-secondary" onclick="openAdvancedSearch()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                    Advanced Search
+                </button>
 
                 <!-- Column Selector -->
                 <div class="column-selector" style="margin-left:auto;">
@@ -565,10 +573,10 @@
             const vendors = ['Minnesota Supply Co.', 'Northern Lights Services', 'School Specialty', 'Pearson Education', 'Office Depot', 'CDW Government', 'Xcel Energy', 'Metro Transit', 'Apple Inc.', 'Amazon Business', 'Staples', 'Home Depot Pro', 'Lakeshore Learning', 'Scholastic', 'Grainger', 'Dell Technologies', 'Menards', 'CenturyLink', 'Waste Management', 'Cintas', 'Sysco Foods', 'US Foods', 'Fastenal', 'W.W. Grainger', 'Ferguson Enterprises', 'Gopher Sport', 'Kaplan Early Learning', 'Nasco Education', 'Quill Corporation', 'Flinn Scientific'];
             const submitters = ['Jane Doe', 'Mike Johnson', 'Sarah Williams', 'Tom Anderson', 'Lisa Chen', 'David Park', 'Amy Nguyen', 'Robert Kim', 'Maria Garcia', 'Kevin O\'Brien', 'Rachel Adams', 'James Wilson', 'Emily Thompson', 'Chris Martinez', 'Nicole Brown'];
             const assignees = ['Budget: S. Williams', 'Compliance: T. Anderson', 'A/P: L. Chen', 'Budget: M. Johnson', 'Budget: R. Adams', 'Compliance: J. Wilson', 'A/P: K. O\'Brien'];
-            const statuses = ['submitted', 'budget-review', 'compliance-review', 'ap-review', 'approved', 'rejected'];
+            const statuses = ['draft', 'submitted', 'budget-review', 'compliance-review', 'ap-review', 'approved', 'rejected'];
             const data = [];
 
-            for (let i = 1; i <= 250; i++) {
+            for (let i = 1; i <= 2606; i++) {
                 const submittedDaysAgo = Math.floor(Math.random() * 90);
                 const submissionDate = new Date();
                 submissionDate.setDate(submissionDate.getDate() - submittedDaysAgo);
@@ -582,7 +590,7 @@
                     submissionDate: submissionDate.toISOString().split('T')[0],
                     daysSinceSubmission: submittedDaysAgo,
                     invoiceAge: submittedDaysAgo + Math.floor(Math.random() * 10),
-                    assignedTo: status === 'approved' || status === 'rejected' ? '—' : assignees[Math.floor(Math.random() * assignees.length)],
+                    assignedTo: status === 'approved' || status === 'rejected' || status === 'draft' ? '—' : assignees[Math.floor(Math.random() * assignees.length)],
                     apBatch: status === 'approved' ? `AP-${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}` : '',
                     status: status,
                     vendor: vendors[Math.floor(Math.random() * vendors.length)],
@@ -932,6 +940,10 @@
         /* ========================================
            IMPORT
            ======================================== */
+        function openAdvancedSearch() {
+            alert('Advanced search will be available soon. (Configuration pending)');
+        }
+
         function openImportModal() {
             document.getElementById('importModal').classList.add('open');
         }
@@ -1064,6 +1076,14 @@
             return isYellowish || isBrightGreen || luminance > 0.85;
         }
 
+        function hexToRgba(hex, alpha) {
+            if (!hex || hex.length < 7) return `rgba(100,100,100,${alpha})`;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r},${g},${b},${alpha})`;
+        }
+
         function applyBrand(primaryHex, secondaryHex, districtNumber) {
             const banner = document.getElementById('headerBanner');
             const accent = document.getElementById('bannerAccent');
@@ -1078,6 +1098,7 @@
                 logo.style.display = 'block';
                 document.documentElement.style.setProperty('--primary-hex', '#000000');
                 document.documentElement.style.setProperty('--secondary-hex', '#0728eb');
+                document.documentElement.style.setProperty('--row-hover-bg', hexToRgba('#0728eb', 0.08));
                 if (title) title.style.color = '#fff';
                 if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
                 updateHamburgerMenuColors('#000000', '#0728eb');
@@ -1094,6 +1115,9 @@
             accent.style.background = secondaryHex || primaryHex;
             document.documentElement.style.setProperty('--primary-hex', primaryHex);
             document.documentElement.style.setProperty('--secondary-hex', secondaryHex || primaryHex);
+            // Row hover: use secondary hex, fall back to primary if secondary is missing or black
+            const hoverColor = (secondaryHex && secondaryHex !== '#000000' && secondaryHex !== '#000') ? secondaryHex : primaryHex;
+            document.documentElement.style.setProperty('--row-hover-bg', hexToRgba(hoverColor, 0.08));
 
             // Set banner text color based on brightness
             if (needsDarkText(primaryHex)) {
@@ -1201,6 +1225,7 @@
         }
         function formatStatus(status) {
             const map = {
+                'draft': 'Draft',
                 'submitted': 'Submitted',
                 'budget-review': 'Budget Review',
                 'compliance-review': 'Compliance Review',
