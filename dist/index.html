@@ -285,6 +285,44 @@
 
         /* Import drop zone */
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+
+        /* ============ PREVIEW MODAL ============ */
+        .preview-modal { background: var(--card-bg); border-radius: 12px; width: 680px; max-width: 92vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+        .preview-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); }
+        .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Metropolis', sans-serif; }
+        .preview-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 0; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
+        }
+        .preview-grid .pg-cell {
+            padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border-color);
+        }
+        .preview-grid .pg-cell:nth-last-child(-n+3) { border-bottom: none; }
+        .preview-grid .pg-cell .pg-label {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--text-secondary); font-family: 'Metropolis', sans-serif; font-weight: 600; margin-bottom: 0.2rem;
+        }
+        .preview-grid .pg-cell .pg-value { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+        .preview-grid-2col { grid-template-columns: 1fr 1fr; }
+        .preview-grid-2col .pg-cell:nth-last-child(-n+2) { border-bottom: none; }
+        .preview-grid-2col .pg-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--border-color); }
+        .preview-line-items { margin-top: 1rem; }
+        .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Metropolis', sans-serif; }
+        .preview-line-items table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); font-family: 'Metropolis', sans-serif; font-weight: 600; border-bottom: 1px solid var(--border-color); position: static; background: transparent; }
+        .preview-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        .preview-line-items .text-right { text-align: right; }
+        .preview-total-row { display: flex; justify-content: flex-end; gap: 1.5rem; padding: 0.6rem 0.6rem 0; font-size: 0.85rem; font-weight: 600; }
+        .preview-total-row .total-label { color: var(--text-secondary); }
+        .preview-total-row .total-value { color: var(--text-primary); }
+        .preview-footer { display: flex; justify-content: flex-start; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
+        .btn-open-form {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.6rem 1.25rem; background: var(--secondary-hex); color: #fff;
+            border: none; border-radius: 6px; font-family: 'Metropolis', sans-serif;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
+        }
+        .btn-open-form:hover { opacity: 0.85; }
         .drop-zone:hover, .drop-zone.dragover { border-color: var(--secondary-hex); background: var(--pale-accent); }
         .drop-zone svg { width: 36px; height: 36px; stroke: var(--text-secondary); stroke-width: 1.5; fill: none; margin-bottom: 0.75rem; }
         .drop-zone p { font-size: 0.85rem; color: var(--text-secondary); }
@@ -534,6 +572,26 @@
         </div>
     </div>
 
+    <!-- ============ PREVIEW MODAL ============ -->
+    <div class="modal-overlay" id="previewModal">
+        <div class="preview-modal">
+            <div class="modal-header">
+                <h3 id="previewTitle">Request Details</h3>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span id="previewStatusBadge"></span>
+                    <button class="btn-icon" onclick="closePreviewModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+                </div>
+            </div>
+            <div class="modal-body" id="previewBody"></div>
+            <div class="preview-footer">
+                <button class="btn-open-form" id="previewOpenBtn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    Open Request for Payment Form
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         /* ========================================
            CONFIGURATION & STATE
@@ -692,7 +750,7 @@
                 if (selectedRFPIds.has(rfp.id)) tr.classList.add('selected');
                 tr.onclick = (e) => {
                     if (e.target.type === 'checkbox') return;
-                    window.location.href = `rfp-form.html?id=${rfp.id}`;
+                    openPreviewModal(rfp);
                 };
 
                 visibleCols.forEach(col => {
@@ -943,6 +1001,78 @@
         function openAdvancedSearch() {
             alert('Advanced search will be available soon. (Configuration pending)');
         }
+
+        /* ========================================
+           PREVIEW MODAL
+           ======================================== */
+        function openPreviewModal(rfp) {
+            const modal = document.getElementById('previewModal');
+            const body = document.getElementById('previewBody');
+            const badge = document.getElementById('previewStatusBadge');
+            const openBtn = document.getElementById('previewOpenBtn');
+
+            badge.className = `status-badge ${rfp.status}`;
+            badge.textContent = formatStatus(rfp.status);
+            openBtn.onclick = () => { window.location.href = `rfp-form.html?id=${rfp.id}`; };
+
+            // Generate dummy line items for preview
+            const lineCount = Math.floor(Math.random() * 4) + 1;
+            const descriptions = ['Office supplies', 'Curriculum materials', 'Technology equipment', 'Consulting services', 'Facility maintenance', 'Professional development', 'Student resources', 'Lab equipment'];
+            const funds = ['01', '02', '04', '06'];
+            const objects = ['340', '430', '530', '350', '460', '555'];
+            let lineItemsHtml = '';
+            let runningTotal = 0;
+
+            for (let i = 1; i <= lineCount; i++) {
+                const amt = i === lineCount ? (rfp.amount - runningTotal) : Math.round((rfp.amount / lineCount) * (0.5 + Math.random()) * 100) / 100;
+                const lineAmt = i === lineCount ? (rfp.amount - runningTotal) : Math.min(amt, rfp.amount - runningTotal);
+                runningTotal += lineAmt;
+                lineItemsHtml += `<tr>
+                    <td>${i}</td>
+                    <td>${descriptions[Math.floor(Math.random() * descriptions.length)]}</td>
+                    <td style="text-align:center;">${funds[Math.floor(Math.random() * funds.length)]}</td>
+                    <td style="text-align:center;">${objects[Math.floor(Math.random() * objects.length)]}</td>
+                    <td class="text-right">${formatCurrency(lineAmt)}</td>
+                </tr>`;
+            }
+
+            body.innerHTML = `
+                <div class="preview-grid">
+                    <div class="pg-cell"><div class="pg-label">RFP No.</div><div class="pg-value" style="color:var(--secondary-hex);font-weight:700;">${rfp.rfpNumber}</div></div>
+                    <div class="pg-cell"><div class="pg-label">Submitted</div><div class="pg-value">${formatDate(rfp.submissionDate)}</div></div>
+                    <div class="pg-cell"><div class="pg-label">Days Open</div><div class="pg-value">${rfp.daysSinceSubmission}d</div></div>
+                    <div class="pg-cell"><div class="pg-label">Submitter</div><div class="pg-value">${rfp.submitter}</div></div>
+                    <div class="pg-cell"><div class="pg-label">Assigned To</div><div class="pg-value">${rfp.assignedTo}</div></div>
+                    <div class="pg-cell"><div class="pg-label">Total</div><div class="pg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(rfp.amount)}</div></div>
+                </div>
+                <div class="preview-grid preview-grid-2col">
+                    <div class="pg-cell"><div class="pg-label">Vendor</div><div class="pg-value">${rfp.vendor}</div></div>
+                    <div class="pg-cell"><div class="pg-label">Type</div><div class="pg-value">${rfp.type === 'vendor' ? 'Vendor Payment' : 'Employee Reimbursement'}</div></div>
+                </div>
+                <div class="preview-line-items">
+                    <h4>Line Items</h4>
+                    <table>
+                        <thead><tr><th style="width:40px;">#</th><th>Description</th><th style="width:50px;text-align:center;">Fund</th><th style="width:55px;text-align:center;">Object</th><th class="text-right" style="width:100px;">Amount</th></tr></thead>
+                        <tbody>${lineItemsHtml}</tbody>
+                    </table>
+                    <div class="preview-total-row">
+                        <span class="total-label">Total:</span>
+                        <span class="total-value">${formatCurrency(rfp.amount)}</span>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('open');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.remove('open');
+        }
+
+        // Close preview on overlay click
+        document.getElementById('previewModal').addEventListener('click', function(e) {
+            if (e.target === this) closePreviewModal();
+        });
 
         function openImportModal() {
             document.getElementById('importModal').classList.add('open');
