@@ -1209,15 +1209,21 @@
         let currentRequestType = 'vendor';
         const MILEAGE_RATE = 0.70; // IRS 2025 rate
 
-        // District mileage table (sample - replace with actual district data)
-        const DISTRICT_MILEAGE = {
-            'District Office|Concord Elementary': 3.2,
-            'District Office|South View MS': 4.1,
-            'District Office|Edina HS': 5.8,
-            'Concord Elementary|South View MS': 2.4,
-            'Concord Elementary|Edina HS': 3.6,
-            'South View MS|Edina HS': 1.7,
-        };
+        // Mileage sites loaded from API
+        let MILEAGE_SITES = [];
+        let mileageSitesLoaded = false;
+
+        async function loadMileageSites() {
+            try {
+                const resp = await fetch(API_BASE + '/api/mileage/sites');
+                const data = await resp.json();
+                MILEAGE_SITES = data.sites || [];
+                mileageSitesLoaded = true;
+                console.log('[MILEAGE] Loaded', MILEAGE_SITES.length, 'sites');
+            } catch (e) {
+                console.error('[MILEAGE] Failed to load sites:', e);
+            }
+        }
 
         /* ========================================
            INITIALIZATION
@@ -1227,6 +1233,7 @@
             loadBrandFromURL();
             setupVendorAutocomplete();
             loadBudgetCodes();
+            loadMileageSites();
 
             // Initialize with 1 line item
             addLineItem();
@@ -1601,46 +1608,142 @@
             mileageCounter++;
             const tbody = document.getElementById('mileageBody');
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input type="text" class="text-right" value="${mileageCounter}" readonly style="width:40px;"></td>
-                <td><input type="date" class="trip-date"></td>
-                <td><select class="trip-from" onchange="calcMileage(this.closest('tr'))">
-                    <option value="">Select location</option>
-                    <option>District Office</option>
-                    <option>Concord Elementary</option>
-                    <option>South View MS</option>
-                    <option>Edina HS</option>
-                </select></td>
-                <td><select class="trip-to" onchange="calcMileage(this.closest('tr'))">
-                    <option value="">Select location</option>
-                    <option>District Office</option>
-                    <option>Concord Elementary</option>
-                    <option>South View MS</option>
-                    <option>Edina HS</option>
-                </select></td>
-                <td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>
-                <td><input type="text" class="trip-rate text-right" readonly value="${formatCurrency(MILEAGE_RATE)}" style="width:70px;"></td>
-                <td><input type="text" class="trip-amount text-right" readonly value="" style="width:85px;"></td>
-            `;
+            var opts = '<option value="">Select location</option><option value="__other__">Other (enter address)</option>';
+            MILEAGE_SITES.forEach(function(s) { opts += '<option value="' + s.replace(/"/g, '&quot;') + '">' + s + '</option>'; });
+            tr.innerHTML = ''
+                + '<td><input type="text" class="text-right" value="' + mileageCounter + '" readonly style="width:40px;"></td>'
+                + '<td><input type="text" class="trip-date" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"></td>'
+                + '<td>'
+                +   '<select class="trip-from">' + opts + '</select>'
+                +   '<input type="text" class="trip-from-addr" placeholder="Enter from address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
+                + '</td>'
+                + '<td>'
+                +   '<select class="trip-to">' + opts + '</select>'
+                +   '<input type="text" class="trip-to-addr" placeholder="Enter to address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
+                + '</td>'
+                + '<td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>'
+                + '<td><input type="text" class="trip-rate text-right" readonly value="' + formatCurrency(MILEAGE_RATE) + '" style="width:70px;"></td>'
+                + '<td><input type="text" class="trip-amount text-right" readonly value="" style="width:85px;"></td>';
             tbody.appendChild(tr);
+
+            // Init date auto-advance
+            initDateAutoAdvance(tr.querySelector('.trip-date'));
+
+            // Bind select change handlers
+            var fromSel = tr.querySelector('.trip-from');
+            var toSel = tr.querySelector('.trip-to');
+            var fromAddr = tr.querySelector('.trip-from-addr');
+            var toAddr = tr.querySelector('.trip-to-addr');
+            var milesInput = tr.querySelector('.trip-miles');
+
+            fromSel.addEventListener('change', function() {
+                if (this.value === '__other__') {
+                    fromAddr.style.display = '';
+                    milesInput.readOnly = false;
+                    milesInput.value = '';
+                    fromAddr.focus();
+                } else {
+                    fromAddr.style.display = 'none';
+                    fromAddr.value = '';
+                    milesInput.readOnly = true;
+                    calcMileage(tr);
+                }
+            });
+
+            toSel.addEventListener('change', function() {
+                if (this.value === '__other__') {
+                    toAddr.style.display = '';
+                    milesInput.readOnly = false;
+                    milesInput.value = '';
+                    toAddr.focus();
+                } else {
+                    toAddr.style.display = 'none';
+                    toAddr.value = '';
+                    milesInput.readOnly = true;
+                    calcMileage(tr);
+                }
+            });
+
+            // When both addresses entered in "Other" mode, calculate via Google
+            var calcTimeout = null;
+            function tryGoogleCalc() {
+                clearTimeout(calcTimeout);
+                calcTimeout = setTimeout(function() {
+                    var fa = fromSel.value === '__other__' ? fromAddr.value.trim() : '';
+                    var ta = toSel.value === '__other__' ? toAddr.value.trim() : '';
+                    // If one side is "Other" with address and other is a known site, also calculate
+                    if (fromSel.value !== '__other__' && fromSel.value) fa = fromSel.value;
+                    if (toSel.value !== '__other__' && toSel.value) ta = toSel.value;
+                    var hasOther = fromSel.value === '__other__' || toSel.value === '__other__';
+                    if (hasOther && fa.length > 3 && ta.length > 3) {
+                        calcMileageGoogle(tr, fa, ta);
+                    }
+                }, 800);
+            }
+            fromAddr.addEventListener('input', tryGoogleCalc);
+            toAddr.addEventListener('input', tryGoogleCalc);
+
+            // Manual miles entry recalculates total
+            milesInput.addEventListener('input', function() {
+                var m = parseFloat(this.value) || 0;
+                tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * MILEAGE_RATE) : '';
+                recalcMileageTotals();
+            });
         }
 
-        function calcMileage(row) {
-            const from = row.querySelector('.trip-from').value;
-            const to = row.querySelector('.trip-to').value;
-            if (!from || !to || from === to) {
+        async function calcMileage(row) {
+            var fromSel = row.querySelector('.trip-from');
+            var toSel = row.querySelector('.trip-to');
+            var from = fromSel.value;
+            var to = toSel.value;
+
+            if (!from || !to || from === to || from === '__other__' || to === '__other__') {
                 row.querySelector('.trip-miles').value = '';
                 row.querySelector('.trip-amount').value = '';
                 recalcMileageTotals();
                 return;
             }
-            // Look up distance (check both directions)
-            const key1 = `${from}|${to}`;
-            const key2 = `${to}|${from}`;
-            const miles = DISTRICT_MILEAGE[key1] || DISTRICT_MILEAGE[key2] || 0;
-            row.querySelector('.trip-miles').value = miles > 0 ? miles.toFixed(1) : '—';
-            const amount = miles * MILEAGE_RATE;
-            row.querySelector('.trip-amount').value = amount > 0 ? formatCurrency(amount) : '';
+
+            // Lookup from API
+            try {
+                var resp = await fetch(API_BASE + '/api/mileage/distance?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to));
+                var data = await resp.json();
+                if (data.distance !== undefined) {
+                    row.querySelector('.trip-miles').value = data.distance.toFixed(1);
+                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * MILEAGE_RATE);
+                } else {
+                    row.querySelector('.trip-miles').value = '—';
+                    row.querySelector('.trip-amount').value = '';
+                }
+            } catch (e) {
+                console.error('[MILEAGE] Lookup failed:', e);
+                row.querySelector('.trip-miles').value = '—';
+                row.querySelector('.trip-amount').value = '';
+            }
+            recalcMileageTotals();
+        }
+
+        async function calcMileageGoogle(row, fromAddr, toAddr) {
+            var milesInput = row.querySelector('.trip-miles');
+            milesInput.value = '...';
+            try {
+                var resp = await fetch(API_BASE + '/api/mileage/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from: fromAddr, to: toAddr }),
+                });
+                var data = await resp.json();
+                if (data.distance !== undefined) {
+                    milesInput.value = data.distance.toFixed(1);
+                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * MILEAGE_RATE);
+                } else {
+                    milesInput.value = '';
+                    row.querySelector('.trip-amount').value = '';
+                }
+            } catch (e) {
+                console.error('[MILEAGE] Google calc failed:', e);
+                milesInput.value = '';
+            }
             recalcMileageTotals();
         }
 

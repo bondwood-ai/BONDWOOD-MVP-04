@@ -154,6 +154,17 @@ export default {
         if (method === 'DELETE') return handleDeleteAttachment(key, env);
       }
 
+      // ── Mileage ──
+      if (path === '/api/mileage/sites' && method === 'GET') {
+        return handleMileageSites(env);
+      }
+      if (path === '/api/mileage/distance' && method === 'GET') {
+        return handleMileageDistance(env, url);
+      }
+      if (path === '/api/mileage/calculate' && method === 'POST') {
+        return handleMileageCalculate(request, env);
+      }
+
       // ── Migrate ──
       if (path === '/api/migrate' && method === 'POST') {
         return handleMigrate(env);
@@ -686,4 +697,94 @@ async function handleDownloadAttachment(key, env) {
 async function handleDeleteAttachment(key, env) {
   await env.BUCKET.delete(key);
   return json({ message: 'Attachment deleted', key });
+}
+
+
+/* ========================================
+   MILEAGE – SITES LIST
+   ======================================== */
+async function handleMileageSites(env) {
+  const { results } = await env.DB.prepare(
+    'SELECT DISTINCT from_site AS site FROM mileage_table UNION SELECT DISTINCT to_site AS site FROM mileage_table ORDER BY site'
+  ).all();
+  return json({ sites: results.map(r => r.site) });
+}
+
+
+/* ========================================
+   MILEAGE – DISTANCE LOOKUP
+   ======================================== */
+async function handleMileageDistance(env, url) {
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  if (!from || !to) return json({ error: 'Missing from/to parameters' }, 400);
+
+  const { results } = await env.DB.prepare(
+    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
+  ).bind(from, to).all();
+
+  if (results.length > 0) {
+    return json({ from, to, distance: results[0].distance, source: 'district' });
+  }
+
+  // Try reverse
+  const { results: rev } = await env.DB.prepare(
+    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
+  ).bind(to, from).all();
+
+  if (rev.length > 0) {
+    return json({ from, to, distance: rev[0].distance, source: 'district' });
+  }
+
+  return json({ error: 'Route not found', from, to }, 404);
+}
+
+
+/* ========================================
+   MILEAGE – GOOGLE MAPS CALCULATE
+   ======================================== */
+async function handleMileageCalculate(request, env) {
+  const body = await request.json();
+  const fromAddr = body.from;
+  const toAddr = body.to;
+
+  if (!fromAddr || !toAddr) {
+    return json({ error: 'Missing from/to addresses' }, 400);
+  }
+
+  const apiKey = env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return json({ error: 'Google Maps API key not configured' }, 500);
+  }
+
+  try {
+    const dmUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(fromAddr)}&destinations=${encodeURIComponent(toAddr)}&units=imperial&key=${apiKey}`;
+
+    const resp = await fetch(dmUrl);
+    const data = await resp.json();
+
+    if (data.status !== 'OK') {
+      return json({ error: 'Google API error', detail: data.status, errorMessage: data.error_message || null }, 502);
+    }
+
+    const element = data.rows?.[0]?.elements?.[0];
+    if (!element || element.status !== 'OK') {
+      return json({ error: 'No route found', detail: element?.status || 'unknown' }, 404);
+    }
+
+    // distance.value is in meters, convert to miles
+    const meters = element.distance.value;
+    const miles = meters / 1609.344;
+
+    return json({
+      from: fromAddr,
+      to: toAddr,
+      distance: Math.round(miles * 10) / 10,
+      distanceText: element.distance.text,
+      durationText: element.duration.text,
+      source: 'google',
+    });
+  } catch (e) {
+    return json({ error: 'Failed to calculate distance', detail: e.message }, 500);
+  }
 }
