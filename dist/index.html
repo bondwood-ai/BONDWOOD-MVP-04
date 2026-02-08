@@ -300,6 +300,8 @@
         .preview-loading-spinner.visible { opacity: 1; }
         @keyframes spinLoad { to { transform: rotate(360deg); } }
         .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
+        #utilityModal .modal-header { border-bottom: none; }
+        #utilityModal .modal-footer { border-top: none; }
 
         /* Import drop zone */
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
