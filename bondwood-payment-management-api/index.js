@@ -7,7 +7,8 @@
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-File-Name, X-Content-Type',
+  'Access-Control-Expose-Headers': 'Content-Disposition',
   'Access-Control-Allow-Credentials': 'true',
 };
 
@@ -32,7 +33,74 @@ export default {
     try {
       // ── Health ──
       if (path === '/api/health') {
-        return json({ status: 'ok', worker: 'bondwood-payment-management-api', timestamp: new Date().toISOString() });
+        // Add ?diag=1 for full diagnostics
+        if (url.searchParams.get('diag') === '1') {
+          const diag = { status: 'ok', worker: 'bondwood-payment-management-api', timestamp: new Date().toISOString() };
+          diag.env_keys = Object.keys(env);
+          diag.r2_bucket_bound = !!env.BUCKET;
+          if (env.BUCKET) {
+            try {
+              const listed = await env.BUCKET.list({ limit: 1 });
+              diag.r2_accessible = true;
+              diag.r2_objects = listed.objects.map(o => o.key);
+            } catch (e) { diag.r2_error = e.message; }
+          }
+          try {
+            const { results } = await env.DB.prepare(
+              'SELECT rfp_number, line_number, invoice_date, invoice_number FROM form_data LIMIT 10'
+            ).all();
+            diag.form_data_sample = results;
+          } catch (e) { diag.form_data_error = e.message; }
+          return json(diag);
+        }
+        return json({ status: 'ok', worker: 'bondwood-payment-management-api', version: 2, timestamp: new Date().toISOString() });
+      }
+
+      // ── Debug diagnostics ──
+      if (path === '/api/debug/diag') {
+        const diag = { path, method };
+
+        // Check R2 binding
+        diag.r2_bucket_bound = !!env.BUCKET;
+        diag.env_keys = Object.keys(env);
+        if (env.BUCKET) {
+          try {
+            const listed = await env.BUCKET.list({ limit: 1 });
+            diag.r2_accessible = true;
+            diag.r2_object_count_sample = listed.objects.length;
+          } catch (e) {
+            diag.r2_accessible = false;
+            diag.r2_error = e.message;
+          }
+        }
+
+        // Check invoice date query
+        try {
+          const { results } = await env.DB.prepare(`
+            SELECT d.rfp_number, d.submission_date,
+                   MAX(f.invoice_date) as latest_invoice_date,
+                   COALESCE(SUM(f.total), 0) as total_amount
+            FROM dashboard_data d
+            LEFT JOIN form_data f ON d.rfp_number = f.rfp_number
+            GROUP BY d.rfp_number
+            LIMIT 5
+          `).all();
+          diag.rfp_sample = results;
+        } catch (e) {
+          diag.rfp_query_error = e.message;
+        }
+
+        // Check form_data invoice dates
+        try {
+          const { results } = await env.DB.prepare(
+            'SELECT rfp_number, line_number, invoice_date, invoice_number FROM form_data LIMIT 10'
+          ).all();
+          diag.form_data_sample = results;
+        } catch (e) {
+          diag.form_data_error = e.message;
+        }
+
+        return json(diag);
       }
 
       // ── User Lookup (SSO) ──
@@ -69,6 +137,21 @@ export default {
         if (method === 'GET') return handleGetRFP(rfpNumber, env);
         if (method === 'PUT') return handleUpdateRFP(rfpNumber, request, env);
         if (method === 'DELETE') return handleDeleteRFP(rfpNumber, env);
+      }
+
+      // ── Attachments ──
+      const attListMatch = path.match(/^\/api\/rfps\/(\d+)\/attachments$/);
+      if (attListMatch) {
+        const rfpNumber = parseInt(attListMatch[1]);
+        if (method === 'GET') return handleListAttachments(rfpNumber, env);
+        if (method === 'POST') return handleUploadAttachment(rfpNumber, request, env);
+      }
+
+      const attItemMatch = path.match(/^\/api\/attachments\/(.+)$/);
+      if (attItemMatch) {
+        const key = decodeURIComponent(attItemMatch[1]);
+        if (method === 'GET') return handleDownloadAttachment(key, env);
+        if (method === 'DELETE') return handleDeleteAttachment(key, env);
       }
 
       // ── Migrate ──
@@ -225,7 +308,8 @@ async function handleListRFPs(env, url) {
 
   // Get RFPs with line item totals
   const { results } = await env.DB.prepare(`
-    SELECT d.*, COALESCE(SUM(f.total), 0) as total_amount
+    SELECT d.*, COALESCE(SUM(f.total), 0) as total_amount,
+           MAX(f.invoice_date) as latest_invoice_date
     FROM dashboard_data d
     LEFT JOIN form_data f ON d.rfp_number = f.rfp_number
     ${whereClause}
@@ -467,4 +551,139 @@ async function handleMigrate(env) {
   }
 
   return json({ message: 'Migration complete', results });
+}
+
+
+/* ========================================
+   ATTACHMENTS – LIST
+   ======================================== */
+async function handleListAttachments(rfpNumber, env) {
+  if (!env.BUCKET) {
+    return json({ error: 'R2 bucket not configured', attachments: [], count: 0 }, 500);
+  }
+
+  const prefix = `rfp/${rfpNumber}/`;
+  const listed = await env.BUCKET.list({ prefix });
+
+  const files = listed.objects.map(obj => ({
+    key: obj.key,
+    name: obj.customMetadata?.originalName || obj.key.split('/').pop(),
+    size: obj.size,
+    contentType: obj.httpMetadata?.contentType || 'application/octet-stream',
+    uploaded: obj.uploaded?.toISOString() || null,
+    uploadedBy: obj.customMetadata?.uploadedBy || null,
+  }));
+
+  return json({ attachments: files, count: files.length });
+}
+
+
+/* ========================================
+   ATTACHMENTS – UPLOAD
+   ======================================== */
+async function handleUploadAttachment(rfpNumber, request, env) {
+  if (!env.BUCKET) {
+    return json({ error: 'R2 bucket not configured. Check wrangler.toml BUCKET binding.' }, 500);
+  }
+
+  const contentType = request.headers.get('Content-Type') || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (e) {
+      return json({ error: 'Failed to parse form data', detail: e.message }, 400);
+    }
+
+    const results = [];
+
+    for (const [fieldName, file] of formData.entries()) {
+      if (typeof file === 'string') continue; // skip non-file entries
+
+      const safeName = (file.name || 'unnamed').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const timestamp = Date.now();
+      const key = `rfp/${rfpNumber}/${timestamp}_${safeName}`;
+
+      try {
+        await env.BUCKET.put(key, file.stream(), {
+          httpMetadata: { contentType: file.type || 'application/octet-stream' },
+          customMetadata: {
+            originalName: file.name || 'unnamed',
+            rfpNumber: String(rfpNumber),
+            uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
+            uploadedAt: new Date().toISOString(),
+          },
+        });
+      } catch (e) {
+        return json({ error: 'R2 put failed', detail: e.message, key }, 500);
+      }
+
+      results.push({
+        key,
+        name: file.name || 'unnamed',
+        size: file.size,
+        contentType: file.type,
+      });
+    }
+
+    return json({ uploaded: results, count: results.length }, 201);
+  }
+
+  // Single file upload via raw body
+  const fileName = request.headers.get('X-File-Name') || 'attachment';
+  const fileType = request.headers.get('X-Content-Type') || contentType || 'application/octet-stream';
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const timestamp = Date.now();
+  const key = `rfp/${rfpNumber}/${timestamp}_${safeName}`;
+
+  await env.BUCKET.put(key, request.body, {
+    httpMetadata: { contentType: fileType },
+    customMetadata: {
+      originalName: fileName,
+      rfpNumber: String(rfpNumber),
+      uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+
+  return json({ key, name: fileName, contentType: fileType }, 201);
+}
+
+
+/* ========================================
+   ATTACHMENTS – DOWNLOAD
+   ======================================== */
+async function handleDownloadAttachment(key, env) {
+  const object = await env.BUCKET.get(key);
+  if (!object) {
+    return json({ error: 'Attachment not found' }, 404);
+  }
+
+  const originalName = object.customMetadata?.originalName || key.split('/').pop();
+  const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
+
+  // For PDFs and images, allow inline viewing; otherwise force download
+  const isViewable = contentType.startsWith('image/') || contentType === 'application/pdf';
+  const disposition = isViewable
+    ? `inline; filename="${originalName}"`
+    : `attachment; filename="${originalName}"`;
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': contentType,
+      'Content-Disposition': disposition,
+      'Content-Length': object.size,
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+
+/* ========================================
+   ATTACHMENTS – DELETE
+   ======================================== */
+async function handleDeleteAttachment(key, env) {
+  await env.BUCKET.delete(key);
+  return json({ message: 'Attachment deleted', key });
 }
