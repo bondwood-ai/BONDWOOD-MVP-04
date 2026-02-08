@@ -642,7 +642,7 @@
                 const response = await fetch(`${API_BASE}/api/rfps?limit=5000`);
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const raw = await response.json();
-                const rfps = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
+                const rfps = Array.isArray(raw) ? raw : (raw.rfps || raw.data || raw.results || []);
 
                 return rfps.map(r => {
                     const submittedDays = r.days_since_submission ||
@@ -659,8 +659,8 @@
                         apBatch: r.ap_batch || '',
                         status: r.status || 'draft',
                         vendor: r.vendor_name || '—',
-                        amount: r.amount || r.mileage_total || 0,
-                        type: r.type || 'vendor',
+                        amount: r.total_amount || r.amount || r.mileage_total || 0,
+                        type: r.request_type || r.type || 'vendor',
                     };
                 });
             } catch (e) {
