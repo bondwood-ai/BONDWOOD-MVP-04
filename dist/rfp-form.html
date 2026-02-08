@@ -683,7 +683,7 @@
                 </div>
 
                 <!-- Request Type -->
-                <div class="type-selector">
+                <div class="type-selector" id="typeSelectorRow">
                     <div class="type-option selected" data-type="vendor" onclick="selectType('vendor')">
                         <div class="type-radio"></div>
                         <div>
@@ -2200,6 +2200,10 @@
                 // Set RFP number display
                 const rfpEl = document.getElementById('rfpNumber');
                 if (rfpEl) rfpEl.textContent = '#' + rfpNumber;
+                document.getElementById('rfpNumberRow').style.display = '';
+
+                // Hide type selector for submitted forms
+                document.getElementById('typeSelectorRow').style.display = 'none';
 
                 // Set request type
                 if (data.request_type) {
