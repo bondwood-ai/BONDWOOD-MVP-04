@@ -1197,9 +1197,25 @@
         /* Look up current user from SSO and populate employee fields */
         async function autoPopulateEmployee() {
             try {
-                const resp = await fetch(`${API_BASE}/api/me`);
+                // Step 1: Get SSO email from Cloudflare Access identity endpoint (same origin)
+                let email = '';
+                try {
+                    const idResp = await fetch('/cdn-cgi/access/get-identity');
+                    if (idResp.ok) {
+                        const identity = await idResp.json();
+                        email = identity.email || '';
+                    }
+                } catch (e) { /* not behind Access or endpoint unavailable */ }
+
+                if (!email) {
+                    console.log('Employee auto-populate: no SSO identity found');
+                    return;
+                }
+
+                // Step 2: Look up user in our DB via the worker
+                const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email)}`);
                 if (!resp.ok) {
-                    console.log('Employee auto-populate: no SSO user found (' + resp.status + ')');
+                    console.log('Employee auto-populate: user not found in DB (' + resp.status + ')');
                     return;
                 }
                 const user = await resp.json();

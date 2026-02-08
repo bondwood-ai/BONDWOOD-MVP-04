@@ -27,6 +27,7 @@ function corsHeaders(request) {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -658,12 +659,38 @@ async function handleBudgetCodes(env, request) {
 
 /**
  * GET /api/me
- * Returns current user info based on Cloudflare Access SSO email header
+ * Returns current user info based on SSO identity.
+ * Tries (in order):
+ *   1. Cf-Access-Authenticated-User-Email header (worker behind Access)
+ *   2. CF_Authorization cookie JWT decode (Pages behind Access, cross-origin fetch)
+ *   3. ?email= query param (for testing)
  */
 async function handleMe(request, env) {
-  const email = (request.headers.get('Cf-Access-Authenticated-User-Email') || '').trim().toLowerCase();
+  const url = new URL(request.url);
+  let email = '';
+
+  // Method 1: CF Access header
+  email = (request.headers.get('Cf-Access-Authenticated-User-Email') || '').trim().toLowerCase();
+
+  // Method 2: Decode CF_Authorization cookie
   if (!email) {
-    return json({ error: 'No SSO email found in request headers' }, 401, request);
+    try {
+      const cookieHeader = request.headers.get('Cookie') || '';
+      const match = cookieHeader.match(/CF_Authorization=([^;]+)/);
+      if (match) {
+        const payload = JSON.parse(atob(match[1].split('.')[1]));
+        email = (payload.email || '').trim().toLowerCase();
+      }
+    } catch (e) { /* ignore decode errors */ }
+  }
+
+  // Method 3: Query param fallback (testing only)
+  if (!email) {
+    email = (url.searchParams.get('email') || '').trim().toLowerCase();
+  }
+
+  if (!email) {
+    return json({ error: 'No SSO email found' }, 401, request);
   }
 
   const user = await env.DB.prepare(
