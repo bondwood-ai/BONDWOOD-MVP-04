@@ -1474,6 +1474,11 @@
             `;
             tbody.appendChild(tr);
 
+            // Hide invoice columns for reimbursements
+            if (currentRequestType === 'reimbursement') {
+                tr.querySelectorAll('.invoice-col').forEach(function(el) { el.style.display = 'none'; });
+            }
+
             // Bind amount events
             const amountInput = tr.querySelector('.line-amount');
             amountInput.addEventListener('input', () => recalcTotals());
