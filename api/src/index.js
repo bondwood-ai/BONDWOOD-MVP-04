@@ -7,6 +7,7 @@
  *   form_data       – Line items (many rows per RFP, linked by rfp_number)
  *   vendor_data     – Vendor lookup (1,616 vendors)
  *   district_metadata – District brand data (513 districts)
+ *   budget_code      – Budget/account code lookup (1,782 rows)
  */
 
 // ---------------------------------------------------------------------------
@@ -102,6 +103,11 @@ export default {
       // ── Districts (brand data) ────────────────────────────────────
       if (path === '/api/districts' && method === 'GET') {
         return handleDistricts(url, env, request);
+      }
+
+      // ── Budget Codes ────────────────────────────────────────────
+      if (path === '/api/budget-codes' && method === 'GET') {
+        return handleBudgetCodes(env, request);
       }
 
       // ── Health ──────────────────────────────────────────────────
@@ -616,4 +622,28 @@ async function handleReplaceLineItems(rfpNumber, request, env) {
     message: 'Line items replaced',
     count: body.lineItems.length,
   }, 200, request);
+}
+
+// ===========================================================================
+// BUDGET CODES
+// ===========================================================================
+
+/**
+ * GET /api/budget-codes
+ * Returns all budget_code rows for frontend autocomplete
+ */
+async function handleBudgetCodes(env, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT budget_code, account_code, fund, organization, program, finance, course
+     FROM budget_code
+     ORDER BY budget_code, account_code`
+  ).all();
+
+  return new Response(JSON.stringify(results), {
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders(request),
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
 }
