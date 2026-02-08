@@ -2188,9 +2188,15 @@
 
         function closeUtilityModal(result = false) {
             document.getElementById('utility-modal').style.display = 'none';
-            // Reset modal width to default
+            // Reset modal width and borders to default
             const modalBox = document.querySelector('#utility-modal > div');
-            if (modalBox) modalBox.style.width = '420px';
+            if (modalBox) {
+                modalBox.style.width = '420px';
+                const modalHeader = modalBox.firstElementChild;
+                if (modalHeader) modalHeader.style.borderBottom = '1px solid var(--border-color)';
+            }
+            const modalFooter = document.getElementById('utilityModalFooter');
+            if (modalFooter) modalFooter.style.borderTop = '1px solid var(--border-color)';
             if (_utilityModalResolve) {
                 _utilityModalResolve(result);
                 _utilityModalResolve = null;
@@ -2216,6 +2222,12 @@
             // Widen modal for audit log content
             const modalBox = document.querySelector('#utility-modal > div');
             if (modalBox) modalBox.style.width = '520px';
+
+            // Remove header/footer border lines for audit log
+            const modalHeader = modalBox?.firstElementChild;
+            const modalFooter = document.getElementById('utilityModalFooter');
+            if (modalHeader) modalHeader.style.borderBottom = 'none';
+            if (modalFooter) modalFooter.style.borderTop = 'none';
 
             // Use innerHTML for rich content in the utility modal
             document.getElementById('utilityModalTitle').textContent = 'Audit Log';
