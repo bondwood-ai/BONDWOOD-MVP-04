@@ -3077,17 +3077,31 @@
             input.value = code;
             input.dispatchEvent(new Event('input', { bubbles: true }));
             closeBcDropdown(input);
+
+            const acInput = row.querySelector('.line-account');
+            const allAccounts = BUDGET_CODE_MAP[code] || [];
+            const accounts = filterAccountsForRow(allAccounts, row);
+
+            // For mileage rows, reject budget codes without 366 or 368
+            if (isMileageRow(row) && accounts.length === 0) {
+                input.classList.remove('bc-valid');
+                input.classList.add('bc-error');
+                showBcTooltip(input, 'This budget code has no valid mileage accounts (366 or 368)');
+                if (acInput) {
+                    acInput.value = '';
+                    acInput.classList.remove('bc-valid');
+                }
+                return;
+            }
+
             clearBcError(input);
             input.classList.remove('bc-error');
             input.classList.add('bc-valid');
             // Clear and focus account field
-            const acInput = row.querySelector('.line-account');
             if (acInput) {
                 acInput.value = '';
                 acInput.classList.remove('bc-error', 'bc-valid');
                 removeBcTooltip(acInput);
-                const allAccounts = BUDGET_CODE_MAP[code] || [];
-                const accounts = filterAccountsForRow(allAccounts, row);
                 if (accounts.length === 1) {
                     // Auto-fill if only one account
                     acInput.value = accounts[0];
@@ -3121,6 +3135,18 @@
             if (!val) { input.classList.remove('bc-error', 'bc-valid'); removeBcTooltip(input); return; }
             if (!budgetDataLoaded) return;
             if (BUDGET_CODE_MAP[val]) {
+                // Check mileage rows have 366 or 368 available
+                const row = input.closest('tr');
+                if (isMileageRow(row)) {
+                    const allAccounts = BUDGET_CODE_MAP[val] || [];
+                    const mileageAccounts = allAccounts.filter(a => MILEAGE_ALLOWED_ACCOUNTS.includes(a));
+                    if (mileageAccounts.length === 0) {
+                        input.classList.remove('bc-valid');
+                        input.classList.add('bc-error');
+                        showBcTooltip(input, 'This budget code has no valid mileage accounts (366 or 368)');
+                        return;
+                    }
+                }
                 input.classList.remove('bc-error');
                 input.classList.add('bc-valid');
                 removeBcTooltip(input);
