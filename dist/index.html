@@ -604,7 +604,7 @@
         /* ========================================
            CONFIGURATION & STATE
            ======================================== */
-        const API_BASE_URL = 'https://rfp-api.bondwood.workers.dev'; // Future Cloudflare Worker endpoint
+        const API_BASE = 'https://bondwood-api.bondwood.workers.dev';
 
         let currentUserRole = 'admin'; // 'user' or 'admin'
         let currentUserId = 'user-001';
@@ -633,38 +633,38 @@
         ];
 
         /* ========================================
-           SAMPLE DATA (replace with API calls)
+           DATA LOADING (from bondwood-api)
            ======================================== */
-        function generateSampleData() {
-            const vendors = ['Minnesota Supply Co.', 'Northern Lights Services', 'School Specialty', 'Pearson Education', 'Office Depot', 'CDW Government', 'Xcel Energy', 'Metro Transit', 'Apple Inc.', 'Amazon Business', 'Staples', 'Home Depot Pro', 'Lakeshore Learning', 'Scholastic', 'Grainger', 'Dell Technologies', 'Menards', 'CenturyLink', 'Waste Management', 'Cintas', 'Sysco Foods', 'US Foods', 'Fastenal', 'W.W. Grainger', 'Ferguson Enterprises', 'Gopher Sport', 'Kaplan Early Learning', 'Nasco Education', 'Quill Corporation', 'Flinn Scientific'];
-            const submitters = ['Jane Doe', 'Mike Johnson', 'Sarah Williams', 'Tom Anderson', 'Lisa Chen', 'David Park', 'Amy Nguyen', 'Robert Kim', 'Maria Garcia', 'Kevin O\'Brien', 'Rachel Adams', 'James Wilson', 'Emily Thompson', 'Chris Martinez', 'Nicole Brown'];
-            const assignees = ['Budget: S. Williams', 'Compliance: T. Anderson', 'A/P: L. Chen', 'Budget: M. Johnson', 'Budget: R. Adams', 'Compliance: J. Wilson', 'A/P: K. O\'Brien'];
-            const statuses = ['draft', 'submitted', 'budget-review', 'compliance-review', 'ap-review', 'approved', 'rejected'];
-            const data = [];
+        async function loadRFPData() {
+            try {
+                const response = await fetch(`${API_BASE}/api/rfps?limit=5000`);
+                if (!response.ok) throw new Error(`API returned ${response.status}`);
+                const raw = await response.json();
+                const rfps = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
 
-            for (let i = 1; i <= 2606; i++) {
-                const submittedDaysAgo = Math.floor(Math.random() * 90);
-                const submissionDate = new Date();
-                submissionDate.setDate(submissionDate.getDate() - submittedDaysAgo);
-                const status = statuses[Math.floor(Math.random() * statuses.length)];
-
-                data.push({
-                    id: `rfp-${String(i).padStart(4, '0')}`,
-                    rfpNumber: 2025000 + i,
-                    submitter: submitters[Math.floor(Math.random() * submitters.length)],
-                    submitterId: `user-${String(Math.floor(Math.random() * 15) + 1).padStart(3, '0')}`,
-                    submissionDate: submissionDate.toISOString().split('T')[0],
-                    daysSinceSubmission: submittedDaysAgo,
-                    invoiceAge: submittedDaysAgo + Math.floor(Math.random() * 10),
-                    assignedTo: status === 'approved' || status === 'rejected' || status === 'draft' ? '—' : assignees[Math.floor(Math.random() * assignees.length)],
-                    apBatch: status === 'approved' ? `AP-${String(Math.floor(Math.random() * 50) + 1).padStart(3, '0')}` : '',
-                    status: status,
-                    vendor: vendors[Math.floor(Math.random() * vendors.length)],
-                    amount: Math.round((Math.random() * 45000 + 50) * 100) / 100,
-                    type: Math.random() > 0.15 ? 'vendor' : 'reimbursement',
+                return rfps.map(r => {
+                    const submittedDays = r.days_since_submission ||
+                        Math.floor((Date.now() - new Date(r.submission_date).getTime()) / 86400000);
+                    return {
+                        id: r.id || `rfp-${r.rfp_number}`,
+                        rfpNumber: r.rfp_number,
+                        submitter: r.submitter_name || '—',
+                        submitterId: r.submitter_id || '',
+                        submissionDate: r.submission_date || '',
+                        daysSinceSubmission: submittedDays,
+                        invoiceAge: r.invoice_age || submittedDays,
+                        assignedTo: r.assigned_to || '—',
+                        apBatch: r.ap_batch || '',
+                        status: r.status || 'draft',
+                        vendor: r.vendor_name || '—',
+                        amount: r.amount || r.mileage_total || 0,
+                        type: r.type || 'vendor',
+                    };
                 });
+            } catch (e) {
+                console.error('Failed to load RFP data:', e);
+                return [];
             }
-            return data;
         }
 
         /* ========================================
@@ -1125,7 +1125,7 @@
 
         async function loadBrandData(retries = 2) {
             try {
-                let response = await fetch('https://bondwood-api.bondwood.workers.dev/api/districts');
+                let response = await fetch(`${API_BASE}/api/districts`);
                 if (!response.ok) {
                     console.warn('Brand API returned', response.status);
                     if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 3000); }
@@ -1471,14 +1471,14 @@
         /* ========================================
            INITIALIZATION
            ======================================== */
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
             buildColumnSelector();
             initDropZone();
 
-            // Load sample data (replace with API call)
-            allRFPs = generateSampleData();
+            // Load real data from bondwood-api
+            allRFPs = await loadRFPData();
             filterTable();
         });
     </script>
