@@ -299,7 +299,7 @@
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
 
         /* ============ PREVIEW MODAL ============ */
-        .preview-modal { background: var(--card-bg); border-radius: 12px; width: 680px; max-width: 92vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+        .preview-modal { background: var(--card-bg); border-radius: 12px; width: 780px; max-width: 92vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
         .preview-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: none; }
         .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Metropolis', sans-serif; }
         .preview-grid {
@@ -318,9 +318,9 @@
         .preview-grid-2col { grid-template-columns: 1fr 1fr; }
         .preview-grid-2col .pg-cell:nth-last-child(-n+2) { border-bottom: none; }
         .preview-grid-2col .pg-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--border-color); }
-        .preview-line-items { margin-top: 1rem; }
+        .preview-line-items { margin-top: 1rem; overflow-x: auto; }
         .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Metropolis', sans-serif; }
-        .preview-line-items table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .preview-line-items table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 0.8rem; }
         .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); font-family: 'Metropolis', sans-serif; font-weight: 600; border-bottom: 1px solid var(--border-color); position: static; background: transparent; }
         .preview-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
         .preview-line-items .text-right { text-align: right; }
@@ -1196,18 +1196,19 @@
 
             const displayTotal = total || rfp.amount;
 
-            // Build Notes section (only if notes exist)
+            // Build Notes section (collapsible, collapsed by default, only if notes exist)
             let notesHtml = '';
             if (notesText) {
+                const notesId = 'notes_' + rfp.rfpNumber;
                 notesHtml = `
                 <div style="margin-top:1rem;">
-                    <h4 style="font-size:0.8rem;font-weight:600;color:var(--text-primary);margin-bottom:0.4rem;font-family:'Metropolis',sans-serif;">
-                        <span style="display:inline-flex;align-items:center;gap:0.4rem;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                            Notes
-                        </span>
-                    </h4>
-                    <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;padding:0.75rem 1rem;font-size:0.85rem;color:var(--text-primary);line-height:1.6;white-space:pre-wrap;">${notesText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                    <button onclick="toggleAuditLog('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Metropolis',sans-serif;">
+                        <svg id="${notesId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                        Notes
+                    </button>
+                    <div id="${notesId}" style="display:none;margin-top:0.4rem;">
+                        <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;padding:0.75rem 1rem;font-size:0.85rem;color:var(--text-primary);line-height:1.6;white-space:pre-wrap;">${notesText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                    </div>
                 </div>`;
             }
 
