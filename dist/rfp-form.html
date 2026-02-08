@@ -2496,6 +2496,17 @@
                 const validAccounts = BUDGET_CODE_MAP[bc] || [];
                 if (q.length < 1 || validAccounts.length === 0) { closeBcDropdown(this); return; }
                 const matches = validAccounts.filter(a => a.includes(q)).slice(0, 20);
+                // Auto-select if exactly one match
+                if (matches.length === 1) {
+                    this.value = matches[0];
+                    closeBcDropdown(this);
+                    this.classList.remove('bc-error');
+                    this.classList.add('bc-valid');
+                    // Move to amount field
+                    const amountInput = this.closest('tr').querySelector('.line-amount');
+                    if (amountInput) setTimeout(() => amountInput.focus(), 50);
+                    return;
+                }
                 acActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
             });
@@ -2503,6 +2514,16 @@
             acInput.addEventListener('focus', function() {
                 const bc = bcInput.value.trim();
                 const validAccounts = BUDGET_CODE_MAP[bc] || [];
+                if (validAccounts.length === 1 && !this.value.trim()) {
+                    // Auto-fill the only option
+                    this.value = validAccounts[0];
+                    this.classList.remove('bc-error');
+                    this.classList.add('bc-valid');
+                    // Move to amount field
+                    const amountInput = this.closest('tr').querySelector('.line-amount');
+                    if (amountInput) setTimeout(() => amountInput.focus(), 50);
+                    return;
+                }
                 if (validAccounts.length > 0) {
                     const q = this.value.trim();
                     const matches = q.length >= 1
