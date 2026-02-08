@@ -2501,7 +2501,7 @@
                 submitter_name: submitterName,
                 submitter_id: submitterId,
                 submission_date: new Date().toISOString().split('T')[0],
-                status: 'pending',
+                status: 'submitted',
                 description: document.getElementById('description').value.trim() || null,
                 lineItems: lineItems,
             };
@@ -2562,7 +2562,7 @@
                     _loadedRfpData = {
                         ...payload,
                         rfp_number: result.rfp_number,
-                        status: 'pending',
+                        status: 'submitted',
                     };
                     // Upload any pending attachments to R2
                     await uploadPendingAttachments(result.rfp_number);
