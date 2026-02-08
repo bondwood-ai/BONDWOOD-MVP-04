@@ -76,6 +76,12 @@ export default {
         return handleMigrate(env);
       }
 
+      // ── Debug schema ──
+      if (path === '/api/debug/schema' && method === 'GET') {
+        const { results } = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='table'").all();
+        return json(results);
+      }
+
       return json({ error: 'Not found' }, 404);
     } catch (e) {
       return json({ error: 'Internal error', detail: e.message }, 500);
@@ -171,11 +177,12 @@ async function handleGetBudgetCodes(env, url) {
    DISTRICTS
    ======================================== */
 async function handleGetDistricts(env, url) {
-  const { results } = await env.DB.prepare(
-    'SELECT * FROM districts ORDER BY district_name'
-  ).all();
-
-  return json({ districts: results, total: results.length });
+  try {
+    const { results } = await env.DB.prepare('SELECT * FROM districts').all();
+    return json(results);
+  } catch (e) {
+    return json({ error: 'Districts query failed', detail: e.message }, 500);
+  }
 }
 
 
