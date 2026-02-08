@@ -7,7 +7,8 @@
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-File-Name, X-Content-Type',
+  'Access-Control-Expose-Headers': 'Content-Disposition',
   'Access-Control-Allow-Credentials': 'true',
 };
 
@@ -71,9 +72,30 @@ export default {
         if (method === 'DELETE') return handleDeleteRFP(rfpNumber, env);
       }
 
+      // ── Attachments ──
+      const attListMatch = path.match(/^\/api\/rfps\/(\d+)\/attachments$/);
+      if (attListMatch) {
+        const rfpNumber = parseInt(attListMatch[1]);
+        if (method === 'GET') return handleListAttachments(rfpNumber, env);
+        if (method === 'POST') return handleUploadAttachment(rfpNumber, request, env);
+      }
+
+      const attItemMatch = path.match(/^\/api\/attachments\/(.+)$/);
+      if (attItemMatch) {
+        const key = decodeURIComponent(attItemMatch[1]);
+        if (method === 'GET') return handleDownloadAttachment(key, env);
+        if (method === 'DELETE') return handleDeleteAttachment(key, env);
+      }
+
       // ── Migrate ──
       if (path === '/api/migrate' && method === 'POST') {
         return handleMigrate(env);
+      }
+
+      // ── Debug schema ──
+      if (path === '/api/debug/schema' && method === 'GET') {
+        const { results } = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='table'").all();
+        return json(results);
       }
 
       return json({ error: 'Not found' }, 404);
@@ -138,10 +160,10 @@ async function handleGetVendors(env, url) {
   const offset = (page - 1) * limit;
 
   const { results } = await env.DB.prepare(
-    'SELECT vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip FROM vendors ORDER BY vendor_name LIMIT ? OFFSET ?'
+    'SELECT vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip FROM vendor_data ORDER BY vendor_name LIMIT ? OFFSET ?'
   ).bind(limit, offset).all();
 
-  const { results: countResult } = await env.DB.prepare('SELECT COUNT(*) as total FROM vendors').all();
+  const { results: countResult } = await env.DB.prepare('SELECT COUNT(*) as total FROM vendor_data').all();
   const total = countResult[0]?.total || 0;
 
   return json({ vendors: results, total, page, limit });
@@ -171,11 +193,12 @@ async function handleGetBudgetCodes(env, url) {
    DISTRICTS
    ======================================== */
 async function handleGetDistricts(env, url) {
-  const { results } = await env.DB.prepare(
-    'SELECT * FROM districts ORDER BY district_name'
-  ).all();
-
-  return json({ districts: results, total: results.length });
+  try {
+    const { results } = await env.DB.prepare('SELECT * FROM district_metadata').all();
+    return json(results);
+  } catch (e) {
+    return json({ error: 'Districts query failed', detail: e.message }, 500);
+  }
 }
 
 
@@ -218,7 +241,8 @@ async function handleListRFPs(env, url) {
 
   // Get RFPs with line item totals
   const { results } = await env.DB.prepare(`
-    SELECT d.*, COALESCE(SUM(f.total), 0) as total_amount
+    SELECT d.*, COALESCE(SUM(f.total), 0) as total_amount,
+           MAX(f.invoice_date) as latest_invoice_date
     FROM dashboard_data d
     LEFT JOIN form_data f ON d.rfp_number = f.rfp_number
     ${whereClause}
@@ -460,4 +484,122 @@ async function handleMigrate(env) {
   }
 
   return json({ message: 'Migration complete', results });
+}
+
+
+/* ========================================
+   ATTACHMENTS – LIST
+   ======================================== */
+async function handleListAttachments(rfpNumber, env) {
+  const prefix = `rfp/${rfpNumber}/`;
+  const listed = await env.BUCKET.list({ prefix });
+
+  const files = listed.objects.map(obj => ({
+    key: obj.key,
+    name: obj.customMetadata?.originalName || obj.key.split('/').pop(),
+    size: obj.size,
+    contentType: obj.httpMetadata?.contentType || 'application/octet-stream',
+    uploaded: obj.uploaded?.toISOString() || null,
+    uploadedBy: obj.customMetadata?.uploadedBy || null,
+  }));
+
+  return json({ attachments: files, count: files.length });
+}
+
+
+/* ========================================
+   ATTACHMENTS – UPLOAD
+   ======================================== */
+async function handleUploadAttachment(rfpNumber, request, env) {
+  const contentType = request.headers.get('Content-Type') || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    const results = [];
+
+    for (const [fieldName, file] of formData.entries()) {
+      if (!(file instanceof File)) continue;
+
+      // Sanitize filename: remove path separators, keep extension
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const timestamp = Date.now();
+      const key = `rfp/${rfpNumber}/${timestamp}_${safeName}`;
+
+      await env.BUCKET.put(key, file.stream(), {
+        httpMetadata: { contentType: file.type || 'application/octet-stream' },
+        customMetadata: {
+          originalName: file.name,
+          rfpNumber: String(rfpNumber),
+          uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
+          uploadedAt: new Date().toISOString(),
+        },
+      });
+
+      results.push({
+        key,
+        name: file.name,
+        size: file.size,
+        contentType: file.type,
+      });
+    }
+
+    return json({ uploaded: results, count: results.length }, 201);
+  }
+
+  // Single file upload via raw body
+  const fileName = request.headers.get('X-File-Name') || 'attachment';
+  const fileType = request.headers.get('X-Content-Type') || contentType || 'application/octet-stream';
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const timestamp = Date.now();
+  const key = `rfp/${rfpNumber}/${timestamp}_${safeName}`;
+
+  await env.BUCKET.put(key, request.body, {
+    httpMetadata: { contentType: fileType },
+    customMetadata: {
+      originalName: fileName,
+      rfpNumber: String(rfpNumber),
+      uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+
+  return json({ key, name: fileName, contentType: fileType }, 201);
+}
+
+
+/* ========================================
+   ATTACHMENTS – DOWNLOAD
+   ======================================== */
+async function handleDownloadAttachment(key, env) {
+  const object = await env.BUCKET.get(key);
+  if (!object) {
+    return json({ error: 'Attachment not found' }, 404);
+  }
+
+  const originalName = object.customMetadata?.originalName || key.split('/').pop();
+  const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
+
+  // For PDFs and images, allow inline viewing; otherwise force download
+  const isViewable = contentType.startsWith('image/') || contentType === 'application/pdf';
+  const disposition = isViewable
+    ? `inline; filename="${originalName}"`
+    : `attachment; filename="${originalName}"`;
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': contentType,
+      'Content-Disposition': disposition,
+      'Content-Length': object.size,
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+
+/* ========================================
+   ATTACHMENTS – DELETE
+   ======================================== */
+async function handleDeleteAttachment(key, env) {
+  await env.BUCKET.delete(key);
+  return json({ message: 'Attachment deleted', key });
 }

@@ -1191,6 +1191,7 @@
         let lineItemCounter = 0;
         let mileageCounter = 0;
         let attachments = [];
+        let currentRfpNumber = null;
         let currentRequestType = 'vendor';
         const MILEAGE_RATE = 0.70; // IRS 2025 rate
 
@@ -1683,26 +1684,136 @@
             const progressText = document.getElementById('attProgressText');
             progressEl.classList.add('active');
 
-            let added = 0;
-            validFiles.forEach((file, i) => {
-                const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
-                const blobUrl = URL.createObjectURL(file);
-                const addedDate = new Date();
-                attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate });
-                added++;
-                progressBar.style.width = `${(added / validFiles.length) * 100}%`;
-                progressText.textContent = `Adding ${file.name}...`;
-            });
+            // Get RFP number — if not yet submitted, store locally until submit
+            const rfpNum = currentRfpNumber;
 
-            progressBar.style.width = '100%';
-            progressText.textContent = `${added} file${added !== 1 ? 's' : ''} added`;
-            setTimeout(() => {
-                progressEl.classList.remove('active');
-                progressBar.style.width = '0%';
-            }, 1500);
+            if (!rfpNum) {
+                // No RFP yet — queue locally, will upload after submission
+                let added = 0;
+                validFiles.forEach(file => {
+                    const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                    const blobUrl = URL.createObjectURL(file);
+                    attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate: new Date(), pending: true });
+                    added++;
+                    progressBar.style.width = `${(added / validFiles.length) * 100}%`;
+                    progressText.textContent = `Queued ${file.name}...`;
+                });
+                progressBar.style.width = '100%';
+                progressText.textContent = `${validFiles.length} file${validFiles.length !== 1 ? 's' : ''} queued (will upload on submit)`;
+                setTimeout(() => { progressEl.classList.remove('active'); progressBar.style.width = '0%'; }, 2000);
+                renderAttachmentsList();
+                updateAttBadge();
+                return;
+            }
 
+            // Upload directly to R2
+            uploadFilesToR2(validFiles, rfpNum, progressBar, progressText, progressEl);
+        }
+
+        async function uploadFilesToR2(files, rfpNum, progressBar, progressText, progressEl) {
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+
+            try {
+                progressText.textContent = `Uploading ${files.length} file${files.length !== 1 ? 's' : ''}...`;
+                progressBar.style.width = '50%';
+
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await resp.json();
+
+                if (data.uploaded) {
+                    data.uploaded.forEach(u => {
+                        attachments.push({
+                            id: u.key,
+                            key: u.key,
+                            name: u.name,
+                            size: u.size,
+                            type: u.contentType,
+                            addedDate: new Date(),
+                            pending: false,
+                        });
+                    });
+                }
+
+                progressBar.style.width = '100%';
+                progressText.textContent = `${data.count || files.length} file${files.length !== 1 ? 's' : ''} uploaded`;
+            } catch (err) {
+                console.error('Attachment upload failed:', err);
+                progressText.textContent = 'Upload failed — files queued locally';
+                // Fallback: keep files locally
+                files.forEach(file => {
+                    const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                    const blobUrl = URL.createObjectURL(file);
+                    attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate: new Date(), pending: true });
+                });
+            }
+
+            setTimeout(() => { progressEl.classList.remove('active'); progressBar.style.width = '0%'; }, 1500);
             renderAttachmentsList();
             updateAttBadge();
+        }
+
+        // Upload any pending local attachments after RFP creation
+        async function uploadPendingAttachments(rfpNum) {
+            const pending = attachments.filter(a => a.pending && a.file);
+            if (pending.length === 0) return;
+
+            const formData = new FormData();
+            pending.forEach(a => formData.append('files', a.file));
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await resp.json();
+
+                // Replace pending entries with R2-backed ones
+                if (data.uploaded) {
+                    pending.forEach((p, i) => {
+                        if (p.blobUrl) URL.revokeObjectURL(p.blobUrl);
+                        const idx = attachments.indexOf(p);
+                        if (idx >= 0 && data.uploaded[i]) {
+                            attachments[idx] = {
+                                id: data.uploaded[i].key,
+                                key: data.uploaded[i].key,
+                                name: data.uploaded[i].name,
+                                size: data.uploaded[i].size,
+                                type: data.uploaded[i].contentType,
+                                addedDate: new Date(),
+                                pending: false,
+                            };
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to upload pending attachments:', err);
+            }
+        }
+
+        // Load attachments from R2 for an existing RFP
+        async function loadAttachments(rfpNum) {
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`);
+                const data = await resp.json();
+                const r2Attachments = (data.attachments || []).map(a => ({
+                    id: a.key,
+                    key: a.key,
+                    name: a.name,
+                    size: a.size,
+                    type: a.contentType,
+                    addedDate: a.uploaded ? new Date(a.uploaded) : new Date(),
+                    pending: false,
+                }));
+                attachments = r2Attachments;
+                renderAttachmentsList();
+                updateAttBadge();
+            } catch (err) {
+                console.error('Failed to load attachments:', err);
+            }
         }
 
         function formatFileSize(bytes) {
@@ -1754,11 +1865,12 @@
                 const sizeStr = formatFileSize(att.size);
                 const dateStr = formatAttDate(att.addedDate || new Date());
                 const iconSvg = getFileTypeIconSVG(ext);
+                const pendingBadge = att.pending ? ' <span style="font-size:0.65rem;color:#f59e0b;font-weight:600;">⏳ Pending</span>' : '';
                 return `<div class="attachment-item" id="${att.id}">
                     <div class="attachment-icon">${iconSvg}</div>
                     <div class="attachment-info">
                         <div class="attachment-name" onclick="${isViewable ? `viewAttachment('${att.id}')` : ''}" title="${att.name}">${att.name}</div>
-                        <div class="attachment-meta">${sizeStr} &middot; ${dateStr}</div>
+                        <div class="attachment-meta">${sizeStr} &middot; ${dateStr}${pendingBadge}</div>
                     </div>
                     <div class="attachment-actions">
                         ${isViewable ? `<button onclick="viewAttachment('${att.id}')" title="View"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>` : ''}
@@ -1769,9 +1881,20 @@
             }).join('');
         }
 
-        function removeAttachment(id) {
+        async function removeAttachment(id) {
             const att = attachments.find(a => a.id === id);
-            if (att) URL.revokeObjectURL(att.blobUrl);
+            if (!att) return;
+
+            // If it's an R2 attachment, delete from server
+            if (att.key && !att.pending) {
+                try {
+                    await fetch(`${API_BASE}/api/attachments/${encodeURIComponent(att.key)}`, { method: 'DELETE' });
+                } catch (err) {
+                    console.error('Failed to delete from R2:', err);
+                }
+            }
+
+            if (att.blobUrl) URL.revokeObjectURL(att.blobUrl);
             attachments = attachments.filter(a => a.id !== id);
             renderAttachmentsList();
             updateAttBadge();
@@ -1781,7 +1904,11 @@
             const att = attachments.find(a => a.id === id);
             if (!att) return;
             const a = document.createElement('a');
-            a.href = att.blobUrl;
+            if (att.key && !att.pending) {
+                a.href = `${API_BASE}/api/attachments/${encodeURIComponent(att.key)}`;
+            } else {
+                a.href = att.blobUrl;
+            }
             a.download = att.name;
             document.body.appendChild(a);
             a.click();
@@ -1805,10 +1932,14 @@
             const body = document.getElementById('pdfViewerBody');
             document.getElementById('pdfViewerTitle').textContent = att.name;
 
+            const url = (att.key && !att.pending)
+                ? `${API_BASE}/api/attachments/${encodeURIComponent(att.key)}`
+                : att.blobUrl;
+
             if (att.type === 'application/pdf' || att.name.endsWith('.pdf')) {
-                body.innerHTML = `<embed src="${att.blobUrl}" type="application/pdf" style="width:100%;height:100%;">`;
-            } else if (att.type.startsWith('image/')) {
-                body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f0f0f0;"><img src="${att.blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`;
+                body.innerHTML = `<embed src="${url}" type="application/pdf" style="width:100%;height:100%;">`;
+            } else if (att.type.startsWith('image/') || ['png','jpg','jpeg'].includes(att.name.split('.').pop().toLowerCase())) {
+                body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f0f0f0;"><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`;
             }
             overlay.classList.add('open');
         }
@@ -1951,6 +2082,9 @@
                 });
                 const result = await resp.json();
                 if (resp.ok) {
+                    currentRfpNumber = result.rfp_number;
+                    // Upload any pending attachments to R2
+                    await uploadPendingAttachments(result.rfp_number);
                     showSuccessModal(result.rfp_number);
                 } else {
                     alert('Submission failed: ' + (result.error || JSON.stringify(result)));
