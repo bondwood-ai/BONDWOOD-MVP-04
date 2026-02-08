@@ -2254,8 +2254,11 @@
                     });
                 }
 
-                // Add one empty row at the end
-                addLineItem();
+                // Only add empty row if form is still editable (draft)
+                // Don't add for submitted/pending/approved forms
+                if (!data.status || data.status === 'draft') {
+                    addLineItem();
+                }
                 recalcTotals();
 
                 // Load attachments
