@@ -299,7 +299,7 @@
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
 
         /* ============ PREVIEW MODAL ============ */
-        .preview-modal { background: var(--card-bg); border-radius: 12px; width: 780px; max-width: 92vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+        .preview-modal { background: var(--card-bg); border-radius: 12px; width: 920px; max-width: 94vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
         .preview-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: none; }
         .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Metropolis', sans-serif; }
         .preview-grid {
@@ -677,7 +677,7 @@
                         assignedTo: r.assigned_to || '—',
                         apBatch: r.ap_batch || '',
                         status: r.status || 'draft',
-                        vendor: r.vendor_name || '—',
+                        vendor: (r.request_type === 'reimbursement' && r.employee_id) ? ('E' + r.employee_id) : (r.vendor_name || '—'),
                         amount: r.total_amount || r.amount || r.mileage_total || 0,
                         type: r.request_type || r.type || 'vendor',
                     };
@@ -1157,6 +1157,10 @@
                 mileageTrips = data.mileageTrips || [];
                 notesText = data.description || '';
                 apiAuditLogs = data.auditLogs || [];
+                // For reimbursements, show employee ID as vendor
+                if ((rfp.type === 'reimbursement' || rfp.type === 'Employee Reimbursement') && data.employee_id) {
+                    rfp.vendor = 'E' + data.employee_id;
+                }
             } catch (e) {
                 console.error('Failed to load RFP details:', e);
             }
@@ -1256,7 +1260,7 @@
                     <div class="pg-cell"><div class="pg-label">Total</div><div class="pg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(displayTotal)}</div></div>
                 </div>
                 <div class="preview-grid preview-grid-2col">
-                    <div class="pg-cell"><div class="pg-label">Vendor</div><div class="pg-value">${rfp.vendor}</div></div>
+                    <div class="pg-cell"><div class="pg-label">${rfp.type === 'reimbursement' ? 'Employee ID' : 'Vendor'}</div><div class="pg-value">${rfp.vendor}</div></div>
                     <div class="pg-cell"><div class="pg-label">Type</div><div class="pg-value">${rfp.type === 'vendor' ? 'Vendor Payment' : 'Employee Reimbursement'}</div></div>
                 </div>
                 <div class="preview-line-items">
@@ -1271,7 +1275,7 @@
                     </div>
                 </div>
                 ${notesHtml}
-                <div id="previewAttachments" style="margin-top:0.5rem;"></div>
+                <div id="previewAttachments" style="margin-top:1.25rem;"></div>
                 ${auditHtml}
             `;
 
