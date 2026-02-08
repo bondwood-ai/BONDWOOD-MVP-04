@@ -639,7 +639,7 @@
 
         async function fetchDashboardUser() {
             try {
-                const resp = await fetch(`${API_BASE}/api/me`);
+                const resp = await fetch('/api/me');
                 if (!resp.ok) return;
                 const ct = resp.headers.get('content-type') || '';
                 if (!ct.includes('application/json')) return;
@@ -1475,6 +1475,12 @@
             const btn = document.getElementById('importConfirmBtn');
             btn.disabled = true;
             btn.textContent = 'Importing...';
+
+            // Ensure we have user identity
+            if (!currentUserName) {
+                await fetchDashboardUser();
+                if (!currentUserName) console.warn('[IMPORT] SSO identity not available — submitter will be empty');
+            }
 
             try {
                 const data = await new Promise((resolve, reject) => {

@@ -524,7 +524,7 @@ async function handleCreateRFP(request, env) {
   await env.DB.batch(statements);
 
   // Write audit log entry
-  const submitter = body.submitter_name || 'Unknown User';
+  const submitter = (body.submitter_name && body.submitter_name.trim()) || 'Unknown User';
   const payee = body.request_type === 'vendor'
     ? (body.vendor_name || 'an unknown vendor')
     : 'Employee Reimbursement';
@@ -534,9 +534,10 @@ async function handleCreateRFP(request, env) {
   if (totalAmount === 0) totalAmount = body.mileage_total || 0;
   const amountStr = '$' + totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-  const auditDesc = `${submitter} submitted a request for payment with ${payee} for ${amountStr}`;
+  const auditAction = status === 'draft' ? 'created a draft' : 'submitted';
+  const auditDesc = `${submitter} ${auditAction} request for payment with ${payee} for ${amountStr}`;
   try {
-    await buildAuditInsert(env, nextRfp, 'submitted', auditDesc, submitter, {
+    await buildAuditInsert(env, nextRfp, status === 'draft' ? 'draft-created' : 'submitted', auditDesc, submitter, {
       request_type: body.request_type,
       vendor_name: body.vendor_name || null,
       employee_name: body.employee_name || null,
