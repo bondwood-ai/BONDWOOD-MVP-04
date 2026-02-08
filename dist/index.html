@@ -1128,43 +1128,38 @@
             if (!container) return;
 
             try {
-                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/attachments`);
+                const resp = await fetch(API_BASE + '/api/rfps/' + rfpNumber + '/attachments');
                 const data = await resp.json();
                 const files = data.attachments || [];
 
-                if (files.length === 0) {
-                    container.innerHTML = '';
-                    return;
-                }
+                if (files.length === 0) { container.innerHTML = ''; return; }
 
-                container.innerHTML = `
-                    <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;">Attachments (${files.length})</h4>
-                    ${files.map(f => {
-                        const ext = f.name.split('.').pop().toLowerCase();
-                        const colors = { pdf: '#DC2626', docx: '#2563EB', doc: '#2563EB', xlsx: '#16A34A', png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1' };
-                        const bg = colors[ext] || '#718096';
-                        const label = ext.toUpperCase().substring(0, 4);
-                        const sizeKB = f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB' : (f.size / 1048576).toFixed(1) + ' MB';
-                        const url = `${API_BASE}/api/attachments/${encodeURIComponent(f.key)}`;
-                        const isPdf = ext === 'pdf';
-                        const isImage = ['png','jpg','jpeg'].includes(ext);
-                        const isViewable = isPdf || isImage;
-                        const clickHandler = isViewable
-                            ? `onclick="openAttachmentPopup('${url}', '${f.name.replace(/'/g, "\\'")}', '${isPdf ? 'pdf' : 'image'}')" style="cursor:pointer;"`
-                            : `onclick="downloadPreviewAttachment('${url}', '${f.name.replace(/'/g, "\\'")}')" style="cursor:pointer;"`;
-                        return `<a href="${url}" target="_blank" ${clickHandler} oncontextmenu="" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.4rem;text-decoration:none;color:inherit;cursor:pointer;transition:background 0.15s;" onmouseenter="this.style.background='var(--pale-accent)'" onmouseleave="this.style.background=''">
-                            <svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${bg}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary);">${f.name}</div>
-                                <div style="font-size:0.7rem;color:var(--text-secondary);">${sizeKB}</div>
-                            </div>
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="flex-shrink:0;">${isViewable
-                                ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
-                                : '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'
-                            }</svg>
-                        </a>`;
-                    }).join('')}
-                `;
+                var html = '<h4 style="font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;">Attachments (' + files.length + ')</h4>';
+                for (var i = 0; i < files.length; i++) {
+                    var f = files[i];
+                    var ext = f.name.split('.').pop().toLowerCase();
+                    var colorMap = { pdf:'#DC2626', docx:'#2563EB', doc:'#2563EB', xlsx:'#16A34A', png:'#6B46C1', jpg:'#6B46C1', jpeg:'#6B46C1' };
+                    var bg = colorMap[ext] || '#718096';
+                    var label = ext.toUpperCase().substring(0, 4);
+                    var sizeStr = f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB' : (f.size / 1048576).toFixed(1) + ' MB';
+                    var fileUrl = API_BASE + '/api/attachments/' + encodeURIComponent(f.key);
+                    html += '<div class="att-row" data-url="' + fileUrl + '" data-name="' + f.name.replace(/"/g, '&quot;') + '" data-ext="' + ext + '" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.4rem;cursor:pointer;">'
+                        + '<svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="' + bg + '"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">' + label + '</text></svg>'
+                        + '<div style="flex:1;min-width:0;">'
+                        + '<div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + f.name + '</div>'
+                        + '<div style="font-size:0.7rem;color:var(--text-secondary);">' + sizeStr + '</div>'
+                        + '</div>'
+                        + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+                        + '</div>';
+                }
+                container.innerHTML = html;
+
+                // Attach click handlers via delegation
+                container.querySelectorAll('.att-row').forEach(function(row) {
+                    row.addEventListener('click', function() {
+                        handleAttachmentClick(row.dataset.url, row.dataset.name, row.dataset.ext);
+                    });
+                });
             } catch (err) {
                 console.error('Failed to load attachments for preview:', err);
                 container.innerHTML = '';
@@ -1175,30 +1170,40 @@
             document.getElementById('previewModal').classList.remove('open');
         }
 
-        function openAttachmentPopup(url, name, type) {
-            event.preventDefault();
-            const w = 900, h = 700;
-            const left = (screen.width - w) / 2;
-            const top = (screen.height - h) / 2;
-            const popup = window.open('', name, `width=${w},height=${h},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,scrollbars=yes`);
-            if (!popup) { window.open(url, '_blank'); return; }
+        async function handleAttachmentClick(url, name, ext) {
+            var isPdf = ext === 'pdf';
+            var isImage = (ext === 'png' || ext === 'jpg' || ext === 'jpeg');
 
-            if (type === 'pdf') {
-                popup.document.write(`<!DOCTYPE html><html><head><title>${name}</title><style>body{margin:0;overflow:hidden;}</style></head><body><embed src="${url}" type="application/pdf" width="100%" height="100%"></body></html>`);
+            if (isPdf || isImage) {
+                try {
+                    var resp = await fetch(url);
+                    var blob = await resp.blob();
+                    var blobUrl = URL.createObjectURL(blob);
+                    var w = 900, h = 700;
+                    var popLeft = (screen.width - w) / 2;
+                    var popTop = (screen.height - h) / 2;
+                    var features = 'width=' + w + ',height=' + h + ',left=' + popLeft + ',top=' + popTop + ',menubar=no,toolbar=no,location=no,status=no,scrollbars=yes';
+                    var popup = window.open('', '_blank', features);
+                    if (!popup) { window.open(blobUrl, '_blank'); return; }
+                    var doc = popup.document;
+                    doc.open();
+                    if (isPdf) {
+                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;overflow:hidden;}</style></head><body><iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>');
+                    } else {
+                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>');
+                    }
+                    doc.close();
+                } catch (e) {
+                    window.open(url, '_blank');
+                }
             } else {
-                popup.document.write(`<!DOCTYPE html><html><head><title>${name}</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>`);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             }
-            popup.document.close();
-        }
-
-        function downloadPreviewAttachment(url, name) {
-            event.preventDefault();
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
         }
 
         // Close preview on overlay click
