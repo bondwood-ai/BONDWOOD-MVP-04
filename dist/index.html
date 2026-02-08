@@ -1020,7 +1020,7 @@
         /* ========================================
            PREVIEW MODAL
            ======================================== */
-        function openPreviewModal(rfp) {
+        async function openPreviewModal(rfp) {
             const modal = document.getElementById('previewModal');
             const body = document.getElementById('previewBody');
             const badge = document.getElementById('previewStatusBadge');
@@ -1030,28 +1030,40 @@
             badge.textContent = formatStatus(rfp.status);
             openBtn.onclick = () => { window.location.href = `rfp-form.html?id=${rfp.id}`; };
 
-            // Generate dummy line items for preview
-            const lineCount = Math.floor(Math.random() * 4) + 1;
-            const descriptions = ['Office supplies', 'Curriculum materials', 'Technology equipment', 'Consulting services', 'Facility maintenance', 'Professional development', 'Student resources', 'Lab equipment'];
-            const invoiceNums = ['INV-2025-001', 'INV-2025-002', 'INV-2025-003', 'INV-4488', 'INV-7721', '90125-A'];
-            const budgetCodes = ['01110051000000', '02310062000000', '04120053000000', '06410071000000', '01210041000000'];
-            const accounts = ['6411000', '6321000', '6151000', '6239000', '6110000'];
-            let lineItemsHtml = '';
-            let runningTotal = 0;
+            // Show loading state
+            body.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading...</div>`;
+            modal.classList.add('open');
 
-            for (let i = 1; i <= lineCount; i++) {
-                const amt = i === lineCount ? (rfp.amount - runningTotal) : Math.round((rfp.amount / lineCount) * (0.5 + Math.random()) * 100) / 100;
-                const lineAmt = i === lineCount ? (rfp.amount - runningTotal) : Math.min(amt, rfp.amount - runningTotal);
-                runningTotal += lineAmt;
-                lineItemsHtml += `<tr>
-                    <td>${i}</td>
-                    <td>${descriptions[Math.floor(Math.random() * descriptions.length)]}</td>
-                    <td>${invoiceNums[Math.floor(Math.random() * invoiceNums.length)]}</td>
-                    <td style="text-align:center;">${budgetCodes[Math.floor(Math.random() * budgetCodes.length)]}</td>
-                    <td style="text-align:center;">${accounts[Math.floor(Math.random() * accounts.length)]}</td>
-                    <td class="text-right">${formatCurrency(lineAmt)}</td>
-                </tr>`;
+            // Fetch real line items from API
+            let lineItems = [];
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`);
+                const data = await resp.json();
+                lineItems = data.lineItems || [];
+            } catch (e) {
+                console.error('Failed to load RFP details:', e);
             }
+
+            let lineItemsHtml = '';
+            let total = 0;
+            lineItems.forEach((item, i) => {
+                const amt = item.total || 0;
+                total += amt;
+                lineItemsHtml += `<tr>
+                    <td>${item.line_number || i + 1}</td>
+                    <td>${item.description || '—'}</td>
+                    <td>${item.invoice_number || '—'}</td>
+                    <td style="text-align:center;">${item.budget_code || '—'}</td>
+                    <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
+                    <td class="text-right">${formatCurrency(amt)}</td>
+                </tr>`;
+            });
+
+            if (lineItems.length === 0) {
+                lineItemsHtml = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>`;
+            }
+
+            const displayTotal = total || rfp.amount;
 
             body.innerHTML = `
                 <div class="preview-grid">
@@ -1060,7 +1072,7 @@
                     <div class="pg-cell"><div class="pg-label">Days Open</div><div class="pg-value">${rfp.daysSinceSubmission}d</div></div>
                     <div class="pg-cell"><div class="pg-label">Submitter</div><div class="pg-value">${rfp.submitter}</div></div>
                     <div class="pg-cell"><div class="pg-label">Assigned To</div><div class="pg-value">${rfp.assignedTo}</div></div>
-                    <div class="pg-cell"><div class="pg-label">Total</div><div class="pg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(rfp.amount)}</div></div>
+                    <div class="pg-cell"><div class="pg-label">Total</div><div class="pg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(displayTotal)}</div></div>
                 </div>
                 <div class="preview-grid preview-grid-2col">
                     <div class="pg-cell"><div class="pg-label">Vendor</div><div class="pg-value">${rfp.vendor}</div></div>
@@ -1074,12 +1086,10 @@
                     </table>
                     <div class="preview-total-row">
                         <span class="total-label">Total:</span>
-                        <span class="total-value">${formatCurrency(rfp.amount)}</span>
+                        <span class="total-value">${formatCurrency(displayTotal)}</span>
                     </div>
                 </div>
             `;
-
-            modal.classList.add('open');
         }
 
         function closePreviewModal() {
