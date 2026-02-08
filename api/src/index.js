@@ -110,9 +110,9 @@ export default {
         return handleBudgetCodes(env, request);
       }
 
-      // ── User Lookup ─────────────────────────────────────────────
-      if (path === '/api/user-lookup' && method === 'GET') {
-        return handleUserLookup(url, env, request);
+      // ── Current User (from SSO) ────────────────────────────────
+      if (path === '/api/me' && method === 'GET') {
+        return handleMe(request, env);
       }
 
       // ── Health ──────────────────────────────────────────────────
@@ -657,13 +657,13 @@ async function handleBudgetCodes(env, request) {
 }
 
 /**
- * GET /api/user-lookup?email=user@example.com
- * Looks up a user in the user_data table by email
+ * GET /api/me
+ * Returns current user info based on Cloudflare Access SSO email header
  */
-async function handleUserLookup(url, env, request) {
-  const email = (url.searchParams.get('email') || '').trim().toLowerCase();
+async function handleMe(request, env) {
+  const email = (request.headers.get('Cf-Access-Authenticated-User-Email') || '').trim().toLowerCase();
   if (!email) {
-    return json({ error: 'Email parameter required' }, 400, request);
+    return json({ error: 'No SSO email found in request headers' }, 401, request);
   }
 
   const user = await env.DB.prepare(
@@ -671,7 +671,7 @@ async function handleUserLookup(url, env, request) {
   ).bind(email).first();
 
   if (!user) {
-    return json({ error: 'User not found' }, 404, request);
+    return json({ error: 'User not found', email }, 404, request);
   }
 
   return json({

@@ -1188,37 +1188,18 @@
             document.getElementById('employeeSection').style.display = type === 'reimbursement' ? '' : 'none';
             document.getElementById('mileageSection').classList.toggle('visible', type === 'reimbursement');
 
-            // Auto-populate employee info from SSO email
+            // Auto-populate employee info from SSO
             if (type === 'reimbursement') {
                 autoPopulateEmployee();
             }
         }
 
-        /* Get SSO email from Cloudflare Access JWT cookie */
-        function getSSOEmail() {
-            try {
-                const cookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('CF_Authorization='));
-                if (!cookie) return null;
-                const token = cookie.split('=')[1];
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                return payload.email || null;
-            } catch (e) {
-                console.warn('Could not parse SSO cookie:', e);
-                return null;
-            }
-        }
-
-        /* Look up employee from user_data and populate fields */
+        /* Look up current user from SSO and populate employee fields */
         async function autoPopulateEmployee() {
-            const email = getSSOEmail();
-            if (!email) {
-                console.log('No SSO email found — employee fields left blank');
-                return;
-            }
             try {
-                const resp = await fetch(`${API_BASE}/api/user-lookup?email=${encodeURIComponent(email)}`);
+                const resp = await fetch(`${API_BASE}/api/me`);
                 if (!resp.ok) {
-                    console.warn('User lookup failed:', resp.status);
+                    console.log('Employee auto-populate: no SSO user found (' + resp.status + ')');
                     return;
                 }
                 const user = await resp.json();
