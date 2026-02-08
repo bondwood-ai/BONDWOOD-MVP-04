@@ -71,6 +71,8 @@
         body.dark-mode .theme-toggle svg { fill: #5b7aff; }
         body.dark-mode .btn-primary { background: #333; color: #fff; }
         body.dark-mode .btn-primary:hover { background: #444; }
+        body.dark-mode .btn-primary.danger { background: #dc2626; color: #fff; }
+        body.dark-mode .btn-primary.danger:hover { background: #b91c1c; }
         body.dark-mode .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
         body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
         body.dark-mode .status-badge.draft { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
@@ -204,7 +206,7 @@
         .column-option:hover { background: var(--bg-color); }
         .column-option input[type="checkbox"] {
             width: 16px; height: 16px; cursor: pointer;
-            accent-color: var(--secondary-hex);
+            accent-color: var(--primary-hex);
         }
         .column-option label { cursor: pointer; flex: 1; color: var(--text-primary); font-weight: 500; font-family: 'Metropolis', sans-serif; }
 
@@ -354,7 +356,7 @@
         /* ============ CUSTOM CHECKBOX ============ */
         table input[type="checkbox"] {
             width: 16px; height: 16px; cursor: pointer;
-            accent-color: var(--secondary-hex);
+            accent-color: var(--primary-hex);
         }
     </style>
 </head>
@@ -647,6 +649,9 @@
                 return rfps.map(r => {
                     const submittedDays = r.days_since_submission ||
                         Math.floor((Date.now() - new Date(r.submission_date).getTime()) / 86400000);
+                    const invoiceAgeDays = r.latest_invoice_date
+                        ? Math.floor((Date.now() - new Date(r.latest_invoice_date).getTime()) / 86400000)
+                        : submittedDays;
                     return {
                         id: r.id || `rfp-${r.rfp_number}`,
                         rfpNumber: r.rfp_number,
@@ -654,7 +659,7 @@
                         submitterId: r.submitter_id || '',
                         submissionDate: r.submission_date || '',
                         daysSinceSubmission: submittedDays,
-                        invoiceAge: r.invoice_age || submittedDays,
+                        invoiceAge: invoiceAgeDays,
                         assignedTo: r.assigned_to || '—',
                         apBatch: r.ap_batch || '',
                         status: r.status || 'draft',
