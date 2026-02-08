@@ -306,7 +306,7 @@
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
 
         /* ============ PREVIEW MODAL ============ */
-        .preview-modal { background: var(--card-bg); border-radius: 12px; width: 920px; max-width: 94vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+        .preview-modal { background: var(--card-bg); border-radius: 12px; width: 1050px; max-width: 96vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
         .preview-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: none; }
         .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Metropolis', sans-serif; }
         .preview-grid {
@@ -327,7 +327,7 @@
         .preview-grid-2col .pg-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--border-color); }
         .preview-line-items { margin-top: 1rem; overflow-x: auto; }
         .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Metropolis', sans-serif; }
-        .preview-line-items table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 0.8rem; }
+        .preview-line-items table { width: 100%; min-width: 750px; border-collapse: collapse; font-size: 0.8rem; }
         .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); font-family: 'Metropolis', sans-serif; font-weight: 600; border-bottom: 1px solid var(--border-color); position: static; background: transparent; }
         .preview-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
         .preview-line-items .text-right { text-align: right; }
@@ -1387,6 +1387,16 @@
         // Close preview on overlay click
         document.getElementById('previewModal').addEventListener('click', function(e) {
             if (e.target === this) closePreviewModal();
+        });
+
+        // Close preview on Esc key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const preview = document.getElementById('previewModal');
+                if (preview.classList.contains('open')) { closePreviewModal(); return; }
+                const importM = document.getElementById('importModal');
+                if (importM && importM.classList.contains('open')) { closeImportModal(); return; }
+            }
         });
 
         function openImportModal() {
