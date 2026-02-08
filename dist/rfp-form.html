@@ -1693,21 +1693,10 @@
                 return;
             }
 
-            // Check for duplicates (same name + size)
-            const dupes = [];
-            const newFiles = validFiles.filter(f => {
-                const isDupe = attachments.some(a => a.name === f.name && a.size === f.size);
-                if (isDupe) dupes.push(f.name);
-                return !isDupe;
-            });
-
-            if (dupes.length > 0 && newFiles.length === 0) {
-                showAlert(`${dupes.length === 1 ? 'This file has' : 'These files have'} already been attached:\n${dupes.join(', ')}`, 'Duplicate File');
-                return;
-            }
-            if (dupes.length > 0) {
-                showAlert(`Skipped ${dupes.length} duplicate${dupes.length !== 1 ? 's' : ''}: ${dupes.join(', ')}`, 'Duplicates Skipped');
-            }
+            // Skip duplicates (same name + size) silently
+            const newFiles = validFiles.filter(f =>
+                !attachments.some(a => a.name === f.name && a.size === f.size)
+            );
             if (newFiles.length === 0) return;
 
             const progressEl = document.getElementById('attProgress');

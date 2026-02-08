@@ -98,6 +98,52 @@ export default {
         return json(results);
       }
 
+      // ── Debug diagnostics ──
+      if (path === '/api/debug/diag' && method === 'GET') {
+        const diag = {};
+
+        // Check R2 binding
+        diag.r2_bucket_bound = !!env.BUCKET;
+        if (env.BUCKET) {
+          try {
+            const listed = await env.BUCKET.list({ limit: 1 });
+            diag.r2_accessible = true;
+            diag.r2_object_count_sample = listed.objects.length;
+          } catch (e) {
+            diag.r2_accessible = false;
+            diag.r2_error = e.message;
+          }
+        }
+
+        // Check invoice date query
+        try {
+          const { results } = await env.DB.prepare(`
+            SELECT d.rfp_number, d.submission_date,
+                   MAX(f.invoice_date) as latest_invoice_date,
+                   COALESCE(SUM(f.total), 0) as total_amount
+            FROM dashboard_data d
+            LEFT JOIN form_data f ON d.rfp_number = f.rfp_number
+            GROUP BY d.rfp_number
+            LIMIT 5
+          `).all();
+          diag.rfp_sample = results;
+        } catch (e) {
+          diag.rfp_query_error = e.message;
+        }
+
+        // Check form_data invoice dates
+        try {
+          const { results } = await env.DB.prepare(
+            'SELECT rfp_number, line_number, invoice_date, invoice_number FROM form_data LIMIT 10'
+          ).all();
+          diag.form_data_sample = results;
+        } catch (e) {
+          diag.form_data_error = e.message;
+        }
+
+        return json(diag);
+      }
+
       return json({ error: 'Not found' }, 404);
     } catch (e) {
       return json({ error: 'Internal error', detail: e.message }, 500);
