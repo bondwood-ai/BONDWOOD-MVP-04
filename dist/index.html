@@ -1553,7 +1553,7 @@
                 // Group rows by vendor number
                 const vendorGroups = {};
                 rows.forEach(r => {
-                    const vn = r.vendorNumber || 'UNKNOWN';
+                    const vn = (r.vendorNumber && r.vendorNumber.length === 4) ? '0' + r.vendorNumber : (r.vendorNumber || 'UNKNOWN');
                     if (!vendorGroups[vn]) vendorGroups[vn] = [];
                     vendorGroups[vn].push(r);
                 });
