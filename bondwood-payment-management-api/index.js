@@ -144,10 +144,10 @@ async function handleGetVendors(env, url) {
   const offset = (page - 1) * limit;
 
   const { results } = await env.DB.prepare(
-    'SELECT vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip FROM vendors ORDER BY vendor_name LIMIT ? OFFSET ?'
+    'SELECT vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip FROM vendor_data ORDER BY vendor_name LIMIT ? OFFSET ?'
   ).bind(limit, offset).all();
 
-  const { results: countResult } = await env.DB.prepare('SELECT COUNT(*) as total FROM vendors').all();
+  const { results: countResult } = await env.DB.prepare('SELECT COUNT(*) as total FROM vendor_data').all();
   const total = countResult[0]?.total || 0;
 
   return json({ vendors: results, total, page, limit });
@@ -178,7 +178,7 @@ async function handleGetBudgetCodes(env, url) {
    ======================================== */
 async function handleGetDistricts(env, url) {
   try {
-    const { results } = await env.DB.prepare('SELECT * FROM districts').all();
+    const { results } = await env.DB.prepare('SELECT * FROM district_metadata').all();
     return json(results);
   } catch (e) {
     return json({ error: 'Districts query failed', detail: e.message }, 500);
