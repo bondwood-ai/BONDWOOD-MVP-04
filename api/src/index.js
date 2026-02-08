@@ -111,6 +111,15 @@ export default {
         return handleBudgetCodes(env, request);
       }
 
+      // ── Migrate form_data table ─────────────────────────────────
+      if (path === '/api/migrate' && method === 'POST') {
+        try { await env.DB.exec(`ALTER TABLE form_data ADD COLUMN invoice_number TEXT`); } catch(e) {}
+        try { await env.DB.exec(`ALTER TABLE form_data ADD COLUMN invoice_date TEXT`); } catch(e) {}
+        try { await env.DB.exec(`ALTER TABLE form_data ADD COLUMN budget_code TEXT`); } catch(e) {}
+        try { await env.DB.exec(`ALTER TABLE form_data ADD COLUMN account_code TEXT`); } catch(e) {}
+        return json({ message: 'Migration complete' }, 200, request);
+      }
+
       // ── Current User (from SSO) ────────────────────────────────
       if (path === '/api/me' && method === 'GET') {
         return handleMe(request, env);
@@ -379,8 +388,8 @@ async function handleCreateRFP(request, env) {
     for (const item of body.lineItems) {
       statements.push(
         env.DB.prepare(`
-          INSERT INTO form_data (rfp_number, line_number, description, fund, organization, program, finance, object, quantity, unit_price, total)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO form_data (rfp_number, line_number, description, fund, organization, program, finance, object, quantity, unit_price, total, invoice_number, invoice_date, budget_code, account_code)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           nextRfp,
           item.line_number || 0,
@@ -389,10 +398,14 @@ async function handleCreateRFP(request, env) {
           item.organization || null,
           item.program || null,
           item.finance || null,
-          item.object || null,
-          item.quantity || 0,
-          item.unit_price || 0,
+          item.object || item.account_code || null,
+          item.quantity || 1,
+          item.unit_price || item.total || 0,
           item.total || 0,
+          item.invoice_number || null,
+          item.invoice_date || null,
+          item.budget_code || null,
+          item.account_code || null,
         )
       );
     }
@@ -456,8 +469,8 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     for (const item of body.lineItems) {
       statements.push(
         env.DB.prepare(`
-          INSERT INTO form_data (rfp_number, line_number, description, fund, organization, program, finance, object, quantity, unit_price, total)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO form_data (rfp_number, line_number, description, fund, organization, program, finance, object, quantity, unit_price, total, invoice_number, invoice_date, budget_code, account_code)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           rfpNumber,
           item.line_number || 0,
@@ -466,10 +479,14 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           item.organization || null,
           item.program || null,
           item.finance || null,
-          item.object || null,
-          item.quantity || 0,
-          item.unit_price || 0,
+          item.object || item.account_code || null,
+          item.quantity || 1,
+          item.unit_price || item.total || 0,
           item.total || 0,
+          item.invoice_number || null,
+          item.invoice_date || null,
+          item.budget_code || null,
+          item.account_code || null,
         )
       );
     }
@@ -606,8 +623,8 @@ async function handleReplaceLineItems(rfpNumber, request, env) {
   for (const item of body.lineItems) {
     statements.push(
       env.DB.prepare(`
-        INSERT INTO form_data (rfp_number, line_number, description, fund, organization, program, finance, object, quantity, unit_price, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO form_data (rfp_number, line_number, description, fund, organization, program, finance, object, quantity, unit_price, total, invoice_number, invoice_date, budget_code, account_code)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         rfpNumber,
         item.line_number || 0,
@@ -616,10 +633,14 @@ async function handleReplaceLineItems(rfpNumber, request, env) {
         item.organization || null,
         item.program || null,
         item.finance || null,
-        item.object || null,
-        item.quantity || 0,
-        item.unit_price || 0,
+        item.object || item.account_code || null,
+        item.quantity || 1,
+        item.unit_price || item.total || 0,
         item.total || 0,
+        item.invoice_number || null,
+        item.invoice_date || null,
+        item.budget_code || null,
+        item.account_code || null,
       )
     );
   }

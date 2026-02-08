@@ -62,6 +62,7 @@
         body.dark-mode .items-table th { background: var(--primary-hex); }
         body.dark-mode .items-table td { border-color: var(--border-color); }
         body.dark-mode .items-table input { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .items-table input[type="date"] { color-scheme: dark; }
         body.dark-mode .items-table input[readonly] { background: var(--readonly-bg); }
         body.dark-mode .items-table tr.selected { background: rgba(91, 122, 255, 0.15) !important; }
         body.dark-mode .workflow-step.active { background: rgba(91, 122, 255, 0.15); border-color: #5b7aff; }
@@ -273,6 +274,7 @@
         }
         .vendor-section textarea { min-height: 60px; resize: vertical; }
         .vendor-section input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; color: var(--text-primary); }
+        .vendor-section textarea[readonly] { background: var(--readonly-bg); cursor: not-allowed; color: var(--text-primary); }
         .vendor-section input:focus, .vendor-section select:focus, .vendor-section textarea:focus {
             outline: none; border-color: var(--secondary-hex);
         }
@@ -682,13 +684,13 @@
                     </div>
                     <div class="cell">
                         <div class="vendor-autocomplete">
-                            <input type="text" id="vendorNumber" placeholder="Search vendor #..." autocomplete="off">
+                            <input type="text" id="vendorNumber" placeholder="—" readonly autocomplete="off">
                             <div class="vendor-dropdown" id="vendorNumberDropdown"></div>
                         </div>
                     </div>
                     <div class="cell header-cell" style="grid-column:1/-1;">Remit-To Address</div>
                     <div class="cell" style="grid-column:1/-1;">
-                        <textarea id="vendorAddress" placeholder="Vendor address"></textarea>
+                        <textarea id="vendorAddress" placeholder="—" readonly></textarea>
                     </div>
                 </div>
 
@@ -728,7 +730,8 @@
                                 <th class="checkbox-col"><input type="checkbox" id="selectAllItems" onclick="toggleSelectAllItems()"></th>
                                 <th style="width:50px;">Line</th>
                                 <th>Description</th>
-                                <th style="width:155px;">Invoice #</th>
+                                <th style="width:130px;">Invoice #</th>
+                                <th style="width:120px;">Invoice Date</th>
                                 <th style="width:155px;">Budget Code</th>
                                 <th style="width:85px;">Account</th>
                                 <th style="width:120px;">Amount</th>
@@ -950,25 +953,18 @@
                 selectedVendor = null;
                 clearVendorError();
                 const q = nameInput.value.trim().toUpperCase();
-                if (q.length < 1) { nameDrop.classList.remove('open'); return; }
+                if (q.length < 1) {
+                    nameDrop.classList.remove('open');
+                    numInput.value = '';
+                    document.getElementById('vendorAddress').value = '';
+                    return;
+                }
                 const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 200);
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
-            numInput.addEventListener('input', () => {
-                vendorActiveField = 'number';
-                vendorActiveIndex = -1;
-                selectedVendor = null;
-                clearVendorError();
-                const q = numInput.value.trim();
-                if (q.length < 1) { numDrop.classList.remove('open'); return; }
-                const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 200);
-                renderVendorDropdown(numDrop, matches, q, 'number');
-            });
-
             // Validate on blur
             nameInput.addEventListener('blur', () => { setTimeout(validateVendorFields, 200); });
-            numInput.addEventListener('blur', () => { setTimeout(validateVendorFields, 200); });
 
             // Show dropdown on focus
             nameInput.addEventListener('focus', () => {
@@ -981,34 +977,18 @@
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
-            numInput.addEventListener('focus', () => {
-                vendorActiveField = 'number';
-                vendorActiveIndex = -1;
-                const q = numInput.value.trim();
-                const matches = q.length >= 1
-                    ? VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 200)
-                    : VENDOR_DATA.slice().sort((a, b) => a.c.localeCompare(b.c, undefined, {numeric: true})).slice(0, 200);
-                renderVendorDropdown(numDrop, matches, q, 'number');
-            });
-
-            [nameInput, numInput].forEach(input => {
-                input.addEventListener('keydown', (e) => {
-                    const drop = input === nameInput ? nameDrop : numDrop;
+            nameInput.addEventListener('keydown', (e) => {
+                    const drop = nameDrop;
                     const isOpen = drop.classList.contains('open');
 
                     if (e.key === 'ArrowDown') {
                         e.preventDefault();
                         // If dropdown not open, trigger a search first
                         if (!isOpen) {
-                            const q = input.value.trim();
+                            const q = nameInput.value.trim();
                             if (q.length >= 1) {
-                                if (input === nameInput) {
-                                    const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 200);
-                                    renderVendorDropdown(nameDrop, matches, q.toUpperCase(), 'name');
-                                } else {
-                                    const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 200);
-                                    renderVendorDropdown(numDrop, matches, q, 'number');
-                                }
+                                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 200);
+                                renderVendorDropdown(nameDrop, matches, q.toUpperCase(), 'name');
                             }
                             vendorActiveIndex = -1;
                         }
@@ -1033,7 +1013,6 @@
                         vendorActiveIndex = -1;
                     }
                 });
-            });
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.vendor-autocomplete')) {
@@ -1189,8 +1168,8 @@
             setupVendorAutocomplete();
             loadBudgetCodes();
 
-            // Initialize with 5 line items
-            for (let i = 0; i < 5; i++) addLineItem();
+            // Initialize with 1 line item
+            addLineItem();
 
             // Check if editing existing form
             const params = new URLSearchParams(window.location.search);
@@ -1283,8 +1262,9 @@
             tr.innerHTML = `
                 <td class="checkbox-cell"><input type="checkbox" class="line-checkbox" onchange="updateLineSelection()"></td>
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
-                <td><textarea class="line-desc" rows="1" cols="25" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
-                <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:145px;"></td>
+                <td><textarea class="line-desc" rows="1" cols="18" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
+                <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
+                <td><input type="date" class="line-invoice-date" value="${data.invoiceDate || ''}" style="width:115px;font-size:0.8rem;"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Enter Budget Code"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;" autocomplete="off" placeholder="—"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
@@ -1297,10 +1277,37 @@
             amountInput.addEventListener('blur', function() {
                 const v = parseFormattedNumber(this.value);
                 if (v > 0) this.value = formatCurrency(v);
+                setTimeout(checkAutoGrow, 50);
             });
 
             // Init autocomplete for this row
             initBudgetAutocomplete(tr);
+
+            // Auto-grow: when all fields in the last row are filled, add a new row
+            const checkAutoGrow = () => {
+                const tbody = document.getElementById('lineItemsBody');
+                const lastRow = tbody.querySelector('tr:last-child');
+                if (tr !== lastRow) return; // only check if this is the last row
+                const desc = tr.querySelector('.line-desc').value.trim();
+                const inv = tr.querySelector('.line-invoice').value.trim();
+                const invDate = tr.querySelector('.line-invoice-date').value.trim();
+                const bc = tr.querySelector('.line-budget-code').value.trim();
+                const acct = tr.querySelector('.line-account').value.trim();
+                const amt = tr.querySelector('.line-amount').value.trim();
+                if (desc && inv && invDate && bc && acct && amt) {
+                    addLineItem();
+                }
+            };
+            tr.querySelector('.line-desc').addEventListener('input', checkAutoGrow);
+            tr.querySelector('.line-invoice').addEventListener('input', checkAutoGrow);
+            tr.querySelector('.line-invoice-date').addEventListener('input', checkAutoGrow);
+            tr.querySelector('.line-invoice-date').addEventListener('change', checkAutoGrow);
+            tr.querySelector('.line-budget-code').addEventListener('input', checkAutoGrow);
+            tr.querySelector('.line-account').addEventListener('input', checkAutoGrow);
+            tr.querySelector('.line-amount').addEventListener('input', checkAutoGrow);
+            // Also check on blur for budget/account (selected from dropdown)
+            tr.querySelector('.line-budget-code').addEventListener('blur', () => setTimeout(checkAutoGrow, 200));
+            tr.querySelector('.line-account').addEventListener('blur', () => setTimeout(checkAutoGrow, 200));
         }
 
         function recalcTotals() {
@@ -1378,6 +1385,7 @@
                         addLineItem({
                             description: row['Description'] || row['description'] || '',
                             invoice: row['Invoice'] || row['Invoice #'] || row['Invoice Number'] || row['invoice'] || '',
+                            invoiceDate: row['Invoice Date'] || row['Invoice_Date'] || row['invoice_date'] || '',
                             budgetCode: row['Budget Code'] || row['Budget_Code'] || row['budget_code'] || '',
                             account: row['Account'] || row['account'] || '',
                             amount: row['Amount'] || row['Total'] || row['amount'] || ''
@@ -1722,12 +1730,71 @@
             }
         }
 
-        function confirmSubmission() {
+        async function confirmSubmission() {
             const sigName = document.getElementById('sigInput').value.trim();
             if (!sigName) return;
+
+            // Collect form data
+            const requestType = currentRequestType;
+            const lineItems = [];
+            document.querySelectorAll('#lineItemsBody tr').forEach((row, idx) => {
+                const desc = row.querySelector('.line-desc').value.trim();
+                if (!desc) return; // skip empty rows
+                lineItems.push({
+                    line_number: idx + 1,
+                    description: desc,
+                    invoice_number: row.querySelector('.line-invoice').value.trim(),
+                    invoice_date: row.querySelector('.line-invoice-date').value || null,
+                    budget_code: row.querySelector('.line-budget-code').value.trim(),
+                    account_code: row.querySelector('.line-account').value.trim(),
+                    total: parseFormattedNumber(row.querySelector('.line-amount').value),
+                });
+            });
+
+            const payload = {
+                request_type: requestType,
+                submitter_name: sigName,
+                submission_date: new Date().toISOString().split('T')[0],
+                status: 'pending',
+                description: document.getElementById('description').value.trim() || null,
+                lineItems: lineItems,
+            };
+
+            // Add vendor or employee fields
+            if (requestType === 'vendor') {
+                payload.vendor_name = document.getElementById('vendorName').value.trim();
+                payload.vendor_number = document.getElementById('vendorNumber').value.trim();
+                payload.vendor_address = document.getElementById('vendorAddress').value.trim();
+            } else {
+                payload.employee_name = document.getElementById('employeeName').value.trim();
+                payload.employee_id = document.getElementById('employeeId').value.trim();
+            }
+
+            // Also set submitter from SSO if available
+            if (_cachedEmployee) {
+                payload.submitter_name = `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim();
+                payload.submitter_id = _cachedEmployee.user_id ? `E${_cachedEmployee.user_id}` : '';
+            }
+            payload.signature = sigName;
+
             closeSignatureModal();
-            alert('Submitted successfully! Signed by: ' + sigName + ' (API integration pending)');
-            window.location.href = 'index.html';
+
+            try {
+                const resp = await fetch('https://bondwood-api.bondwood.workers.dev/api/rfps', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const result = await resp.json();
+                if (resp.ok) {
+                    alert(`Submitted! RFP #${result.rfp_number} created successfully.`);
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Submission failed: ' + (result.error || JSON.stringify(result)));
+                }
+            } catch (e) {
+                alert('Submission error: ' + e.message);
+            }
         }
 
         function loadExistingForm(id) {
@@ -2029,6 +2096,7 @@
 
         function selectBudgetCode(input, code, row) {
             input.value = code;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
             closeBcDropdown(input);
             clearBcError(input);
             input.classList.remove('bc-error');
@@ -2044,6 +2112,7 @@
                     // Auto-fill if only one account
                     acInput.value = accounts[0];
                     acInput.classList.add('bc-valid');
+                    acInput.dispatchEvent(new Event('input', { bubbles: true }));
                 } else {
                     setTimeout(() => acInput.focus(), 50);
                 }
@@ -2052,6 +2121,7 @@
 
         function selectAccountCode(input, code) {
             input.value = code;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
             closeBcDropdown(input);
             clearBcError(input);
             input.classList.remove('bc-error');
