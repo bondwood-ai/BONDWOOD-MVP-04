@@ -933,7 +933,7 @@
                     <button class="att-close-btn" onclick="closeImportFileModal()">&times;</button>
                 </div>
                 <div style="padding:0 1.75rem;">
-                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to populate line items. The first row must contain these column headers:</p>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to populate line items. Headers are auto-detected. If no headers, columns must be in this order:</p>
                     <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Metropolis',sans-serif;font-weight:600;letter-spacing:0.01em;">Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
                     <div class="att-drop-zone" id="importDropZone"
                          onclick="document.getElementById('importFileInput').click()"
@@ -1739,12 +1739,10 @@
 
             // Show file preview
             const preview = document.getElementById('importFilePreview');
-            const iconColor = ext === 'csv' ? '#16a34a' : '#034694';
-            const label = ext.toUpperCase();
             preview.innerHTML = `
                 <div class="attachment-item">
                     <div class="attachment-icon">
-                        <svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${iconColor}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>
+                        <img src="xlsx.png" alt="XLSX" style="width:36px;height:36px;object-fit:contain;">
                     </div>
                     <div class="attachment-info">
                         <div class="attachment-name" style="cursor:default;">${file.name}</div>
@@ -1772,32 +1770,98 @@
             const file = preview._pendingFile;
             if (!file) return;
 
+            const EXPECTED_ORDER = ['description', 'invoice', 'invoiceDate', 'budgetCode', 'account', 'amount'];
+            const HEADER_KEYWORDS = ['description', 'invoice', 'invoicedate', 'date', 'budgetcode', 'budget', 'account', 'acct', 'amount', 'total', 'amt'];
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const wb = XLSX.read(e.target.result, { type: 'array' });
+                    const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
                     const ws = wb.Sheets[wb.SheetNames[0]];
-                    const data = XLSX.utils.sheet_to_json(ws);
-                    if (data.length === 0) { showAlert('No data found in file.', 'Import Error'); return; }
+
+                    // First, read as array-of-arrays to inspect the first row
+                    const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+                    if (allRows.length === 0) { showAlert('No data found in file.', 'Import Error'); return; }
+
+                    const firstRow = allRows[0].map(c => String(c).trim());
+                    const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                    // Detect if first row is headers by checking if any cell matches known header keywords
+                    const headerMatches = firstRow.filter(cell => HEADER_KEYWORDS.includes(normalize(cell)));
+                    const hasHeaders = headerMatches.length >= 2; // at least 2 header matches
+
+                    console.log('[IMPORT] First row:', firstRow);
+                    console.log('[IMPORT] Header matches:', headerMatches.length, '→', hasHeaders ? 'HAS HEADERS' : 'NO HEADERS');
+
+                    let rows = [];
+
+                    if (hasHeaders) {
+                        // Use header-based mapping
+                        const data = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' });
+                        const origKeys = Object.keys(data[0]);
+                        function findCol(...patterns) {
+                            for (const pat of patterns) {
+                                const norm = pat.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                for (const k of origKeys) {
+                                    if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === norm) return k;
+                                }
+                            }
+                            return null;
+                        }
+                        const colDesc = findCol('Description');
+                        const colInv = findCol('Invoice #', 'Invoice', 'Invoice Number', 'Inv');
+                        const colInvDate = findCol('Invoice Date', 'Invoice_Date', 'Date');
+                        const colBC = findCol('Budget Code', 'Budget_Code', 'BudgetCode', 'BC', 'Budget');
+                        const colAcct = findCol('Account', 'Account Code', 'Account_Code', 'Acct');
+                        const colAmt = findCol('Amount', 'Total', 'Amt');
+
+                        console.log('[IMPORT] Column mapping:', { colDesc, colInv, colInvDate, colBC, colAcct, colAmt });
+
+                        const val = (row, col) => col != null && row[col] != null ? String(row[col]).trim() : '';
+                        data.forEach(row => {
+                            rows.push({
+                                description: val(row, colDesc),
+                                invoice: val(row, colInv),
+                                invoiceDate: val(row, colInvDate),
+                                budgetCode: val(row, colBC),
+                                account: val(row, colAcct),
+                                amount: val(row, colAmt)
+                            });
+                        });
+                    } else {
+                        // No headers — use positional mapping
+                        console.log('[IMPORT] Using positional mapping (no headers detected)');
+                        allRows.forEach(cells => {
+                            if (cells.every(c => String(c).trim() === '')) return; // skip blank rows
+                            const mapped = {};
+                            EXPECTED_ORDER.forEach((field, i) => {
+                                let val = i < cells.length ? String(cells[i]).trim() : '';
+                                mapped[field] = val;
+                            });
+                            rows.push(mapped);
+                        });
+                    }
+
+                    if (rows.length === 0) { showAlert('No data found in file.', 'Import Error'); return; }
 
                     // Clear existing rows
                     document.getElementById('lineItemsBody').innerHTML = '';
                     lineItemCounter = 0;
 
-                    data.forEach(row => {
+                    rows.forEach(r => {
                         addLineItem({
-                            description: row['Description'] || row['description'] || '',
-                            invoice: row['Invoice #'] || row['Invoice'] || row['Invoice Number'] || row['invoice'] || row['invoice #'] || '',
-                            invoiceDate: row['Invoice Date'] || row['Invoice_Date'] || row['invoice date'] || row['invoice_date'] || '',
-                            budgetCode: row['Budget Code'] || row['Budget_Code'] || row['budget code'] || row['budget_code'] || '',
-                            account: row['Account'] || row['account'] || '',
-                            amount: row['Amount'] || row['amount'] || row['Total'] || row['total'] || ''
+                            description: r.description || '',
+                            invoice: r.invoice || '',
+                            invoiceDate: r.invoiceDate || '',
+                            budgetCode: r.budgetCode || '',
+                            account: r.account || '',
+                            amount: r.amount || ''
                         });
                     });
 
                     recalcTotals();
                     closeImportFileModal();
-                    showAlert(`Imported ${data.length} line items.`, 'Import Complete');
+                    showAlert(`Imported ${rows.length} line item${rows.length !== 1 ? 's' : ''}.`, 'Import Complete');
                 } catch (err) {
                     showAlert('Error reading file: ' + err.message, 'Import Error');
                 }
