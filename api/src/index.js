@@ -110,6 +110,11 @@ export default {
         return handleBudgetCodes(env, request);
       }
 
+      // ── User Lookup ─────────────────────────────────────────────
+      if (path === '/api/user-lookup' && method === 'GET') {
+        return handleUserLookup(url, env, request);
+      }
+
       // ── Health ──────────────────────────────────────────────────
       if (path === '/api/health') {
         return json({ status: 'ok', timestamp: new Date().toISOString() }, 200, request);
@@ -649,4 +654,30 @@ async function handleBudgetCodes(env, request) {
       'Cache-Control': 'public, max-age=3600',
     },
   });
+}
+
+/**
+ * GET /api/user-lookup?email=user@example.com
+ * Looks up a user in the user_data table by email
+ */
+async function handleUserLookup(url, env, request) {
+  const email = (url.searchParams.get('email') || '').trim().toLowerCase();
+  if (!email) {
+    return json({ error: 'Email parameter required' }, 400, request);
+  }
+
+  const user = await env.DB.prepare(
+    'SELECT user_id, user_first_name, user_last_name, user_email FROM user_data WHERE LOWER(user_email) = ? LIMIT 1'
+  ).bind(email).first();
+
+  if (!user) {
+    return json({ error: 'User not found' }, 404, request);
+  }
+
+  return json({
+    user_id: user.user_id,
+    first_name: user.user_first_name,
+    last_name: user.user_last_name,
+    email: user.user_email
+  }, 200, request);
 }

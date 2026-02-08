@@ -1187,6 +1187,49 @@
             document.getElementById('vendorSection').style.display = type === 'vendor' ? '' : 'none';
             document.getElementById('employeeSection').style.display = type === 'reimbursement' ? '' : 'none';
             document.getElementById('mileageSection').classList.toggle('visible', type === 'reimbursement');
+
+            // Auto-populate employee info from SSO email
+            if (type === 'reimbursement') {
+                autoPopulateEmployee();
+            }
+        }
+
+        /* Get SSO email from Cloudflare Access JWT cookie */
+        function getSSOEmail() {
+            try {
+                const cookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('CF_Authorization='));
+                if (!cookie) return null;
+                const token = cookie.split('=')[1];
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.email || null;
+            } catch (e) {
+                console.warn('Could not parse SSO cookie:', e);
+                return null;
+            }
+        }
+
+        /* Look up employee from user_data and populate fields */
+        async function autoPopulateEmployee() {
+            const email = getSSOEmail();
+            if (!email) {
+                console.log('No SSO email found — employee fields left blank');
+                return;
+            }
+            try {
+                const resp = await fetch(`${API_BASE}/api/user-lookup?email=${encodeURIComponent(email)}`);
+                if (!resp.ok) {
+                    console.warn('User lookup failed:', resp.status);
+                    return;
+                }
+                const user = await resp.json();
+                const fullName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
+                const empId = user.user_id ? `E${user.user_id}` : '';
+                document.getElementById('employeeName').value = fullName;
+                document.getElementById('employeeId').value = empId;
+                console.log(`Auto-populated employee: ${fullName} (${empId})`);
+            } catch (e) {
+                console.warn('Employee auto-populate error:', e);
+            }
         }
 
         /* ========================================
