@@ -2637,6 +2637,20 @@
            ======================================== */
         let BUDGET_CODE_DATA = []; // [{budget_code, account_code, fund, organization, program, finance, course}]
         let BUDGET_CODE_MAP = {};  // budget_code -> [account_codes]
+
+        // Mileage rows can ONLY use account codes 366 or 368
+        const MILEAGE_ALLOWED_ACCOUNTS = ['366', '368'];
+
+        function isMileageRow(row) {
+            return row && row.closest('#mileageBody') !== null;
+        }
+
+        function filterAccountsForRow(accounts, row) {
+            if (isMileageRow(row)) {
+                return accounts.filter(a => MILEAGE_ALLOWED_ACCOUNTS.includes(a));
+            }
+            return accounts;
+        }
         let UNIQUE_BUDGET_CODES = []; // sorted unique budget codes
         let budgetDataLoaded = false;
 
@@ -2745,7 +2759,8 @@
                 clearBcError(this);
                 const bc = bcInput.value.trim();
                 const q = this.value.trim();
-                const validAccounts = BUDGET_CODE_MAP[bc] || [];
+                const allAccounts = BUDGET_CODE_MAP[bc] || [];
+                const validAccounts = filterAccountsForRow(allAccounts, this.closest('tr'));
                 if (q.length < 1 || validAccounts.length === 0) { closeBcDropdown(this); return; }
                 const matches = validAccounts.filter(a => a.includes(q)).slice(0, 20);
                 // Auto-select if exactly one match
@@ -2765,7 +2780,8 @@
 
             acInput.addEventListener('focus', function() {
                 const bc = bcInput.value.trim();
-                const validAccounts = BUDGET_CODE_MAP[bc] || [];
+                const allAccounts = BUDGET_CODE_MAP[bc] || [];
+                const validAccounts = filterAccountsForRow(allAccounts, this.closest('tr'));
                 if (validAccounts.length === 1 && !this.value.trim()) {
                     // Auto-fill the only option
                     this.value = validAccounts[0];
@@ -2877,7 +2893,8 @@
                 acInput.value = '';
                 acInput.classList.remove('bc-error', 'bc-valid');
                 removeBcTooltip(acInput);
-                const accounts = BUDGET_CODE_MAP[code] || [];
+                const allAccounts = BUDGET_CODE_MAP[code] || [];
+                const accounts = filterAccountsForRow(allAccounts, row);
                 if (accounts.length === 1) {
                     // Auto-fill if only one account
                     acInput.value = accounts[0];
@@ -2926,7 +2943,8 @@
             const bc = bcInput.value.trim();
             if (!val) { input.classList.remove('bc-error', 'bc-valid'); removeBcTooltip(input); return; }
             if (!budgetDataLoaded) return;
-            const validAccounts = BUDGET_CODE_MAP[bc] || [];
+            const allAccounts = BUDGET_CODE_MAP[bc] || [];
+            const validAccounts = filterAccountsForRow(allAccounts, input.closest('tr'));
             if (validAccounts.includes(val)) {
                 input.classList.remove('bc-error');
                 input.classList.add('bc-valid');
@@ -2938,7 +2956,8 @@
             } else {
                 input.classList.remove('bc-valid');
                 input.classList.add('bc-error');
-                showBcTooltip(input, 'Invalid for this budget code');
+                const isMileage = isMileageRow(input.closest('tr'));
+                showBcTooltip(input, isMileage ? 'Mileage account must be 366 or 368' : 'Invalid for this budget code');
             }
         }
 
@@ -2966,6 +2985,7 @@
         submitForm = function() {
             if (budgetDataLoaded) {
                 let hasError = false;
+                // Validate line items
                 document.querySelectorAll('#lineItemsBody tr').forEach(row => {
                     const bcInput = row.querySelector('.line-budget-code');
                     const acInput = row.querySelector('.line-account');
@@ -2982,6 +3002,33 @@
                             acInput.classList.add('bc-error');
                             showBcTooltip(acInput, 'Invalid account code');
                             hasError = true;
+                        }
+                    }
+                });
+                // Validate mileage rows (account must be 366 or 368 only)
+                document.querySelectorAll('#mileageBody tr').forEach(row => {
+                    const bcInput = row.querySelector('.line-budget-code');
+                    const acInput = row.querySelector('.line-account');
+                    if (!bcInput || !acInput) return;
+                    const bcVal = bcInput.value.trim();
+                    const acVal = acInput.value.trim();
+                    if (bcVal && !BUDGET_CODE_MAP[bcVal]) {
+                        bcInput.classList.add('bc-error');
+                        showBcTooltip(bcInput, 'Budget code not found');
+                        hasError = true;
+                    }
+                    if (acVal) {
+                        if (!MILEAGE_ALLOWED_ACCOUNTS.includes(acVal)) {
+                            acInput.classList.add('bc-error');
+                            showBcTooltip(acInput, 'Mileage account must be 366 or 368');
+                            hasError = true;
+                        } else if (bcVal) {
+                            const valid = BUDGET_CODE_MAP[bcVal] || [];
+                            if (!valid.includes(acVal)) {
+                                acInput.classList.add('bc-error');
+                                showBcTooltip(acInput, 'Invalid account code for this budget');
+                                hasError = true;
+                            }
                         }
                     }
                 });
