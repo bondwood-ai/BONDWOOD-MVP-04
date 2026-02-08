@@ -1,26 +1,42 @@
 /**
  * Pages Function: GET /api/me
- * Reads the CF_Authorization cookie (HttpOnly, set by Cloudflare Access),
+ * Reads the Clerk session cookie (__session or __clerk_db_jwt),
  * decodes the JWT to extract the user's email, then proxies
  * to the worker API to look up the full user record.
  */
 export async function onRequest(context) {
+  const { request } = context;
   const headers = { 'Content-Type': 'application/json' };
 
   try {
-    const cookie = context.request.headers.get('Cookie') || '';
-    const match = cookie.match(/CF_Authorization=([^;]+)/);
+    const cookieHeader = request.headers.get('Cookie') || '';
 
-    if (!match) {
-      return new Response(JSON.stringify({ error: 'No CF_Authorization cookie found' }), { status: 401, headers });
+    // Try Clerk session cookies
+    const token = getCookie(cookieHeader, '__session') || getCookie(cookieHeader, '__clerk_db_jwt');
+
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'No session cookie found' }), { status: 401, headers });
     }
 
     // Decode JWT payload (middle segment)
-    const payload = JSON.parse(atob(match[1].split('.')[1]));
-    const email = (payload.email || '').trim().toLowerCase();
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+
+    // Clerk stores email in different possible locations
+    const email = (
+      payload.email ||
+      payload.email_address ||
+      (payload.unsafe_metadata && payload.unsafe_metadata.email) ||
+      (payload.public_metadata && payload.public_metadata.email) ||
+      ''
+    ).trim().toLowerCase();
 
     if (!email) {
-      return new Response(JSON.stringify({ error: 'No email in JWT payload' }), { status: 401, headers });
+      // Return the payload so we can debug where the email lives
+      return new Response(JSON.stringify({
+        error: 'No email found in JWT',
+        payload_keys: Object.keys(payload),
+        payload_preview: payload
+      }), { status: 401, headers });
     }
 
     // Proxy to the worker
@@ -34,6 +50,16 @@ export async function onRequest(context) {
       headers
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Failed to decode auth token', detail: e.message }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: 'Failed to decode session', detail: e.message }), { status: 500, headers });
   }
+}
+
+function getCookie(cookieHeader, name) {
+  const cookies = cookieHeader.split(';').map(c => c.trim());
+  for (const cookie of cookies) {
+    if (cookie.startsWith(name + '=')) {
+      return cookie.substring(name.length + 1);
+    }
+  }
+  return null;
 }
