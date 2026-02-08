@@ -195,6 +195,60 @@
             background: rgba(220, 38, 38, 0.06); display: none;
             font-weight: 500; font-family: 'Metropolis', sans-serif;
         }
+
+        /* ============ BUDGET CODE AUTOCOMPLETE ============ */
+        .bc-autocomplete-wrapper { position: relative; }
+        .bc-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 6px; max-height: 180px; overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18); display: none;
+            margin-top: 2px; min-width: 140px;
+        }
+        .bc-dropdown.open { display: block; }
+        .bc-dropdown-item {
+            padding: 0.4rem 0.6rem; cursor: pointer; font-size: 0.8rem;
+            font-family: 'Metropolis', monospace; letter-spacing: 0.03em;
+            border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+            color: var(--text-primary);
+        }
+        .bc-dropdown-item:last-child { border-bottom: none; }
+        .bc-dropdown-item:hover, .bc-dropdown-item.active {
+            background: color-mix(in srgb, var(--primary-hex) 10%, var(--card-bg));
+        }
+        .bc-dropdown-item .bc-match { font-weight: 700; color: var(--secondary-hex); }
+        .bc-dropdown-empty {
+            padding: 0.45rem 0.6rem; font-size: 0.75rem; color: var(--text-secondary);
+            text-align: center; font-family: 'Metropolis', sans-serif;
+        }
+        .bc-error {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important;
+        }
+        .bc-valid {
+            border-color: #16a34a !important;
+            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12) !important;
+        }
+        .bc-error-tooltip {
+            position: absolute; bottom: calc(100% + 4px); left: 0; right: 0;
+            background: #dc2626; color: #fff; font-size: 0.68rem; padding: 0.25rem 0.5rem;
+            border-radius: 4px; font-family: 'Metropolis', sans-serif; font-weight: 500;
+            text-align: center; white-space: nowrap; z-index: 110; pointer-events: none;
+        }
+        .bc-error-tooltip::after {
+            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border: 4px solid transparent; border-top-color: #dc2626;
+        }
+        body.dark-mode .bc-dropdown { background: var(--card-bg); border-color: var(--border-color); }
+        body.dark-mode .bc-dropdown-item { color: var(--text-primary); }
+        body.dark-mode .bc-dropdown-item:hover, body.dark-mode .bc-dropdown-item.active {
+            background: rgba(91, 122, 255, 0.15);
+        }
+        body.dark-mode .bc-dropdown-item .bc-match { color: #5b7aff; }
+        body.dark-mode .bc-error { border-color: #f87171 !important; box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15) !important; }
+        body.dark-mode .bc-valid { border-color: #4ade80 !important; box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.12) !important; }
+        body.dark-mode .bc-error-tooltip { background: #f87171; color: #000; }
+        body.dark-mode .bc-error-tooltip::after { border-top-color: #f87171; }
         body.dark-mode .vendor-error-msg { color: #f87171; background: rgba(248, 113, 113, 0.1); }
         body.dark-mode .input-error { border-color: #f87171 !important; box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15) !important; }
         .vendor-section {
@@ -1035,6 +1089,7 @@
             initTheme();
             loadBrandFromURL();
             setupVendorAutocomplete();
+            loadBudgetCodes();
 
             // Initialize with 5 line items
             for (let i = 0; i < 5; i++) addLineItem();
@@ -1073,8 +1128,8 @@
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><textarea class="line-desc" rows="1" cols="25" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
                 <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:145px;"></td>
-                <td><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;"></td>
-                <td><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;"></td>
+                <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Search..."></td>
+                <td class="bc-autocomplete-wrapper"><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;" autocomplete="off" placeholder="—"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
             `;
             tbody.appendChild(tr);
@@ -1086,6 +1141,9 @@
                 const v = parseFormattedNumber(this.value);
                 if (v > 0) this.value = formatCurrency(v);
             });
+
+            // Init autocomplete for this row
+            initBudgetAutocomplete(tr);
         }
 
         function recalcTotals() {
@@ -1486,6 +1544,342 @@
                     if (retries > 0) setTimeout(() => loadBrandFromURL(retries - 1), 2000);
                 });
         }
+
+        /* ========================================
+           BUDGET CODE AUTOCOMPLETE
+           ======================================== */
+        let BUDGET_CODE_DATA = []; // [{budget_code, account_code, fund, organization, program, finance, course}]
+        let BUDGET_CODE_MAP = {};  // budget_code -> [account_codes]
+        let UNIQUE_BUDGET_CODES = []; // sorted unique budget codes
+        let budgetDataLoaded = false;
+
+        function loadBudgetCodes() {
+            fetch('https://bondwood-api.bondwood.workers.dev/api/budget-codes')
+                .then(r => r.json())
+                .then(raw => {
+                    const data = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
+                    BUDGET_CODE_DATA = data;
+                    BUDGET_CODE_MAP = {};
+                    data.forEach(row => {
+                        if (!BUDGET_CODE_MAP[row.budget_code]) BUDGET_CODE_MAP[row.budget_code] = [];
+                        if (!BUDGET_CODE_MAP[row.budget_code].includes(row.account_code)) {
+                            BUDGET_CODE_MAP[row.budget_code].push(row.account_code);
+                        }
+                    });
+                    UNIQUE_BUDGET_CODES = Object.keys(BUDGET_CODE_MAP).sort();
+                    budgetDataLoaded = true;
+                    console.log(`Loaded ${UNIQUE_BUDGET_CODES.length} budget codes, ${data.length} total rows`);
+                })
+                .catch(err => {
+                    console.warn('Failed to load budget codes:', err);
+                    // Retry once after 3s
+                    setTimeout(() => {
+                        fetch('https://bondwood-api.bondwood.workers.dev/api/budget-codes')
+                            .then(r => r.json())
+                            .then(raw => {
+                                const data = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
+                                BUDGET_CODE_DATA = data;
+                                BUDGET_CODE_MAP = {};
+                                data.forEach(row => {
+                                    if (!BUDGET_CODE_MAP[row.budget_code]) BUDGET_CODE_MAP[row.budget_code] = [];
+                                    if (!BUDGET_CODE_MAP[row.budget_code].includes(row.account_code)) {
+                                        BUDGET_CODE_MAP[row.budget_code].push(row.account_code);
+                                    }
+                                });
+                                UNIQUE_BUDGET_CODES = Object.keys(BUDGET_CODE_MAP).sort();
+                                budgetDataLoaded = true;
+                            }).catch(() => {});
+                    }, 3000);
+                });
+        }
+
+        function initBudgetAutocomplete(row) {
+            const bcInput = row.querySelector('.line-budget-code');
+            const acInput = row.querySelector('.line-account');
+            if (!bcInput || !acInput) return;
+
+            let bcActiveIndex = -1;
+            let acActiveIndex = -1;
+
+            // ---- Budget Code input ----
+            bcInput.addEventListener('input', function() {
+                clearBcError(this);
+                const q = this.value.trim();
+                if (q.length < 1 || !budgetDataLoaded) { closeBcDropdown(this); return; }
+                const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 25);
+                bcActiveIndex = -1;
+                renderBcDropdown(this, matches, q);
+            });
+
+            bcInput.addEventListener('focus', function() {
+                const q = this.value.trim();
+                if (q.length >= 1 && budgetDataLoaded) {
+                    const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 25);
+                    bcActiveIndex = -1;
+                    renderBcDropdown(this, matches, q);
+                }
+            });
+
+            bcInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    closeBcDropdown(this);
+                    validateBcField(this);
+                }, 180);
+            });
+
+            bcInput.addEventListener('keydown', function(e) {
+                const drop = this.parentElement.querySelector('.bc-dropdown');
+                if (!drop || !drop.classList.contains('open')) {
+                    if (e.key === 'Tab') return;
+                    return;
+                }
+                const items = drop.querySelectorAll('.bc-dropdown-item');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    bcActiveIndex = Math.min(bcActiveIndex + 1, items.length - 1);
+                    highlightBcItem(items, bcActiveIndex);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    bcActiveIndex = Math.max(bcActiveIndex - 1, 0);
+                    highlightBcItem(items, bcActiveIndex);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (bcActiveIndex >= 0 && items[bcActiveIndex]) {
+                        selectBudgetCode(this, items[bcActiveIndex].dataset.code, row);
+                    }
+                } else if (e.key === 'Escape') {
+                    closeBcDropdown(this);
+                }
+            });
+
+            // ---- Account Code input ----
+            acInput.addEventListener('input', function() {
+                clearBcError(this);
+                const bc = bcInput.value.trim();
+                const q = this.value.trim();
+                const validAccounts = BUDGET_CODE_MAP[bc] || [];
+                if (q.length < 1 || validAccounts.length === 0) { closeBcDropdown(this); return; }
+                const matches = validAccounts.filter(a => a.includes(q)).slice(0, 20);
+                acActiveIndex = -1;
+                renderBcDropdown(this, matches, q);
+            });
+
+            acInput.addEventListener('focus', function() {
+                const bc = bcInput.value.trim();
+                const validAccounts = BUDGET_CODE_MAP[bc] || [];
+                if (validAccounts.length > 0) {
+                    const q = this.value.trim();
+                    const matches = q.length >= 1
+                        ? validAccounts.filter(a => a.includes(q)).slice(0, 20)
+                        : validAccounts.slice(0, 20);
+                    acActiveIndex = -1;
+                    renderBcDropdown(this, matches, q);
+                }
+            });
+
+            acInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    closeBcDropdown(this);
+                    validateAcField(this, bcInput);
+                }, 180);
+            });
+
+            acInput.addEventListener('keydown', function(e) {
+                const drop = this.parentElement.querySelector('.bc-dropdown');
+                if (!drop || !drop.classList.contains('open')) return;
+                const items = drop.querySelectorAll('.bc-dropdown-item');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    acActiveIndex = Math.min(acActiveIndex + 1, items.length - 1);
+                    highlightBcItem(items, acActiveIndex);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    acActiveIndex = Math.max(acActiveIndex - 1, 0);
+                    highlightBcItem(items, acActiveIndex);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (acActiveIndex >= 0 && items[acActiveIndex]) {
+                        selectAccountCode(this, items[acActiveIndex].dataset.code);
+                    }
+                } else if (e.key === 'Escape') {
+                    closeBcDropdown(this);
+                }
+            });
+        }
+
+        function renderBcDropdown(input, matches, query) {
+            let drop = input.parentElement.querySelector('.bc-dropdown');
+            if (!drop) {
+                drop = document.createElement('div');
+                drop.className = 'bc-dropdown';
+                input.parentElement.appendChild(drop);
+            }
+            if (matches.length === 0 && query.length > 0) {
+                drop.innerHTML = '<div class="bc-dropdown-empty">No matching codes</div>';
+                drop.classList.add('open');
+                return;
+            }
+            if (matches.length === 0) { drop.classList.remove('open'); return; }
+
+            drop.innerHTML = matches.map(code => {
+                const highlighted = highlightMatch(code, query);
+                return `<div class="bc-dropdown-item" data-code="${code}">${highlighted}</div>`;
+            }).join('');
+            drop.classList.add('open');
+
+            // Click handlers
+            drop.querySelectorAll('.bc-dropdown-item').forEach(item => {
+                item.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    const code = this.dataset.code;
+                    if (input.classList.contains('line-budget-code')) {
+                        selectBudgetCode(input, code, input.closest('tr'));
+                    } else {
+                        selectAccountCode(input, code);
+                    }
+                });
+            });
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const idx = text.indexOf(query);
+            if (idx === -1) return text;
+            return text.substring(0, idx) +
+                   '<span class="bc-match">' + text.substring(idx, idx + query.length) + '</span>' +
+                   text.substring(idx + query.length);
+        }
+
+        function highlightBcItem(items, activeIdx) {
+            items.forEach((item, i) => item.classList.toggle('active', i === activeIdx));
+            if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
+        }
+
+        function selectBudgetCode(input, code, row) {
+            input.value = code;
+            closeBcDropdown(input);
+            clearBcError(input);
+            input.classList.remove('bc-error');
+            input.classList.add('bc-valid');
+            // Clear and focus account field
+            const acInput = row.querySelector('.line-account');
+            if (acInput) {
+                acInput.value = '';
+                acInput.classList.remove('bc-error', 'bc-valid');
+                removeBcTooltip(acInput);
+                const accounts = BUDGET_CODE_MAP[code] || [];
+                if (accounts.length === 1) {
+                    // Auto-fill if only one account
+                    acInput.value = accounts[0];
+                    acInput.classList.add('bc-valid');
+                } else {
+                    setTimeout(() => acInput.focus(), 50);
+                }
+            }
+        }
+
+        function selectAccountCode(input, code) {
+            input.value = code;
+            closeBcDropdown(input);
+            clearBcError(input);
+            input.classList.remove('bc-error');
+            input.classList.add('bc-valid');
+            // Move to amount field
+            const amountInput = input.closest('tr').querySelector('.line-amount');
+            if (amountInput) setTimeout(() => amountInput.focus(), 50);
+        }
+
+        function closeBcDropdown(input) {
+            const drop = input.parentElement.querySelector('.bc-dropdown');
+            if (drop) drop.classList.remove('open');
+        }
+
+        function validateBcField(input) {
+            const val = input.value.trim();
+            if (!val) { input.classList.remove('bc-error', 'bc-valid'); removeBcTooltip(input); return; }
+            if (!budgetDataLoaded) return;
+            if (BUDGET_CODE_MAP[val]) {
+                input.classList.remove('bc-error');
+                input.classList.add('bc-valid');
+                removeBcTooltip(input);
+            } else {
+                input.classList.remove('bc-valid');
+                input.classList.add('bc-error');
+                showBcTooltip(input, 'Budget code not found');
+            }
+        }
+
+        function validateAcField(input, bcInput) {
+            const val = input.value.trim();
+            const bc = bcInput.value.trim();
+            if (!val) { input.classList.remove('bc-error', 'bc-valid'); removeBcTooltip(input); return; }
+            if (!budgetDataLoaded) return;
+            const validAccounts = BUDGET_CODE_MAP[bc] || [];
+            if (validAccounts.includes(val)) {
+                input.classList.remove('bc-error');
+                input.classList.add('bc-valid');
+                removeBcTooltip(input);
+            } else if (!bc) {
+                input.classList.remove('bc-valid');
+                input.classList.add('bc-error');
+                showBcTooltip(input, 'Enter budget code first');
+            } else {
+                input.classList.remove('bc-valid');
+                input.classList.add('bc-error');
+                showBcTooltip(input, 'Invalid for this budget code');
+            }
+        }
+
+        function clearBcError(input) {
+            input.classList.remove('bc-error');
+            removeBcTooltip(input);
+        }
+
+        function showBcTooltip(input, msg) {
+            removeBcTooltip(input);
+            const tip = document.createElement('div');
+            tip.className = 'bc-error-tooltip';
+            tip.textContent = msg;
+            input.parentElement.appendChild(tip);
+            setTimeout(() => { if (tip.parentElement) tip.remove(); }, 4000);
+        }
+
+        function removeBcTooltip(input) {
+            const tip = input.parentElement.querySelector('.bc-error-tooltip');
+            if (tip) tip.remove();
+        }
+
+        // ---- Validation on form submit ----
+        const origSubmitForm = submitForm;
+        submitForm = function() {
+            if (budgetDataLoaded) {
+                let hasError = false;
+                document.querySelectorAll('#lineItemsBody tr').forEach(row => {
+                    const bcInput = row.querySelector('.line-budget-code');
+                    const acInput = row.querySelector('.line-account');
+                    const bcVal = bcInput.value.trim();
+                    const acVal = acInput.value.trim();
+                    if (bcVal && !BUDGET_CODE_MAP[bcVal]) {
+                        bcInput.classList.add('bc-error');
+                        showBcTooltip(bcInput, 'Budget code not found');
+                        hasError = true;
+                    }
+                    if (acVal && bcVal) {
+                        const valid = BUDGET_CODE_MAP[bcVal] || [];
+                        if (!valid.includes(acVal)) {
+                            acInput.classList.add('bc-error');
+                            showBcTooltip(acInput, 'Invalid account code');
+                            hasError = true;
+                        }
+                    }
+                });
+                if (hasError) {
+                    alert('Please fix the highlighted budget/account code errors before submitting.');
+                    return;
+                }
+            }
+            origSubmitForm();
+        };
 
         // Keyboard shortcut: Escape to close PDF viewer
         document.addEventListener('keydown', (e) => {
