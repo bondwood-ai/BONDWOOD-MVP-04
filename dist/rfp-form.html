@@ -252,6 +252,7 @@
         body.dark-mode .bc-valid { border-color: #4ade80 !important; box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.12) !important; }
         body.dark-mode .bc-error-tooltip { background: #f87171; color: #000; }
         body.dark-mode .bc-error-tooltip::after { border-top-color: #f87171; }
+        body.dark-mode #mileageErrorBanner { background: rgba(248, 113, 113, 0.1); border-color: #f87171; color: #f87171; }
         body.dark-mode .vendor-error-msg { color: #f87171; background: rgba(248, 113, 113, 0.1); }
         body.dark-mode .input-error { border-color: #f87171 !important; box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15) !important; }
         .vendor-section {
@@ -815,6 +816,8 @@
                     </div>
 
                     <div class="mileage-table-scroll">
+                        <div id="mileageErrorBanner" style="display:none;background:#fef2f2;border:1px solid #dc2626;border-radius:8px;padding:0.5rem 0.85rem;margin-bottom:0.5rem;font-size:0.82rem;font-weight:600;color:#dc2626;font-family:'Metropolis',sans-serif;">
+                        </div>
                         <table class="mileage-table">
                             <thead>
                                 <tr>
@@ -3090,6 +3093,7 @@
                 if (acInput) {
                     acInput.value = '';
                     acInput.classList.remove('bc-valid');
+                    acInput.classList.add('bc-error');
                 }
                 return;
             }
@@ -3144,6 +3148,8 @@
                         input.classList.remove('bc-valid');
                         input.classList.add('bc-error');
                         showBcTooltip(input, 'This budget code has no valid mileage accounts (366 or 368)');
+                        const acInput = row.querySelector('.line-account');
+                        if (acInput) { acInput.classList.remove('bc-valid'); acInput.classList.add('bc-error'); }
                         return;
                     }
                 }
@@ -3187,6 +3193,19 @@
 
         function showBcTooltip(input, msg) {
             removeBcTooltip(input);
+            const row = input.closest('tr');
+            // For mileage budget code errors, show in banner above the table
+            if (isMileageRow(row) && input.classList.contains('line-budget-code')) {
+                const banner = document.getElementById('mileageErrorBanner');
+                if (banner) {
+                    banner.textContent = msg;
+                    banner.style.display = 'block';
+                    // Auto-hide after 5s
+                    clearTimeout(banner._hideTimer);
+                    banner._hideTimer = setTimeout(() => { banner.style.display = 'none'; }, 5000);
+                }
+                return;
+            }
             const tip = document.createElement('div');
             tip.className = 'bc-error-tooltip';
             tip.textContent = msg;
@@ -3197,6 +3216,12 @@
         function removeBcTooltip(input) {
             const tip = input.parentElement.querySelector('.bc-error-tooltip');
             if (tip) tip.remove();
+            // Also clear mileage banner if this is a mileage budget code input
+            const row = input.closest('tr');
+            if (row && isMileageRow(row) && input.classList.contains('line-budget-code')) {
+                const banner = document.getElementById('mileageErrorBanner');
+                if (banner) { banner.style.display = 'none'; clearTimeout(banner._hideTimer); }
+            }
         }
 
         // ---- Validation on form submit ----
