@@ -269,6 +269,7 @@
             background: var(--field-bg); color: var(--text-primary);
         }
         .vendor-section textarea { min-height: 60px; resize: vertical; }
+        .vendor-section input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; color: var(--text-primary); }
         .vendor-section input:focus, .vendor-section select:focus, .vendor-section textarea:focus {
             outline: none; border-color: var(--secondary-hex);
         }
@@ -1190,6 +1191,11 @@
 
             // Auto-populate employee info from SSO
             if (type === 'reimbursement') {
+                // Reset to editable in case previous lookup set readonly
+                document.getElementById('employeeName').removeAttribute('readonly');
+                document.getElementById('employeeId').removeAttribute('readonly');
+                document.getElementById('employeeName').value = '';
+                document.getElementById('employeeId').value = '';
                 autoPopulateEmployee();
             }
         }
@@ -1208,6 +1214,9 @@
                 const empId = user.user_id ? `E${user.user_id}` : '';
                 document.getElementById('employeeName').value = fullName;
                 document.getElementById('employeeId').value = empId;
+                // Lock fields since user was found
+                document.getElementById('employeeName').setAttribute('readonly', true);
+                document.getElementById('employeeId').setAttribute('readonly', true);
                 console.log(`Auto-populated employee: ${fullName} (${empId})`);
             } catch (e) {
                 console.warn('Employee auto-populate error:', e);
