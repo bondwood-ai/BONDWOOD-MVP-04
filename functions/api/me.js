@@ -1,45 +1,57 @@
 /**
  * Pages Function: GET /api/me
- * Reads the Clerk session cookie (__session or __clerk_db_jwt),
- * decodes the JWT to extract the user's email, then proxies
- * to the worker API to look up the full user record.
+ * Reads Clerk session JWT to get user ID, then calls Clerk Backend API
+ * to get email, then proxies to worker to get employee details.
  */
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
   const headers = { 'Content-Type': 'application/json' };
 
   try {
     const cookieHeader = request.headers.get('Cookie') || '';
-
-    // Try Clerk session cookies
     const token = getCookie(cookieHeader, '__session') || getCookie(cookieHeader, '__clerk_db_jwt');
 
     if (!token) {
       return new Response(JSON.stringify({ error: 'No session cookie found' }), { status: 401, headers });
     }
 
-    // Decode JWT payload (middle segment)
+    // Decode JWT to get Clerk user ID (sub)
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const userId = payload.sub;
 
-    // Clerk stores email in different possible locations
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'No user ID in JWT' }), { status: 401, headers });
+    }
+
+    // Call Clerk Backend API to get user details
+    const clerkKey = env.CLERK_SECRET_KEY;
+    if (!clerkKey) {
+      return new Response(JSON.stringify({ error: 'CLERK_SECRET_KEY not configured' }), { status: 500, headers });
+    }
+
+    const clerkResp = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: { 'Authorization': `Bearer ${clerkKey}` }
+    });
+
+    if (!clerkResp.ok) {
+      return new Response(JSON.stringify({ error: 'Clerk API error', status: clerkResp.status }), { status: 500, headers });
+    }
+
+    const clerkUser = await clerkResp.json();
+
+    // Get primary email from Clerk user
     const email = (
-      payload.email ||
-      payload.email_address ||
-      (payload.unsafe_metadata && payload.unsafe_metadata.email) ||
-      (payload.public_metadata && payload.public_metadata.email) ||
-      ''
+      (clerkUser.email_addresses && clerkUser.email_addresses.length > 0
+        ? clerkUser.email_addresses.find(e => e.id === clerkUser.primary_email_address_id)?.email_address
+          || clerkUser.email_addresses[0].email_address
+        : '')
     ).trim().toLowerCase();
 
     if (!email) {
-      // Return the payload so we can debug where the email lives
-      return new Response(JSON.stringify({
-        error: 'No email found in JWT',
-        payload_keys: Object.keys(payload),
-        payload_preview: payload
-      }), { status: 401, headers });
+      return new Response(JSON.stringify({ error: 'No email found for user' }), { status: 404, headers });
     }
 
-    // Proxy to the worker
+    // Proxy to worker to get employee record
     const workerResp = await fetch(
       `https://bondwood-api.bondwood.workers.dev/api/me?email=${encodeURIComponent(email)}`
     );
@@ -50,7 +62,7 @@ export async function onRequest(context) {
       headers
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Failed to decode session', detail: e.message }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: 'Failed to process session', detail: e.message }), { status: 500, headers });
   }
 }
 
