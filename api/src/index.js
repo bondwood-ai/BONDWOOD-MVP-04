@@ -133,10 +133,13 @@ export default {
 async function handleVendorSearch(url, env, request) {
   const search = (url.searchParams.get('search') || '').trim();
   const field = url.searchParams.get('field') || 'both'; // name, number, both
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '30'), 100);
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '30'), 2000);
 
   if (!search) {
-    return json({ vendors: [], count: 0 }, 200, request);
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM vendor_data ORDER BY vendor_name LIMIT ?'
+    ).bind(limit).all();
+    return json({ vendors: results, count: results.length }, 200, request);
   }
 
   let query, params;

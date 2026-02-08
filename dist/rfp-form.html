@@ -864,7 +864,7 @@
                 const response = await fetch(`${API_BASE}/api/vendors?limit=2000`);
                 if (!response.ok) throw new Error(`Vendor API returned ${response.status}`);
                 const raw = await response.json();
-                const vendors = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
+                const vendors = Array.isArray(raw) ? raw : (raw.vendors || raw.data || raw.results || []);
                 VENDOR_DATA = vendors.map(v => ({
                     n: v.vendor_name || v.name || v.n || '\u2014',
                     c: v.vendor_number || v.code || v.c || '\u2014',
