@@ -454,6 +454,30 @@
         /* Import Modal */
         #import-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
         #import-modal.open { display: flex; }
+        .import-modal-box {
+            background: var(--card-bg); border-radius: 0.875rem;
+            max-height: 88vh; overflow-y: auto; width: 92%; max-width: 540px;
+            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); border: 1px solid var(--border-color);
+        }
+        .import-modal-box .att-modal-header { padding: 1.5rem 1.75rem 0; }
+        .import-modal-box .att-drop-zone { margin-bottom: 0; }
+        .import-modal-footer {
+            display: flex; justify-content: flex-end; gap: 0.75rem;
+            padding: 1.25rem 1.75rem; border-top: 1px solid var(--border-color); margin-top: 1.25rem;
+        }
+        .import-btn-cancel {
+            padding: 0.55rem 1.25rem; border-radius: 6px; font-family: 'Metropolis', sans-serif;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);
+        }
+        .import-btn-cancel:hover { background: var(--bg-color); }
+        .import-btn-confirm {
+            padding: 0.55rem 1.25rem; border-radius: 6px; font-family: 'Metropolis', sans-serif;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            background: var(--primary-hex); border: none; color: var(--accent-text-color);
+        }
+        .import-btn-confirm:hover { opacity: 0.9; }
+        .import-btn-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
         #attachments-modal .att-modal-content {
             background: var(--card-bg); border-radius: 0.875rem; padding: 1.5rem 1.75rem;
             max-height: 88vh; overflow-y: auto; width: 92%; max-width: 540px;
@@ -903,24 +927,31 @@
 
         <!-- Import XLSX Modal -->
         <div id="import-modal">
-            <div class="att-modal-content">
+            <div class="import-modal-box">
                 <div class="att-modal-header">
                     <h3>Import Line Items</h3>
                     <button class="att-close-btn" onclick="closeImportFileModal()">&times;</button>
                 </div>
-                <div class="att-drop-zone" id="importDropZone"
-                     onclick="document.getElementById('importFileInput').click()"
-                     ondragover="event.preventDefault();this.classList.add('dragover')"
-                     ondragleave="this.classList.remove('dragover')"
-                     ondrop="event.preventDefault();this.classList.remove('dragover');handleImportDrop(event)">
-                    <div class="att-drop-icon">
-                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div style="padding:0 1.75rem;">
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Upload a spreadsheet to populate line items. The first row should contain column headers.</p>
+                    <div class="att-drop-zone" id="importDropZone"
+                         onclick="document.getElementById('importFileInput').click()"
+                         ondragover="event.preventDefault();this.classList.add('dragover')"
+                         ondragleave="this.classList.remove('dragover')"
+                         ondrop="event.preventDefault();this.classList.remove('dragover');handleImportDrop(event)">
+                        <div class="att-drop-icon">
+                            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <p class="att-drop-main">Drop your file here or <span style="color:var(--primary-hex);font-weight:600;">browse</span></p>
+                        <p class="att-drop-hint">.xlsx, .xls, .csv</p>
+                        <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFileSelect(event)">
                     </div>
-                    <p class="att-drop-main">Drop file here or click to browse</p>
-                    <p class="att-drop-hint">.xlsx, .xls, .csv</p>
-                    <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFileSelect(event)">
+                    <div id="importFilePreview" style="display:none;" class="att-file-list"></div>
                 </div>
-                <div id="importFilePreview" style="display:none;" class="att-file-list"></div>
+                <div class="import-modal-footer">
+                    <button class="import-btn-cancel" onclick="closeImportFileModal()">Cancel</button>
+                    <button class="import-btn-confirm" id="importConfirmBtn" disabled onclick="executeImport()">Import</button>
+                </div>
             </div>
         </div>
 
@@ -1668,6 +1699,7 @@
             document.getElementById('import-modal').classList.add('open');
             document.getElementById('importFilePreview').style.display = 'none';
             document.getElementById('importFileInput').value = '';
+            document.getElementById('importConfirmBtn').disabled = true;
         }
 
         function closeImportFileModal() {
@@ -1717,11 +1749,21 @@
                         <div class="attachment-name" style="cursor:default;">${file.name}</div>
                         <div class="attachment-meta">${(file.size / 1024).toFixed(1)} KB</div>
                     </div>
-                    <button style="background:var(--primary-hex);color:var(--accent-text-color);border:none;padding:0.45rem 1rem;border-radius:6px;font-family:'Metropolis',sans-serif;font-weight:600;font-size:0.8rem;cursor:pointer;" onclick="executeImport()">Import</button>
+                    <button style="background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:var(--text-secondary);" onclick="clearImportFile()">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
                 </div>
             `;
             preview.style.display = 'flex';
             preview._pendingFile = file;
+            document.getElementById('importConfirmBtn').disabled = false;
+        }
+
+        function clearImportFile() {
+            document.getElementById('importFilePreview').style.display = 'none';
+            document.getElementById('importFilePreview')._pendingFile = null;
+            document.getElementById('importFileInput').value = '';
+            document.getElementById('importConfirmBtn').disabled = true;
         }
 
         function executeImport() {
