@@ -1940,7 +1940,7 @@
             fetch(`${API_BASE}/api/budget-codes`)
                 .then(r => r.json())
                 .then(raw => {
-                    const data = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
+                    const data = Array.isArray(raw) ? raw : (raw.budget_codes || raw.data || raw.results || []);
                     BUDGET_CODE_DATA = data;
                     BUDGET_CODE_MAP = {};
                     data.forEach(row => {
@@ -1960,7 +1960,7 @@
                         fetch(`${API_BASE}/api/budget-codes`)
                             .then(r => r.json())
                             .then(raw => {
-                                const data = Array.isArray(raw) ? raw : (raw.data || raw.results || []);
+                                const data = Array.isArray(raw) ? raw : (raw.budget_codes || raw.data || raw.results || []);
                                 BUDGET_CODE_DATA = data;
                                 BUDGET_CODE_MAP = {};
                                 data.forEach(row => {
