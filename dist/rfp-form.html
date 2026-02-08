@@ -165,7 +165,7 @@
         .vendor-dropdown {
             position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
             background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: 6px; max-height: 220px; overflow-y: auto;
+            border-radius: 6px; max-height: 350px; overflow-y: auto;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none;
             margin-top: 2px;
         }
@@ -201,7 +201,7 @@
         .bc-dropdown {
             position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
             background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: 6px; max-height: 180px; overflow-y: auto;
+            border-radius: 6px; max-height: 350px; overflow-y: auto;
             box-shadow: 0 8px 24px rgba(0,0,0,0.18); display: none;
             margin-top: 2px; min-width: 140px;
         }
@@ -948,7 +948,7 @@
                 clearVendorError();
                 const q = nameInput.value.trim().toUpperCase();
                 if (q.length < 1) { nameDrop.classList.remove('open'); return; }
-                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 30);
+                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 200);
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
@@ -959,7 +959,7 @@
                 clearVendorError();
                 const q = numInput.value.trim();
                 if (q.length < 1) { numDrop.classList.remove('open'); return; }
-                const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 30);
+                const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 200);
                 renderVendorDropdown(numDrop, matches, q, 'number');
             });
 
@@ -973,8 +973,8 @@
                 vendorActiveIndex = -1;
                 const q = nameInput.value.trim().toUpperCase();
                 const matches = q.length >= 1
-                    ? VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 30)
-                    : VENDOR_DATA.slice(0, 30);
+                    ? VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 200)
+                    : VENDOR_DATA.slice(0, 200);
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
@@ -983,8 +983,8 @@
                 vendorActiveIndex = -1;
                 const q = numInput.value.trim();
                 const matches = q.length >= 1
-                    ? VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 30)
-                    : VENDOR_DATA.slice().sort((a, b) => a.c.localeCompare(b.c, undefined, {numeric: true})).slice(0, 30);
+                    ? VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 200)
+                    : VENDOR_DATA.slice().sort((a, b) => a.c.localeCompare(b.c, undefined, {numeric: true})).slice(0, 200);
                 renderVendorDropdown(numDrop, matches, q, 'number');
             });
 
@@ -1000,10 +1000,10 @@
                             const q = input.value.trim();
                             if (q.length >= 1) {
                                 if (input === nameInput) {
-                                    const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 30);
+                                    const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 200);
                                     renderVendorDropdown(nameDrop, matches, q.toUpperCase(), 'name');
                                 } else {
-                                    const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 30);
+                                    const matches = VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 200);
                                     renderVendorDropdown(numDrop, matches, q, 'number');
                                 }
                             }
@@ -1874,7 +1874,7 @@
                 clearBcError(this);
                 const q = this.value.trim();
                 if (q.length < 1 || !budgetDataLoaded) { closeBcDropdown(this); return; }
-                const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 25);
+                const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 200);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
             });
@@ -1883,8 +1883,8 @@
                 if (!budgetDataLoaded) return;
                 const q = this.value.trim();
                 const matches = q.length >= 1
-                    ? UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 25)
-                    : UNIQUE_BUDGET_CODES.slice(0, 25);
+                    ? UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 200)
+                    : UNIQUE_BUDGET_CODES.slice(0, 200);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
             });
