@@ -758,8 +758,8 @@
                                 <th class="checkbox-col"><input type="checkbox" id="selectAllItems" onclick="toggleSelectAllItems()"></th>
                                 <th style="width:50px;">Line</th>
                                 <th>Description</th>
-                                <th style="width:130px;">Invoice #</th>
-                                <th style="width:120px;">Invoice Date</th>
+                                <th class="invoice-col" style="width:130px;">Invoice #</th>
+                                <th class="invoice-col" style="width:120px;">Invoice Date</th>
                                 <th style="width:155px;">Budget Code</th>
                                 <th style="width:85px;">Account</th>
                                 <th style="width:120px;">Amount</th>
@@ -1268,6 +1268,10 @@
             document.getElementById('employeeSection').style.display = type === 'reimbursement' ? '' : 'none';
             document.getElementById('mileageSection').classList.toggle('visible', type === 'reimbursement');
 
+            // Hide invoice columns for employee reimbursements
+            var invoiceDisplay = type === 'reimbursement' ? 'none' : '';
+            document.querySelectorAll('.invoice-col').forEach(function(el) { el.style.display = invoiceDisplay; });
+
             // Auto-populate employee info from SSO
             if (type === 'reimbursement') {
                 // Reset to editable in case previous lookup set readonly
@@ -1461,8 +1465,8 @@
                 <td class="checkbox-cell"><input type="checkbox" class="line-checkbox" onchange="updateLineSelection()"></td>
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><textarea class="line-desc" rows="1" cols="18" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
-                <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
-                <td><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"></td>
+                <td class="invoice-col"><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
+                <td class="invoice-col"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Enter Budget Code"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;" autocomplete="off" placeholder="—"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
@@ -1490,8 +1494,8 @@
                 const lastRow = tbody.querySelector('tr:last-child');
                 if (tr !== lastRow) return; // only check if this is the last row
                 const desc = tr.querySelector('.line-desc').value.trim();
-                const inv = tr.querySelector('.line-invoice').value.trim();
-                const invDate = tr.querySelector('.line-invoice-date').value.trim();
+                const inv = currentRequestType === 'reimbursement' ? 'skip' : tr.querySelector('.line-invoice').value.trim();
+                const invDate = currentRequestType === 'reimbursement' ? 'skip' : tr.querySelector('.line-invoice-date').value.trim();
                 const bc = tr.querySelector('.line-budget-code').value.trim();
                 const acct = tr.querySelector('.line-account').value.trim();
                 const amt = tr.querySelector('.line-amount').value.trim();
@@ -2189,13 +2193,22 @@
                 if (!validateVendorFields()) return;
             }
 
-            // Check line items
+            // Check line items OR mileage trips
             const rows = document.querySelectorAll('#lineItemsBody tr');
             let hasItems = false;
             rows.forEach(r => {
                 if (r.querySelector('.line-desc').value.trim()) hasItems = true;
             });
-            if (!hasItems) { showAlert('Please add at least one line item.', 'Validation'); return; }
+
+            let hasMileage = false;
+            if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
+                document.querySelectorAll('#mileageBody tr').forEach(r => {
+                    var miles = parseFloat(r.querySelector('.trip-miles').value) || 0;
+                    if (miles > 0) hasMileage = true;
+                });
+            }
+
+            if (!hasItems && !hasMileage) { showAlert('Please add at least one line item or mileage trip.', 'Validation'); return; }
 
             // Submit directly (no signature needed - using SSO identity)
             performSubmission();
