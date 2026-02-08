@@ -1298,6 +1298,126 @@
         /* ========================================
            LINE ITEMS
            ======================================== */
+        /* ============ INVOICE DATE AUTO-ADVANCE ============ */
+        function formatDateForDisplay(val) {
+            // Convert YYYY-MM-DD to MM/DD/YYYY
+            if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                const [y, m, d] = val.split('-');
+                return `${m}/${d}/${y}`;
+            }
+            return val;
+        }
+
+        function formatDateForStorage(val) {
+            // Convert MM/DD/YYYY to YYYY-MM-DD
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+                const [m, d, y] = val.split('/');
+                return `${y}-${m}-${d}`;
+            }
+            return val;
+        }
+
+        function initDateAutoAdvance(input) {
+            input.addEventListener('keydown', function(e) {
+                // Allow: backspace, delete, tab, escape, arrows
+                if ([8, 46, 9, 27, 37, 39].includes(e.keyCode)) {
+                    if (e.key === 'Backspace') {
+                        const pos = this.selectionStart;
+                        // If cursor is right after a slash, skip over it
+                        if (pos > 0 && this.value[pos - 1] === '/') {
+                            e.preventDefault();
+                            this.setSelectionRange(pos - 1, pos - 1);
+                        }
+                    }
+                    return;
+                }
+                // Only allow digits
+                if (!/^\d$/.test(e.key)) {
+                    e.preventDefault();
+                    return;
+                }
+                e.preventDefault();
+                const val = this.value;
+                const pos = this.selectionStart;
+                let digits = val.replace(/\D/g, '');
+
+                // Find which digit position we're inserting at
+                let digitIndex = 0;
+                for (let i = 0; i < pos; i++) {
+                    if (/\d/.test(val[i])) digitIndex++;
+                }
+
+                // Insert the new digit
+                digits = digits.substring(0, digitIndex) + e.key + digits.substring(digitIndex);
+
+                // Cap at 8 digits (MMDDYYYY)
+                if (digits.length > 8) digits = digits.substring(0, 8);
+
+                // Format as MM/DD/YYYY
+                let formatted = '';
+                for (let i = 0; i < digits.length; i++) {
+                    if (i === 2 || i === 4) formatted += '/';
+                    formatted += digits[i];
+                }
+
+                this.value = formatted;
+
+                // Set cursor position after the newly typed digit
+                let newPos = 0;
+                let count = 0;
+                for (let i = 0; i < formatted.length; i++) {
+                    if (/\d/.test(formatted[i])) {
+                        count++;
+                        if (count === digitIndex + 1) {
+                            newPos = i + 1;
+                            // Skip over slash if next char is one
+                            if (formatted[newPos] === '/') newPos++;
+                            break;
+                        }
+                    }
+                }
+                this.setSelectionRange(newPos, newPos);
+
+                // Trigger input event for auto-grow
+                this.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            // On paste, format the pasted date
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                let pasted = (e.clipboardData || window.clipboardData).getData('text');
+                let digits = pasted.replace(/\D/g, '');
+                // Handle YYYY-MM-DD paste
+                if (/^\d{4}\d{2}\d{2}$/.test(digits) && parseInt(digits.substring(0,4)) > 1900) {
+                    digits = digits.substring(4,6) + digits.substring(6,8) + digits.substring(0,4);
+                }
+                if (digits.length > 8) digits = digits.substring(0, 8);
+                let formatted = '';
+                for (let i = 0; i < digits.length; i++) {
+                    if (i === 2 || i === 4) formatted += '/';
+                    formatted += digits[i];
+                }
+                this.value = formatted;
+                this.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            // Validate on blur
+            input.addEventListener('blur', function() {
+                const val = this.value.trim();
+                if (!val) return;
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+                    const [m, d, y] = val.split('/').map(Number);
+                    if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > 2100) {
+                        this.style.borderColor = '#e74c3c';
+                    } else {
+                        this.style.borderColor = '';
+                    }
+                } else {
+                    this.style.borderColor = '#e74c3c';
+                }
+            });
+        }
+
         function addLineItem(data = {}) {
             lineItemCounter++;
             const num = lineItemCounter;
@@ -1309,7 +1429,7 @@
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><textarea class="line-desc" rows="1" cols="18" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
                 <td><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
-                <td><input type="date" class="line-invoice-date" value="${data.invoiceDate || ''}" style="width:115px;font-size:0.8rem;"></td>
+                <td><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Enter Budget Code"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;" autocomplete="off" placeholder="—"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
@@ -1327,6 +1447,9 @@
 
             // Init autocomplete for this row
             initBudgetAutocomplete(tr);
+
+            // Init date auto-advance
+            initDateAutoAdvance(tr.querySelector('.line-invoice-date'));
 
             // Auto-grow: when all fields in the last row are filled, add a new row
             const checkAutoGrow = () => {
@@ -1786,7 +1909,7 @@
                     line_number: idx + 1,
                     description: desc,
                     invoice_number: row.querySelector('.line-invoice').value.trim(),
-                    invoice_date: row.querySelector('.line-invoice-date').value || null,
+                    invoice_date: formatDateForStorage(row.querySelector('.line-invoice-date').value) || null,
                     budget_code: row.querySelector('.line-budget-code').value.trim(),
                     account_code: row.querySelector('.line-account').value.trim(),
                     total: parseFormattedNumber(row.querySelector('.line-amount').value),
