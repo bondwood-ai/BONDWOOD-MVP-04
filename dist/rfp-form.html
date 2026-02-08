@@ -386,7 +386,7 @@
         .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Metropolis', sans-serif; }
         .mileage-table-scroll { overflow-x: auto; margin-bottom: 0.75rem; }
         .mileage-table {
-            width: 100%; border-collapse: collapse; min-width: 700px;
+            width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px;
         }
         .mileage-table th {
             background: var(--primary-hex); color: var(--accent-text-color);
@@ -790,11 +790,7 @@
         </div>
 
         <!-- Mileage Reimbursement Section -->
-        <div class="form-container mileage-section" id="mileageSection">
-            <div class="section-header">
-                <span>Business Mileage Reimbursement</span>
-            </div>
-            <div class="form-body">
+        <div class="mileage-section" id="mileageSection" style="margin-bottom:1.25rem;">
                 <div class="mileage-check-row">
                     <input type="checkbox" id="mileageCheck" onchange="toggleMileageTable()">
                     <label for="mileageCheck">Submit Business Mileage</label>
@@ -804,13 +800,13 @@
                         <table class="mileage-table">
                             <thead>
                                 <tr>
-                                    <th style="width:50px;">Trip</th>
+                                    <th style="width:50px;border-radius:8px 0 0 0;">Trip</th>
                                     <th style="width:110px;">Date</th>
                                     <th>From Location</th>
                                     <th>To Location</th>
                                     <th style="width:90px;">Miles</th>
                                     <th style="width:85px;">Rate</th>
-                                    <th style="width:100px;">Amount</th>
+                                    <th style="width:100px;border-radius:0 8px 0 0;">Amount</th>
                                 </tr>
                             </thead>
                             <tbody id="mileageBody"></tbody>
@@ -833,7 +829,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
 
         <!-- Notes -->
