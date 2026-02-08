@@ -440,7 +440,7 @@
             max-height: 88vh; overflow-y: auto; width: 92%; max-width: 540px;
             box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); border: 1px solid var(--border-color);
         }
-        .att-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .att-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
         .att-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
         .att-modal-header h3 .att-header-icon { font-size: 1.15rem; }
         .att-modal-header h3 .att-rfp-label { font-weight: 400; color: var(--text-secondary); margin-left: 0.15rem; }
@@ -504,6 +504,8 @@
         .btn-submit:hover { opacity: 0.9; }
         .btn-save { background: #d1d5db; color: #000; }
         .btn-save:hover { background: #9ca3af; }
+        body.dark-mode .btn-save { background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
+        body.dark-mode .btn-save:hover { background: var(--bg-color); }
         .btn-audit { background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
         .btn-audit:hover { background: var(--bg-color); }
         .btn-primary-sm {
@@ -823,7 +825,6 @@
             <div class="att-modal-content">
                 <div class="att-modal-header">
                     <h3>
-                        <span class="att-header-icon">&#x1F4CE;</span>
                         Attachments<span class="att-rfp-label" id="attRfpLabel"></span>
                     </h3>
                     <button class="att-close-btn" onclick="closeAttachmentsModal()">&times;</button>
@@ -1465,75 +1466,20 @@
 
         /* Realistic file-type SVG icons */
         function getFileTypeIconSVG(ext) {
-            const icons = {
-                pdf: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#E53E3E"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#C53030"/>
-                    <path d="M4 4a2 2 0 012-2h12l10 10v16a2 2 0 01-2 2" fill="none"/>
-                    <path d="M18 2v8a2 2 0 002 2h8" fill="#FC8181" opacity="0.4"/>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">PDF</text>
-                </svg>`,
-                docx: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#2B6CB0"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#2C5282"/>
-                    <path d="M18 2v8a2 2 0 002 2h8" fill="#90CDF4" opacity="0.3"/>
-                    <rect x="9" y="8" width="10" height="1.2" rx="0.6" fill="#BEE3F8"/>
-                    <rect x="9" y="11" width="14" height="1.2" rx="0.6" fill="#BEE3F8"/>
-                    <rect x="9" y="14" width="8" height="1.2" rx="0.6" fill="#BEE3F8"/>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">DOCX</text>
-                </svg>`,
-                doc: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#2B6CB0"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#2C5282"/>
-                    <path d="M18 2v8a2 2 0 002 2h8" fill="#90CDF4" opacity="0.3"/>
-                    <rect x="9" y="8" width="10" height="1.2" rx="0.6" fill="#BEE3F8"/>
-                    <rect x="9" y="11" width="14" height="1.2" rx="0.6" fill="#BEE3F8"/>
-                    <rect x="9" y="14" width="8" height="1.2" rx="0.6" fill="#BEE3F8"/>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">DOC</text>
-                </svg>`,
-                xlsx: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#276749"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#22543D"/>
-                    <path d="M18 2v8a2 2 0 002 2h8" fill="#9AE6B4" opacity="0.3"/>
-                    <rect x="8" y="7" width="16" height="10" rx="1" fill="none" stroke="#C6F6D5" stroke-width="0.8"/>
-                    <line x1="16" y1="7" x2="16" y2="17" stroke="#C6F6D5" stroke-width="0.8"/>
-                    <line x1="8" y1="12" x2="24" y2="12" stroke="#C6F6D5" stroke-width="0.8"/>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">XLSX</text>
-                </svg>`,
-                png: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#6B46C1"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#553C9A"/>
-                    <circle cx="12" cy="10" r="2.5" fill="#D6BCFA" opacity="0.6"/>
-                    <path d="M8 17l5-5 4 3 3-2 4 4" fill="none" stroke="#D6BCFA" stroke-width="1.2" stroke-linejoin="round"/>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">PNG</text>
-                </svg>`,
-                jpg: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#6B46C1"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#553C9A"/>
-                    <circle cx="12" cy="10" r="2.5" fill="#D6BCFA" opacity="0.6"/>
-                    <path d="M8 17l5-5 4 3 3-2 4 4" fill="none" stroke="#D6BCFA" stroke-width="1.2" stroke-linejoin="round"/>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">JPG</text>
-                </svg>`,
-                jpeg: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#6B46C1"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#553C9A"/>
-                    <circle cx="12" cy="10" r="2.5" fill="#D6BCFA" opacity="0.6"/>
-                    <path d="M8 17l5-5 4 3 3-2 4 4" fill="none" stroke="#D6BCFA" stroke-width="1.2" stroke-linejoin="round"/>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6" font-weight="700" font-family="system-ui">JPEG</text>
-                </svg>`,
-                html: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#C05621"/>
-                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#9C4221"/>
-                    <path d="M18 2v8a2 2 0 002 2h8" fill="#FEFCBF" opacity="0.2"/>
-                    <text x="16" y="14" text-anchor="middle" fill="#FEFCBF" font-size="9" font-weight="700" font-family="monospace">&lt;/&gt;</text>
-                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">HTML</text>
-                </svg>`
-            };
-            return icons[ext] || `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="2" width="24" height="28" rx="2" fill="#718096"/>
-                <rect x="4" y="18" width="24" height="12" rx="0" fill="#4A5568"/>
-                <path d="M18 2v8a2 2 0 002 2h8" fill="#CBD5E0" opacity="0.3"/>
-                <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6" font-weight="700" font-family="system-ui">${ext.toUpperCase().substring(0,4)}</text>
+            // Use PNG images for types that have them
+            const pngTypes = { pdf: 'pdf.png', docx: 'docx.png', doc: 'docx.png', xlsx: 'xlsx.png' };
+            if (pngTypes[ext]) {
+                return `<img src="${pngTypes[ext]}" alt="${ext}" style="width:36px;height:36px;object-fit:contain;">`;
+            }
+            // SVG fallbacks for other types
+            const colors = { png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1', html: '#C05621' };
+            const bg = colors[ext] || '#718096';
+            const label = ext.toUpperCase().substring(0, 4);
+            return `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="2" width="24" height="28" rx="2" fill="${bg}"/>
+                <rect x="4" y="18" width="24" height="12" rx="0" fill="${bg}" opacity="0.8"/>
+                <path d="M18 2v8a2 2 0 002 2h8" fill="#fff" opacity="0.2"/>
+                <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">${label}</text>
             </svg>`;
         }
 
