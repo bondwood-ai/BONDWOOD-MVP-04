@@ -147,6 +147,14 @@ export default {
         if (method === 'POST') return handleUploadAttachment(rfpNumber, request, env);
       }
 
+      // ── Audit Logs ──
+      const auditMatch = path.match(/^\/api\/rfps\/(\d+)\/audit-log$/);
+      if (auditMatch) {
+        const rfpNumber = parseInt(auditMatch[1]);
+        if (method === 'GET') return handleGetAuditLog(rfpNumber, env);
+        if (method === 'POST') return handleAddAuditLog(rfpNumber, request, env);
+      }
+
       const attItemMatch = path.match(/^\/api\/attachments\/(.+)$/);
       if (attItemMatch) {
         const key = decodeURIComponent(attItemMatch[1]);
@@ -370,7 +378,18 @@ async function handleGetRFP(rfpNumber, env) {
     }
   }
 
-  return json({ ...header[0], lineItems, mileageTrips });
+  // Fetch audit logs
+  let auditLogs = [];
+  try {
+    const { results: logs } = await env.DB.prepare(
+      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC'
+    ).bind(rfpNumber).all();
+    auditLogs = logs;
+  } catch (e) {
+    // Table may not exist in older deployments
+  }
+
+  return json({ ...header[0], lineItems, mileageTrips, auditLogs });
 }
 
 
@@ -512,6 +531,30 @@ async function handleCreateRFP(request, env) {
   }
 
   await env.DB.batch(statements);
+
+  // Write audit log entry
+  const submitter = body.submitter_name || 'Unknown User';
+  const payee = body.request_type === 'vendor'
+    ? (body.vendor_name || 'an unknown vendor')
+    : 'Employee Reimbursement';
+  let totalAmount = 0;
+  if (body.lineItems) body.lineItems.forEach(i => { totalAmount += (i.total || 0); });
+  if (body.mileageTrips) body.mileageTrips.forEach(t => { totalAmount += (t.amount || 0); });
+  if (totalAmount === 0) totalAmount = body.mileage_total || 0;
+  const amountStr = '$' + totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  const auditDesc = `${submitter} submitted a request for payment with ${payee} for ${amountStr}`;
+  try {
+    await buildAuditInsert(env, nextRfp, 'submitted', auditDesc, submitter, {
+      request_type: body.request_type,
+      vendor_name: body.vendor_name || null,
+      employee_name: body.employee_name || null,
+      total_amount: totalAmount,
+      status: status,
+    }).run();
+  } catch (e) {
+    console.error('Audit log insert failed:', e.message);
+  }
 
   return json({ rfp_number: nextRfp, status, message: 'RFP created' }, 201);
 }
@@ -660,6 +703,36 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     await env.DB.batch(statements);
   }
 
+  // Write audit log entries for notable changes
+  try {
+    const performer = body.performed_by || body.submitter_name || 'System';
+
+    // Status change
+    if (body.status) {
+      const statusLabels = {
+        'draft': 'Draft', 'submitted': 'Submitted', 'pending': 'Pending Review',
+        'budget-review': 'Budget Review', 'compliance-review': 'Compliance Review',
+        'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected',
+        'archived': 'Archived',
+      };
+      const label = statusLabels[body.status] || body.status;
+      await buildAuditInsert(env, rfpNumber, 'status_change',
+        `Request status changed to ${label}`, performer,
+        { new_status: body.status }
+      ).run();
+    }
+
+    // Assignment change
+    if (body.assigned_to) {
+      await buildAuditInsert(env, rfpNumber, 'assigned',
+        `Request assigned to ${body.assigned_to}`, performer,
+        { assigned_to: body.assigned_to }
+      ).run();
+    }
+  } catch (e) {
+    console.error('Audit log insert failed:', e.message);
+  }
+
   return json({ rfp_number: rfpNumber, message: 'RFP updated' });
 }
 
@@ -711,6 +784,62 @@ async function handleMigrate(env) {
   }
 
   return json({ message: 'Migration complete', results });
+}
+
+
+/* ========================================
+   AUDIT LOGS – GET
+   ======================================== */
+async function handleGetAuditLog(rfpNumber, env) {
+  const { results } = await env.DB.prepare(
+    'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC'
+  ).bind(rfpNumber).all();
+
+  return json({ audit_logs: results, count: results.length });
+}
+
+
+/* ========================================
+   AUDIT LOGS – ADD
+   ======================================== */
+async function handleAddAuditLog(rfpNumber, request, env) {
+  const body = await request.json();
+
+  if (!body.action || !body.description) {
+    return json({ error: 'action and description are required' }, 400);
+  }
+
+  await env.DB.prepare(`
+    INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at, metadata)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(
+    rfpNumber,
+    body.action,
+    body.description,
+    body.performed_by || null,
+    body.performed_at || new Date().toISOString(),
+    body.metadata ? JSON.stringify(body.metadata) : null,
+  ).run();
+
+  return json({ message: 'Audit log entry added', rfp_number: rfpNumber }, 201);
+}
+
+
+/* ========================================
+   AUDIT LOGS – HELPER (internal use)
+   ======================================== */
+function buildAuditInsert(env, rfpNumber, action, description, performedBy, metadata) {
+  return env.DB.prepare(`
+    INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at, metadata)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(
+    rfpNumber,
+    action,
+    description,
+    performedBy || null,
+    new Date().toISOString(),
+    metadata ? JSON.stringify(metadata) : null,
+  );
 }
 
 

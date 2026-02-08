@@ -1204,6 +1204,7 @@
         let currentRfpNumber = null;
         let currentRequestType = 'vendor';
         let _loadedRfpData = null; // Cache of the loaded RFP data for audit log
+        let _loadedAuditLogs = []; // Real audit logs from API
         // IRS mileage rates by year
         const MILEAGE_RATES = [
             { start: '2026-01-01', end: '2026-12-31', rate: 0.725 },
@@ -2245,16 +2246,23 @@
         }
 
         function buildFormAuditLog() {
+            // Use real API audit logs if available
+            if (_loadedAuditLogs.length > 0) {
+                return _loadedAuditLogs.map(log => ({
+                    text: log.description,
+                    timestamp: formatAuditTimestamp(log.performed_at),
+                }));
+            }
+
+            // Fallback: generate from form state for older RFPs without audit entries
             const entries = [];
 
-            // If we have loaded RFP data (editing an existing form)
             if (_loadedRfpData) {
                 const data = _loadedRfpData;
                 const submitter = data.submitter_name || 'Unknown User';
                 const status = data.status || 'draft';
                 const submissionDate = data.submission_date;
 
-                // Determine payee
                 let payeeDesc = '';
                 if (data.request_type === 'vendor') {
                     payeeDesc = data.vendor_name || 'an unknown vendor';
@@ -2262,14 +2270,12 @@
                     payeeDesc = 'Employee Reimbursement';
                 }
 
-                // Calculate total
                 let total = 0;
                 if (data.lineItems) data.lineItems.forEach(item => { total += (item.total || 0); });
                 if (data.mileageTrips) data.mileageTrips.forEach(trip => { total += (trip.amount || 0); });
                 if (total === 0) total = data.total_amount || data.amount || data.mileage_total || 0;
                 const amountStr = formatCurrency(total);
 
-                // Entry 1: Submission
                 if (status !== 'draft') {
                     entries.push({
                         text: `<strong>${submitter}</strong> submitted a request for payment with <strong>${payeeDesc}</strong> for <strong>${amountStr}</strong>`,
@@ -2282,7 +2288,6 @@
                     });
                 }
 
-                // Status-based entries
                 const statusMap = {
                     'submitted': 'Request is pending review',
                     'pending': 'Request is pending review',
@@ -2298,13 +2303,22 @@
                     entries.push({ text: statusMap[status], timestamp: '—' });
                 }
 
-                // Assignment
                 if (data.assigned_to && data.assigned_to !== '—') {
                     entries.push({ text: `Request assigned to <strong>${data.assigned_to}</strong>`, timestamp: '—' });
                 }
             }
 
             return entries;
+        }
+
+        function formatAuditTimestamp(isoStr) {
+            if (!isoStr) return '—';
+            try {
+                const d = new Date(isoStr);
+                if (isNaN(d.getTime())) return isoStr;
+                return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() + ' ' +
+                    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            } catch (e) { return isoStr; }
         }
 
         function submitForm() {
@@ -2507,6 +2521,7 @@
 
                 // Cache data for audit log
                 _loadedRfpData = data;
+                _loadedAuditLogs = data.auditLogs || [];
 
                 // Set RFP number display
                 const rfpEl = document.getElementById('rfpNumber');

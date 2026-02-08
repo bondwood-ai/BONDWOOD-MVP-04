@@ -1058,6 +1058,16 @@
             }
         }
 
+        function formatAuditTimestamp(isoStr) {
+            if (!isoStr) return '—';
+            try {
+                const d = new Date(isoStr);
+                if (isNaN(d.getTime())) return isoStr;
+                return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() + ' ' +
+                    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            } catch (e) { return isoStr; }
+        }
+
         /* ========================================
            AUDIT LOG BUILDER
            ======================================== */
@@ -1139,12 +1149,14 @@
             let lineItems = [];
             let mileageTrips = [];
             let notesText = '';
+            let apiAuditLogs = [];
             try {
                 const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`);
                 const data = await resp.json();
                 lineItems = data.lineItems || [];
                 mileageTrips = data.mileageTrips || [];
                 notesText = data.description || '';
+                apiAuditLogs = data.auditLogs || [];
             } catch (e) {
                 console.error('Failed to load RFP details:', e);
             }
@@ -1200,7 +1212,16 @@
             }
 
             // Build Audit Log (collapsible, collapsed by default)
-            const auditEntries = buildAuditLog(rfp, displayTotal);
+            // Use real API audit logs if available, fall back to generated entries
+            let auditEntries;
+            if (apiAuditLogs.length > 0) {
+                auditEntries = apiAuditLogs.map(log => ({
+                    text: log.description,
+                    timestamp: log.performed_at ? formatAuditTimestamp(log.performed_at) : '—',
+                }));
+            } else {
+                auditEntries = buildAuditLog(rfp, displayTotal);
+            }
             const auditId = 'audit_' + rfp.rfpNumber;
             let auditHtml = `
                 <div style="margin-top:1rem;">
