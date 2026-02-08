@@ -802,8 +802,8 @@
                                 <tr>
                                     <th style="width:50px;border-radius:8px 0 0 0;">Trip</th>
                                     <th style="width:110px;">Date</th>
-                                    <th style="width:180px;">From Location</th>
-                                    <th style="width:180px;">To Location</th>
+                                    <th>From Location</th>
+                                    <th>To Location</th>
                                     <th style="width:80px;">Miles</th>
                                     <th style="width:155px;">Budget Code</th>
                                     <th style="width:85px;">Account</th>
@@ -1746,7 +1746,7 @@
             });
         }
 
-        // Budget code autocomplete for mileage rows (reuses allBudgetCodes)
+        // Budget code autocomplete for mileage rows (reuses BUDGET_CODE_DATA)
         function setupMileageBudgetAutocomplete(tr) {
             var bcInput = tr.querySelector('.trip-budget-code');
             var acctInput = tr.querySelector('.trip-account');
@@ -1759,11 +1759,17 @@
                 var val = this.value.trim();
                 selectedBudgetCode = null;
                 acctInput.value = '';
-                if (val.length < 2) { removeDropdown(); return; }
-                var matches = allBudgetCodes.filter(function(bc) {
-                    return bc.budget_code.includes(val) || (bc.description && bc.description.toLowerCase().includes(val.toLowerCase()));
-                }).slice(0, 8);
-                showDropdown(matches);
+                if (val.length < 2 || !budgetDataLoaded) { removeDropdown(); return; }
+                var seen = new Set();
+                var matches = [];
+                BUDGET_CODE_DATA.forEach(function(bc) {
+                    if (seen.has(bc.budget_code)) return;
+                    if (bc.budget_code.includes(val) || (bc.description && bc.description.toLowerCase().includes(val.toLowerCase()))) {
+                        seen.add(bc.budget_code);
+                        matches.push(bc);
+                    }
+                });
+                showDropdown(matches.slice(0, 8));
             });
 
             bcInput.addEventListener('blur', function() {
@@ -1771,9 +1777,8 @@
             });
 
             acctInput.addEventListener('focus', function() {
-                if (selectedBudgetCode) {
-                    var accts = allBudgetCodes.filter(function(bc) { return bc.budget_code === selectedBudgetCode; });
-                    var uniqueAccts = [...new Set(accts.map(function(bc) { return bc.account_code; }))].filter(Boolean);
+                if (selectedBudgetCode && BUDGET_CODE_MAP[selectedBudgetCode]) {
+                    var uniqueAccts = BUDGET_CODE_MAP[selectedBudgetCode];
                     if (uniqueAccts.length === 1) {
                         acctInput.value = uniqueAccts[0];
                     }
