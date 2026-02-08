@@ -633,8 +633,27 @@
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
 
         let currentUserRole = 'admin'; // 'user' or 'admin'
-        let currentUserId = 'user-001';
-        let currentUserName = 'Jane Doe';
+        let currentUserId = '';
+        let currentUserName = '';
+        let _dashboardEmployee = null;
+
+        async function fetchDashboardUser() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/me`);
+                if (!resp.ok) return;
+                const ct = resp.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) return;
+                const user = await resp.json();
+                if (user.first_name && user.user_id) {
+                    _dashboardEmployee = user;
+                    currentUserName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
+                    currentUserId = user.user_id ? `E${user.user_id}` : '';
+                    console.log('[SSO] Logged in as:', currentUserName, currentUserId);
+                }
+            } catch (e) {
+                console.warn('[SSO] Could not fetch user identity:', e);
+            }
+        }
 
         let allRFPs = []; // Full dataset
         let filteredRFPs = []; // After filters
@@ -685,7 +704,7 @@
                         assignedTo: r.assigned_to || '—',
                         apBatch: r.ap_batch || '',
                         status: r.status || 'draft',
-                        vendor: (r.request_type === 'reimbursement' && r.employee_id) ? r.employee_id : (r.vendor_name || '—'),
+                        vendor: (r.request_type === 'reimbursement' && r.employee_id) ? r.employee_id : (r.vendor_name || r.vendor_number || '—'),
                         amount: r.total_amount || r.amount || r.mileage_total || 0,
                         type: r.request_type || r.type || 'vendor',
                     };
@@ -1613,7 +1632,8 @@
                 }
 
                 // Refresh the dashboard
-                loadDashboardData();
+                allRFPs = await loadRFPData();
+                filterTable();
 
             } catch (err) {
                 showAlert('Error reading file: ' + err.message, 'Import Error');
@@ -2034,6 +2054,9 @@
             loadBrandData();
             buildColumnSelector();
             initDropZone();
+
+            // Fetch logged-in user identity from SSO
+            await fetchDashboardUser();
 
             // Load real data from bondwood-api
             allRFPs = await loadRFPData();
