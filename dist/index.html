@@ -1588,7 +1588,7 @@
                     const lineItems = items.map(item => {
                         const amt = parseFloat(String(item.amount).replace(/[^0-9.\-]/g, '')) || 0;
                         return {
-                            description: item.description || '',
+                            description: (item.description || '').toUpperCase(),
                             invoice_number: item.invoice || '',
                             invoice_date: item.invoiceDate || '',
                             budget_code: item.budgetCode || '',

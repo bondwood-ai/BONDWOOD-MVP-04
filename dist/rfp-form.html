@@ -1850,7 +1850,7 @@
 
                     rows.forEach(r => {
                         addLineItem({
-                            description: r.description || '',
+                            description: (r.description || '').toUpperCase(),
                             invoice: r.invoice || '',
                             invoiceDate: r.invoiceDate || '',
                             budgetCode: r.budgetCode || '',
