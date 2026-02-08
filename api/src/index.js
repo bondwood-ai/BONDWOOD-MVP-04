@@ -33,6 +33,26 @@ export default {
     try {
       // ── Health ──
       if (path === '/api/health') {
+        // Add ?diag=1 for full diagnostics
+        if (url.searchParams.get('diag') === '1') {
+          const diag = { status: 'ok', worker: 'bondwood-payment-management-api', timestamp: new Date().toISOString() };
+          diag.env_keys = Object.keys(env);
+          diag.r2_bucket_bound = !!env.BUCKET;
+          if (env.BUCKET) {
+            try {
+              const listed = await env.BUCKET.list({ limit: 1 });
+              diag.r2_accessible = true;
+              diag.r2_objects = listed.objects.map(o => o.key);
+            } catch (e) { diag.r2_error = e.message; }
+          }
+          try {
+            const { results } = await env.DB.prepare(
+              'SELECT rfp_number, line_number, invoice_date, invoice_number FROM form_data LIMIT 10'
+            ).all();
+            diag.form_data_sample = results;
+          } catch (e) { diag.form_data_error = e.message; }
+          return json(diag);
+        }
         return json({ status: 'ok', worker: 'bondwood-payment-management-api', timestamp: new Date().toISOString() });
       }
 
