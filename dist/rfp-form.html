@@ -1220,26 +1220,52 @@
         }
 
         /* Look up current user from SSO and populate employee fields */
-        async function autoPopulateEmployee() {
-            try {
-                // Call same-origin Pages Function which reads the SSO cookie server-side
-                const resp = await fetch('/api/me');
-                if (!resp.ok) {
-                    console.log('Employee auto-populate: not available (' + resp.status + ')');
-                    return;
+        let _cachedEmployee = null;
+        let _employeeFetchPromise = null;
+
+        async function fetchEmployeeData() {
+            if (_cachedEmployee) return _cachedEmployee;
+            if (_employeeFetchPromise) return _employeeFetchPromise;
+
+            _employeeFetchPromise = (async () => {
+                try {
+                    const resp = await fetch('/api/me');
+                    if (!resp.ok) return null;
+                    const contentType = resp.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) return null;
+                    const user = await resp.json();
+                    if (user.first_name && user.user_id) {
+                        _cachedEmployee = user;
+                        return user;
+                    }
+                    return null;
+                } catch (e) {
+                    return null;
+                } finally {
+                    _employeeFetchPromise = null;
                 }
-                const user = await resp.json();
-                const fullName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
-                const empId = user.user_id ? `E${user.user_id}` : '';
-                document.getElementById('employeeName').value = fullName;
-                document.getElementById('employeeId').value = empId;
-                // Lock fields since user was found
-                document.getElementById('employeeName').setAttribute('readonly', true);
-                document.getElementById('employeeId').setAttribute('readonly', true);
-                console.log(`Auto-populated employee: ${fullName} (${empId})`);
-            } catch (e) {
-                console.warn('Employee auto-populate error:', e);
+            })();
+
+            return _employeeFetchPromise;
+        }
+
+        // Pre-fetch on page load so it's instant when switching to reimbursement
+        fetchEmployeeData();
+
+        async function autoPopulateEmployee() {
+            const user = await fetchEmployeeData();
+            if (!user) {
+                console.log('Employee auto-populate: user not available');
+                return;
             }
+            const fullName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
+            const empId = user.user_id ? `E${user.user_id}` : '';
+            document.getElementById('employeeName').value = fullName;
+            document.getElementById('employeeId').value = empId;
+            // Lock fields since user was found
+            document.getElementById('employeeName').setAttribute('readonly', true);
+            document.getElementById('employeeId').setAttribute('readonly', true);
+            console.log(`Auto-populated employee: ${fullName} (${empId})`);
         }
 
         /* ========================================
