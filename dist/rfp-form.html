@@ -1696,10 +1696,10 @@
                     attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate: new Date(), pending: true });
                     added++;
                     progressBar.style.width = `${(added / validFiles.length) * 100}%`;
-                    progressText.textContent = `Queued ${file.name}...`;
+                    progressText.textContent = `Adding ${file.name}...`;
                 });
                 progressBar.style.width = '100%';
-                progressText.textContent = `${validFiles.length} file${validFiles.length !== 1 ? 's' : ''} queued (will upload on submit)`;
+                progressText.textContent = `${validFiles.length} file${validFiles.length !== 1 ? 's' : ''} added`;
                 setTimeout(() => { progressEl.classList.remove('active'); progressBar.style.width = '0%'; }, 2000);
                 renderAttachmentsList();
                 updateAttBadge();
@@ -1765,11 +1765,21 @@
             pending.forEach(a => formData.append('files', a.file));
 
             try {
+                console.log(`Uploading ${pending.length} pending attachments to RFP ${rfpNum}...`);
                 const resp = await fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`, {
                     method: 'POST',
                     body: formData,
                 });
+
+                if (!resp.ok) {
+                    const errText = await resp.text();
+                    console.error('Attachment upload failed:', resp.status, errText);
+                    alert(`Attachment upload failed (${resp.status}): ${errText}`);
+                    return;
+                }
+
                 const data = await resp.json();
+                console.log('Attachment upload response:', data);
 
                 // Replace pending entries with R2-backed ones
                 if (data.uploaded) {
@@ -1789,8 +1799,10 @@
                         }
                     });
                 }
+                console.log(`Successfully uploaded ${data.count || pending.length} attachments`);
             } catch (err) {
                 console.error('Failed to upload pending attachments:', err);
+                alert('Attachment upload error: ' + err.message);
             }
         }
 
@@ -1865,12 +1877,11 @@
                 const sizeStr = formatFileSize(att.size);
                 const dateStr = formatAttDate(att.addedDate || new Date());
                 const iconSvg = getFileTypeIconSVG(ext);
-                const pendingBadge = att.pending ? ' <span style="font-size:0.65rem;color:#f59e0b;font-weight:600;">⏳ Pending</span>' : '';
                 return `<div class="attachment-item" id="${att.id}">
                     <div class="attachment-icon">${iconSvg}</div>
                     <div class="attachment-info">
                         <div class="attachment-name" onclick="${isViewable ? `viewAttachment('${att.id}')` : ''}" title="${att.name}">${att.name}</div>
-                        <div class="attachment-meta">${sizeStr} &middot; ${dateStr}${pendingBadge}</div>
+                        <div class="attachment-meta">${sizeStr} &middot; ${dateStr}</div>
                     </div>
                     <div class="attachment-actions">
                         ${isViewable ? `<button onclick="viewAttachment('${att.id}')" title="View"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>` : ''}
