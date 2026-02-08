@@ -1116,7 +1116,52 @@
                         <span class="total-value">${formatCurrency(displayTotal)}</span>
                     </div>
                 </div>
+                <div id="previewAttachments" style="margin-top:0.5rem;"></div>
             `;
+
+            // Load attachments
+            loadPreviewAttachments(rfp.rfpNumber);
+        }
+
+        async function loadPreviewAttachments(rfpNumber) {
+            const container = document.getElementById('previewAttachments');
+            if (!container) return;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/attachments`);
+                const data = await resp.json();
+                const files = data.attachments || [];
+
+                if (files.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;">Attachments (${files.length})</h4>
+                    ${files.map(f => {
+                        const ext = f.name.split('.').pop().toLowerCase();
+                        const colors = { pdf: '#DC2626', docx: '#2563EB', doc: '#2563EB', xlsx: '#16A34A', png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1' };
+                        const bg = colors[ext] || '#718096';
+                        const label = ext.toUpperCase().substring(0, 4);
+                        const sizeKB = f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB' : (f.size / 1048576).toFixed(1) + ' MB';
+                        const url = `${API_BASE}/api/attachments/${encodeURIComponent(f.key)}`;
+                        return `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.4rem;">
+                            <svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${bg}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</div>
+                                <div style="font-size:0.7rem;color:var(--text-secondary);">${sizeKB}</div>
+                            </div>
+                            <a href="${url}" target="_blank" title="Download" style="color:var(--text-secondary);display:flex;padding:4px;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                        </div>`;
+                    }).join('')}
+                `;
+            } catch (err) {
+                console.error('Failed to load attachments for preview:', err);
+                container.innerHTML = '';
+            }
         }
 
         function closePreviewModal() {

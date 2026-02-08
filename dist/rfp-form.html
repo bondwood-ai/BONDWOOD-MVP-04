@@ -1772,30 +1772,45 @@
 
         // Upload any pending local attachments after RFP creation
         async function uploadPendingAttachments(rfpNum) {
+            console.log('[ATTACH] uploadPendingAttachments called for RFP:', rfpNum);
+            console.log('[ATTACH] Total attachments:', attachments.length);
+            console.log('[ATTACH] Attachments:', attachments.map(a => ({ id: a.id, name: a.name, pending: a.pending, hasFile: !!a.file })));
+
             const pending = attachments.filter(a => a.pending && a.file);
-            if (pending.length === 0) return;
+            console.log('[ATTACH] Pending with files:', pending.length);
+
+            if (pending.length === 0) {
+                console.log('[ATTACH] No pending attachments to upload');
+                return;
+            }
 
             const formData = new FormData();
-            pending.forEach(a => formData.append('files', a.file));
+            pending.forEach(a => {
+                console.log('[ATTACH] Appending file:', a.name, 'size:', a.file.size, 'type:', a.file.type);
+                formData.append('files', a.file, a.name);
+            });
 
             try {
-                console.log(`Uploading ${pending.length} pending attachments to RFP ${rfpNum}...`);
-                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`, {
+                const url = `${API_BASE}/api/rfps/${rfpNum}/attachments`;
+                console.log('[ATTACH] POSTing to:', url);
+
+                const resp = await fetch(url, {
                     method: 'POST',
                     body: formData,
                 });
 
+                console.log('[ATTACH] Response status:', resp.status);
+
                 if (!resp.ok) {
                     const errText = await resp.text();
-                    console.error('Attachment upload failed:', resp.status, errText);
+                    console.error('[ATTACH] Upload failed:', resp.status, errText);
                     showAlert(`Attachment upload failed (${resp.status}): ${errText}`, 'Upload Error');
                     return;
                 }
 
                 const data = await resp.json();
-                console.log('Attachment upload response:', data);
+                console.log('[ATTACH] Upload response:', JSON.stringify(data));
 
-                // Replace pending entries with R2-backed ones
                 if (data.uploaded) {
                     pending.forEach((p, i) => {
                         if (p.blobUrl) URL.revokeObjectURL(p.blobUrl);
@@ -1813,9 +1828,9 @@
                         }
                     });
                 }
-                console.log(`Successfully uploaded ${data.count || pending.length} attachments`);
+                console.log('[ATTACH] Successfully uploaded', data.count || pending.length, 'attachments');
             } catch (err) {
-                console.error('Failed to upload pending attachments:', err);
+                console.error('[ATTACH] Upload error:', err);
                 showAlert('Attachment upload error: ' + err.message, 'Upload Error');
             }
         }

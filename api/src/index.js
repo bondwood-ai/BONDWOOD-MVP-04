@@ -491,6 +491,10 @@ async function handleMigrate(env) {
    ATTACHMENTS – LIST
    ======================================== */
 async function handleListAttachments(rfpNumber, env) {
+  if (!env.BUCKET) {
+    return json({ error: 'R2 bucket not configured', attachments: [], count: 0 }, 500);
+  }
+
   const prefix = `rfp/${rfpNumber}/`;
   const listed = await env.BUCKET.list({ prefix });
 
@@ -511,33 +515,46 @@ async function handleListAttachments(rfpNumber, env) {
    ATTACHMENTS – UPLOAD
    ======================================== */
 async function handleUploadAttachment(rfpNumber, request, env) {
+  if (!env.BUCKET) {
+    return json({ error: 'R2 bucket not configured. Check wrangler.toml BUCKET binding.' }, 500);
+  }
+
   const contentType = request.headers.get('Content-Type') || '';
 
   if (contentType.includes('multipart/form-data')) {
-    const formData = await request.formData();
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (e) {
+      return json({ error: 'Failed to parse form data', detail: e.message }, 400);
+    }
+
     const results = [];
 
     for (const [fieldName, file] of formData.entries()) {
-      if (!(file instanceof File)) continue;
+      if (typeof file === 'string') continue; // skip non-file entries
 
-      // Sanitize filename: remove path separators, keep extension
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const safeName = (file.name || 'unnamed').replace(/[^a-zA-Z0-9._-]/g, '_');
       const timestamp = Date.now();
       const key = `rfp/${rfpNumber}/${timestamp}_${safeName}`;
 
-      await env.BUCKET.put(key, file.stream(), {
-        httpMetadata: { contentType: file.type || 'application/octet-stream' },
-        customMetadata: {
-          originalName: file.name,
-          rfpNumber: String(rfpNumber),
-          uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
-          uploadedAt: new Date().toISOString(),
-        },
-      });
+      try {
+        await env.BUCKET.put(key, file.stream(), {
+          httpMetadata: { contentType: file.type || 'application/octet-stream' },
+          customMetadata: {
+            originalName: file.name || 'unnamed',
+            rfpNumber: String(rfpNumber),
+            uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
+            uploadedAt: new Date().toISOString(),
+          },
+        });
+      } catch (e) {
+        return json({ error: 'R2 put failed', detail: e.message, key }, 500);
+      }
 
       results.push({
         key,
-        name: file.name,
+        name: file.name || 'unnamed',
         size: file.size,
         contentType: file.type,
       });
