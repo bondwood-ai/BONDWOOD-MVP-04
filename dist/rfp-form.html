@@ -1203,6 +1203,7 @@
         let attachments = [];
         let currentRfpNumber = null;
         let currentRequestType = 'vendor';
+        let _loadedRfpData = null; // Cache of the loaded RFP data for audit log
         // IRS mileage rates by year
         const MILEAGE_RATES = [
             { start: '2026-01-01', end: '2026-12-31', rate: 0.725 },
@@ -2186,6 +2187,9 @@
 
         function closeUtilityModal(result = false) {
             document.getElementById('utility-modal').style.display = 'none';
+            // Reset modal width to default
+            const modalBox = document.querySelector('#utility-modal > div');
+            if (modalBox) modalBox.style.width = '420px';
             if (_utilityModalResolve) {
                 _utilityModalResolve(result);
                 _utilityModalResolve = null;
@@ -2205,8 +2209,102 @@
         }
 
         function showAuditLog() {
-            // Placeholder: Will fetch audit log entries from API
-            showAlert('Audit log will display a chronological record of all changes, approvals, and actions taken on this form.', 'Audit Log');
+            // Build audit entries from current form state
+            const entries = buildFormAuditLog();
+
+            // Widen modal for audit log content
+            const modalBox = document.querySelector('#utility-modal > div');
+            if (modalBox) modalBox.style.width = '520px';
+
+            // Use innerHTML for rich content in the utility modal
+            document.getElementById('utilityModalTitle').textContent = 'Audit Log';
+            const messageEl = document.getElementById('utilityModalMessage');
+            
+            if (entries.length === 0) {
+                messageEl.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:0.5rem 0;">No audit entries yet. Entries will appear after the form is submitted.</div>';
+            } else {
+                messageEl.innerHTML = `
+                    <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
+                        ${entries.map((entry, i) => `
+                            <div style="display:flex;gap:0.75rem;padding:0.6rem 0.75rem;${i < entries.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}align-items:flex-start;">
+                                <span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);min-width:18px;text-align:right;padding-top:2px;">${i + 1}.</span>
+                                <div style="flex:1;">
+                                    <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${entry.text}</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.15rem;">${entry.timestamp}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('utilityModalFooter').innerHTML = `
+                <button onclick="closeUtilityModal(true)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);min-width:80px;">OK</button>
+            `;
+            document.getElementById('utility-modal').style.display = 'flex';
+        }
+
+        function buildFormAuditLog() {
+            const entries = [];
+
+            // If we have loaded RFP data (editing an existing form)
+            if (_loadedRfpData) {
+                const data = _loadedRfpData;
+                const submitter = data.submitter_name || 'Unknown User';
+                const status = data.status || 'draft';
+                const submissionDate = data.submission_date;
+
+                // Determine payee
+                let payeeDesc = '';
+                if (data.request_type === 'vendor') {
+                    payeeDesc = data.vendor_name || 'an unknown vendor';
+                } else {
+                    payeeDesc = 'Employee Reimbursement';
+                }
+
+                // Calculate total
+                let total = 0;
+                if (data.lineItems) data.lineItems.forEach(item => { total += (item.total || 0); });
+                if (data.mileageTrips) data.mileageTrips.forEach(trip => { total += (trip.amount || 0); });
+                if (total === 0) total = data.total_amount || data.amount || data.mileage_total || 0;
+                const amountStr = formatCurrency(total);
+
+                // Entry 1: Submission
+                if (status !== 'draft') {
+                    entries.push({
+                        text: `<strong>${submitter}</strong> submitted a request for payment with <strong>${payeeDesc}</strong> for <strong>${amountStr}</strong>`,
+                        timestamp: submissionDate ? formatDateForDisplay(submissionDate) : '—'
+                    });
+                } else {
+                    entries.push({
+                        text: `<strong>${submitter}</strong> created a draft request for payment with <strong>${payeeDesc}</strong> for <strong>${amountStr}</strong>`,
+                        timestamp: submissionDate ? formatDateForDisplay(submissionDate) : '—'
+                    });
+                }
+
+                // Status-based entries
+                const statusMap = {
+                    'submitted': 'Request is pending review',
+                    'pending': 'Request is pending review',
+                    'budget-review': 'Request moved to <strong>Budget Review</strong>',
+                    'compliance-review': 'Request moved to <strong>Compliance Review</strong>',
+                    'ap-review': 'Request moved to <strong>A/P Review</strong>',
+                    'approved': 'Request has been <strong style="color:var(--positive-color);">approved</strong>',
+                    'rejected': 'Request has been <strong style="color:var(--negative-color);">rejected</strong>',
+                    'archived': 'Request has been <strong>archived</strong>',
+                };
+
+                if (status !== 'draft' && statusMap[status]) {
+                    entries.push({ text: statusMap[status], timestamp: '—' });
+                }
+
+                // Assignment
+                if (data.assigned_to && data.assigned_to !== '—') {
+                    entries.push({ text: `Request assigned to <strong>${data.assigned_to}</strong>`, timestamp: '—' });
+                }
+            }
+
+            return entries;
         }
 
         function submitForm() {
@@ -2372,6 +2470,12 @@
                 const result = await resp.json();
                 if (resp.ok) {
                     currentRfpNumber = result.rfp_number;
+                    // Cache submission data for audit log
+                    _loadedRfpData = {
+                        ...payload,
+                        rfp_number: result.rfp_number,
+                        status: 'pending',
+                    };
                     // Upload any pending attachments to R2
                     await uploadPendingAttachments(result.rfp_number);
                     showSuccessModal(result.rfp_number);
@@ -2400,6 +2504,9 @@
 
                 const data = await resp.json();
                 console.log('[LOAD] Data received:', JSON.stringify(data).substring(0, 500));
+
+                // Cache data for audit log
+                _loadedRfpData = data;
 
                 // Set RFP number display
                 const rfpEl = document.getElementById('rfpNumber');
