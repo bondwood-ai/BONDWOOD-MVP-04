@@ -1857,18 +1857,13 @@
         /* Realistic file-type SVG icons */
         function getFileTypeIconSVG(ext) {
             // Use PNG images for types that have them
-            const pngTypes = { pdf: 'pdf.png', docx: 'docx.png', doc: 'docx.png', xlsx: 'xlsx.png' };
-            if (pngTypes[ext]) {
-                return `<img src="${pngTypes[ext]}" alt="${ext}" style="width:36px;height:36px;object-fit:contain;">`;
-            }
-            // SVG fallbacks for other types
-            const colors = { png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1', html: '#C05621' };
+            const colors = { pdf: '#DC2626', docx: '#2563EB', doc: '#2563EB', xlsx: '#16A34A', png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1', html: '#C05621' };
             const bg = colors[ext] || '#718096';
             const label = ext.toUpperCase().substring(0, 4);
             return `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="2" width="24" height="28" rx="2" fill="${bg}"/>
-                <rect x="4" y="18" width="24" height="12" rx="0" fill="${bg}" opacity="0.8"/>
-                <path d="M18 2v8a2 2 0 002 2h8" fill="#fff" opacity="0.2"/>
+                <path d="M20 2v6a2 2 0 002 2h6" fill="#fff" opacity="0.25"/>
+                <rect x="4" y="18" width="24" height="12" rx="0 0 2 2" fill="${bg}" opacity="0.85"/>
                 <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">${label}</text>
             </svg>`;
         }
