@@ -395,7 +395,7 @@
             font-family: 'Metropolis', sans-serif;
         }
         .mileage-table td {
-            padding: 0.35rem; border-bottom: 1px solid var(--border-color);
+            padding: 0.35rem; border-bottom: 1px solid var(--border-color); position: relative;
         }
         .mileage-table input, .mileage-table select {
             width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color);
@@ -1645,9 +1645,9 @@
                 +   '<input type="text" class="trip-to-addr" placeholder="Enter to address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
                 + '</td>'
                 + '<td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>'
-                + '<td><input type="text" class="trip-budget-code" placeholder="Budget Code" style="width:145px;font-size:0.8rem;" autocomplete="off"></td>'
-                + '<td><input type="text" class="trip-account" placeholder="\u2014" style="width:75px;font-size:0.8rem;" autocomplete="off"></td>'
-                + '<td><input type="text" class="trip-amount text-right" readonly value="" style="width:110px;"></td>';
+                + '<td class="bc-autocomplete-wrapper"><input type="text" class="trip-budget-code line-budget-code" placeholder="Enter Budget Code" maxlength="14" style="width:145px;text-align:center;" autocomplete="off"></td>'
+                + '<td class="bc-autocomplete-wrapper"><input type="text" class="trip-account line-account" placeholder="\u2014" maxlength="7" style="width:75px;text-align:center;" autocomplete="off"></td>'
+                + '<td><input type="text" class="trip-amount line-amount text-right" readonly value="" style="width:110px;"></td>';
             tbody.appendChild(tr);
 
             // Init date auto-advance
@@ -1681,8 +1681,8 @@
                 }
             });
 
-            // Set up budget code autocomplete for mileage row
-            setupMileageBudgetAutocomplete(tr);
+            // Set up budget code autocomplete (same as item detail)
+            initBudgetAutocomplete(tr);
 
             // Bind select change handlers
             var fromSel = tr.querySelector('.trip-from');
@@ -1747,81 +1747,6 @@
         }
 
         // Budget code autocomplete for mileage rows (reuses BUDGET_CODE_DATA)
-        function setupMileageBudgetAutocomplete(tr) {
-            var bcInput = tr.querySelector('.trip-budget-code');
-            var acctInput = tr.querySelector('.trip-account');
-            if (!bcInput || !acctInput) return;
-
-            var dropdown = null;
-            var selectedBudgetCode = null;
-
-            bcInput.addEventListener('input', function() {
-                var val = this.value.trim();
-                selectedBudgetCode = null;
-                acctInput.value = '';
-                if (val.length < 2 || !budgetDataLoaded) { removeDropdown(); return; }
-                var seen = new Set();
-                var matches = [];
-                BUDGET_CODE_DATA.forEach(function(bc) {
-                    if (seen.has(bc.budget_code)) return;
-                    if (bc.budget_code.includes(val) || (bc.description && bc.description.toLowerCase().includes(val.toLowerCase()))) {
-                        seen.add(bc.budget_code);
-                        matches.push(bc);
-                    }
-                });
-                showDropdown(matches.slice(0, 8));
-            });
-
-            bcInput.addEventListener('blur', function() {
-                setTimeout(function() { removeDropdown(); }, 200);
-            });
-
-            acctInput.addEventListener('focus', function() {
-                if (selectedBudgetCode && BUDGET_CODE_MAP[selectedBudgetCode]) {
-                    var uniqueAccts = BUDGET_CODE_MAP[selectedBudgetCode];
-                    if (uniqueAccts.length === 1) {
-                        acctInput.value = uniqueAccts[0];
-                    }
-                }
-            });
-
-            function showDropdown(matches) {
-                removeDropdown();
-                if (!matches.length) return;
-                dropdown = document.createElement('div');
-                dropdown.className = 'budget-dropdown';
-                dropdown.style.cssText = 'position:absolute;z-index:999;background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
-                var seen = new Set();
-                matches.forEach(function(m) {
-                    if (seen.has(m.budget_code)) return;
-                    seen.add(m.budget_code);
-                    var item = document.createElement('div');
-                    item.style.cssText = 'padding:6px 10px;cursor:pointer;font-size:0.8rem;border-bottom:1px solid var(--border-color);';
-                    item.textContent = m.budget_code + (m.description ? ' - ' + m.description : '');
-                    item.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        bcInput.value = m.budget_code;
-                        selectedBudgetCode = m.budget_code;
-                        removeDropdown();
-                        acctInput.focus();
-                    });
-                    item.addEventListener('mouseenter', function() { this.style.background = 'var(--hover-bg, #f0f0f0)'; });
-                    item.addEventListener('mouseleave', function() { this.style.background = ''; });
-                    dropdown.appendChild(item);
-                });
-                bcInput.parentElement.style.position = 'relative';
-                bcInput.parentElement.appendChild(dropdown);
-                dropdown.style.width = '250px';
-                dropdown.style.top = bcInput.offsetTop + bcInput.offsetHeight + 'px';
-                dropdown.style.left = bcInput.offsetLeft + 'px';
-            }
-
-            function removeDropdown() {
-                if (dropdown && dropdown.parentElement) dropdown.parentElement.removeChild(dropdown);
-                dropdown = null;
-            }
-        }
-
         async function calcMileage(row) {
             var fromSel = row.querySelector('.trip-from');
             var toSel = row.querySelector('.trip-to');
