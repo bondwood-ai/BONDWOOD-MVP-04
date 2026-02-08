@@ -805,9 +805,9 @@
                                     <th style="width:180px;">From Location</th>
                                     <th style="width:180px;">To Location</th>
                                     <th style="width:80px;">Miles</th>
-                                    <th style="width:145px;">Budget Code</th>
-                                    <th style="width:80px;">Account</th>
-                                    <th style="width:100px;border-radius:0 8px 0 0;">Amount</th>
+                                    <th style="width:155px;">Budget Code</th>
+                                    <th style="width:85px;">Account</th>
+                                    <th style="width:120px;border-radius:0 8px 0 0;">Amount</th>
                                 </tr>
                             </thead>
                             <tbody id="mileageBody"></tbody>
@@ -1225,6 +1225,7 @@
         let MILEAGE_SITES = [];
         let mileageSitesLoaded = false;
 
+        let mileageSitesPromise = null;
         async function loadMileageSites() {
             try {
                 const resp = await fetch(API_BASE + '/api/mileage/sites');
@@ -1245,7 +1246,7 @@
             loadBrandFromURL();
             setupVendorAutocomplete();
             loadBudgetCodes();
-            loadMileageSites();
+            mileageSitesPromise = loadMileageSites();
 
             // Initialize with 1 line item
             addLineItem();
@@ -1616,11 +1617,12 @@
         /* ========================================
            MILEAGE
            ======================================== */
-        function toggleMileageTable() {
+        async function toggleMileageTable() {
             const wrapper = document.getElementById('mileageTableWrapper');
             const checked = document.getElementById('mileageCheck').checked;
             wrapper.style.display = checked ? '' : 'none';
             if (checked && document.getElementById('mileageBody').children.length === 0) {
+                if (mileageSitesPromise) await mileageSitesPromise;
                 for (let i = 0; i < 3; i++) addMileageRow();
             }
         }
@@ -1633,7 +1635,7 @@
             MILEAGE_SITES.forEach(function(s) { opts += '<option value="' + s.replace(/"/g, '&quot;') + '">' + s + '</option>'; });
             tr.innerHTML = ''
                 + '<td><input type="text" class="text-right" value="' + mileageCounter + '" readonly style="width:40px;"></td>'
-                + '<td><input type="text" class="trip-date" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"></td>'
+                + '<td style="position:relative;"><input type="text" class="trip-date" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"><input type="date" class="trip-date-picker" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;"></td>'
                 + '<td>'
                 +   '<select class="trip-from">' + opts + '</select>'
                 +   '<input type="text" class="trip-from-addr" placeholder="Enter from address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
@@ -1643,16 +1645,32 @@
                 +   '<input type="text" class="trip-to-addr" placeholder="Enter to address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
                 + '</td>'
                 + '<td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>'
-                + '<td><input type="text" class="trip-budget-code" placeholder="Budget Code" style="width:135px;font-size:0.8rem;" autocomplete="off"></td>'
-                + '<td><input type="text" class="trip-account" placeholder="\u2014" style="width:70px;font-size:0.8rem;" autocomplete="off"></td>'
-                + '<td><input type="text" class="trip-amount text-right" readonly value="" style="width:85px;"></td>';
+                + '<td><input type="text" class="trip-budget-code" placeholder="Budget Code" style="width:145px;font-size:0.8rem;" autocomplete="off"></td>'
+                + '<td><input type="text" class="trip-account" placeholder="\u2014" style="width:75px;font-size:0.8rem;" autocomplete="off"></td>'
+                + '<td><input type="text" class="trip-amount text-right" readonly value="" style="width:110px;"></td>';
             tbody.appendChild(tr);
 
             // Init date auto-advance
             initDateAutoAdvance(tr.querySelector('.trip-date'));
 
-            // Update amount when date changes (rate changes by year)
+            // Sync hidden date picker with text field
             var tripDateInput = tr.querySelector('.trip-date');
+            var tripDatePicker = tr.querySelector('.trip-date-picker');
+            tripDatePicker.addEventListener('change', function() {
+                if (this.value) {
+                    var parts = this.value.split('-');
+                    tripDateInput.value = parts[1] + '/' + parts[2] + '/' + parts[0];
+                    tripDateInput.dispatchEvent(new Event('blur'));
+                }
+            });
+            tripDateInput.addEventListener('input', function() {
+                // If user types a full date, sync to picker
+                var v = this.value.trim();
+                if (v.length === 10 && v.includes('/')) {
+                    var p = v.split('/');
+                    tripDatePicker.value = p[2] + '-' + p[0].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+                }
+            });
             tripDateInput.addEventListener('blur', function() {
                 var d = this.value.trim();
                 if (d.length === 10) {
