@@ -454,6 +454,34 @@
         .att-close-btn:hover { color: var(--text-primary); background: rgba(0,0,0,0.06); }
         body.dark-mode .att-close-btn:hover { background: rgba(255,255,255,0.08); }
 
+        /* Success Modal */
+        #success-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
+        #success-modal.open { display: flex; }
+        #success-modal .success-modal-content {
+            background: var(--card-bg); border-radius: 0.875rem; padding: 2rem 1.75rem;
+            width: 92%; max-width: 420px;
+            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .success-icon { width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: #16a34a; display: flex; align-items: center; justify-content: center; }
+        .success-icon svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.5; fill: none; }
+        .success-modal-title { font-family: 'Metropolis', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; }
+        .success-modal-sub { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
+        .success-modal-rfp { font-family: 'Metropolis', sans-serif; font-weight: 700; color: var(--primary-hex); }
+        .success-modal-actions { display: flex; gap: 0.75rem; }
+        .success-modal-actions button {
+            flex: 1; padding: 0.65rem 1rem; border-radius: 8px; font-family: 'Metropolis', sans-serif;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+        }
+        .success-btn-secondary {
+            background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);
+        }
+        .success-btn-secondary:hover { background: var(--bg-color); }
+        .success-btn-primary {
+            background: var(--primary-hex); border: none; color: var(--accent-text-color);
+        }
+        .success-btn-primary:hover { opacity: 0.9; }
+
         /* Drop Zone */
         .att-drop-zone {
             border: 2px dashed var(--border-color); border-radius: 0.625rem; padding: 2rem 1rem;
@@ -891,6 +919,23 @@
             <div class="sig-modal-footer">
                 <button class="btn-cancel" onclick="closeSignatureModal()">Cancel</button>
                 <button class="btn-confirm" id="sigConfirmBtn" disabled onclick="confirmSubmission()">Sign &amp; Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ SUCCESS MODAL ============ -->
+    <div id="success-modal" onclick="if(event.target===this)return;">
+        <div class="success-modal-content">
+            <div class="success-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="success-modal-title">Submitted Successfully</div>
+            <div class="success-modal-sub">
+                Your request <span class="success-modal-rfp" id="successRfpNumber"></span> has been submitted for approval.
+            </div>
+            <div class="success-modal-actions">
+                <button class="success-btn-secondary" onclick="window.location.href='rfp-form.html'">New Form</button>
+                <button class="success-btn-primary" onclick="window.location.href='index.html'">Go to Dashboard</button>
             </div>
         </div>
     </div>
@@ -1678,8 +1723,8 @@
             });
             if (!hasItems) { alert('Please add at least one line item.'); return; }
 
-            // Show signature modal
-            openSignatureModal();
+            // Submit directly (no signature needed - using SSO identity)
+            performSubmission();
         }
 
         function openSignatureModal() {
@@ -1730,10 +1775,7 @@
             }
         }
 
-        async function confirmSubmission() {
-            const sigName = document.getElementById('sigInput').value.trim();
-            if (!sigName) return;
-
+        async function performSubmission() {
             // Collect form data
             const requestType = currentRequestType;
             const lineItems = [];
@@ -1751,9 +1793,17 @@
                 });
             });
 
+            // Get submitter info from SSO
+            const submitterName = _cachedEmployee
+                ? `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim()
+                : 'Unknown';
+            const submitterId = _cachedEmployee && _cachedEmployee.user_id
+                ? `E${_cachedEmployee.user_id}` : '';
+
             const payload = {
                 request_type: requestType,
-                submitter_name: sigName,
+                submitter_name: submitterName,
+                submitter_id: submitterId,
                 submission_date: new Date().toISOString().split('T')[0],
                 status: 'pending',
                 description: document.getElementById('description').value.trim() || null,
@@ -1770,15 +1820,6 @@
                 payload.employee_id = document.getElementById('employeeId').value.trim();
             }
 
-            // Also set submitter from SSO if available
-            if (_cachedEmployee) {
-                payload.submitter_name = `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim();
-                payload.submitter_id = _cachedEmployee.user_id ? `E${_cachedEmployee.user_id}` : '';
-            }
-            payload.signature = sigName;
-
-            closeSignatureModal();
-
             try {
                 const resp = await fetch('https://bondwood-api.bondwood.workers.dev/api/rfps', {
                     method: 'POST',
@@ -1787,8 +1828,7 @@
                 });
                 const result = await resp.json();
                 if (resp.ok) {
-                    alert(`Submitted! RFP #${result.rfp_number} created successfully.`);
-                    window.location.href = 'index.html';
+                    showSuccessModal(result.rfp_number);
                 } else {
                     alert('Submission failed: ' + (result.error || JSON.stringify(result)));
                 }
@@ -1800,6 +1840,11 @@
         function loadExistingForm(id) {
             // Placeholder: Load form data from API by ID
             console.log('Loading form:', id);
+        }
+
+        function showSuccessModal(rfpNumber) {
+            document.getElementById('successRfpNumber').textContent = '#' + rfpNumber;
+            document.getElementById('success-modal').classList.add('open');
         }
 
         /* ========================================
