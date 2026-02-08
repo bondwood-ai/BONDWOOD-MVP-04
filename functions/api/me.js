@@ -1,8 +1,3 @@
-/**
- * Pages Function: GET /api/me
- * Reads Clerk session JWT to get user ID, then calls Clerk Backend API
- * to get email, then proxies to worker to get employee details.
- */
 export async function onRequest(context) {
   const { request, env } = context;
   const headers = { 'Content-Type': 'application/json' };
@@ -15,7 +10,6 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'No session cookie found' }), { status: 401, headers });
     }
 
-    // Decode JWT to get Clerk user ID (sub)
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
     const userId = payload.sub;
 
@@ -23,35 +17,41 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'No user ID in JWT' }), { status: 401, headers });
     }
 
-    // Call Clerk Backend API to get user details
     const clerkKey = env.CLERK_SECRET_KEY;
     if (!clerkKey) {
       return new Response(JSON.stringify({ error: 'CLERK_SECRET_KEY not configured' }), { status: 500, headers });
     }
 
+    // Call Clerk Backend API
     const clerkResp = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
       headers: { 'Authorization': `Bearer ${clerkKey}` }
     });
 
+    // Return full debug info if not OK
     if (!clerkResp.ok) {
-      return new Response(JSON.stringify({ error: 'Clerk API error', status: clerkResp.status }), { status: 500, headers });
+      const body = await clerkResp.text();
+      return new Response(JSON.stringify({
+        error: 'Clerk API error',
+        status: clerkResp.status,
+        userId,
+        clerkResponse: body,
+        keyPrefix: clerkKey.substring(0, 12) + '...'
+      }), { status: 500, headers });
     }
 
     const clerkUser = await clerkResp.json();
 
-    // Get primary email from Clerk user
     const email = (
-      (clerkUser.email_addresses && clerkUser.email_addresses.length > 0
-        ? clerkUser.email_addresses.find(e => e.id === clerkUser.primary_email_address_id)?.email_address
-          || clerkUser.email_addresses[0].email_address
-        : '')
+      clerkUser.email_addresses && clerkUser.email_addresses.length > 0
+        ? (clerkUser.email_addresses.find(e => e.id === clerkUser.primary_email_address_id)?.email_address
+          || clerkUser.email_addresses[0].email_address)
+        : ''
     ).trim().toLowerCase();
 
     if (!email) {
       return new Response(JSON.stringify({ error: 'No email found for user' }), { status: 404, headers });
     }
 
-    // Proxy to worker to get employee record
     const workerResp = await fetch(
       `https://bondwood-api.bondwood.workers.dev/api/me?email=${encodeURIComponent(email)}`
     );
