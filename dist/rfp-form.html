@@ -1197,38 +1197,13 @@
         /* Look up current user from SSO and populate employee fields */
         async function autoPopulateEmployee() {
             try {
-                let email = '';
-
-                // Method 1: Try CF Access identity endpoint
-                try {
-                    const idResp = await fetch('/cdn-cgi/access/get-identity');
-                    if (idResp.ok) {
-                        const identity = await idResp.json();
-                        email = identity.email || '';
-                    }
-                } catch (e) { /* not behind Access */ }
-
-                // Method 2: Check localStorage cache
-                if (!email) {
-                    email = localStorage.getItem('bondwood_user_email') || '';
-                }
-
-                // Method 3: Prompt user once
-                if (!email) {
-                    email = prompt('Enter your work email to auto-fill employee info:');
-                    if (!email) return;
-                }
-
-                // Look up user in DB
-                const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+                // Call same-origin Pages Function which reads the SSO cookie server-side
+                const resp = await fetch('/api/me');
                 if (!resp.ok) {
-                    console.log('Employee auto-populate: user not found in DB (' + resp.status + ')');
-                    localStorage.removeItem('bondwood_user_email');
+                    console.log('Employee auto-populate: not available (' + resp.status + ')');
                     return;
                 }
                 const user = await resp.json();
-                // Cache email for next time
-                localStorage.setItem('bondwood_user_email', email.trim().toLowerCase());
                 const fullName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
                 const empId = user.user_id ? `E${user.user_id}` : '';
                 document.getElementById('employeeName').value = fullName;
