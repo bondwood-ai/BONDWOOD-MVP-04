@@ -1233,8 +1233,8 @@
 
             // Check if editing existing form
             const params = new URLSearchParams(window.location.search);
-            if (params.get('id')) {
-                loadExistingForm(params.get('id'));
+            if (params.get('rfp')) {
+                loadExistingForm(params.get('rfp'));
             }
         });
 
@@ -2179,9 +2179,90 @@
             }
         }
 
-        function loadExistingForm(id) {
-            // Placeholder: Load form data from API by ID
-            console.log('Loading form:', id);
+        async function loadExistingForm(rfpNumber) {
+            console.log('Loading RFP:', rfpNumber);
+            currentRfpNumber = rfpNumber;
+
+            try {
+                const resp = await fetch(API_BASE + '/api/rfps/' + rfpNumber);
+                if (!resp.ok) { console.error('Failed to load RFP:', resp.status); return; }
+                const data = await resp.json();
+
+                // Set RFP number display
+                document.getElementById('rfpNumber').textContent = '#' + rfpNumber;
+
+                // Set request type
+                if (data.request_type) {
+                    selectType(data.request_type);
+                }
+
+                // Vendor fields
+                if (data.vendor_name) document.getElementById('vendorName').value = data.vendor_name;
+                if (data.vendor_number) document.getElementById('vendorNumber').value = data.vendor_number;
+                if (data.vendor_address) document.getElementById('vendorAddress').value = data.vendor_address;
+
+                // Employee fields
+                if (data.employee_name) document.getElementById('employeeName').value = data.employee_name;
+                if (data.employee_id) document.getElementById('employeeId').value = data.employee_id;
+
+                // Description
+                if (data.description) {
+                    document.getElementById('description').value = data.description;
+                    autoResize(document.getElementById('description'));
+                }
+
+                // Clear default empty row and load line items
+                document.getElementById('lineItemsBody').innerHTML = '';
+                lineItemCounter = 0;
+
+                if (data.lineItems && data.lineItems.length > 0) {
+                    data.lineItems.forEach(function(item) {
+                        addLineItem({
+                            description: item.description || '',
+                            invoice: item.invoice_number || '',
+                            invoiceDate: item.invoice_date || '',
+                            budgetCode: item.budget_code || '',
+                            account: item.account_code || '',
+                            amount: item.total ? formatCurrency(item.total) : '',
+                        });
+                    });
+                }
+
+                // Add one empty row at the end
+                addLineItem();
+                recalcTotals();
+
+                // Load attachments
+                loadExistingAttachments(rfpNumber);
+
+            } catch (err) {
+                console.error('Error loading RFP:', err);
+            }
+        }
+
+        async function loadExistingAttachments(rfpNumber) {
+            try {
+                const resp = await fetch(API_BASE + '/api/rfps/' + rfpNumber + '/attachments');
+                const data = await resp.json();
+                const files = data.attachments || [];
+                files.forEach(function(f) {
+                    attachments.push({
+                        id: f.key,
+                        key: f.key,
+                        name: f.name,
+                        size: f.size,
+                        type: f.contentType || '',
+                        addedDate: new Date(f.uploadedAt || Date.now()),
+                        pending: false,
+                    });
+                });
+                if (files.length > 0) {
+                    renderAttachmentsList();
+                    updateAttBadge();
+                }
+            } catch (err) {
+                console.error('Error loading attachments:', err);
+            }
         }
 
         function showSuccessModal(rfpNumber) {

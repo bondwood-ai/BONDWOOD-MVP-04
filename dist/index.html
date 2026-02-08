@@ -1055,7 +1055,7 @@
 
             badge.className = `status-badge ${rfp.status}`;
             badge.textContent = formatStatus(rfp.status);
-            openBtn.onclick = () => { window.location.href = `rfp-form.html?id=${rfp.id}`; };
+            openBtn.onclick = () => { window.location.href = `rfp-form.html?id=${rfp.rfpNumber}`; };
 
             // Show loading state
             body.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading...</div>`;
