@@ -1693,6 +1693,23 @@
                 return;
             }
 
+            // Check for duplicates (same name + size)
+            const dupes = [];
+            const newFiles = validFiles.filter(f => {
+                const isDupe = attachments.some(a => a.name === f.name && a.size === f.size);
+                if (isDupe) dupes.push(f.name);
+                return !isDupe;
+            });
+
+            if (dupes.length > 0 && newFiles.length === 0) {
+                showAlert(`${dupes.length === 1 ? 'This file has' : 'These files have'} already been attached:\n${dupes.join(', ')}`, 'Duplicate File');
+                return;
+            }
+            if (dupes.length > 0) {
+                showAlert(`Skipped ${dupes.length} duplicate${dupes.length !== 1 ? 's' : ''}: ${dupes.join(', ')}`, 'Duplicates Skipped');
+            }
+            if (newFiles.length === 0) return;
+
             const progressEl = document.getElementById('attProgress');
             const progressBar = document.getElementById('attProgressBar');
             const progressText = document.getElementById('attProgressText');
@@ -1704,16 +1721,16 @@
             if (!rfpNum) {
                 // No RFP yet — queue locally, will upload after submission
                 let added = 0;
-                validFiles.forEach(file => {
+                newFiles.forEach(file => {
                     const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
                     const blobUrl = URL.createObjectURL(file);
                     attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate: new Date(), pending: true });
                     added++;
-                    progressBar.style.width = `${(added / validFiles.length) * 100}%`;
+                    progressBar.style.width = `${(added / newFiles.length) * 100}%`;
                     progressText.textContent = `Adding ${file.name}...`;
                 });
                 progressBar.style.width = '100%';
-                progressText.textContent = `${validFiles.length} file${validFiles.length !== 1 ? 's' : ''} added`;
+                progressText.textContent = `${newFiles.length} file${newFiles.length !== 1 ? 's' : ''} added`;
                 setTimeout(() => { progressEl.classList.remove('active'); progressBar.style.width = '0%'; }, 2000);
                 renderAttachmentsList();
                 updateAttBadge();
@@ -1721,7 +1738,7 @@
             }
 
             // Upload directly to R2
-            uploadFilesToR2(validFiles, rfpNum, progressBar, progressText, progressEl);
+            uploadFilesToR2(newFiles, rfpNum, progressBar, progressText, progressEl);
         }
 
         async function uploadFilesToR2(files, rfpNum, progressBar, progressText, progressEl) {
