@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signing in...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050a12;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f8fafc;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(59, 130, 246, 0.15);
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+
+  <script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_aW5zcGlyZWQtY2hpY2tlbi05Ni5jbGVyay5hY2NvdW50cy5kZXYk"
+    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+  ></script>
+
+  <script>
+    window.addEventListener('load', async () => {
+      await Clerk.load();
+      
+      // Handle the OAuth callback
+      try {
+        await Clerk.handleRedirectCallback();
+      } catch (e) {
+        console.error('OAuth callback error:', e);
+        // Redirect to login with error flag
+        window.location.href = '/login?error=auth_failed';
+        return;
+      }
+      
+      // After handling callback, redirect based on auth status
+      if (Clerk.user) {
+        // Get redirect URL from stored value or default to home
+        const redirectUrl = sessionStorage.getItem('clerk_redirect_url') || '/';
+        sessionStorage.removeItem('clerk_redirect_url');
+        window.location.href = redirectUrl;
+      } else {
+        // Not signed in - auth failed, redirect with error
+        window.location.href = '/login?error=access_denied';
+      }
+    });
+  </script>
+</body>
+</html>
