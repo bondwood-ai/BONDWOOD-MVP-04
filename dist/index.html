@@ -77,8 +77,8 @@
         body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
         body.dark-mode .status-badge.draft { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
         body.dark-mode .status-badge.submitted, body.dark-mode .status-badge.pending { background: rgba(91, 122, 255, 0.2); color: #5b7aff; }
-        body.dark-mode .status-badge.budget-review { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
-        body.dark-mode .status-badge.compliance-review { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+        body.dark-mode .status-badge.accounting-review { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        body.dark-mode .filter-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
         body.dark-mode .status-badge.ap-review { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
         body.dark-mode .status-badge.approved { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
         body.dark-mode .status-badge.rejected { background: rgba(248, 113, 113, 0.2); color: #f87171; }
@@ -173,8 +173,9 @@
         .search-box { display: flex; align-items: center; gap: 8px; padding: 0.45rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; flex: 1; min-width: 200px; max-width: 360px; }
         .search-box svg { width: 16px; height: 16px; stroke: var(--text-secondary); stroke-width: 2; fill: none; flex-shrink: 0; }
         .search-box input { flex: 1; border: none; outline: none; font-size: 0.8rem; background: transparent; font-family: inherit; color: var(--text-primary); }
-        .filter-select { padding: 0.45rem 0.6rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; min-width: 130px; font-family: 'Metropolis', sans-serif; }
-        .filter-select:focus { outline: none; border-color: var(--secondary-hex); }
+        .filter-select { padding: 0.45rem 2rem 0.45rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; min-width: 130px; font-family: 'Metropolis', sans-serif; font-weight: 500; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; }
+        .filter-select:focus { outline: none; border-color: var(--primary-hex); }
+        .filter-select option { font-family: 'Metropolis', sans-serif; padding: 0.35rem 0.5rem; }
 
         /* ============ COLUMN SELECTOR ============ */
         .column-selector { position: relative; }
@@ -251,8 +252,7 @@
         .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; font-family: 'Metropolis', sans-serif; }
         .status-badge.draft { background: rgba(107, 114, 128, 0.12); color: #4b5563; }
         .status-badge.submitted, .status-badge.pending { background: rgba(3, 70, 148, 0.12); color: #034694; }
-        .status-badge.budget-review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
-        .status-badge.compliance-review { background: rgba(147, 51, 234, 0.12); color: #7c3aed; }
+        .status-badge.accounting-review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
         .status-badge.ap-review { background: rgba(14, 165, 233, 0.12); color: #0284c7; }
         .status-badge.approved { background: rgba(22, 163, 74, 0.12); color: #15803d; }
         .status-badge.rejected { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
@@ -497,8 +497,7 @@
                     <option value="all">All Statuses</option>
                     <option value="draft">Draft</option>
                     <option value="submitted">Submitted</option>
-                    <option value="budget-review">Budget Review</option>
-                    <option value="compliance-review">Compliance Review</option>
+                    <option value="accounting-review">Accounting Review</option>
                     <option value="ap-review">A/P Review</option>
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
@@ -989,7 +988,7 @@
         function updateStats() {
             const data = filteredRFPs;
             document.getElementById('statTotal').textContent = data.length;
-            document.getElementById('statInProgress').textContent = data.filter(r => ['submitted', 'budget-review', 'compliance-review', 'ap-review'].includes(r.status)).length;
+            document.getElementById('statInProgress').textContent = data.filter(r => ['submitted', 'accounting-review', 'ap-review'].includes(r.status)).length;
             document.getElementById('statApproved').textContent = data.filter(r => r.status === 'approved').length;
             document.getElementById('statOverdue').textContent = data.filter(r => r.invoiceAge > 35 && r.status !== 'approved').length;
             const totalAmt = data.reduce((sum, r) => sum + r.amount, 0);
@@ -1108,8 +1107,7 @@
             // Entry 2: Status-based entries
             const statusMap = {
                 'submitted': { text: `Request is pending review`, icon: '📋' },
-                'budget-review': { text: `Request moved to <strong>Budget Review</strong>`, icon: '📊' },
-                'compliance-review': { text: `Request moved to <strong>Compliance Review</strong>`, icon: '🔍' },
+                'accounting-review': { text: `Request moved to <strong>Accounting Review</strong>`, icon: '📊' },
                 'ap-review': { text: `Request moved to <strong>A/P Review</strong>`, icon: '💳' },
                 'approved': { text: `Request has been <strong style="color:var(--positive-color);">approved</strong>`, icon: '✅' },
                 'rejected': { text: `Request has been <strong style="color:var(--negative-color);">rejected</strong>`, icon: '❌' },
@@ -1741,8 +1739,7 @@
                 'draft': 'Draft',
                 'pending': 'Submitted',
                 'submitted': 'Submitted',
-                'budget-review': 'Budget Review',
-                'compliance-review': 'Compliance Review',
+                'accounting-review': 'Accounting Review',
                 'ap-review': 'A/P Review',
                 'approved': 'Approved',
                 'rejected': 'Rejected',

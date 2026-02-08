@@ -702,7 +702,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     if (body.status) {
       const statusLabels = {
         'draft': 'Draft', 'submitted': 'Submitted', 'pending': 'Pending Review',
-        'budget-review': 'Budget Review', 'compliance-review': 'Compliance Review',
+        'accounting-review': 'Accounting Review',
         'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected',
         'archived': 'Archived',
       };

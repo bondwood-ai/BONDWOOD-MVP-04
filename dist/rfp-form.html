@@ -933,7 +933,8 @@
                     <button class="att-close-btn" onclick="closeImportFileModal()">&times;</button>
                 </div>
                 <div style="padding:0 1.75rem;">
-                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Upload a spreadsheet to populate line items. The first row should contain column headers.</p>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to populate line items. The first row must contain these column headers:</p>
+                    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Metropolis',sans-serif;font-weight:600;letter-spacing:0.01em;">Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
                     <div class="att-drop-zone" id="importDropZone"
                          onclick="document.getElementById('importFileInput').click()"
                          ondragover="event.preventDefault();this.classList.add('dragover')"
@@ -1786,11 +1787,11 @@
                     data.forEach(row => {
                         addLineItem({
                             description: row['Description'] || row['description'] || '',
-                            invoice: row['Invoice'] || row['Invoice #'] || row['Invoice Number'] || row['invoice'] || '',
-                            invoiceDate: row['Invoice Date'] || row['Invoice_Date'] || row['invoice_date'] || '',
-                            budgetCode: row['Budget Code'] || row['Budget_Code'] || row['budget_code'] || '',
+                            invoice: row['Invoice #'] || row['Invoice'] || row['Invoice Number'] || row['invoice'] || row['invoice #'] || '',
+                            invoiceDate: row['Invoice Date'] || row['Invoice_Date'] || row['invoice date'] || row['invoice_date'] || '',
+                            budgetCode: row['Budget Code'] || row['Budget_Code'] || row['budget code'] || row['budget_code'] || '',
                             account: row['Account'] || row['account'] || '',
-                            amount: row['Amount'] || row['Total'] || row['amount'] || ''
+                            amount: row['Amount'] || row['amount'] || row['Total'] || row['total'] || ''
                         });
                     });
 
@@ -2492,8 +2493,7 @@
                 const statusMap = {
                     'submitted': 'Request is pending review',
                     'pending': 'Request is pending review',
-                    'budget-review': 'Request moved to <strong>Budget Review</strong>',
-                    'compliance-review': 'Request moved to <strong>Compliance Review</strong>',
+                    'accounting-review': 'Request moved to <strong>Accounting Review</strong>',
                     'ap-review': 'Request moved to <strong>A/P Review</strong>',
                     'approved': 'Request has been <strong style="color:var(--positive-color);">approved</strong>',
                     'rejected': 'Request has been <strong style="color:var(--negative-color);">rejected</strong>',
