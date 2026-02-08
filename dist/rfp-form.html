@@ -868,10 +868,10 @@
                 VENDOR_DATA = vendors.map(v => ({
                     n: v.vendor_name || v.name || v.n || '\u2014',
                     c: v.vendor_number || v.code || v.c || '\u2014',
-                    a: v.address || v.a || '\u2014',
-                    ci: v.city || v.ci || '\u2014',
-                    st: v.state || v.st || '\u2014',
-                    z: v.zip || v.z || '\u2014'
+                    a: v.vendor_address || v.address || v.a || '\u2014',
+                    ci: v.vendor_city || v.city || v.ci || '\u2014',
+                    st: v.vendor_state || v.state || v.st || '\u2014',
+                    z: v.vendor_zip || v.zip || v.z || '\u2014'
                 }));
                 console.log(`Loaded ${VENDOR_DATA.length} vendors from API`);
             } catch (e) {
