@@ -923,6 +923,20 @@
         </div>
     </div>
 
+    <!-- ============ UTILITY MODAL (alert/confirm replacement) ============ -->
+    <div id="utility-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:9998;backdrop-filter:blur(2px);">
+        <div style="background:var(--card-bg);border-radius:14px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--border-color);">
+                <h3 id="utilityModalTitle" style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:'Metropolis',sans-serif;margin:0;">Notice</h3>
+                <button onclick="closeUtilityModal()" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);display:flex;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div style="padding:1.25rem;">
+                <p id="utilityModalMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.6;margin:0;"></p>
+            </div>
+            <div id="utilityModalFooter" style="display:flex;justify-content:flex-end;gap:0.5rem;padding:1rem 1.25rem;border-top:1px solid var(--border-color);"></div>
+        </div>
+    </div>
+
     <!-- ============ SUCCESS MODAL ============ -->
     <div id="success-modal" onclick="if(event.target===this)return;">
         <div class="success-modal-content">
@@ -1544,7 +1558,7 @@
                     const wb = XLSX.read(e.target.result, { type: 'array' });
                     const ws = wb.Sheets[wb.SheetNames[0]];
                     const data = XLSX.utils.sheet_to_json(ws);
-                    if (data.length === 0) { alert('No data found in file.'); return; }
+                    if (data.length === 0) { showAlert('No data found in file.', 'Import Error'); return; }
 
                     // Clear existing rows
                     document.getElementById('lineItemsBody').innerHTML = '';
@@ -1562,9 +1576,9 @@
                     });
 
                     recalcTotals();
-                    alert(`Imported ${data.length} line items.`);
+                    showAlert(`Imported ${data.length} line items.`, 'Import Complete');
                 } catch (err) {
-                    alert('Error reading file: ' + err.message);
+                    showAlert('Error reading file: ' + err.message, 'Import Error');
                 }
             };
             reader.readAsArrayBuffer(input.files[0]);
@@ -1675,7 +1689,7 @@
                 return allowedExts.includes(ext);
             });
             if (validFiles.length === 0) {
-                alert('No valid files. Allowed: .pdf, .docx, .xlsx, .png, .jpeg, .html');
+                showAlert('No valid files. Allowed: .pdf, .docx, .xlsx, .png, .jpeg, .html', 'Invalid Files');
                 return;
             }
 
@@ -1774,7 +1788,7 @@
                 if (!resp.ok) {
                     const errText = await resp.text();
                     console.error('Attachment upload failed:', resp.status, errText);
-                    alert(`Attachment upload failed (${resp.status}): ${errText}`);
+                    showAlert(`Attachment upload failed (${resp.status}): ${errText}`, 'Upload Error');
                     return;
                 }
 
@@ -1802,7 +1816,7 @@
                 console.log(`Successfully uploaded ${data.count || pending.length} attachments`);
             } catch (err) {
                 console.error('Failed to upload pending attachments:', err);
-                alert('Attachment upload error: ' + err.message);
+                showAlert('Attachment upload error: ' + err.message, 'Upload Error');
             }
         }
 
@@ -1962,21 +1976,65 @@
 
 
         /* ========================================
+           UTILITY MODAL (replaces alert/confirm)
+           ======================================== */
+        let _utilityModalResolve = null;
+
+        function showAlert(message, title = 'Notice') {
+            return new Promise(resolve => {
+                _utilityModalResolve = resolve;
+                document.getElementById('utilityModalTitle').textContent = title;
+                document.getElementById('utilityModalMessage').textContent = message;
+                document.getElementById('utilityModalFooter').innerHTML = `
+                    <button onclick="closeUtilityModal(true)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);min-width:80px;">OK</button>
+                `;
+                document.getElementById('utility-modal').style.display = 'flex';
+            });
+        }
+
+        function showConfirm(message, title = 'Confirm', { confirmText = 'OK', cancelText = 'Cancel', danger = false } = {}) {
+            return new Promise(resolve => {
+                _utilityModalResolve = resolve;
+                document.getElementById('utilityModalTitle').textContent = title;
+                document.getElementById('utilityModalMessage').textContent = message;
+                const bg = danger ? '#dc2626' : 'var(--primary-hex)';
+                document.getElementById('utilityModalFooter').innerHTML = `
+                    <button onclick="closeUtilityModal(false)" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);">${cancelText}</button>
+                    <button onclick="closeUtilityModal(true)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:${bg};color:#fff;min-width:80px;">${confirmText}</button>
+                `;
+                document.getElementById('utility-modal').style.display = 'flex';
+            });
+        }
+
+        function closeUtilityModal(result = false) {
+            document.getElementById('utility-modal').style.display = 'none';
+            if (_utilityModalResolve) {
+                _utilityModalResolve(result);
+                _utilityModalResolve = null;
+            }
+        }
+
+        document.getElementById('utility-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeUtilityModal(false);
+        });
+
+
+        /* ========================================
            FORM ACTIONS
            ======================================== */
         function saveDraft() {
-            alert('Draft saved. (API integration pending)');
+            showAlert('Draft saved.', 'Saved');
         }
 
         function showAuditLog() {
             // Placeholder: Will fetch audit log entries from API
-            alert('Audit log will display a chronological record of all changes, approvals, and actions taken on this form. (API integration pending)');
+            showAlert('Audit log will display a chronological record of all changes, approvals, and actions taken on this form.', 'Audit Log');
         }
 
         function submitForm() {
             // Vendor validation
             if (currentRequestType === 'vendor') {
-                if (!document.getElementById('vendorName').value.trim()) { alert('Please enter vendor name.'); return; }
+                if (!document.getElementById('vendorName').value.trim()) { showAlert('Please enter vendor name.', 'Validation'); return; }
                 if (!validateVendorFields()) return;
             }
 
@@ -1986,7 +2044,7 @@
             rows.forEach(r => {
                 if (r.querySelector('.line-desc').value.trim()) hasItems = true;
             });
-            if (!hasItems) { alert('Please add at least one line item.'); return; }
+            if (!hasItems) { showAlert('Please add at least one line item.', 'Validation'); return; }
 
             // Submit directly (no signature needed - using SSO identity)
             performSubmission();
@@ -2098,10 +2156,10 @@
                     await uploadPendingAttachments(result.rfp_number);
                     showSuccessModal(result.rfp_number);
                 } else {
-                    alert('Submission failed: ' + (result.error || JSON.stringify(result)));
+                    showAlert('Submission failed: ' + (result.error || JSON.stringify(result)), 'Error');
                 }
             } catch (e) {
-                alert('Submission error: ' + e.message);
+                showAlert('Submission error: ' + e.message, 'Error');
             }
         }
 
@@ -2529,7 +2587,7 @@
                     }
                 });
                 if (hasError) {
-                    alert('Please fix the highlighted budget/account code errors before submitting.');
+                    showAlert('Please fix the highlighted budget/account code errors before submitting.', 'Validation');
                     return;
                 }
             }

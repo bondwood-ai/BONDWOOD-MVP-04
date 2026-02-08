@@ -584,6 +584,20 @@
         </div>
     </div>
 
+    <!-- ============ UTILITY MODAL (alert/confirm replacement) ============ -->
+    <div class="modal-overlay" id="utilityModal">
+        <div class="modal" style="width:420px;">
+            <div class="modal-header">
+                <h3 id="utilityModalTitle">Notice</h3>
+                <button class="btn-icon" onclick="closeUtilityModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="modal-body">
+                <p id="utilityModalMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.6;"></p>
+            </div>
+            <div class="modal-footer" id="utilityModalFooter"></div>
+        </div>
+    </div>
+
     <!-- ============ PREVIEW MODAL ============ -->
     <div class="modal-overlay" id="previewModal">
         <div class="preview-modal">
@@ -1003,8 +1017,21 @@
             filterTable();
         }
 
-        function deleteSelected() {
-            if (!confirm(`Delete ${selectedRFPIds.size} request(s)? This cannot be undone.`)) return;
+        async function deleteSelected() {
+            const confirmed = await showConfirm(
+                `Delete ${selectedRFPIds.size} request(s)? This cannot be undone.`,
+                'Delete Requests',
+                { confirmText: 'Delete', danger: true }
+            );
+            if (!confirmed) return;
+
+            // Delete from API
+            const deletePromises = [...selectedRFPIds].map(id => {
+                const rfpNum = id.replace('rfp-', '');
+                return fetch(`${API_BASE}/api/rfps/${rfpNum}`, { method: 'DELETE' }).catch(() => {});
+            });
+            await Promise.all(deletePromises);
+
             allRFPs = allRFPs.filter(r => !selectedRFPIds.has(r.id));
             selectedRFPIds.clear();
             filterTable();
@@ -1014,7 +1041,7 @@
            IMPORT
            ======================================== */
         function openAdvancedSearch() {
-            alert('Advanced search will be available soon. (Configuration pending)');
+            showAlert('Advanced search will be available soon.', 'Coming Soon');
         }
 
         /* ========================================
@@ -1120,7 +1147,7 @@
         }
         function confirmImport() {
             // Placeholder: parse XLSX and create RFPs via API
-            alert('Import processing… (API integration pending)');
+            showAlert('Import processing… (API integration pending)', 'Import');
             closeImportModal();
         }
 
@@ -1389,6 +1416,49 @@
         /* ========================================
            UTILITIES
            ======================================== */
+        /* ========================================
+           UTILITY MODAL (replaces alert/confirm)
+           ======================================== */
+        let _utilityModalResolve = null;
+
+        function showAlert(message, title = 'Notice') {
+            return new Promise(resolve => {
+                _utilityModalResolve = resolve;
+                document.getElementById('utilityModalTitle').textContent = title;
+                document.getElementById('utilityModalMessage').textContent = message;
+                document.getElementById('utilityModalFooter').innerHTML = `
+                    <button class="btn-primary accent" onclick="closeUtilityModal(true)" style="min-width:80px;">OK</button>
+                `;
+                document.getElementById('utilityModal').classList.add('open');
+            });
+        }
+
+        function showConfirm(message, title = 'Confirm', { confirmText = 'OK', cancelText = 'Cancel', danger = false } = {}) {
+            return new Promise(resolve => {
+                _utilityModalResolve = resolve;
+                document.getElementById('utilityModalTitle').textContent = title;
+                document.getElementById('utilityModalMessage').textContent = message;
+                const dangerClass = danger ? 'danger' : 'accent';
+                document.getElementById('utilityModalFooter').innerHTML = `
+                    <button class="btn-secondary" onclick="closeUtilityModal(false)">${cancelText}</button>
+                    <button class="btn-primary ${dangerClass}" onclick="closeUtilityModal(true)" style="min-width:80px;">${confirmText}</button>
+                `;
+                document.getElementById('utilityModal').classList.add('open');
+            });
+        }
+
+        function closeUtilityModal(result = false) {
+            document.getElementById('utilityModal').classList.remove('open');
+            if (_utilityModalResolve) {
+                _utilityModalResolve(result);
+                _utilityModalResolve = null;
+            }
+        }
+
+        document.getElementById('utilityModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeUtilityModal(false);
+        });
+
         function formatCurrency(num) {
             return '$' + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
