@@ -53,7 +53,7 @@ export default {
           } catch (e) { diag.form_data_error = e.message; }
           return json(diag);
         }
-        return json({ status: 'ok', worker: 'bondwood-payment-management-api', timestamp: new Date().toISOString() });
+        return json({ status: 'ok', worker: 'bondwood-payment-management-api', version: 2, timestamp: new Date().toISOString() });
       }
 
       // ── Debug diagnostics ──
