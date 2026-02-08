@@ -293,6 +293,13 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); }
         .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
         .modal-body { padding: 1.25rem; }
+        /* Loading indicator */
+        .preview-loading { text-align: center; padding: 2.5rem 2rem; color: var(--text-secondary); }
+        .preview-loading-text { font-size: 0.85rem; font-weight: 500; font-family: 'Metropolis', sans-serif; margin-bottom: 1rem; }
+        .preview-loading-bar { width: 200px; height: 4px; background: var(--border-color); border-radius: 4px; margin: 0 auto; overflow: hidden; opacity: 0; transition: opacity 0.2s ease; }
+        .preview-loading-bar.visible { opacity: 1; }
+        .preview-loading-bar-fill { width: 40%; height: 100%; background: var(--primary-hex); border-radius: 4px; animation: loadingSlide 1.2s ease-in-out infinite; }
+        @keyframes loadingSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
         .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
 
         /* Import drop zone */
@@ -677,7 +684,7 @@
                         assignedTo: r.assigned_to || '—',
                         apBatch: r.ap_batch || '',
                         status: r.status || 'draft',
-                        vendor: (r.request_type === 'reimbursement' && r.employee_id) ? ('E' + r.employee_id) : (r.vendor_name || '—'),
+                        vendor: (r.request_type === 'reimbursement' && r.employee_id) ? r.employee_id : (r.vendor_name || '—'),
                         amount: r.total_amount || r.amount || r.mileage_total || 0,
                         type: r.request_type || r.type || 'vendor',
                     };
@@ -1142,8 +1149,17 @@
             openBtn.onclick = () => { window.location.href = `rfp-form.html?id=${rfp.rfpNumber}`; };
 
             // Show loading state
-            body.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading...</div>`;
+            body.innerHTML = `<div class="preview-loading">
+                <div class="preview-loading-text">Loading...</div>
+                <div class="preview-loading-bar" id="previewLoadingBar"><div class="preview-loading-bar-fill"></div></div>
+            </div>`;
             modal.classList.add('open');
+
+            // Show loading bar after 800ms if still loading
+            const loadingBarTimer = setTimeout(() => {
+                const bar = document.getElementById('previewLoadingBar');
+                if (bar) bar.classList.add('visible');
+            }, 800);
 
             // Fetch real line items from API
             let lineItems = [];
@@ -1159,11 +1175,12 @@
                 apiAuditLogs = data.auditLogs || [];
                 // For reimbursements, show employee ID as vendor
                 if ((rfp.type === 'reimbursement' || rfp.type === 'Employee Reimbursement') && data.employee_id) {
-                    rfp.vendor = 'E' + data.employee_id;
+                    rfp.vendor = data.employee_id;
                 }
             } catch (e) {
                 console.error('Failed to load RFP details:', e);
             }
+            clearTimeout(loadingBarTimer);
 
             let lineItemsHtml = '';
             let total = 0;

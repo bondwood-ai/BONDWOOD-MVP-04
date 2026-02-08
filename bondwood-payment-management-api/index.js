@@ -345,22 +345,22 @@ async function handleListRFPs(env, url) {
    RFPs – GET SINGLE
    ======================================== */
 async function handleGetRFP(rfpNumber, env) {
-  const { results: header } = await env.DB.prepare(
-    'SELECT * FROM dashboard_data WHERE rfp_number = ?'
-  ).bind(rfpNumber).all();
+  // Run all queries in parallel using D1 batch
+  const [headerResult, rowsResult, auditResult] = await env.DB.batch([
+    env.DB.prepare('SELECT * FROM dashboard_data WHERE rfp_number = ?').bind(rfpNumber),
+    env.DB.prepare('SELECT * FROM form_data WHERE rfp_number = ? ORDER BY line_number').bind(rfpNumber),
+    env.DB.prepare('SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC').bind(rfpNumber),
+  ]);
 
+  const header = headerResult.results;
   if (!header.length) {
     return json({ error: 'RFP not found' }, 404);
   }
 
-  const { results: allRows } = await env.DB.prepare(
-    'SELECT * FROM form_data WHERE rfp_number = ? ORDER BY line_number'
-  ).bind(rfpNumber).all();
-
   // Split into line items vs mileage trips
   const lineItems = [];
   const mileageTrips = [];
-  for (const row of allRows) {
+  for (const row of rowsResult.results) {
     if (row.description === 'BUSINESS MILEAGE') {
       mileageTrips.push({
         trip_number: row.line_number,
@@ -378,16 +378,7 @@ async function handleGetRFP(rfpNumber, env) {
     }
   }
 
-  // Fetch audit logs
-  let auditLogs = [];
-  try {
-    const { results: logs } = await env.DB.prepare(
-      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC'
-    ).bind(rfpNumber).all();
-    auditLogs = logs;
-  } catch (e) {
-    // Table may not exist in older deployments
-  }
+  const auditLogs = auditResult.results || [];
 
   return json({ ...header[0], lineItems, mileageTrips, auditLogs });
 }
