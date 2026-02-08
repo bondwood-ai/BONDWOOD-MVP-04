@@ -154,17 +154,6 @@ export default {
         if (method === 'DELETE') return handleDeleteAttachment(key, env);
       }
 
-      // ── Mileage ──
-      if (path === '/api/mileage/sites' && method === 'GET') {
-        return handleMileageSites(env);
-      }
-      if (path === '/api/mileage/distance' && method === 'GET') {
-        return handleMileageDistance(env, url);
-      }
-      if (path === '/api/mileage/calculate' && method === 'POST') {
-        return handleMileageCalculate(request, env);
-      }
-
       // ── Migrate ──
       if (path === '/api/migrate' && method === 'POST') {
         return handleMigrate(env);
@@ -345,11 +334,32 @@ async function handleGetRFP(rfpNumber, env) {
     return json({ error: 'RFP not found' }, 404);
   }
 
-  const { results: lineItems } = await env.DB.prepare(
+  const { results: allRows } = await env.DB.prepare(
     'SELECT * FROM form_data WHERE rfp_number = ? ORDER BY line_number'
   ).bind(rfpNumber).all();
 
-  return json({ ...header[0], lineItems });
+  // Split into line items vs mileage trips
+  const lineItems = [];
+  const mileageTrips = [];
+  for (const row of allRows) {
+    if (row.description === 'BUSINESS MILEAGE') {
+      mileageTrips.push({
+        trip_number: row.line_number,
+        trip_date: row.invoice_date,
+        from_location: row.mileage_from,
+        to_location: row.mileage_to,
+        miles: row.quantity,
+        rate: row.unit_price,
+        amount: row.total,
+        budget_code: row.budget_code,
+        account_code: row.account_code,
+      });
+    } else {
+      lineItems.push(row);
+    }
+  }
+
+  return json({ ...header[0], lineItems, mileageTrips });
 }
 
 
@@ -399,24 +409,45 @@ async function handleCreateRFP(request, env) {
 
   const statements = [headerStmt.bind(...headerParams)];
 
+  // Helper: parse budget code into components
+  // Fund=digits 1-2, Org=3-5, Program=6-8, Finance=9-11, Course=12-14
+  function parseBudgetCode(bc) {
+    const s = (bc || '').replace(/\D/g, '');
+    return {
+      fund: s.substring(0, 2) || null,
+      organization: s.substring(2, 5) || null,
+      program: s.substring(5, 8) || null,
+      finance: s.substring(8, 11) || null,
+      course: s.substring(11, 14) || null,
+    };
+  }
+
+  const submissionType = body.request_type === 'reimbursement' ? 'employee_reimbursement' : 'vendor_payment';
+  let lineNum = 0;
+
   if (body.lineItems && body.lineItems.length) {
     for (const item of body.lineItems) {
+      lineNum++;
+      const bc = parseBudgetCode(item.budget_code);
       statements.push(
         env.DB.prepare(`
           INSERT INTO form_data (
-            rfp_number, line_number, description, fund, organization,
-            program, finance, object, quantity, unit_price, total,
-            invoice_number, invoice_date, budget_code, account_code
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            rfp_number, submission_type, line_number, description, fund, organization,
+            program, finance, object, course, quantity, unit_price, total,
+            invoice_number, invoice_date, budget_code, account_code,
+            mileage_from, mileage_to
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           nextRfp,
-          item.line_number || 0,
+          submissionType,
+          lineNum,
           item.description || '',
-          item.fund || null,
-          item.organization || null,
-          item.program || null,
-          item.finance || null,
-          item.object || item.account_code || null,
+          bc.fund,
+          bc.organization,
+          bc.program,
+          bc.finance,
+          item.account_code || null,
+          bc.course,
           item.quantity || 1,
           item.unit_price || item.total || 0,
           item.total || 0,
@@ -424,6 +455,46 @@ async function handleCreateRFP(request, env) {
           item.invoice_date || null,
           item.budget_code || null,
           item.account_code || null,
+          null,
+          null,
+        )
+      );
+    }
+  }
+
+  // Mileage trips go into form_data as well
+  if (body.mileageTrips && body.mileageTrips.length) {
+    for (const trip of body.mileageTrips) {
+      lineNum++;
+      const bc = parseBudgetCode(trip.budget_code);
+      statements.push(
+        env.DB.prepare(`
+          INSERT INTO form_data (
+            rfp_number, submission_type, line_number, description, fund, organization,
+            program, finance, object, course, quantity, unit_price, total,
+            invoice_number, invoice_date, budget_code, account_code,
+            mileage_from, mileage_to
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          nextRfp,
+          submissionType,
+          lineNum,
+          'BUSINESS MILEAGE',
+          bc.fund,
+          bc.organization,
+          bc.program,
+          bc.finance,
+          trip.account_code || null,
+          bc.course,
+          trip.miles || 0,
+          trip.rate || 0,
+          trip.amount || 0,
+          null,
+          trip.trip_date || null,
+          trip.budget_code || null,
+          trip.account_code || null,
+          trip.from_location || null,
+          trip.to_location || null,
         )
       );
     }
@@ -476,38 +547,101 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     );
   }
 
-  // Replace line items if provided
-  if (body.lineItems) {
+  // Helper: parse budget code into components
+  function parseBudgetCode(bc) {
+    const s = (bc || '').replace(/\D/g, '');
+    return {
+      fund: s.substring(0, 2) || null,
+      organization: s.substring(2, 5) || null,
+      program: s.substring(5, 8) || null,
+      finance: s.substring(8, 11) || null,
+      course: s.substring(11, 14) || null,
+    };
+  }
+
+  const submissionType = body.request_type === 'reimbursement' ? 'employee_reimbursement'
+    : body.request_type === 'vendor' ? 'vendor_payment' : null;
+
+  // Replace line items and mileage if provided
+  if (body.lineItems || body.mileageTrips) {
     statements.push(
       env.DB.prepare('DELETE FROM form_data WHERE rfp_number = ?').bind(rfpNumber)
     );
 
-    for (const item of body.lineItems) {
-      statements.push(
-        env.DB.prepare(`
-          INSERT INTO form_data (
-            rfp_number, line_number, description, fund, organization,
-            program, finance, object, quantity, unit_price, total,
-            invoice_number, invoice_date, budget_code, account_code
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          rfpNumber,
-          item.line_number || 0,
-          item.description || '',
-          item.fund || null,
-          item.organization || null,
-          item.program || null,
-          item.finance || null,
-          item.object || item.account_code || null,
-          item.quantity || 1,
-          item.unit_price || item.total || 0,
-          item.total || 0,
-          item.invoice_number || null,
-          item.invoice_date || null,
-          item.budget_code || null,
-          item.account_code || null,
-        )
-      );
+    let lineNum = 0;
+
+    if (body.lineItems) {
+      for (const item of body.lineItems) {
+        lineNum++;
+        const bc = parseBudgetCode(item.budget_code);
+        statements.push(
+          env.DB.prepare(`
+            INSERT INTO form_data (
+              rfp_number, submission_type, line_number, description, fund, organization,
+              program, finance, object, course, quantity, unit_price, total,
+              invoice_number, invoice_date, budget_code, account_code,
+              mileage_from, mileage_to
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            rfpNumber,
+            submissionType,
+            lineNum,
+            item.description || '',
+            bc.fund,
+            bc.organization,
+            bc.program,
+            bc.finance,
+            item.account_code || null,
+            bc.course,
+            item.quantity || 1,
+            item.unit_price || item.total || 0,
+            item.total || 0,
+            item.invoice_number || null,
+            item.invoice_date || null,
+            item.budget_code || null,
+            item.account_code || null,
+            null,
+            null,
+          )
+        );
+      }
+    }
+
+    if (body.mileageTrips) {
+      for (const trip of body.mileageTrips) {
+        lineNum++;
+        const bc = parseBudgetCode(trip.budget_code);
+        statements.push(
+          env.DB.prepare(`
+            INSERT INTO form_data (
+              rfp_number, submission_type, line_number, description, fund, organization,
+              program, finance, object, course, quantity, unit_price, total,
+              invoice_number, invoice_date, budget_code, account_code,
+              mileage_from, mileage_to
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            rfpNumber,
+            submissionType,
+            lineNum,
+            'BUSINESS MILEAGE',
+            bc.fund,
+            bc.organization,
+            bc.program,
+            bc.finance,
+            trip.account_code || null,
+            bc.course,
+            trip.miles || 0,
+            trip.rate || 0,
+            trip.amount || 0,
+            null,
+            trip.trip_date || null,
+            trip.budget_code || null,
+            trip.account_code || null,
+            trip.from_location || null,
+            trip.to_location || null,
+          )
+        );
+      }
     }
   }
 
@@ -549,6 +683,10 @@ async function handleMigrate(env) {
     'ALTER TABLE form_data ADD COLUMN invoice_date TEXT',
     'ALTER TABLE form_data ADD COLUMN budget_code TEXT',
     'ALTER TABLE form_data ADD COLUMN account_code TEXT',
+    'ALTER TABLE form_data ADD COLUMN submission_type TEXT',
+    'ALTER TABLE form_data ADD COLUMN course TEXT',
+    'ALTER TABLE form_data ADD COLUMN mileage_from TEXT',
+    'ALTER TABLE form_data ADD COLUMN mileage_to TEXT',
   ];
 
   const results = [];
@@ -697,94 +835,4 @@ async function handleDownloadAttachment(key, env) {
 async function handleDeleteAttachment(key, env) {
   await env.BUCKET.delete(key);
   return json({ message: 'Attachment deleted', key });
-}
-
-
-/* ========================================
-   MILEAGE – SITES LIST
-   ======================================== */
-async function handleMileageSites(env) {
-  const { results } = await env.DB.prepare(
-    'SELECT DISTINCT from_site AS site FROM mileage_table UNION SELECT DISTINCT to_site AS site FROM mileage_table ORDER BY site'
-  ).all();
-  return json({ sites: results.map(r => r.site) });
-}
-
-
-/* ========================================
-   MILEAGE – DISTANCE LOOKUP
-   ======================================== */
-async function handleMileageDistance(env, url) {
-  const from = url.searchParams.get('from');
-  const to = url.searchParams.get('to');
-  if (!from || !to) return json({ error: 'Missing from/to parameters' }, 400);
-
-  const { results } = await env.DB.prepare(
-    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
-  ).bind(from, to).all();
-
-  if (results.length > 0) {
-    return json({ from, to, distance: results[0].distance, source: 'district' });
-  }
-
-  // Try reverse
-  const { results: rev } = await env.DB.prepare(
-    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
-  ).bind(to, from).all();
-
-  if (rev.length > 0) {
-    return json({ from, to, distance: rev[0].distance, source: 'district' });
-  }
-
-  return json({ error: 'Route not found', from, to }, 404);
-}
-
-
-/* ========================================
-   MILEAGE – GOOGLE MAPS CALCULATE
-   ======================================== */
-async function handleMileageCalculate(request, env) {
-  const body = await request.json();
-  const fromAddr = body.from;
-  const toAddr = body.to;
-
-  if (!fromAddr || !toAddr) {
-    return json({ error: 'Missing from/to addresses' }, 400);
-  }
-
-  const apiKey = env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) {
-    return json({ error: 'Google Maps API key not configured' }, 500);
-  }
-
-  try {
-    const dmUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(fromAddr)}&destinations=${encodeURIComponent(toAddr)}&units=imperial&key=${apiKey}`;
-
-    const resp = await fetch(dmUrl);
-    const data = await resp.json();
-
-    if (data.status !== 'OK') {
-      return json({ error: 'Google API error', detail: data.status, errorMessage: data.error_message || null }, 502);
-    }
-
-    const element = data.rows?.[0]?.elements?.[0];
-    if (!element || element.status !== 'OK') {
-      return json({ error: 'No route found', detail: element?.status || 'unknown' }, 404);
-    }
-
-    // distance.value is in meters, convert to miles
-    const meters = element.distance.value;
-    const miles = meters / 1609.344;
-
-    return json({
-      from: fromAddr,
-      to: toAddr,
-      distance: Math.round(miles * 10) / 10,
-      distanceText: element.distance.text,
-      durationText: element.duration.text,
-      source: 'google',
-    });
-  } catch (e) {
-    return json({ error: 'Failed to calculate distance', detail: e.message }, 500);
-  }
 }

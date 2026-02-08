@@ -1063,10 +1063,12 @@
 
             // Fetch real line items from API
             let lineItems = [];
+            let mileageTrips = [];
             try {
                 const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`);
                 const data = await resp.json();
                 lineItems = data.lineItems || [];
+                mileageTrips = data.mileageTrips || [];
             } catch (e) {
                 console.error('Failed to load RFP details:', e);
             }
@@ -1086,7 +1088,21 @@
                 </tr>`;
             });
 
-            if (lineItems.length === 0) {
+            // Add mileage trips as line items
+            mileageTrips.forEach((trip, i) => {
+                const amt = trip.amount || 0;
+                total += amt;
+                lineItemsHtml += `<tr>
+                    <td>${lineItems.length + i + 1}</td>
+                    <td>BUSINESS MILEAGE<br><span style="font-size:0.75rem;color:var(--text-secondary);">${trip.from_location || ''} → ${trip.to_location || ''} (${trip.miles || 0} mi)</span></td>
+                    <td>—</td>
+                    <td style="text-align:center;">${trip.budget_code || '—'}</td>
+                    <td style="text-align:center;">${trip.account_code || '—'}</td>
+                    <td class="text-right">${formatCurrency(amt)}</td>
+                </tr>`;
+            });
+
+            if (lineItems.length === 0 && mileageTrips.length === 0) {
                 lineItemsHtml = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>`;
             }
 

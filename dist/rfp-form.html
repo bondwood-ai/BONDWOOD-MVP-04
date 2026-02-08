@@ -802,10 +802,11 @@
                                 <tr>
                                     <th style="width:50px;border-radius:8px 0 0 0;">Trip</th>
                                     <th style="width:110px;">Date</th>
-                                    <th>From Location</th>
-                                    <th>To Location</th>
-                                    <th style="width:90px;">Miles</th>
-                                    <th style="width:85px;">Rate</th>
+                                    <th style="width:180px;">From Location</th>
+                                    <th style="width:180px;">To Location</th>
+                                    <th style="width:80px;">Miles</th>
+                                    <th style="width:145px;">Budget Code</th>
+                                    <th style="width:80px;">Account</th>
                                     <th style="width:100px;border-radius:0 8px 0 0;">Amount</th>
                                 </tr>
                             </thead>
@@ -1637,26 +1638,28 @@
                 +   '<input type="text" class="trip-to-addr" placeholder="Enter to address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
                 + '</td>'
                 + '<td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>'
-                + '<td><input type="text" class="trip-rate text-right" readonly value="' + formatCurrency(DEFAULT_MILEAGE_RATE) + '" style="width:70px;"></td>'
+                + '<td><input type="text" class="trip-budget-code" placeholder="Budget Code" style="width:135px;font-size:0.8rem;" autocomplete="off"></td>'
+                + '<td><input type="text" class="trip-account" placeholder="\u2014" style="width:70px;font-size:0.8rem;" autocomplete="off"></td>'
                 + '<td><input type="text" class="trip-amount text-right" readonly value="" style="width:85px;"></td>';
             tbody.appendChild(tr);
 
             // Init date auto-advance
             initDateAutoAdvance(tr.querySelector('.trip-date'));
 
-            // Update rate when date changes
+            // Update amount when date changes (rate changes by year)
             var tripDateInput = tr.querySelector('.trip-date');
-            var rateInput = tr.querySelector('.trip-rate');
             tripDateInput.addEventListener('blur', function() {
                 var d = this.value.trim();
                 if (d.length === 10) {
                     var rate = getMileageRate(d);
-                    rateInput.value = formatCurrency(rate);
                     var m = parseFloat(tr.querySelector('.trip-miles').value) || 0;
                     tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * rate) : '';
                     recalcMileageTotals();
                 }
             });
+
+            // Set up budget code autocomplete for mileage row
+            setupMileageBudgetAutocomplete(tr);
 
             // Bind select change handlers
             var fromSel = tr.querySelector('.trip-from');
@@ -1700,7 +1703,6 @@
                 calcTimeout = setTimeout(function() {
                     var fa = fromSel.value === '__other__' ? fromAddr.value.trim() : '';
                     var ta = toSel.value === '__other__' ? toAddr.value.trim() : '';
-                    // If one side is "Other" with address and other is a known site, also calculate
                     if (fromSel.value !== '__other__' && fromSel.value) fa = fromSel.value;
                     if (toSel.value !== '__other__' && toSel.value) ta = toSel.value;
                     var hasOther = fromSel.value === '__other__' || toSel.value === '__other__';
@@ -1716,10 +1718,80 @@
             milesInput.addEventListener('input', function() {
                 var m = parseFloat(this.value) || 0;
                 var rate = getMileageRate(tr.querySelector('.trip-date').value);
-                tr.querySelector('.trip-rate').value = formatCurrency(rate);
                 tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * rate) : '';
                 recalcMileageTotals();
             });
+        }
+
+        // Budget code autocomplete for mileage rows (reuses allBudgetCodes)
+        function setupMileageBudgetAutocomplete(tr) {
+            var bcInput = tr.querySelector('.trip-budget-code');
+            var acctInput = tr.querySelector('.trip-account');
+            if (!bcInput || !acctInput) return;
+
+            var dropdown = null;
+            var selectedBudgetCode = null;
+
+            bcInput.addEventListener('input', function() {
+                var val = this.value.trim();
+                selectedBudgetCode = null;
+                acctInput.value = '';
+                if (val.length < 2) { removeDropdown(); return; }
+                var matches = allBudgetCodes.filter(function(bc) {
+                    return bc.budget_code.includes(val) || (bc.description && bc.description.toLowerCase().includes(val.toLowerCase()));
+                }).slice(0, 8);
+                showDropdown(matches);
+            });
+
+            bcInput.addEventListener('blur', function() {
+                setTimeout(function() { removeDropdown(); }, 200);
+            });
+
+            acctInput.addEventListener('focus', function() {
+                if (selectedBudgetCode) {
+                    var accts = allBudgetCodes.filter(function(bc) { return bc.budget_code === selectedBudgetCode; });
+                    var uniqueAccts = [...new Set(accts.map(function(bc) { return bc.account_code; }))].filter(Boolean);
+                    if (uniqueAccts.length === 1) {
+                        acctInput.value = uniqueAccts[0];
+                    }
+                }
+            });
+
+            function showDropdown(matches) {
+                removeDropdown();
+                if (!matches.length) return;
+                dropdown = document.createElement('div');
+                dropdown.className = 'budget-dropdown';
+                dropdown.style.cssText = 'position:absolute;z-index:999;background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+                var seen = new Set();
+                matches.forEach(function(m) {
+                    if (seen.has(m.budget_code)) return;
+                    seen.add(m.budget_code);
+                    var item = document.createElement('div');
+                    item.style.cssText = 'padding:6px 10px;cursor:pointer;font-size:0.8rem;border-bottom:1px solid var(--border-color);';
+                    item.textContent = m.budget_code + (m.description ? ' - ' + m.description : '');
+                    item.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        bcInput.value = m.budget_code;
+                        selectedBudgetCode = m.budget_code;
+                        removeDropdown();
+                        acctInput.focus();
+                    });
+                    item.addEventListener('mouseenter', function() { this.style.background = 'var(--hover-bg, #f0f0f0)'; });
+                    item.addEventListener('mouseleave', function() { this.style.background = ''; });
+                    dropdown.appendChild(item);
+                });
+                bcInput.parentElement.style.position = 'relative';
+                bcInput.parentElement.appendChild(dropdown);
+                dropdown.style.width = '250px';
+                dropdown.style.top = bcInput.offsetTop + bcInput.offsetHeight + 'px';
+                dropdown.style.left = bcInput.offsetLeft + 'px';
+            }
+
+            function removeDropdown() {
+                if (dropdown && dropdown.parentElement) dropdown.parentElement.removeChild(dropdown);
+                dropdown = null;
+            }
         }
 
         async function calcMileage(row) {
@@ -1741,7 +1813,6 @@
                 var data = await resp.json();
                 if (data.distance !== undefined) {
                     var rate = getMileageRate(row.querySelector('.trip-date').value);
-                    row.querySelector('.trip-rate').value = formatCurrency(rate);
                     row.querySelector('.trip-miles').value = data.distance.toFixed(1);
                     row.querySelector('.trip-amount').value = formatCurrency(data.distance * rate);
                 } else {
@@ -1768,7 +1839,6 @@
                 var data = await resp.json();
                 if (data.distance !== undefined) {
                     var rate = getMileageRate(row.querySelector('.trip-date').value);
-                    row.querySelector('.trip-rate').value = formatCurrency(rate);
                     milesInput.value = data.distance.toFixed(1);
                     row.querySelector('.trip-amount').value = formatCurrency(data.distance * rate);
                 } else {
@@ -2307,6 +2377,39 @@
                 payload.employee_id = document.getElementById('employeeId').value.trim();
             }
 
+            // Collect mileage trips
+            if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
+                var mileageTrips = [];
+                var mileageTotal = 0;
+                document.querySelectorAll('#mileageBody tr').forEach(function(row, idx) {
+                    var miles = parseFloat(row.querySelector('.trip-miles').value) || 0;
+                    if (miles <= 0) return;
+                    var fromSel = row.querySelector('.trip-from').value;
+                    var toSel = row.querySelector('.trip-to').value;
+                    var fromAddr = row.querySelector('.trip-from-addr') ? row.querySelector('.trip-from-addr').value.trim() : '';
+                    var toAddr = row.querySelector('.trip-to-addr') ? row.querySelector('.trip-to-addr').value.trim() : '';
+                    var tripDate = row.querySelector('.trip-date').value.trim();
+                    var rate = getMileageRate(tripDate);
+                    var amount = parseFormattedNumber(row.querySelector('.trip-amount').value);
+                    mileageTrips.push({
+                        trip_number: idx + 1,
+                        trip_date: formatDateForStorage(tripDate) || null,
+                        from_location: fromSel === '__other__' ? fromAddr : fromSel,
+                        to_location: toSel === '__other__' ? toAddr : toSel,
+                        miles: miles,
+                        rate: rate,
+                        amount: amount,
+                        budget_code: row.querySelector('.trip-budget-code') ? row.querySelector('.trip-budget-code').value.trim() : '',
+                        account_code: row.querySelector('.trip-account') ? row.querySelector('.trip-account').value.trim() : '',
+                    });
+                    mileageTotal += amount;
+                });
+                if (mileageTrips.length > 0) {
+                    payload.mileageTrips = mileageTrips;
+                    payload.mileage_total = mileageTotal;
+                }
+            }
+
             try {
                 const resp = await fetch('https://bondwood-payment-management-api.bondwood.workers.dev/api/rfps', {
                     method: 'POST',
@@ -2408,6 +2511,51 @@
                     addLineItem();
                 }
                 recalcTotals();
+
+                // Load mileage trips
+                if (data.mileageTrips && data.mileageTrips.length > 0) {
+                    document.getElementById('mileageCheck').checked = true;
+                    toggleMileageTable();
+                    // Clear default rows
+                    document.getElementById('mileageBody').innerHTML = '';
+                    mileageCounter = 0;
+                    data.mileageTrips.forEach(function(trip) {
+                        addMileageRow();
+                        var rows = document.querySelectorAll('#mileageBody tr');
+                        var row = rows[rows.length - 1];
+                        if (trip.trip_date) {
+                            row.querySelector('.trip-date').value = formatDateForDisplay(trip.trip_date);
+                        }
+                        // Check if from/to are known sites or custom addresses
+                        var fromSel = row.querySelector('.trip-from');
+                        var toSel = row.querySelector('.trip-to');
+                        var fromOpt = Array.from(fromSel.options).find(function(o) { return o.value === trip.from_location; });
+                        var toOpt = Array.from(toSel.options).find(function(o) { return o.value === trip.to_location; });
+                        if (fromOpt) {
+                            fromSel.value = trip.from_location;
+                        } else {
+                            fromSel.value = '__other__';
+                            fromSel.dispatchEvent(new Event('change'));
+                            row.querySelector('.trip-from-addr').value = trip.from_location;
+                        }
+                        if (toOpt) {
+                            toSel.value = trip.to_location;
+                        } else {
+                            toSel.value = '__other__';
+                            toSel.dispatchEvent(new Event('change'));
+                            row.querySelector('.trip-to-addr').value = trip.to_location;
+                        }
+                        row.querySelector('.trip-miles').value = trip.miles ? trip.miles.toFixed(1) : '';
+                        row.querySelector('.trip-amount').value = trip.amount ? formatCurrency(trip.amount) : '';
+                        if (trip.budget_code && row.querySelector('.trip-budget-code')) {
+                            row.querySelector('.trip-budget-code').value = trip.budget_code;
+                        }
+                        if (trip.account_code && row.querySelector('.trip-account')) {
+                            row.querySelector('.trip-account').value = trip.account_code;
+                        }
+                    });
+                    recalcMileageTotals();
+                }
 
                 // Load attachments
                 loadExistingAttachments(rfpNumber);
