@@ -65,6 +65,7 @@
         body.dark-mode .items-table input[type="date"] { color-scheme: dark; }
         body.dark-mode .items-table input[readonly] { background: var(--readonly-bg); }
         body.dark-mode .items-table tr.selected { background: rgba(91, 122, 255, 0.15) !important; }
+        body.dark-mode .mileage-table tr.selected { background: rgba(91, 122, 255, 0.15) !important; }
         body.dark-mode .workflow-step.active { background: rgba(91, 122, 255, 0.15); border-color: #5b7aff; }
         body.dark-mode .workflow-step.completed { background: rgba(74, 222, 128, 0.15); border-color: #4ade80; }
         body.dark-mode .attachment-item { background: var(--readonly-bg); border-color: var(--border-color); }
@@ -72,8 +73,8 @@
         body.dark-mode .mileage-table th { background: var(--primary-hex); }
         body.dark-mode .mileage-table td { border-color: var(--border-color); }
         body.dark-mode .mileage-table input { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
-        body.dark-mode .row-actions-toolbar { background: #3d3200; border-color: #665500; }
-        body.dark-mode .row-actions-toolbar .selected-count { color: #ffd700; }
+        body.dark-mode .row-actions-toolbar { background: rgba(255, 255, 255, 0.06); border-color: var(--primary-hex); }
+        body.dark-mode .row-actions-toolbar .selected-count { color: var(--text-primary); }
         body.dark-mode .total-row input { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
         body.dark-mode .total-row input[readonly] { background: var(--readonly-bg); }
         body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
@@ -339,11 +340,12 @@
 
         /* ============ ROW ACTIONS TOOLBAR ============ */
         .row-actions-toolbar {
-            display: none; background: #fff3cd; border: 1px solid #ffc107;
+            display: none; background: rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--primary-hex);
             border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 0.75rem;
         }
         .row-actions-toolbar.visible { display: flex; align-items: center; justify-content: space-between; }
-        .row-actions-toolbar .selected-count { font-weight: 600; color: #856404; font-size: 0.85rem; }
+        .row-actions-toolbar .selected-count { font-weight: 600; color: var(--text-primary); font-size: 0.85rem; }
         .delete-rows-btn {
             display: flex; align-items: center; gap: 0.4rem;
             background: var(--negative-color); color: #fff; border: none;
@@ -388,6 +390,12 @@
         .mileage-table {
             width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px;
         }
+        .mileage-table th.mileage-checkbox-col, .mileage-table td.mileage-checkbox-cell { text-align: center; width: 36px; }
+        .mileage-table input[type="checkbox"] {
+            width: 15px; height: 15px; accent-color: var(--primary-hex); cursor: pointer;
+            margin: 0;
+        }
+        .mileage-table tr.selected { background: var(--pale-accent) !important; }
         .mileage-table th {
             background: var(--primary-hex); color: var(--accent-text-color);
             padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
@@ -645,7 +653,8 @@
         @media print {
             body { background: white !important; color: #000 !important; padding: 0; }
             .back-btn, .button-container, .add-row-container, .row-actions-toolbar,
-            .checkbox-col, .checkbox-cell, .attachments-section, .footer,
+            .checkbox-col, .checkbox-cell, .mileage-checkbox-col, .mileage-checkbox-cell,
+            .attachments-section, .footer,
             .table-actions-bar .btn-primary-sm, #headerBanner { display: none !important; }
             .form-container { box-shadow: none; border: none; }
             .section-header, .vendor-section .cell.header-cell,
@@ -796,11 +805,21 @@
                     <label for="mileageCheck">Submit Business Mileage</label>
                 </div>
                 <div id="mileageTableWrapper" style="display:none;">
+                    <!-- Mileage Row Actions -->
+                    <div class="row-actions-toolbar" id="mileageActionsToolbar">
+                        <span class="selected-count"><span id="mileageSelectedCount">0</span> trip(s) selected</span>
+                        <button class="delete-rows-btn" onclick="deleteMileageSelectedRows()">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Delete
+                        </button>
+                    </div>
+
                     <div class="mileage-table-scroll">
                         <table class="mileage-table">
                             <thead>
                                 <tr>
-                                    <th style="width:50px;border-radius:8px 0 0 0;">Trip</th>
+                                    <th class="mileage-checkbox-col" style="border-radius:8px 0 0 0;"><input type="checkbox" id="selectAllMileage" onclick="toggleSelectAllMileage()"></th>
+                                    <th style="width:50px;">Trip</th>
                                     <th style="width:110px;">Date</th>
                                     <th>From Location</th>
                                     <th>To Location</th>
@@ -1575,6 +1594,45 @@
         }
 
         /* ========================================
+           MILEAGE ROW SELECTION & DELETE
+           ======================================== */
+        function toggleSelectAllMileage() {
+            const cb = document.getElementById('selectAllMileage');
+            document.querySelectorAll('.mileage-checkbox').forEach(c => c.checked = cb.checked);
+            updateMileageSelection();
+        }
+
+        function updateMileageSelection() {
+            const checkboxes = document.querySelectorAll('.mileage-checkbox');
+            let count = 0;
+            checkboxes.forEach(cb => {
+                const row = cb.closest('tr');
+                if (cb.checked) { row.classList.add('selected'); count++; }
+                else row.classList.remove('selected');
+            });
+            document.getElementById('mileageSelectedCount').textContent = count;
+            const toolbar = document.getElementById('mileageActionsToolbar');
+            toolbar.classList.toggle('visible', count > 0);
+
+            const selectAll = document.getElementById('selectAllMileage');
+            selectAll.checked = checkboxes.length > 0 && count === checkboxes.length;
+            selectAll.indeterminate = count > 0 && count < checkboxes.length;
+        }
+
+        function deleteMileageSelectedRows() {
+            document.querySelectorAll('.mileage-checkbox:checked').forEach(cb => cb.closest('tr').remove());
+            // Renumber
+            let n = 0;
+            document.querySelectorAll('#mileageBody tr').forEach(tr => {
+                n++;
+                tr.querySelector('.text-right').value = n;
+            });
+            mileageCounter = n;
+            updateMileageSelection();
+            recalcMileageTotals();
+        }
+
+        /* ========================================
            LINE ITEM IMPORT
            ======================================== */
         function importLineItems() {
@@ -1636,6 +1694,7 @@
             var opts = '<option value="">Select location</option><option value="__other__">Other (enter address)</option>';
             MILEAGE_SITES.forEach(function(s) { opts += '<option value="' + s.replace(/"/g, '&quot;') + '">' + s + '</option>'; });
             tr.innerHTML = ''
+                + '<td class="mileage-checkbox-cell"><input type="checkbox" class="mileage-checkbox" onchange="updateMileageSelection()"></td>'
                 + '<td><input type="text" class="text-right" value="' + mileageCounter + '" readonly style="width:40px;"></td>'
                 + '<td style="position:relative;"><input type="text" class="trip-date" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"><input type="date" class="trip-date-picker" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;"></td>'
                 + '<td>'
