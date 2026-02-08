@@ -1025,11 +1025,11 @@
             );
             if (!confirmed) return;
 
-            // Delete from API
-            const deletePromises = [...selectedRFPIds].map(id => {
-                const rfpNum = id.replace('rfp-', '');
-                return fetch(`${API_BASE}/api/rfps/${rfpNum}`, { method: 'DELETE' }).catch(() => {});
-            });
+            // Look up actual RFP numbers from the selected IDs
+            const toDelete = allRFPs.filter(r => selectedRFPIds.has(r.id));
+            const deletePromises = toDelete.map(rfp =>
+                fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, { method: 'DELETE' }).catch(() => {})
+            );
             await Promise.all(deletePromises);
 
             allRFPs = allRFPs.filter(r => !selectedRFPIds.has(r.id));
