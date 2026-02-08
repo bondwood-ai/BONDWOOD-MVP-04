@@ -450,6 +450,10 @@
         /* Attachment Modal Overlay */
         #attachments-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
         #attachments-modal.open { display: flex; }
+
+        /* Import Modal */
+        #import-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
+        #import-modal.open { display: flex; }
         #attachments-modal .att-modal-content {
             background: var(--card-bg); border-radius: 0.875rem; padding: 1.5rem 1.75rem;
             max-height: 88vh; overflow-y: auto; width: 92%; max-width: 540px;
@@ -749,7 +753,6 @@
             <div style="margin-bottom:0.75rem;">
                 <h3 style="font-family:'Metropolis',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Item Detail</h3>
             </div>
-                <input type="file" id="lineItemFileInput" accept=".xlsx" style="display:none;" onchange="handleLineItemImport(this)">
 
                 <!-- Row Actions -->
                 <div class="row-actions-toolbar" id="rowActionsToolbar">
@@ -895,6 +898,29 @@
                     <span class="att-progress-text" id="attProgressText">Uploading...</span>
                 </div>
                 <div class="att-file-list" id="attachmentsList"></div>
+            </div>
+        </div>
+
+        <!-- Import XLSX Modal -->
+        <div id="import-modal">
+            <div class="att-modal-content">
+                <div class="att-modal-header">
+                    <h3>Import Line Items</h3>
+                    <button class="att-close-btn" onclick="closeImportFileModal()">&times;</button>
+                </div>
+                <div class="att-drop-zone" id="importDropZone"
+                     onclick="document.getElementById('importFileInput').click()"
+                     ondragover="event.preventDefault();this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="event.preventDefault();this.classList.remove('dragover');handleImportDrop(event)">
+                    <div class="att-drop-icon">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <p class="att-drop-main">Drop file here or click to browse</p>
+                    <p class="att-drop-hint">.xlsx, .xls, .csv</p>
+                    <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFileSelect(event)">
+                </div>
+                <div id="importFilePreview" style="display:none;" class="att-file-list"></div>
             </div>
         </div>
 
@@ -1639,11 +1665,70 @@
            LINE ITEM IMPORT
            ======================================== */
         function importLineItems() {
-            document.getElementById('lineItemFileInput').click();
+            document.getElementById('import-modal').classList.add('open');
+            document.getElementById('importFilePreview').style.display = 'none';
+            document.getElementById('importFileInput').value = '';
         }
 
-        function handleLineItemImport(input) {
-            if (!input.files.length) return;
+        function closeImportFileModal() {
+            document.getElementById('import-modal').classList.remove('open');
+        }
+
+        // Close import modal on overlay click
+        document.getElementById('import-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeImportFileModal();
+        });
+
+        // Close import modal on Esc
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const importM = document.getElementById('import-modal');
+                if (importM.classList.contains('open')) { closeImportFileModal(); return; }
+            }
+        });
+
+        function handleImportDrop(event) {
+            const files = event.dataTransfer.files;
+            if (files.length > 0) processImportFile(files[0]);
+        }
+
+        function handleImportFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) processImportFile(files[0]);
+        }
+
+        function processImportFile(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+                showAlert('Invalid file type. Please upload .xlsx, .xls, or .csv files only.', 'Import Error');
+                return;
+            }
+
+            // Show file preview
+            const preview = document.getElementById('importFilePreview');
+            const iconColor = ext === 'csv' ? '#16a34a' : '#034694';
+            const label = ext.toUpperCase();
+            preview.innerHTML = `
+                <div class="attachment-item">
+                    <div class="attachment-icon">
+                        <svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${iconColor}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>
+                    </div>
+                    <div class="attachment-info">
+                        <div class="attachment-name" style="cursor:default;">${file.name}</div>
+                        <div class="attachment-meta">${(file.size / 1024).toFixed(1)} KB</div>
+                    </div>
+                    <button style="background:var(--primary-hex);color:var(--accent-text-color);border:none;padding:0.45rem 1rem;border-radius:6px;font-family:'Metropolis',sans-serif;font-weight:600;font-size:0.8rem;cursor:pointer;" onclick="executeImport()">Import</button>
+                </div>
+            `;
+            preview.style.display = 'flex';
+            preview._pendingFile = file;
+        }
+
+        function executeImport() {
+            const preview = document.getElementById('importFilePreview');
+            const file = preview._pendingFile;
+            if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -1668,13 +1753,13 @@
                     });
 
                     recalcTotals();
+                    closeImportFileModal();
                     showAlert(`Imported ${data.length} line items.`, 'Import Complete');
                 } catch (err) {
                     showAlert('Error reading file: ' + err.message, 'Import Error');
                 }
             };
-            reader.readAsArrayBuffer(input.files[0]);
-            input.value = '';
+            reader.readAsArrayBuffer(file);
         }
 
         /* ========================================
