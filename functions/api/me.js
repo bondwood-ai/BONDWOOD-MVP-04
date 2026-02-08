@@ -22,21 +22,13 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'CLERK_SECRET_KEY not configured' }), { status: 500, headers });
     }
 
-    // Call Clerk Backend API
     const clerkResp = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
       headers: { 'Authorization': `Bearer ${clerkKey}` }
     });
 
-    // Return full debug info if not OK
     if (!clerkResp.ok) {
       const body = await clerkResp.text();
-      return new Response(JSON.stringify({
-        error: 'Clerk API error',
-        status: clerkResp.status,
-        userId,
-        clerkResponse: body,
-        keyPrefix: clerkKey.substring(0, 12) + '...'
-      }), { status: 500, headers });
+      return new Response(JSON.stringify({ error: 'Clerk API error', status: clerkResp.status, detail: body }), { status: 500, headers });
     }
 
     const clerkUser = await clerkResp.json();
@@ -52,15 +44,13 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: 'No email found for user' }), { status: 404, headers });
     }
 
+    // Proxy to NEW independent worker
     const workerResp = await fetch(
-      `https://bondwood-api.bondwood.workers.dev/api/me?email=${encodeURIComponent(email)}`
+      `https://bondwood-payment-management-api.bondwood.workers.dev/api/me?email=${encodeURIComponent(email)}`
     );
     const data = await workerResp.json();
 
-    return new Response(JSON.stringify(data), {
-      status: workerResp.status,
-      headers
-    });
+    return new Response(JSON.stringify(data), { status: workerResp.status, headers });
   } catch (e) {
     return new Response(JSON.stringify({ error: 'Failed to process session', detail: e.message }), { status: 500, headers });
   }

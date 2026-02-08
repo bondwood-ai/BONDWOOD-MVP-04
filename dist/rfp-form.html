@@ -957,7 +957,7 @@
         /* ========================================
            VENDOR AUTOCOMPLETE
            ======================================== */
-        const API_BASE = 'https://bondwood-api.bondwood.workers.dev';
+        const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let VENDOR_DATA = [];
 
         // Load vendor data from API
@@ -1821,7 +1821,7 @@
             }
 
             try {
-                const resp = await fetch('https://bondwood-api.bondwood.workers.dev/api/rfps', {
+                const resp = await fetch('https://bondwood-payment-management-api.bondwood.workers.dev/api/rfps', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
