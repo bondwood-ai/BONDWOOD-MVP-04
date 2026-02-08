@@ -421,44 +421,73 @@
         .workflow-step.completed .step-status { color: var(--positive-color); }
 
         /* ============ ATTACHMENTS ============ */
-        .attachments-section { margin-bottom: 1.5rem; }
-        .upload-btn {
+        .attachments-trigger-btn {
             display: flex; align-items: center; justify-content: center; gap: 0.75rem;
             width: 100%; padding: 1rem; background: var(--primary-hex);
             color: var(--accent-text-color); border: none;
             border-radius: 8px; font-family: 'Metropolis', sans-serif; font-size: 1rem;
-            font-weight: 600; cursor: pointer; transition: all 0.2s;
+            font-weight: 600; cursor: pointer; transition: all 0.2s; position: relative;
         }
-        .upload-btn:hover { opacity: 0.9; }
-        .upload-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
-        .attachments-list { margin-top: 0.75rem; }
-        .attachment-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.6rem 0.85rem; background: var(--readonly-bg);
-            border: 1px solid var(--border-color); border-radius: 6px;
-            margin-bottom: 0.4rem;
-        }
-        .attachment-info { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; }
-        .attachment-icon {
-            flex-shrink: 0; width: 30px; height: 30px; display: flex;
-            align-items: center; justify-content: center; background: var(--card-bg);
-            border-radius: 6px; color: var(--secondary-hex);
-        }
-        .attachment-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
-        .attachment-name { font-weight: 500; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .attachment-size { font-size: 0.7rem; color: var(--text-secondary); }
-        .attachment-actions { display: flex; gap: 0.25rem; }
-        .attachment-actions button {
-            background: none; border: none; cursor: pointer; padding: 0.25rem;
-            border-radius: 4px; display: flex; align-items: center; justify-content: center;
-            transition: background 0.15s;
-        }
-        .attachment-actions button svg { width: 16px; height: 16px; stroke-width: 2; fill: none; }
-        .attachment-actions .view-btn { color: var(--secondary-hex); }
-        .attachment-actions .view-btn:hover { background: var(--pale-accent); }
-        .attachment-actions .remove-btn { color: var(--negative-color); }
-        .attachment-actions .remove-btn:hover { background: rgba(220, 38, 38, 0.1); }
+        .attachments-trigger-btn:hover { opacity: 0.9; }
+        .attachments-trigger-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .att-badge { background: #fff; color: var(--primary-hex); font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: 0.25rem; }
 
+        /* Attachment Modal Overlay */
+        #attachments-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
+        #attachments-modal.open { display: flex; }
+        #attachments-modal .att-modal-content {
+            background: var(--card-bg); border-radius: 0.875rem; padding: 1.5rem 1.75rem;
+            max-height: 88vh; overflow-y: auto; width: 92%; max-width: 540px;
+            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); border: 1px solid var(--border-color);
+        }
+        .att-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .att-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
+        .att-modal-header h3 .att-header-icon { font-size: 1.15rem; }
+        .att-modal-header h3 .att-rfp-label { font-weight: 400; color: var(--text-secondary); margin-left: 0.15rem; }
+        .att-close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); line-height: 1; padding: 0.25rem 0.4rem; border-radius: 6px; transition: background 0.15s, color 0.15s; }
+        .att-close-btn:hover { color: var(--text-primary); background: rgba(0,0,0,0.06); }
+        body.dark-mode .att-close-btn:hover { background: rgba(255,255,255,0.08); }
+
+        /* Drop Zone */
+        .att-drop-zone {
+            border: 2px dashed var(--border-color); border-radius: 0.625rem; padding: 2rem 1rem;
+            text-align: center; margin-bottom: 1.25rem; cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .att-drop-zone:hover, .att-drop-zone.dragover { border-color: var(--primary-hex); background: rgba(0,0,0,0.02); }
+        body.dark-mode .att-drop-zone:hover, body.dark-mode .att-drop-zone.dragover { background: rgba(255,255,255,0.04); }
+        .att-drop-zone p { margin: 0; }
+        .att-drop-zone .att-drop-icon { margin-bottom: 0.25rem; opacity: 0.45; }
+        .att-drop-zone .att-drop-main { color: var(--text-primary); font-size: 0.875rem; font-weight: 500; margin-top: 0.5rem; }
+        .att-drop-zone .att-drop-hint { margin-top: 0.3rem; color: var(--text-secondary); font-size: 0.75rem; opacity: 0.6; }
+
+        /* Progress */
+        .att-progress { display: none; margin-bottom: 1rem; align-items: center; gap: 0.5rem; }
+        .att-progress.active { display: flex; }
+        .att-progress-track { flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; }
+        .att-progress-fill { height: 100%; background: var(--primary-hex); border-radius: 3px; transition: width 0.3s; width: 0%; }
+        .att-progress-text { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; }
+
+        /* File List */
+        .att-file-list { max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+        .attachment-item { display: flex; align-items: center; gap: 0.875rem; padding: 0.7rem 0.875rem; border: 1px solid var(--border-color); border-radius: 0.625rem; transition: background 0.15s; }
+        .attachment-item:hover { background: #fafafa; }
+        body.dark-mode .attachment-item:hover { background: rgba(255,255,255,0.04); }
+        body.dark-mode .attachment-item { background: var(--readonly-bg); border-color: var(--border-color); }
+        .attachment-icon { width: 48px; height: 48px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: #f3f4f6; }
+        body.dark-mode .attachment-icon { background: rgba(255,255,255,0.08); }
+        .attachment-icon svg.filetype-icon { width: 32px; height: 32px; }
+        .attachment-info { flex: 1; min-width: 0; }
+        .attachment-name { font-size: 0.825rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .attachment-name:hover { text-decoration: underline; }
+        .attachment-meta { font-size: 0.725rem; color: var(--text-secondary); margin-top: 3px; }
+        .attachment-actions { display: flex; gap: 0.125rem; flex-shrink: 0; }
+        .attachment-actions button { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px; color: var(--text-secondary); display: flex; align-items: center; transition: background 0.15s, color 0.15s; }
+        .attachment-actions button:hover { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+        body.dark-mode .attachment-actions button:hover { background: rgba(255,255,255,0.08); }
+        .attachment-actions button.delete-btn:hover { color: #dc2626; background: rgba(220,38,38,0.08); }
+        .att-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); }
+        .att-empty svg { margin-bottom: 0.5rem; opacity: 0.35; }
         /* ============ BUTTONS ============ */
         .button-container {
             display: flex; gap: 0.75rem; justify-content: center;
@@ -784,12 +813,39 @@
 
         <!-- Attachments -->
         <div style="margin-bottom:1.5rem;">
-            <button class="upload-btn" onclick="document.getElementById('attachmentInput').click()">
+            <button class="attachments-trigger-btn" onclick="openAttachmentsModal()">
                 <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                Attachments
+                Attachments <span class="att-badge" id="attBadge" style="display:none;">0</span>
             </button>
-            <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" style="display:none;" onchange="handleAttachments(this)">
-            <div class="attachments-list" id="attachmentsList"></div>
+        </div>
+
+        <div id="attachments-modal">
+            <div class="att-modal-content">
+                <div class="att-modal-header">
+                    <h3>
+                        <span class="att-header-icon">&#x1F4CE;</span>
+                        Attachments<span class="att-rfp-label" id="attRfpLabel"></span>
+                    </h3>
+                    <button class="att-close-btn" onclick="closeAttachmentsModal()">&times;</button>
+                </div>
+                <div class="att-drop-zone" id="attDropZone"
+                     onclick="document.getElementById('attachmentInput').click()"
+                     ondragover="event.preventDefault();this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="event.preventDefault();this.classList.remove('dragover');handleAttachmentDrop(event)">
+                    <div class="att-drop-icon">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <p class="att-drop-main">Drop files here or click to browse</p>
+                    <p class="att-drop-hint">.pdf, .docx, .xlsx, .png, .jpeg, .html</p>
+                    <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx,.html" style="display:none;" onchange="handleAttachmentSelect(event)">
+                </div>
+                <div class="att-progress" id="attProgress">
+                    <div class="att-progress-track"><div class="att-progress-fill" id="attProgressBar"></div></div>
+                    <span class="att-progress-text" id="attProgressText">Uploading...</span>
+                </div>
+                <div class="att-file-list" id="attachmentsList"></div>
+            </div>
         </div>
 
 
@@ -1329,50 +1385,218 @@
             document.getElementById('totalMiles').value = totalMiles.toFixed(1);
             document.getElementById('mileageTotal').value = formatCurrency(totalAmount);
         }
-
         /* ========================================
            ATTACHMENTS
            ======================================== */
-        function handleAttachments(input) {
-            Array.from(input.files).forEach(file => {
-                const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
-                const blobUrl = URL.createObjectURL(file);
-                attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file });
-                renderAttachment({ id, name: file.name, size: file.size, type: file.type, blobUrl });
-            });
-            input.value = '';
+        function openAttachmentsModal() {
+            // Set RFP number in header
+            const rfpNum = document.getElementById('rfpNumber')?.value;
+            const label = document.getElementById('attRfpLabel');
+            if (label) label.textContent = rfpNum ? ` \u2014 ${rfpNum}` : '';
+            document.getElementById('attachments-modal').classList.add('open');
+            renderAttachmentsList();
+        }
+        function closeAttachmentsModal() {
+            document.getElementById('attachments-modal').classList.remove('open');
+        }
+        document.getElementById('attachments-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeAttachmentsModal();
+        });
+
+        function handleAttachmentDrop(event) {
+            const files = event.dataTransfer.files;
+            if (files.length > 0) addAttachmentFiles(files);
+        }
+        function handleAttachmentSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) addAttachmentFiles(files);
+            event.target.value = '';
         }
 
-        function renderAttachment(att) {
+        function addAttachmentFiles(files) {
+            const allowedExts = ['pdf','docx','doc','xlsx','png','jpg','jpeg','html'];
+            const validFiles = Array.from(files).filter(f => {
+                const ext = f.name.split('.').pop().toLowerCase();
+                return allowedExts.includes(ext);
+            });
+            if (validFiles.length === 0) {
+                alert('No valid files. Allowed: .pdf, .docx, .xlsx, .png, .jpeg, .html');
+                return;
+            }
+
+            const progressEl = document.getElementById('attProgress');
+            const progressBar = document.getElementById('attProgressBar');
+            const progressText = document.getElementById('attProgressText');
+            progressEl.classList.add('active');
+
+            let added = 0;
+            validFiles.forEach((file, i) => {
+                const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                const blobUrl = URL.createObjectURL(file);
+                const addedDate = new Date();
+                attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate });
+                added++;
+                progressBar.style.width = `${(added / validFiles.length) * 100}%`;
+                progressText.textContent = `Adding ${file.name}...`;
+            });
+
+            progressBar.style.width = '100%';
+            progressText.textContent = `${added} file${added !== 1 ? 's' : ''} added`;
+            setTimeout(() => {
+                progressEl.classList.remove('active');
+                progressBar.style.width = '0%';
+            }, 1500);
+
+            renderAttachmentsList();
+            updateAttBadge();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function formatAttDate(date) {
+            if (!date) return '';
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        }
+
+        /* Realistic file-type SVG icons */
+        function getFileTypeIconSVG(ext) {
+            const icons = {
+                pdf: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#E53E3E"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#C53030"/>
+                    <path d="M4 4a2 2 0 012-2h12l10 10v16a2 2 0 01-2 2" fill="none"/>
+                    <path d="M18 2v8a2 2 0 002 2h8" fill="#FC8181" opacity="0.4"/>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">PDF</text>
+                </svg>`,
+                docx: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#2B6CB0"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#2C5282"/>
+                    <path d="M18 2v8a2 2 0 002 2h8" fill="#90CDF4" opacity="0.3"/>
+                    <rect x="9" y="8" width="10" height="1.2" rx="0.6" fill="#BEE3F8"/>
+                    <rect x="9" y="11" width="14" height="1.2" rx="0.6" fill="#BEE3F8"/>
+                    <rect x="9" y="14" width="8" height="1.2" rx="0.6" fill="#BEE3F8"/>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">DOCX</text>
+                </svg>`,
+                doc: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#2B6CB0"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#2C5282"/>
+                    <path d="M18 2v8a2 2 0 002 2h8" fill="#90CDF4" opacity="0.3"/>
+                    <rect x="9" y="8" width="10" height="1.2" rx="0.6" fill="#BEE3F8"/>
+                    <rect x="9" y="11" width="14" height="1.2" rx="0.6" fill="#BEE3F8"/>
+                    <rect x="9" y="14" width="8" height="1.2" rx="0.6" fill="#BEE3F8"/>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">DOC</text>
+                </svg>`,
+                xlsx: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#276749"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#22543D"/>
+                    <path d="M18 2v8a2 2 0 002 2h8" fill="#9AE6B4" opacity="0.3"/>
+                    <rect x="8" y="7" width="16" height="10" rx="1" fill="none" stroke="#C6F6D5" stroke-width="0.8"/>
+                    <line x1="16" y1="7" x2="16" y2="17" stroke="#C6F6D5" stroke-width="0.8"/>
+                    <line x1="8" y1="12" x2="24" y2="12" stroke="#C6F6D5" stroke-width="0.8"/>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">XLSX</text>
+                </svg>`,
+                png: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#6B46C1"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#553C9A"/>
+                    <circle cx="12" cy="10" r="2.5" fill="#D6BCFA" opacity="0.6"/>
+                    <path d="M8 17l5-5 4 3 3-2 4 4" fill="none" stroke="#D6BCFA" stroke-width="1.2" stroke-linejoin="round"/>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">PNG</text>
+                </svg>`,
+                jpg: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#6B46C1"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#553C9A"/>
+                    <circle cx="12" cy="10" r="2.5" fill="#D6BCFA" opacity="0.6"/>
+                    <path d="M8 17l5-5 4 3 3-2 4 4" fill="none" stroke="#D6BCFA" stroke-width="1.2" stroke-linejoin="round"/>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">JPG</text>
+                </svg>`,
+                jpeg: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#6B46C1"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#553C9A"/>
+                    <circle cx="12" cy="10" r="2.5" fill="#D6BCFA" opacity="0.6"/>
+                    <path d="M8 17l5-5 4 3 3-2 4 4" fill="none" stroke="#D6BCFA" stroke-width="1.2" stroke-linejoin="round"/>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6" font-weight="700" font-family="system-ui">JPEG</text>
+                </svg>`,
+                html: `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="2" width="24" height="28" rx="2" fill="#C05621"/>
+                    <rect x="4" y="18" width="24" height="12" rx="0" fill="#9C4221"/>
+                    <path d="M18 2v8a2 2 0 002 2h8" fill="#FEFCBF" opacity="0.2"/>
+                    <text x="16" y="14" text-anchor="middle" fill="#FEFCBF" font-size="9" font-weight="700" font-family="monospace">&lt;/&gt;</text>
+                    <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="700" font-family="system-ui">HTML</text>
+                </svg>`
+            };
+            return icons[ext] || `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="2" width="24" height="28" rx="2" fill="#718096"/>
+                <rect x="4" y="18" width="24" height="12" rx="0" fill="#4A5568"/>
+                <path d="M18 2v8a2 2 0 002 2h8" fill="#CBD5E0" opacity="0.3"/>
+                <text x="16" y="27" text-anchor="middle" fill="#fff" font-size="6" font-weight="700" font-family="system-ui">${ext.toUpperCase().substring(0,4)}</text>
+            </svg>`;
+        }
+
+        function renderAttachmentsList() {
             const list = document.getElementById('attachmentsList');
-            const item = document.createElement('div');
-            item.className = 'attachment-item';
-            item.id = att.id;
-            const isPdf = att.type === 'application/pdf' || att.name.endsWith('.pdf');
-            const isImage = att.type.startsWith('image/');
-            item.innerHTML = `
-                <div class="attachment-info">
-                    <div class="attachment-icon">
-                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" stroke="currentColor"/><path d="M14 2v6h6" stroke="currentColor"/></svg>
+            if (attachments.length === 0) {
+                list.innerHTML = `<div class="att-empty">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    <p style="font-size:0.85rem;">No attachments yet</p>
+                    <p style="font-size:0.75rem;opacity:0.6;">Upload files using the area above</p>
+                </div>`;
+                return;
+            }
+            list.innerHTML = attachments.map(att => {
+                const ext = att.name.split('.').pop().toLowerCase();
+                const isPdf = att.type === 'application/pdf' || ext === 'pdf';
+                const isImage = att.type.startsWith('image/') || ['png','jpg','jpeg'].includes(ext);
+                const isViewable = isPdf || isImage;
+                const sizeStr = formatFileSize(att.size);
+                const dateStr = formatAttDate(att.addedDate || new Date());
+                const iconSvg = getFileTypeIconSVG(ext);
+                return `<div class="attachment-item" id="${att.id}">
+                    <div class="attachment-icon">${iconSvg}</div>
+                    <div class="attachment-info">
+                        <div class="attachment-name" onclick="${isViewable ? `viewAttachment('${att.id}')` : ''}" title="${att.name}">${att.name}</div>
+                        <div class="attachment-meta">${sizeStr} &middot; ${dateStr}</div>
                     </div>
-                    <div>
-                        <div class="attachment-name">${att.name}</div>
-                        <div class="attachment-size">${(att.size / 1024).toFixed(1)} KB</div>
+                    <div class="attachment-actions">
+                        ${isViewable ? `<button onclick="viewAttachment('${att.id}')" title="View"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>` : ''}
+                        <button onclick="downloadAttachmentLocal('${att.id}')" title="Download"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                        <button class="delete-btn" onclick="removeAttachment('${att.id}')" title="Delete"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
-                </div>
-                <div class="attachment-actions">
-                    ${isPdf || isImage ? `<button class="view-btn" onclick="viewAttachment('${att.id}')" title="Preview"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>` : ''}
-                    <button class="remove-btn" onclick="removeAttachment('${att.id}')" title="Remove"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-                </div>
-            `;
-            list.appendChild(item);
+                </div>`;
+            }).join('');
         }
 
         function removeAttachment(id) {
             const att = attachments.find(a => a.id === id);
             if (att) URL.revokeObjectURL(att.blobUrl);
             attachments = attachments.filter(a => a.id !== id);
-            document.getElementById(id)?.remove();
+            renderAttachmentsList();
+            updateAttBadge();
+        }
+
+        function downloadAttachmentLocal(id) {
+            const att = attachments.find(a => a.id === id);
+            if (!att) return;
+            const a = document.createElement('a');
+            a.href = att.blobUrl;
+            a.download = att.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function updateAttBadge() {
+            const badge = document.getElementById('attBadge');
+            if (attachments.length > 0) {
+                badge.textContent = attachments.length;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
         }
 
         function viewAttachment(id) {
@@ -1394,6 +1618,7 @@
             document.getElementById('pdfOverlay').classList.remove('open');
             document.getElementById('pdfViewerBody').innerHTML = '';
         }
+
 
         /* ========================================
            FORM ACTIONS
