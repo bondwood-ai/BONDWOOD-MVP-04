@@ -1233,8 +1233,8 @@
 
             // Check if editing existing form
             const params = new URLSearchParams(window.location.search);
-            if (params.get('rfp')) {
-                loadExistingForm(params.get('rfp'));
+            if (params.get('id')) {
+                loadExistingForm(params.get('id'));
             }
         });
 
@@ -2180,30 +2180,50 @@
         }
 
         async function loadExistingForm(rfpNumber) {
-            console.log('Loading RFP:', rfpNumber);
+            console.log('[LOAD] Starting load for RFP:', rfpNumber);
             currentRfpNumber = rfpNumber;
 
             try {
-                const resp = await fetch(API_BASE + '/api/rfps/' + rfpNumber);
-                if (!resp.ok) { console.error('Failed to load RFP:', resp.status); return; }
+                const url = API_BASE + '/api/rfps/' + rfpNumber;
+                console.log('[LOAD] Fetching:', url);
+                const resp = await fetch(url);
+                console.log('[LOAD] Response status:', resp.status);
+
+                if (!resp.ok) {
+                    console.error('[LOAD] Failed to load RFP:', resp.status);
+                    return;
+                }
+
                 const data = await resp.json();
+                console.log('[LOAD] Data received:', JSON.stringify(data).substring(0, 500));
 
                 // Set RFP number display
-                document.getElementById('rfpNumber').textContent = '#' + rfpNumber;
+                const rfpEl = document.getElementById('rfpNumber');
+                if (rfpEl) rfpEl.textContent = '#' + rfpNumber;
 
                 // Set request type
                 if (data.request_type) {
+                    console.log('[LOAD] Setting type:', data.request_type);
                     selectType(data.request_type);
                 }
 
-                // Vendor fields
-                if (data.vendor_name) document.getElementById('vendorName').value = data.vendor_name;
-                if (data.vendor_number) document.getElementById('vendorNumber').value = data.vendor_number;
-                if (data.vendor_address) document.getElementById('vendorAddress').value = data.vendor_address;
+                // Vendor fields — set AFTER selectType to avoid being cleared
+                setTimeout(() => {
+                    if (data.vendor_name) {
+                        document.getElementById('vendorName').value = data.vendor_name;
+                        console.log('[LOAD] Set vendorName:', data.vendor_name);
+                    }
+                    if (data.vendor_number) {
+                        document.getElementById('vendorNumber').value = data.vendor_number;
+                    }
+                    if (data.vendor_address) {
+                        document.getElementById('vendorAddress').value = data.vendor_address;
+                    }
 
-                // Employee fields
-                if (data.employee_name) document.getElementById('employeeName').value = data.employee_name;
-                if (data.employee_id) document.getElementById('employeeId').value = data.employee_id;
+                    // Employee fields
+                    if (data.employee_name) document.getElementById('employeeName').value = data.employee_name;
+                    if (data.employee_id) document.getElementById('employeeId').value = data.employee_id;
+                }, 100);
 
                 // Description
                 if (data.description) {
@@ -2214,6 +2234,8 @@
                 // Clear default empty row and load line items
                 document.getElementById('lineItemsBody').innerHTML = '';
                 lineItemCounter = 0;
+
+                console.log('[LOAD] Line items:', data.lineItems ? data.lineItems.length : 'none');
 
                 if (data.lineItems && data.lineItems.length > 0) {
                     data.lineItems.forEach(function(item) {
@@ -2235,8 +2257,9 @@
                 // Load attachments
                 loadExistingAttachments(rfpNumber);
 
+                console.log('[LOAD] Complete');
             } catch (err) {
-                console.error('Error loading RFP:', err);
+                console.error('[LOAD] Error:', err);
             }
         }
 
@@ -2268,6 +2291,8 @@
         function showSuccessModal(rfpNumber) {
             document.getElementById('successRfpNumber').textContent = '#' + rfpNumber;
             document.getElementById('success-modal').classList.add('open');
+            // Update URL so the form is now addressable
+            history.replaceState(null, '', 'rfp-form.html?id=' + rfpNumber);
         }
 
         /* ========================================
