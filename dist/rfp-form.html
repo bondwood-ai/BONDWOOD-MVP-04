@@ -1207,7 +1207,23 @@
         let attachments = [];
         let currentRfpNumber = null;
         let currentRequestType = 'vendor';
-        const MILEAGE_RATE = 0.70; // IRS 2025 rate
+        // IRS mileage rates by year
+        const MILEAGE_RATES = [
+            { start: '2026-01-01', end: '2026-12-31', rate: 0.725 },
+            { start: '2025-01-01', end: '2025-12-31', rate: 0.700 },
+        ];
+        const DEFAULT_MILEAGE_RATE = 0.725; // fallback to current year
+
+        function getMileageRate(dateStr) {
+            // dateStr can be MM/DD/YYYY or YYYY-MM-DD
+            if (!dateStr) return DEFAULT_MILEAGE_RATE;
+            var parts = dateStr.includes('/') ? dateStr.split('/') : null;
+            var iso = parts ? parts[2] + '-' + parts[0].padStart(2,'0') + '-' + parts[1].padStart(2,'0') : dateStr;
+            for (var i = 0; i < MILEAGE_RATES.length; i++) {
+                if (iso >= MILEAGE_RATES[i].start && iso <= MILEAGE_RATES[i].end) return MILEAGE_RATES[i].rate;
+            }
+            return DEFAULT_MILEAGE_RATE;
+        }
 
         // Mileage sites loaded from API
         let MILEAGE_SITES = [];
@@ -1622,12 +1638,26 @@
                 +   '<input type="text" class="trip-to-addr" placeholder="Enter to address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
                 + '</td>'
                 + '<td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>'
-                + '<td><input type="text" class="trip-rate text-right" readonly value="' + formatCurrency(MILEAGE_RATE) + '" style="width:70px;"></td>'
+                + '<td><input type="text" class="trip-rate text-right" readonly value="' + formatCurrency(DEFAULT_MILEAGE_RATE) + '" style="width:70px;"></td>'
                 + '<td><input type="text" class="trip-amount text-right" readonly value="" style="width:85px;"></td>';
             tbody.appendChild(tr);
 
             // Init date auto-advance
             initDateAutoAdvance(tr.querySelector('.trip-date'));
+
+            // Update rate when date changes
+            var tripDateInput = tr.querySelector('.trip-date');
+            var rateInput = tr.querySelector('.trip-rate');
+            tripDateInput.addEventListener('blur', function() {
+                var d = this.value.trim();
+                if (d.length === 10) {
+                    var rate = getMileageRate(d);
+                    rateInput.value = formatCurrency(rate);
+                    var m = parseFloat(tr.querySelector('.trip-miles').value) || 0;
+                    tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * rate) : '';
+                    recalcMileageTotals();
+                }
+            });
 
             // Bind select change handlers
             var fromSel = tr.querySelector('.trip-from');
@@ -1686,7 +1716,9 @@
             // Manual miles entry recalculates total
             milesInput.addEventListener('input', function() {
                 var m = parseFloat(this.value) || 0;
-                tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * MILEAGE_RATE) : '';
+                var rate = getMileageRate(tr.querySelector('.trip-date').value);
+                tr.querySelector('.trip-rate').value = formatCurrency(rate);
+                tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * rate) : '';
                 recalcMileageTotals();
             });
         }
@@ -1709,8 +1741,10 @@
                 var resp = await fetch(API_BASE + '/api/mileage/distance?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to));
                 var data = await resp.json();
                 if (data.distance !== undefined) {
+                    var rate = getMileageRate(row.querySelector('.trip-date').value);
+                    row.querySelector('.trip-rate').value = formatCurrency(rate);
                     row.querySelector('.trip-miles').value = data.distance.toFixed(1);
-                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * MILEAGE_RATE);
+                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * rate);
                 } else {
                     row.querySelector('.trip-miles').value = '—';
                     row.querySelector('.trip-amount').value = '';
@@ -1734,8 +1768,10 @@
                 });
                 var data = await resp.json();
                 if (data.distance !== undefined) {
+                    var rate = getMileageRate(row.querySelector('.trip-date').value);
+                    row.querySelector('.trip-rate').value = formatCurrency(rate);
                     milesInput.value = data.distance.toFixed(1);
-                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * MILEAGE_RATE);
+                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * rate);
                 } else {
                     milesInput.value = '';
                     row.querySelector('.trip-amount').value = '';
@@ -1751,8 +1787,9 @@
             let totalMiles = 0, totalAmount = 0;
             document.querySelectorAll('#mileageBody tr').forEach(row => {
                 const m = parseFloat(row.querySelector('.trip-miles').value) || 0;
+                const rate = getMileageRate(row.querySelector('.trip-date').value);
                 totalMiles += m;
-                totalAmount += m * MILEAGE_RATE;
+                totalAmount += m * rate;
             });
             document.getElementById('totalMiles').value = totalMiles.toFixed(1);
             document.getElementById('mileageTotal').value = formatCurrency(totalAmount);
