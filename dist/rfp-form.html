@@ -967,6 +967,27 @@
             nameInput.addEventListener('blur', () => { setTimeout(validateVendorFields, 200); });
             numInput.addEventListener('blur', () => { setTimeout(validateVendorFields, 200); });
 
+            // Show dropdown on focus
+            nameInput.addEventListener('focus', () => {
+                vendorActiveField = 'name';
+                vendorActiveIndex = -1;
+                const q = nameInput.value.trim().toUpperCase();
+                const matches = q.length >= 1
+                    ? VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 30)
+                    : VENDOR_DATA.slice(0, 30);
+                renderVendorDropdown(nameDrop, matches, q, 'name');
+            });
+
+            numInput.addEventListener('focus', () => {
+                vendorActiveField = 'number';
+                vendorActiveIndex = -1;
+                const q = numInput.value.trim();
+                const matches = q.length >= 1
+                    ? VENDOR_DATA.filter(v => v.c.includes(q)).slice(0, 30)
+                    : VENDOR_DATA.slice().sort((a, b) => a.c.localeCompare(b.c, undefined, {numeric: true})).slice(0, 30);
+                renderVendorDropdown(numDrop, matches, q, 'number');
+            });
+
             [nameInput, numInput].forEach(input => {
                 input.addEventListener('keydown', (e) => {
                     const drop = input === nameInput ? nameDrop : numDrop;
@@ -1833,12 +1854,13 @@
             });
 
             bcInput.addEventListener('focus', function() {
+                if (!budgetDataLoaded) return;
                 const q = this.value.trim();
-                if (q.length >= 1 && budgetDataLoaded) {
-                    const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 25);
-                    bcActiveIndex = -1;
-                    renderBcDropdown(this, matches, q);
-                }
+                const matches = q.length >= 1
+                    ? UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 25)
+                    : UNIQUE_BUDGET_CODES.slice(0, 25);
+                bcActiveIndex = -1;
+                renderBcDropdown(this, matches, q);
             });
 
             bcInput.addEventListener('blur', function() {
