@@ -901,6 +901,10 @@
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     Open Request for Payment Form
                 </button>
+                <button class="btn-open-form" id="previewPrintRfpBtn" onclick="printRFP()" style="display:none;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Print RFP
+                </button>
                 <div class="preview-footer-right" id="previewApprovalBtns" style="display:none;">
                     <button class="btn-reject" id="previewRejectBtn" onclick="openRejectModal()">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
@@ -1719,11 +1723,15 @@
         function toggleAuditLog(id) {
             const el = document.getElementById(id);
             const chevron = document.getElementById(id + '_chevron');
+            const printBtn = document.getElementById(id + '_print');
             if (!el) return;
             const isHidden = el.style.display === 'none';
             el.style.display = isHidden ? 'block' : 'none';
             if (chevron) {
                 chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+            }
+            if (printBtn) {
+                printBtn.style.display = isHidden ? 'inline-flex' : 'none';
             }
         }
 
@@ -1812,11 +1820,13 @@
 
             // Show/hide approval buttons
             const approvalBtns = document.getElementById('previewApprovalBtns');
+            const printRfpBtn = document.getElementById('previewPrintRfpBtn');
             if (isInApprovalWorkflow(rfp.status)) {
                 approvalBtns.style.display = '';
             } else {
                 approvalBtns.style.display = 'none';
             }
+            printRfpBtn.style.display = rfp.status === 'approved' ? '' : 'none';
 
             // Show loading state
             body.innerHTML = `<div class="preview-loading">
@@ -1843,6 +1853,7 @@
                 mileageTrips = data.mileageTrips || [];
                 notesText = data.description || '';
                 apiAuditLogs = data.auditLogs || [];
+                window._previewFullData = data; // store for printRFP
                 // For reimbursements, show employee ID as vendor
                 if ((rfp.type === 'reimbursement' || rfp.type === 'Employee Reimbursement') && data.employee_id) {
                     rfp.vendor = data.employee_id;
@@ -1926,7 +1937,7 @@
                             Audit Log
                             <span style="font-size:0.7rem;font-weight:500;color:var(--text-secondary);margin-left:0.25rem;">(${auditEntries.length})</span>
                         </button>
-                        ${auditEntries.length > 0 ? `<button onclick="printAuditLog(window._auditPrintRfp, window._auditPrintEntries)" style="margin-left:auto;display:inline-flex;align-items:center;gap:0.3rem;background:none;border:1px solid var(--border-color);border-radius:5px;padding:0.2rem 0.6rem;cursor:pointer;font-size:0.7rem;font-family:'Metropolis',sans-serif;font-weight:600;color:var(--text-secondary);">
+                        ${auditEntries.length > 0 ? `<button id="${auditId}_print" onclick="printAuditLog(window._auditPrintRfp, window._auditPrintEntries)" style="display:none;margin-left:auto;align-items:center;gap:0.3rem;background:none;border:1px solid var(--border-color);border-radius:5px;padding:0.2rem 0.6rem;cursor:pointer;font-size:0.7rem;font-family:'Metropolis',sans-serif;font-weight:600;color:var(--text-secondary);">
                             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                             Print
                         </button>` : ''}
@@ -2769,6 +2780,92 @@
         document.getElementById('utilityModal')?.addEventListener('click', function(e) {
             if (e.target === this) closeUtilityModal(false);
         });
+
+        function printRFP() {
+            if (!previewRfp) return;
+            const rfp = previewRfp;
+            const data = window._previewFullData || {};
+            const lineItems = data.lineItems || [];
+            const mileageTrips = data.mileageTrips || [];
+            let total = 0;
+            lineItems.forEach(i => total += (i.total || 0));
+            mileageTrips.forEach(t => total += (t.amount || 0));
+            if (total === 0) total = rfp.amount || 0;
+
+            let rowsHtml = '';
+            lineItems.forEach((item, i) => {
+                rowsHtml += `<tr>
+                    <td class="num">${item.line_number || i + 1}</td>
+                    <td>${item.description || ''}</td>
+                    <td>${item.invoice_number || ''}</td>
+                    <td>${item.invoice_date || ''}</td>
+                    <td>${item.budget_code || ''}</td>
+                    <td>${item.account_code || item.object || ''}</td>
+                    <td class="amt">$${(item.total || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+            mileageTrips.forEach((trip, i) => {
+                rowsHtml += `<tr>
+                    <td class="num">${lineItems.length + i + 1}</td>
+                    <td>BUSINESS MILEAGE – ${trip.from_location || ''} → ${trip.to_location || ''} (${trip.miles || 0} mi)</td>
+                    <td></td>
+                    <td>${trip.trip_date || ''}</td>
+                    <td>${trip.budget_code || ''}</td>
+                    <td>${trip.account_code || ''}</td>
+                    <td class="amt">$${(trip.amount || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+
+            const auditEntries = window._auditPrintEntries || [];
+            let auditHtml = '';
+            if (auditEntries.length > 0) {
+                auditHtml = `<h2>Audit Log</h2><table>
+                    <thead><tr><th style="width:30px;">#</th><th>Entry</th><th style="width:150px;">Timestamp</th></tr></thead>
+                    <tbody>${auditEntries.map((e, i) => `<tr><td class="num">${i + 1}</td><td>${e.text}</td><td style="font-size:10px;color:#666;">${e.timestamp}</td></tr>`).join('')}</tbody>
+                </table>`;
+            }
+
+            const w = window.open('', '_blank', 'width=900,height=700');
+            w.document.write(`<!DOCTYPE html><html><head><title>RFP #${rfp.rfpNumber}</title>
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #222; font-size: 11px; }
+                h1 { font-size: 18px; margin-bottom: 2px; }
+                h2 { font-size: 13px; margin: 20px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                .subtitle { font-size: 10px; color: #666; margin-bottom: 16px; }
+                .header-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 20px; margin-bottom: 16px; }
+                .header-grid .label { font-size: 9px; text-transform: uppercase; color: #999; font-weight: 700; }
+                .header-grid .value { font-size: 12px; font-weight: 600; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
+                th { background: #f5f5f5; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ddd; font-weight: 700; font-size: 10px; }
+                td { padding: 5px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+                td.num { text-align: right; width: 30px; color: #999; }
+                td.amt { text-align: right; font-weight: 600; }
+                .total-row { text-align: right; font-size: 13px; font-weight: 700; padding: 8px 8px 0; border-top: 2px solid #333; }
+                .status-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #2B6D51; color: #fff; }
+                @media print { body { padding: 20px; } }
+            </style></head><body>
+            <h1>Request for Payment – #${rfp.rfpNumber}</h1>
+            <div class="subtitle">Printed ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} &nbsp;|&nbsp; <span class="status-badge">${formatStatus(rfp.status)}</span>${data.ap_batch ? ' &nbsp;|&nbsp; A/P Batch: <strong>' + data.ap_batch + '</strong>' : ''}</div>
+            <div class="header-grid">
+                <div><div class="label">Submitter</div><div class="value">${rfp.submitter}</div></div>
+                <div><div class="label">Submission Date</div><div class="value">${rfp.submissionDate}</div></div>
+                <div><div class="label">Type</div><div class="value">${rfp.type === 'vendor' ? 'Vendor Payment' : 'Employee Reimbursement'}</div></div>
+                <div><div class="label">${rfp.type === 'reimbursement' ? 'Employee ID' : 'Vendor'}</div><div class="value">${rfp.vendor}</div></div>
+                <div><div class="label">Assigned To</div><div class="value">${rfp.assignedTo || '—'}</div></div>
+                <div><div class="label">Total</div><div class="value">$${total.toFixed(2)}</div></div>
+            </div>
+            <h2>Line Items</h2>
+            <table>
+                <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:80px;">Invoice #</th><th style="width:80px;">Inv. Date</th><th style="width:100px;">Budget Code</th><th style="width:65px;">Account</th><th style="width:80px;text-align:right;">Amount</th></tr></thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+            <div class="total-row">Total: $${total.toFixed(2)}</div>
+            ${auditHtml}
+            </body></html>`);
+            w.document.close();
+            setTimeout(() => w.print(), 300);
+        }
 
         function printAuditLog(rfpNumber, entries) {
             const w = window.open('', '_blank', 'width=700,height=600');

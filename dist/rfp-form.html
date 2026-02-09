@@ -979,6 +979,13 @@
                 Approve
             </button>
         </div>
+        <div class="button-container" id="approvedButtons" style="display:none;">
+            <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
+            <button class="btn btn-submit" onclick="printFormRFP()">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print RFP
+            </button>
+        </div>
 
         <!-- Footer -->
         <div class="footer">
@@ -2869,8 +2876,10 @@
         function showApprovalButtons(status) {
             currentFormStatus = status;
             const isApproval = status === 'submitted' || status === 'accounting-review' || status === 'ap-review';
-            document.getElementById('draftButtons').style.display = isApproval ? 'none' : '';
+            const isApproved = status === 'approved';
+            document.getElementById('draftButtons').style.display = (!isApproval && !isApproved) ? '' : 'none';
             document.getElementById('approvalButtons').style.display = isApproval ? '' : 'none';
+            document.getElementById('approvedButtons').style.display = isApproved ? '' : 'none';
         }
 
         function openFormRejectModal() {
@@ -3170,6 +3179,94 @@
            UTILITIES
            ======================================== */
         function formatNumber(num) { return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+        function printFormRFP() {
+            const data = _loadedRfpData || {};
+            const lineItems = data.lineItems || [];
+            const mileageTrips = data.mileageTrips || [];
+            const rfpNum = currentRfpNumber || 'N/A';
+            let total = 0;
+            lineItems.forEach(i => total += (i.total || 0));
+            mileageTrips.forEach(t => total += (t.amount || 0));
+            if (total === 0) total = data.total_amount || data.amount || data.mileage_total || 0;
+
+            let rowsHtml = '';
+            lineItems.forEach((item, i) => {
+                rowsHtml += `<tr>
+                    <td class="num">${item.line_number || i + 1}</td>
+                    <td>${item.description || ''}</td>
+                    <td>${item.invoice_number || ''}</td>
+                    <td>${item.invoice_date || ''}</td>
+                    <td>${item.budget_code || ''}</td>
+                    <td>${item.account_code || item.object || ''}</td>
+                    <td class="amt">$${(item.total || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+            mileageTrips.forEach((trip, i) => {
+                rowsHtml += `<tr>
+                    <td class="num">${lineItems.length + i + 1}</td>
+                    <td>BUSINESS MILEAGE – ${trip.from_location || ''} → ${trip.to_location || ''} (${trip.miles || 0} mi)</td>
+                    <td></td>
+                    <td>${trip.trip_date || ''}</td>
+                    <td>${trip.budget_code || ''}</td>
+                    <td>${trip.account_code || ''}</td>
+                    <td class="amt">$${(trip.amount || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+
+            const auditEntries = buildFormAuditLog();
+            let auditHtml = '';
+            if (auditEntries.length > 0) {
+                auditHtml = `<h2>Audit Log</h2><table>
+                    <thead><tr><th style="width:30px;">#</th><th>Entry</th><th style="width:150px;">Timestamp</th></tr></thead>
+                    <tbody>${auditEntries.map((e, i) => `<tr><td class="num">${i + 1}</td><td>${e.text}</td><td style="font-size:10px;color:#666;">${e.timestamp}</td></tr>`).join('')}</tbody>
+                </table>`;
+            }
+
+            const vendor = data.request_type === 'reimbursement' ? (data.employee_id || data.employee_name || '—') : (data.vendor_name || data.vendor_number || '—');
+            const typeLabel = data.request_type === 'vendor' ? 'Vendor Payment' : 'Employee Reimbursement';
+
+            const w = window.open('', '_blank', 'width=900,height=700');
+            w.document.write(`<!DOCTYPE html><html><head><title>RFP #${rfpNum}</title>
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #222; font-size: 11px; }
+                h1 { font-size: 18px; margin-bottom: 2px; }
+                h2 { font-size: 13px; margin: 20px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                .subtitle { font-size: 10px; color: #666; margin-bottom: 16px; }
+                .header-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 20px; margin-bottom: 16px; }
+                .header-grid .label { font-size: 9px; text-transform: uppercase; color: #999; font-weight: 700; }
+                .header-grid .value { font-size: 12px; font-weight: 600; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
+                th { background: #f5f5f5; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ddd; font-weight: 700; font-size: 10px; }
+                td { padding: 5px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+                td.num { text-align: right; width: 30px; color: #999; }
+                td.amt { text-align: right; font-weight: 600; }
+                .total-row { text-align: right; font-size: 13px; font-weight: 700; padding: 8px 8px 0; border-top: 2px solid #333; }
+                .status-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #2B6D51; color: #fff; }
+                @media print { body { padding: 20px; } }
+            </style></head><body>
+            <h1>Request for Payment – #${rfpNum}</h1>
+            <div class="subtitle">Printed ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} &nbsp;|&nbsp; <span class="status-badge">${data.status ? data.status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Approved'}</span>${data.ap_batch ? ' &nbsp;|&nbsp; A/P Batch: <strong>' + data.ap_batch + '</strong>' : ''}</div>
+            <div class="header-grid">
+                <div><div class="label">Submitter</div><div class="value">${data.submitter_name || '—'}</div></div>
+                <div><div class="label">Submission Date</div><div class="value">${data.submission_date || '—'}</div></div>
+                <div><div class="label">Type</div><div class="value">${typeLabel}</div></div>
+                <div><div class="label">${data.request_type === 'reimbursement' ? 'Employee ID' : 'Vendor'}</div><div class="value">${vendor}</div></div>
+                <div><div class="label">Assigned To</div><div class="value">${data.assigned_to || '—'}</div></div>
+                <div><div class="label">Total</div><div class="value">$${total.toFixed(2)}</div></div>
+            </div>
+            <h2>Line Items</h2>
+            <table>
+                <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:80px;">Invoice #</th><th style="width:80px;">Inv. Date</th><th style="width:100px;">Budget Code</th><th style="width:65px;">Account</th><th style="width:80px;text-align:right;">Amount</th></tr></thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+            <div class="total-row">Total: $${total.toFixed(2)}</div>
+            ${auditHtml}
+            </body></html>`);
+            w.document.close();
+            setTimeout(() => w.print(), 300);
+        }
+
         function printAuditLog(rfpNumber, entries) {
             const w = window.open('', '_blank', 'width=700,height=600');
             w.document.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
