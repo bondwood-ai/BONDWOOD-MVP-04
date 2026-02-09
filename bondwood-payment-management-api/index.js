@@ -596,8 +596,8 @@ async function handleCreateRFP(request, env) {
       rfp_number, submitter_name, submitter_id, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
-      description, status, assigned_to, ap_batch, mileage_total
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      description, status, assigned_to, ap_batch, mileage_total, check_number
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
@@ -618,6 +618,7 @@ async function handleCreateRFP(request, env) {
     body.assigned_to || null,
     body.ap_batch || null,
     body.mileage_total || 0,
+    body.check_number || null,
   ];
 
   const statements = [headerStmt.bind(...headerParams)];
@@ -648,8 +649,8 @@ async function handleCreateRFP(request, env) {
             rfp_number, submission_type, line_number, description, fund, organization,
             program, finance, object, course, quantity, unit_price, total,
             invoice_number, invoice_date, budget_code, account_code,
-            mileage_from, mileage_to
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            mileage_from, mileage_to, check_number
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           nextRfp,
           submissionType,
@@ -670,6 +671,7 @@ async function handleCreateRFP(request, env) {
           item.account_code || null,
           null,
           null,
+          body.check_number || null,
         )
       );
     }
@@ -686,8 +688,8 @@ async function handleCreateRFP(request, env) {
             rfp_number, submission_type, line_number, description, fund, organization,
             program, finance, object, course, quantity, unit_price, total,
             invoice_number, invoice_date, budget_code, account_code,
-            mileage_from, mileage_to
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            mileage_from, mileage_to, check_number
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           nextRfp,
           submissionType,
@@ -708,6 +710,7 @@ async function handleCreateRFP(request, env) {
           trip.account_code || null,
           trip.from_location || null,
           trip.to_location || null,
+          body.check_number || null,
         )
       );
     }
@@ -762,7 +765,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     'submitter_name', 'submitter_id', 'budget_approver', 'submission_date',
     'request_type', 'vendor_name', 'vendor_number', 'vendor_address',
     'invoice_number', 'employee_name', 'employee_id', 'description',
-    'status', 'assigned_to', 'ap_batch', 'mileage_total',
+    'status', 'assigned_to', 'ap_batch', 'mileage_total', 'check_number',
   ];
 
   const setClauses = [];
@@ -818,8 +821,8 @@ async function handleUpdateRFP(rfpNumber, request, env) {
               rfp_number, submission_type, line_number, description, fund, organization,
               program, finance, object, course, quantity, unit_price, total,
               invoice_number, invoice_date, budget_code, account_code,
-              mileage_from, mileage_to
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              mileage_from, mileage_to, check_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             rfpNumber,
             submissionType,
@@ -840,6 +843,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
             item.account_code || null,
             null,
             null,
+            body.check_number || null,
           )
         );
       }
@@ -855,8 +859,8 @@ async function handleUpdateRFP(rfpNumber, request, env) {
               rfp_number, submission_type, line_number, description, fund, organization,
               program, finance, object, course, quantity, unit_price, total,
               invoice_number, invoice_date, budget_code, account_code,
-              mileage_from, mileage_to
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              mileage_from, mileage_to, check_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             rfpNumber,
             submissionType,
@@ -877,6 +881,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
             trip.account_code || null,
             trip.from_location || null,
             trip.to_location || null,
+            body.check_number || null,
           )
         );
       }
