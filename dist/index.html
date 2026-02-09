@@ -290,7 +290,7 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .modal-overlay.open { display: flex; }
         .modal { background: var(--card-bg); border-radius: 12px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; }
         .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
         .modal-body { padding: 1.25rem; }
         /* Loading indicator */
@@ -299,11 +299,7 @@
         .preview-loading-spinner { width: 36px; height: 36px; margin: 0 auto; border: 3px solid var(--border-color); border-top-color: var(--primary-hex); border-radius: 50%; opacity: 0; transition: opacity 0.2s ease; animation: spinLoad 0.8s linear infinite; }
         .preview-loading-spinner.visible { opacity: 1; }
         @keyframes spinLoad { to { transform: rotate(360deg); } }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
-        #utilityModal .modal-header { border-bottom: none; }
-        #importModal .modal-header { border-bottom: none; }
-        #importModal .modal-footer { border-top: none; }
-        #utilityModal .modal-footer { border-top: none; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; }
 
         /* Import drop zone */
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
@@ -311,7 +307,6 @@
         /* ============ PREVIEW MODAL ============ */
         /* ============ ADVANCED SEARCH MODAL ============ */
         .adv-search-modal { background: var(--card-bg); border-radius: 12px; width: 720px; max-width: 96vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
-        .adv-search-modal .modal-header { border-bottom: 1px solid var(--border-color); }
         .adv-search-section { margin-bottom: 0.75rem; }
         .adv-search-section-title { font-family: 'Metropolis', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0.5rem; padding: 0 0.125rem; }
         .adv-search-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.625rem; }
@@ -325,7 +320,7 @@
         .adv-search-field input::placeholder { color: var(--text-secondary); opacity: 0.6; }
         .adv-search-range { display: flex; gap: 0.375rem; align-items: center; }
         .adv-search-range span { font-size: 0.7rem; color: var(--text-secondary); flex-shrink: 0; }
-        .adv-search-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1.25rem; border-top: 1px solid var(--border-color); }
+        .adv-search-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1.25rem; }
         .adv-search-footer .btn-clear { background: none; border: none; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.75rem; border-radius: 6px; font-family: 'Metropolis', sans-serif; font-weight: 500; }
         .adv-search-footer .btn-clear:hover { color: var(--text-primary); background: var(--bg-color); }
         .adv-search-active-badge { display: none; background: var(--primary-hex); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 99px; margin-left: 0.35rem; vertical-align: middle; font-family: 'Metropolis', sans-serif; }
