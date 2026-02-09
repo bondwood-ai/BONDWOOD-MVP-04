@@ -972,7 +972,7 @@
                         ? Math.floor((Date.now() - new Date(r.latest_invoice_date).getTime()) / 86400000)
                         : submittedDays;
                     return {
-                        id: r.id || `rfp-${r.rfp_number}`,
+                        id: String(r.id || `rfp-${r.rfp_number}`),
                         rfpNumber: r.rfp_number,
                         submitter: r.submitter_name || '—',
                         submitterId: r.submitter_id || '',
