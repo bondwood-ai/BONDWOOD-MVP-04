@@ -3108,17 +3108,20 @@
 
             let created = 0;
             let failed = 0;
+            let completed = 0;
             const results = [];
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const pct = ((i) / files.length * 100).toFixed(0);
-                overlayBar.style.width = `${pct}%`;
-                overlayMsg.textContent = `Extracting ${i + 1} of ${files.length}: ${file.name}`;
+            // Pre-convert all files to base64 in parallel (local operation, fast)
+            overlayMsg.textContent = `Reading ${files.length} files...`;
+            const base64Map = new Map();
+            await Promise.all(files.map(async (file) => {
+                base64Map.set(file, await fileToBase64(file));
+            }));
 
+            // Process single invoice: extract → match → create → attach
+            async function processInvoice(file) {
                 try {
-                    // Extract invoice data
-                    const base64 = await fileToBase64(file);
+                    const base64 = base64Map.get(file);
                     const resp = await fetch(`${API_BASE}/api/extract-invoice`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -3148,7 +3151,6 @@
                         }
                     }
 
-                    // Build line items
                     const lineItems = data.lineItems.map(item => ({
                         description: (item.description || '').toUpperCase(),
                         invoice_number: item.invoiceNumber || '',
@@ -3160,7 +3162,6 @@
                         unit_price: parseFloat(item.amount) || 0,
                     }));
 
-                    // Create draft RFP
                     const payload = {
                         submitter_name: currentUserName,
                         submitter_id: currentUserId,
@@ -3186,17 +3187,11 @@
                     const result = await createResp.json();
                     const rfpNum = result.rfp_number;
 
-                    // Upload PDF as attachment
-                    try {
-                        const formData = new FormData();
-                        formData.append('files', file);
-                        await fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`, {
-                            method: 'POST',
-                            body: formData,
-                        });
-                    } catch (e) {
-                        console.warn(`[CAPTURE] Attachment upload failed for ${rfpNum}:`, e);
-                    }
+                    // Upload PDF as attachment (fire-and-forget, don't block)
+                    const formData = new FormData();
+                    formData.append('files', file);
+                    fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`, { method: 'POST', body: formData })
+                        .catch(e => console.warn(`[CAPTURE] Attachment upload failed for ${rfpNum}:`, e));
 
                     created++;
                     results.push({ file: file.name, rfp: rfpNum, items: lineItems.length, vendor: vendorName });
@@ -3208,7 +3203,25 @@
                     overlayLog.innerHTML += `<div style="color:var(--negative-color);">✗ ${file.name} — ${err.message}</div>`;
                     console.error(`[CAPTURE] Failed for ${file.name}:`, err);
                 }
+
+                completed++;
+                overlayBar.style.width = `${(completed / files.length * 100).toFixed(0)}%`;
+                overlayMsg.textContent = `Processed ${completed} of ${files.length}...`;
             }
+
+            // Run up to 3 extractions concurrently
+            const CONCURRENCY = 3;
+            const queue = [...files];
+            const workers = [];
+            for (let w = 0; w < Math.min(CONCURRENCY, queue.length); w++) {
+                workers.push((async () => {
+                    while (queue.length > 0) {
+                        const file = queue.shift();
+                        await processInvoice(file);
+                    }
+                })());
+            }
+            await Promise.all(workers);
 
             // Complete
             overlayBar.style.width = '100%';
