@@ -18,8 +18,8 @@
             --primary-hex: #000000;
             --secondary-hex: #0728eb;
             --checkbox-color: #034694;
-            --positive-color: #16a34a;
-            --negative-color: #dc2626;
+            --positive-color: #2B6D51;
+            --negative-color: #FA050F;
             --warning-color: #d97706;
             --border-color: #e0e0e0;
             --bg-color: #f5f5f5;
@@ -71,8 +71,8 @@
         body.dark-mode .theme-toggle svg { fill: #5b7aff; }
         body.dark-mode .btn-primary { background: #333; color: #fff; }
         body.dark-mode .btn-primary:hover { background: #444; }
-        body.dark-mode .btn-primary.danger { background: #dc2626; color: #fff; }
-        body.dark-mode .btn-primary.danger:hover { background: #b91c1c; }
+        body.dark-mode .btn-primary.danger { background: #FA050F; color: #fff; }
+        body.dark-mode .btn-primary.danger:hover { background: #FA050F; }
         body.dark-mode .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
         body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
         body.dark-mode .status-badge.draft { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
@@ -144,7 +144,7 @@
         .btn-primary.green { background: var(--positive-color); color: #fff; }
         .btn-primary.green:hover { background: #15803d; }
         .btn-primary.danger { background: var(--negative-color); color: #fff; }
-        .btn-primary.danger:hover { background: #b91c1c; }
+        .btn-primary.danger:hover { background: #FA050F; }
         .btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1rem; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-family: 'Metropolis', sans-serif; }
         .btn-secondary:hover { background: var(--bg-color); }
         .btn-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: transparent; border: none; border-radius: 6px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s ease; }
@@ -161,7 +161,7 @@
         .stat-icon.blue svg { stroke: var(--checkbox-color); }
         .stat-icon.green { background: rgba(22, 163, 74, 0.1); }
         .stat-icon.green svg { stroke: var(--positive-color); }
-        .stat-icon.red { background: rgba(220, 38, 38, 0.1); }
+        .stat-icon.red { background: rgba(250, 5, 15, 0.1); }
         .stat-icon.red svg { stroke: var(--negative-color); }
         .stat-icon.amber { background: rgba(217, 119, 6, 0.1); }
         .stat-icon.amber svg { stroke: var(--warning-color); }
@@ -255,7 +255,7 @@
         .status-badge.accounting-review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
         .status-badge.ap-review { background: rgba(14, 165, 233, 0.12); color: #0284c7; }
         .status-badge.approved { background: rgba(22, 163, 74, 0.12); color: #15803d; }
-        .status-badge.rejected { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+        .status-badge.rejected { background: rgba(250, 5, 15, 0.12); color: #FA050F; }
         .status-badge.archived { background: rgba(0,0,0,0.06); color: #6b7280; }
 
         /* Invoice age coloring */
@@ -370,11 +370,11 @@
         .preview-footer-right { display: flex; gap: 0.5rem; align-items: center; }
         .btn-reject {
             display: inline-flex; align-items: center; gap: 0.4rem;
-            padding: 0.6rem 1.25rem; background: var(--card-bg); color: var(--negative-color);
-            border: 1px solid var(--negative-color); border-radius: 6px; font-family: 'Metropolis', sans-serif;
-            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
+            padding: 0.6rem 1.25rem; background: var(--negative-color); color: #fff;
+            border: none; border-radius: 6px; font-family: 'Metropolis', sans-serif;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
         }
-        .btn-reject:hover { background: var(--negative-color); color: #fff; }
+        .btn-reject:hover { opacity: 0.85; }
         .btn-approve {
             display: inline-flex; align-items: center; gap: 0.4rem;
             padding: 0.6rem 1.25rem; background: var(--positive-color); color: #fff;
@@ -1794,7 +1794,7 @@
                 for (var i = 0; i < files.length; i++) {
                     var f = files[i];
                     var ext = f.name.split('.').pop().toLowerCase();
-                    var colorMap = { pdf:'#DC2626', docx:'#2563EB', doc:'#2563EB', xlsx:'#16A34A', png:'#6B46C1', jpg:'#6B46C1', jpeg:'#6B46C1' };
+                    var colorMap = { pdf:'#FA050F', docx:'#2563EB', doc:'#2563EB', xlsx:'#2B6D51', png:'#6B46C1', jpg:'#6B46C1', jpeg:'#6B46C1' };
                     var bg = colorMap[ext] || '#718096';
                     var label = ext.toUpperCase().substring(0, 4);
                     var sizeStr = f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB' : (f.size / 1048576).toFixed(1) + ' MB';
