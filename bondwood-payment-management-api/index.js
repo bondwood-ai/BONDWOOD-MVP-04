@@ -353,39 +353,50 @@ async function handleAdvancedSearch(request, env) {
   let params = [];
   let needsJoin = false;
 
-  // Dashboard fields (d.*)
-  if (body.rfp_number) {
-    where.push('CAST(d.rfp_number AS TEXT) LIKE ?');
-    params.push(`%${body.rfp_number}%`);
+  // Helper: build OR clause for multi-value fields
+  // values can be a string or array; uses LIKE for partial matching
+  function addLikeOr(column, values, join) {
+    const arr = Array.isArray(values) ? values : [values];
+    const filtered = arr.map(v => String(v).trim()).filter(Boolean);
+    if (!filtered.length) return;
+    if (join) needsJoin = true;
+    if (filtered.length === 1) {
+      where.push(`${column} LIKE ?`);
+      params.push(`%${filtered[0]}%`);
+    } else {
+      const clauses = filtered.map(() => `${column} LIKE ?`);
+      where.push(`(${clauses.join(' OR ')})`);
+      filtered.forEach(v => params.push(`%${v}%`));
+    }
   }
-  if (body.status) {
-    where.push('d.status = ?');
-    params.push(body.status);
+
+  // Helper: exact match OR for multi-value fields
+  function addExactOr(column, values, join) {
+    const arr = Array.isArray(values) ? values : [values];
+    const filtered = arr.map(v => String(v).trim()).filter(Boolean);
+    if (!filtered.length) return;
+    if (join) needsJoin = true;
+    if (filtered.length === 1) {
+      where.push(`${column} = ?`);
+      params.push(filtered[0]);
+    } else {
+      where.push(`${column} IN (${filtered.map(() => '?').join(',')})`);
+      filtered.forEach(v => params.push(v));
+    }
   }
+
+  // Dashboard fields
+  if (body.rfp_number) addLikeOr('CAST(d.rfp_number AS TEXT)', body.rfp_number, false);
+  if (body.status) addExactOr('d.status', body.status, false);
   if (body.request_type) {
     where.push('d.request_type = ?');
     params.push(body.request_type);
   }
-  if (body.submitter_name) {
-    where.push('d.submitter_name LIKE ?');
-    params.push(`%${body.submitter_name}%`);
-  }
-  if (body.assigned_to) {
-    where.push('d.assigned_to LIKE ?');
-    params.push(`%${body.assigned_to}%`);
-  }
-  if (body.ap_batch) {
-    where.push('d.ap_batch LIKE ?');
-    params.push(`%${body.ap_batch}%`);
-  }
-  if (body.vendor_name) {
-    where.push('d.vendor_name LIKE ?');
-    params.push(`%${body.vendor_name}%`);
-  }
-  if (body.vendor_number) {
-    where.push('d.vendor_number LIKE ?');
-    params.push(`%${body.vendor_number}%`);
-  }
+  if (body.submitter_name) addLikeOr('d.submitter_name', body.submitter_name, false);
+  if (body.assigned_to) addLikeOr('d.assigned_to', body.assigned_to, false);
+  if (body.ap_batch) addLikeOr('d.ap_batch', body.ap_batch, false);
+  if (body.vendor_name) addLikeOr('d.vendor_name', body.vendor_name, false);
+  if (body.vendor_number) addLikeOr('d.vendor_number', body.vendor_number, false);
   if (body.date_from) {
     where.push('d.submission_date >= ?');
     params.push(body.date_from);
@@ -395,17 +406,9 @@ async function handleAdvancedSearch(request, env) {
     params.push(body.date_to);
   }
 
-  // Form data fields (f.*) — require JOIN
-  if (body.description) {
-    needsJoin = true;
-    where.push('f.description LIKE ?');
-    params.push(`%${body.description}%`);
-  }
-  if (body.invoice_number) {
-    needsJoin = true;
-    where.push('f.invoice_number LIKE ?');
-    params.push(`%${body.invoice_number}%`);
-  }
+  // Form data fields
+  if (body.description) addLikeOr('f.description', body.description, true);
+  if (body.invoice_number) addLikeOr('f.invoice_number', body.invoice_number, true);
   if (body.inv_date_from) {
     needsJoin = true;
     where.push('f.invoice_date >= ?');
@@ -416,41 +419,25 @@ async function handleAdvancedSearch(request, env) {
     where.push('f.invoice_date <= ?');
     params.push(body.inv_date_to);
   }
-  if (body.budget_code) {
-    needsJoin = true;
-    where.push('f.budget_code LIKE ?');
-    params.push(`%${body.budget_code}%`);
-  }
+  if (body.budget_code) addLikeOr('f.budget_code', body.budget_code, true);
+
+  // Account code — check both account_code and object columns
   if (body.account_code) {
-    needsJoin = true;
-    where.push('(f.account_code LIKE ? OR f.object LIKE ?)');
-    params.push(`%${body.account_code}%`, `%${body.account_code}%`);
+    const arr = Array.isArray(body.account_code) ? body.account_code : [body.account_code];
+    const filtered = arr.map(v => String(v).trim()).filter(Boolean);
+    if (filtered.length) {
+      needsJoin = true;
+      const clauses = filtered.map(() => `(f.account_code LIKE ? OR f.object LIKE ?)`);
+      where.push(`(${clauses.join(' OR ')})`);
+      filtered.forEach(v => { params.push(`%${v}%`); params.push(`%${v}%`); });
+    }
   }
-  if (body.fund) {
-    needsJoin = true;
-    where.push('f.fund LIKE ?');
-    params.push(`%${body.fund}%`);
-  }
-  if (body.organization) {
-    needsJoin = true;
-    where.push('f.organization LIKE ?');
-    params.push(`%${body.organization}%`);
-  }
-  if (body.program) {
-    needsJoin = true;
-    where.push('f.program LIKE ?');
-    params.push(`%${body.program}%`);
-  }
-  if (body.finance) {
-    needsJoin = true;
-    where.push('f.finance LIKE ?');
-    params.push(`%${body.finance}%`);
-  }
-  if (body.course) {
-    needsJoin = true;
-    where.push('f.course LIKE ?');
-    params.push(`%${body.course}%`);
-  }
+
+  if (body.fund) addLikeOr('f.fund', body.fund, true);
+  if (body.organization) addLikeOr('f.organization', body.organization, true);
+  if (body.program) addLikeOr('f.program', body.program, true);
+  if (body.finance) addLikeOr('f.finance', body.finance, true);
+  if (body.course) addLikeOr('f.course', body.course, true);
   if (body.amount_min != null && !isNaN(body.amount_min)) {
     needsJoin = true;
     where.push('f.total >= ?');
@@ -472,7 +459,6 @@ async function handleAdvancedSearch(request, env) {
   const sql = `SELECT DISTINCT d.rfp_number FROM dashboard_data d ${joinClause} ${whereClause} ORDER BY d.rfp_number DESC`;
   console.log('[ADV SEARCH] SQL:', sql);
   console.log('[ADV SEARCH] Params:', params);
-  console.log('[ADV SEARCH] Body:', JSON.stringify(body));
 
   try {
     const { results } = await env.DB.prepare(sql).bind(...params).all();

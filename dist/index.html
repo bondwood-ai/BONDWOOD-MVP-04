@@ -316,6 +316,8 @@
             border-radius: 6px; background: var(--bg-color); color: var(--text-primary);
             font-family: 'Open Sauce Sans', sans-serif;
         }
+        .adv-search-field select[multiple] { padding: 0.25rem; }
+        .adv-search-field select[multiple] option { padding: 0.2rem 0.4rem; border-radius: 4px; margin: 1px 0; font-size: 0.75rem; }
         .adv-search-field input:focus, .adv-search-field select:focus { outline: none; border-color: var(--primary-hex); }
         .adv-search-field input::placeholder { color: var(--text-secondary); opacity: 0.6; }
         .adv-search-range { display: flex; gap: 0.375rem; align-items: center; }
@@ -625,12 +627,11 @@
                     <div class="adv-search-grid">
                         <div class="adv-search-field">
                             <label>RFP Number</label>
-                            <input type="text" id="advRfpNumber" placeholder="e.g. 2600001">
+                            <input type="text" id="advRfpNumber" placeholder="2600001, 2600002...">
                         </div>
                         <div class="adv-search-field">
                             <label>Status</label>
-                            <select id="advStatus">
-                                <option value="">Any</option>
+                            <select id="advStatus" multiple size="3" style="min-height:5rem;">
                                 <option value="draft">Draft</option>
                                 <option value="submitted">Submitted</option>
                                 <option value="accounting-review">Accounting Review</option>
@@ -650,15 +651,15 @@
                         </div>
                         <div class="adv-search-field">
                             <label>Submitter</label>
-                            <input type="text" id="advSubmitter" placeholder="Name...">
+                            <input type="text" id="advSubmitter" placeholder="Name, name...">
                         </div>
                         <div class="adv-search-field">
                             <label>Assigned To</label>
-                            <input type="text" id="advAssignedTo" placeholder="Name...">
+                            <input type="text" id="advAssignedTo" placeholder="Name, name...">
                         </div>
                         <div class="adv-search-field">
                             <label>AP Batch</label>
-                            <input type="text" id="advApBatch" placeholder="Batch #...">
+                            <input type="text" id="advApBatch" placeholder="Batch #, batch #...">
                         </div>
                     </div>
                 </div>
@@ -669,11 +670,11 @@
                     <div class="adv-search-grid">
                         <div class="adv-search-field">
                             <label>Vendor Name</label>
-                            <input type="text" id="advVendorName" placeholder="Name...">
+                            <input type="text" id="advVendorName" placeholder="Name, name...">
                         </div>
                         <div class="adv-search-field">
                             <label>Vendor Number</label>
-                            <input type="text" id="advVendorNumber" placeholder="e.g. 05410">
+                            <input type="text" id="advVendorNumber" placeholder="05410, 32990...">
                         </div>
                         <div class="adv-search-field">
                             <label>Submission Date</label>
@@ -692,11 +693,11 @@
                     <div class="adv-search-grid">
                         <div class="adv-search-field">
                             <label>Description</label>
-                            <input type="text" id="advDescription" placeholder="Line item text...">
+                            <input type="text" id="advDescription" placeholder="Text, text...">
                         </div>
                         <div class="adv-search-field">
                             <label>Invoice Number</label>
-                            <input type="text" id="advInvoiceNumber" placeholder="Invoice #...">
+                            <input type="text" id="advInvoiceNumber" placeholder="Inv #, inv #...">
                         </div>
                         <div class="adv-search-field">
                             <label>Invoice Date</label>
@@ -715,31 +716,31 @@
                     <div class="adv-search-grid">
                         <div class="adv-search-field">
                             <label>Budget Code</label>
-                            <input type="text" id="advBudgetCode" placeholder="Full or partial...">
+                            <input type="text" id="advBudgetCode" placeholder="01526810..., 01527...">
                         </div>
                         <div class="adv-search-field">
                             <label>Account Code</label>
-                            <input type="text" id="advAccountCode" placeholder="e.g. 330">
+                            <input type="text" id="advAccountCode" placeholder="330, 368...">
                         </div>
                         <div class="adv-search-field">
                             <label>Fund</label>
-                            <input type="text" id="advFund" placeholder="e.g. 01">
+                            <input type="text" id="advFund" placeholder="01, 02...">
                         </div>
                         <div class="adv-search-field">
                             <label>Organization</label>
-                            <input type="text" id="advOrganization" placeholder="e.g. 526">
+                            <input type="text" id="advOrganization" placeholder="526, 527...">
                         </div>
                         <div class="adv-search-field">
                             <label>Program</label>
-                            <input type="text" id="advProgram" placeholder="e.g. 810">
+                            <input type="text" id="advProgram" placeholder="810, 000...">
                         </div>
                         <div class="adv-search-field">
                             <label>Finance</label>
-                            <input type="text" id="advFinance" placeholder="e.g. 000">
+                            <input type="text" id="advFinance" placeholder="000, 100...">
                         </div>
                         <div class="adv-search-field">
                             <label>Course</label>
-                            <input type="text" id="advCourse" placeholder="e.g. 000">
+                            <input type="text" id="advCourse" placeholder="000, 100...">
                         </div>
                         <div class="adv-search-field">
                             <label>Amount</label>
@@ -1257,12 +1258,15 @@
         }
 
         function clearAdvancedSearch() {
-            const fields = ['advRfpNumber','advStatus','advRequestType','advSubmitter','advAssignedTo','advApBatch',
+            const fields = ['advRfpNumber','advRequestType','advSubmitter','advAssignedTo','advApBatch',
                 'advVendorName','advVendorNumber','advDateFrom','advDateTo',
                 'advDescription','advInvoiceNumber','advInvDateFrom','advInvDateTo',
                 'advBudgetCode','advAccountCode','advFund','advOrganization','advProgram','advFinance','advCourse',
                 'advAmountMin','advAmountMax'];
             fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            // Clear multi-select status
+            const statusEl = document.getElementById('advStatus');
+            if (statusEl) Array.from(statusEl.options).forEach(o => o.selected = false);
 
             // Clear active filter
             advancedSearchActive = false;
@@ -1275,31 +1279,60 @@
 
         async function executeAdvancedSearch() {
             const v = id => (document.getElementById(id)?.value || '').trim();
+            // Parse comma-separated values into array, filtering empties
+            const multi = id => {
+                const raw = (document.getElementById(id)?.value || '').trim();
+                if (!raw) return [];
+                return raw.split(',').map(s => s.trim()).filter(Boolean);
+            };
+            // Get multi-select values
+            const multiSelect = id => {
+                const el = document.getElementById(id);
+                if (!el) return [];
+                return Array.from(el.selectedOptions).map(o => o.value);
+            };
 
             const criteria = {};
-            // Dashboard fields
-            if (v('advRfpNumber')) criteria.rfp_number = v('advRfpNumber');
-            if (v('advStatus')) criteria.status = v('advStatus');
+            // Dashboard fields — multi-value
+            const rfpNums = multi('advRfpNumber');
+            if (rfpNums.length) criteria.rfp_number = rfpNums;
+            const statuses = multiSelect('advStatus');
+            if (statuses.length) criteria.status = statuses;
             if (v('advRequestType')) criteria.request_type = v('advRequestType');
-            if (v('advSubmitter')) criteria.submitter_name = v('advSubmitter');
-            if (v('advAssignedTo')) criteria.assigned_to = v('advAssignedTo');
-            if (v('advApBatch')) criteria.ap_batch = v('advApBatch');
-            if (v('advVendorName')) criteria.vendor_name = v('advVendorName');
-            if (v('advVendorNumber')) criteria.vendor_number = v('advVendorNumber');
+            const submitters = multi('advSubmitter');
+            if (submitters.length) criteria.submitter_name = submitters;
+            const assignees = multi('advAssignedTo');
+            if (assignees.length) criteria.assigned_to = assignees;
+            const batches = multi('advApBatch');
+            if (batches.length) criteria.ap_batch = batches;
+            const vendorNames = multi('advVendorName');
+            if (vendorNames.length) criteria.vendor_name = vendorNames;
+            const vendorNums = multi('advVendorNumber');
+            if (vendorNums.length) criteria.vendor_number = vendorNums;
             if (v('advDateFrom')) criteria.date_from = v('advDateFrom');
             if (v('advDateTo')) criteria.date_to = v('advDateTo');
-            // Form data fields
-            if (v('advDescription')) criteria.description = v('advDescription');
-            if (v('advInvoiceNumber')) criteria.invoice_number = v('advInvoiceNumber');
+            // Form data fields — multi-value
+            const descs = multi('advDescription');
+            if (descs.length) criteria.description = descs;
+            const invNums = multi('advInvoiceNumber');
+            if (invNums.length) criteria.invoice_number = invNums;
             if (v('advInvDateFrom')) criteria.inv_date_from = v('advInvDateFrom');
             if (v('advInvDateTo')) criteria.inv_date_to = v('advInvDateTo');
-            if (v('advBudgetCode')) criteria.budget_code = v('advBudgetCode');
-            if (v('advAccountCode')) criteria.account_code = v('advAccountCode');
-            if (v('advFund')) criteria.fund = v('advFund');
-            if (v('advOrganization')) criteria.organization = v('advOrganization');
-            if (v('advProgram')) criteria.program = v('advProgram');
-            if (v('advFinance')) criteria.finance = v('advFinance');
-            if (v('advCourse')) criteria.course = v('advCourse');
+            // Budget code fields — multi-value
+            const budgetCodes = multi('advBudgetCode');
+            if (budgetCodes.length) criteria.budget_code = budgetCodes;
+            const acctCodes = multi('advAccountCode');
+            if (acctCodes.length) criteria.account_code = acctCodes;
+            const funds = multi('advFund');
+            if (funds.length) criteria.fund = funds;
+            const orgs = multi('advOrganization');
+            if (orgs.length) criteria.organization = orgs;
+            const programs = multi('advProgram');
+            if (programs.length) criteria.program = programs;
+            const finances = multi('advFinance');
+            if (finances.length) criteria.finance = finances;
+            const courses = multi('advCourse');
+            if (courses.length) criteria.course = courses;
             if (v('advAmountMin')) criteria.amount_min = parseFloat(v('advAmountMin'));
             if (v('advAmountMax')) criteria.amount_max = parseFloat(v('advAmountMax'));
 
