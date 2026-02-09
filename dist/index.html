@@ -2792,8 +2792,12 @@
             mileageTrips.forEach(t => total += (t.amount || 0));
             if (total === 0) total = rfp.amount || 0;
 
+            const fmtAmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             let rowsHtml = '';
+            let rowIdx = 0;
             lineItems.forEach((item, i) => {
+                const amt = item.total || 0;
+                const amtStr = rowIdx === 0 ? '$' + fmtAmt(amt) : fmtAmt(amt);
                 rowsHtml += `<tr>
                     <td class="num">${item.line_number || i + 1}</td>
                     <td>${item.description || ''}</td>
@@ -2801,10 +2805,13 @@
                     <td>${item.invoice_date || ''}</td>
                     <td>${item.budget_code || ''}</td>
                     <td>${item.account_code || item.object || ''}</td>
-                    <td class="amt">$${(item.total || 0).toFixed(2)}</td>
+                    <td class="amt">${amtStr}</td>
                 </tr>`;
+                rowIdx++;
             });
             mileageTrips.forEach((trip, i) => {
+                const amt = trip.amount || 0;
+                const amtStr = rowIdx === 0 ? '$' + fmtAmt(amt) : fmtAmt(amt);
                 rowsHtml += `<tr>
                     <td class="num">${lineItems.length + i + 1}</td>
                     <td>BUSINESS MILEAGE – ${trip.from_location || ''} → ${trip.to_location || ''} (${trip.miles || 0} mi)</td>
@@ -2812,8 +2819,9 @@
                     <td>${trip.trip_date || ''}</td>
                     <td>${trip.budget_code || ''}</td>
                     <td>${trip.account_code || ''}</td>
-                    <td class="amt">$${(trip.amount || 0).toFixed(2)}</td>
+                    <td class="amt">${amtStr}</td>
                 </tr>`;
+                rowIdx++;
             });
 
             const auditEntries = window._auditPrintEntries || [];
@@ -2832,7 +2840,7 @@
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
                 body { font-family: 'Open Sauce Sans', 'Inter', sans-serif; padding: 40px; color: #222; font-size: 11px; }
-                h1 { font-family: 'Metropolis', sans-serif; font-size: 18px; margin-bottom: 2px; }
+                h1 { font-family: 'Metropolis', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 2px; }
                 h2 { font-family: 'Metropolis', sans-serif; font-size: 13px; margin: 20px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
                 .subtitle { font-size: 10px; color: #666; margin-bottom: 16px; }
                 .header-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 20px; margin-bottom: 16px; }
@@ -2855,14 +2863,14 @@
                 <div><div class="label">Type</div><div class="value">${rfp.type === 'vendor' ? 'Vendor Payment' : 'Employee Reimbursement'}</div></div>
                 <div><div class="label">${rfp.type === 'reimbursement' ? 'Employee ID' : 'Vendor'}</div><div class="value">${rfp.vendor}</div></div>
                 <div><div class="label">Assigned To</div><div class="value">${rfp.assignedTo || '—'}</div></div>
-                <div><div class="label">Total</div><div class="value">$${total.toFixed(2)}</div></div>
+                <div><div class="label">Total</div><div class="value">$${fmtAmt(total)}</div></div>
             </div>
             <h2>Line Items</h2>
             <table>
                 <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:80px;">Invoice #</th><th style="width:80px;">Inv. Date</th><th style="width:100px;">Budget Code</th><th style="width:65px;">Account</th><th style="width:80px;text-align:right;">Amount</th></tr></thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
-            <div class="total-row">Total: $${total.toFixed(2)}</div>
+            <div class="total-row">Total: $${fmtAmt(total)}</div>
             ${auditHtml}
             </body></html>`);
             w.document.close();
