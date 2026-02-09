@@ -2420,6 +2420,26 @@
                 return;
             }
 
+            // Show blocking upload overlay
+            let overlay = document.getElementById('uploadOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'uploadOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+                overlay.innerHTML = `
+                    <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--secondary-hex)" stroke-width="2" fill="none" style="animation:spin 1s linear infinite;margin-bottom:1rem;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <div id="uploadOverlayTitle" style="font-family:'Metropolis',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Uploading Attachments...</div>
+                        <div id="uploadOverlayMsg" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Please wait. Do not close or navigate away.</div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+            const overlayTitle = document.getElementById('uploadOverlayTitle');
+            const overlayMsg = document.getElementById('uploadOverlayMsg');
+            const overlayIcon = overlay.querySelector('svg');
+
             const formData = new FormData();
             pending.forEach(a => {
                 console.log('[ATTACH] Appending file:', a.name, 'size:', a.file.size, 'type:', a.file.type);
@@ -2440,7 +2460,12 @@
                 if (!resp.ok) {
                     const errText = await resp.text();
                     console.error('[ATTACH] Upload failed:', resp.status, errText);
-                    showAlert(`Attachment upload failed (${resp.status}): ${errText}`, 'Upload Error');
+                    overlayIcon.style.animation = 'none';
+                    overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/>';
+                    overlayIcon.setAttribute('stroke', 'var(--negative-color)');
+                    overlayTitle.textContent = 'Upload Failed';
+                    overlayMsg.textContent = `Error ${resp.status}. Your RFP was saved but attachments were not uploaded.`;
+                    setTimeout(() => { overlay.style.display = 'none'; }, 4000);
                     return;
                 }
 
@@ -2465,9 +2490,24 @@
                     });
                 }
                 console.log('[ATTACH] Successfully uploaded', data.count || pending.length, 'attachments');
+
+                // Show success state
+                overlayIcon.style.animation = 'none';
+                overlayIcon.innerHTML = '<path d="M20 6L9 17l-5-5"/>';
+                overlayIcon.setAttribute('stroke', 'var(--positive-color)');
+                overlayTitle.textContent = 'Attachments Uploaded';
+                overlayMsg.textContent = `${data.count || pending.length} file${(data.count || pending.length) !== 1 ? 's' : ''} saved successfully.`;
+                await new Promise(r => setTimeout(r, 1500));
+                overlay.style.display = 'none';
+
             } catch (err) {
                 console.error('[ATTACH] Upload error:', err);
-                showAlert('Attachment upload error: ' + err.message, 'Upload Error');
+                overlayIcon.style.animation = 'none';
+                overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/>';
+                overlayIcon.setAttribute('stroke', 'var(--negative-color)');
+                overlayTitle.textContent = 'Upload Error';
+                overlayMsg.textContent = err.message;
+                setTimeout(() => { overlay.style.display = 'none'; }, 4000);
             }
         }
 
