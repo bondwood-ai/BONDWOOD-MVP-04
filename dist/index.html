@@ -639,7 +639,7 @@
     </div>
 
     <!-- ============ REJECT MODAL ============ -->
-    <div class="modal-overlay" id="rejectModal" onclick="if(event.target===this)closeRejectModal()">
+    <div id="rejectModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:3000;backdrop-filter:blur(2px);" onclick="if(event.target===this)closeRejectModal()">
         <div class="modal" style="width:440px;">
             <div class="modal-header">
                 <h3>Reject Request</h3>
@@ -647,14 +647,14 @@
             </div>
             <div class="modal-body" style="padding:1rem 1.25rem;">
                 <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Choose how to reject this request:</p>
-                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;margin-bottom:0.5rem;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--primary-hex)'" onmouseleave="if(!this.querySelector('input').checked)this.style.borderColor='var(--border-color)'" id="rejectOptPrev">
+                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;margin-bottom:0.5rem;transition:border-color 0.15s;">
                     <input type="radio" name="rejectType" value="previous" style="margin-top:2px;accent-color:var(--primary-hex);" checked>
                     <div>
                         <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Metropolis',sans-serif;">Reject to Previous Step</div>
                         <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;" id="rejectPrevLabel">Returns the request to the previous workflow step.</div>
                     </div>
                 </label>
-                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--negative-color)'" onmouseleave="if(!this.querySelector('input').checked)this.style.borderColor='var(--border-color)'" id="rejectOptPerm">
+                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:border-color 0.15s;">
                     <input type="radio" name="rejectType" value="permanent" style="margin-top:2px;accent-color:var(--negative-color);">
                     <div>
                         <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Metropolis',sans-serif;">Reject Permanently</div>
@@ -859,7 +859,7 @@
     </div>
 
     <!-- ============ UTILITY MODAL (alert/confirm replacement) ============ -->
-    <div class="modal-overlay" id="utilityModal">
+    <div class="modal-overlay" id="utilityModal" style="z-index:3500;">
         <div class="modal" style="width:420px;">
             <div class="modal-header">
                 <h3 id="utilityModalTitle">Notice</h3>
@@ -1840,25 +1840,31 @@
         }
 
         function openRejectModal() {
-            if (!previewRfp) return;
+            if (!previewRfp) { console.error('openRejectModal: no previewRfp'); return; }
             const prevStatus = WORKFLOW_PREV[previewRfp.status];
             document.getElementById('rejectPrevLabel').textContent = prevStatus
                 ? `Returns the request to "${WORKFLOW_LABELS[prevStatus] || prevStatus}".`
                 : 'Returns the request to the previous workflow step.';
             document.querySelector('#rejectModal input[value="previous"]').checked = true;
-            document.getElementById('rejectModal').classList.add('open');
+            document.getElementById('rejectModal').style.display = 'flex';
         }
 
         function closeRejectModal() {
-            document.getElementById('rejectModal').classList.remove('open');
+            document.getElementById('rejectModal').style.display = 'none';
         }
 
         async function confirmReject() {
             if (!previewRfp) return;
-            const rejectType = document.querySelector('input[name="rejectType"]:checked').value;
-            let newStatus;
-            let auditText;
+            const rejectType = document.querySelector('#rejectModal input[name="rejectType"]:checked').value;
+            const msg = rejectType === 'permanent'
+                ? 'Are you sure you want to permanently reject this request? This cannot be undone.'
+                : `Are you sure you want to reject this request back to "${WORKFLOW_LABELS[WORKFLOW_PREV[previewRfp.status]] || 'previous step'}"?`;
 
+            closeRejectModal();
+            const confirmed = await showConfirm(msg, 'Confirm Rejection');
+            if (!confirmed) return;
+
+            let newStatus, auditText;
             if (rejectType === 'permanent') {
                 newStatus = 'rejected';
                 auditText = `${currentUserName || 'Reviewer'} permanently rejected the request`;
@@ -1979,7 +1985,7 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const rejectM = document.getElementById('rejectModal');
-                if (rejectM && rejectM.classList.contains('open')) { closeRejectModal(); return; }
+                if (rejectM && rejectM.style.display === 'flex') { closeRejectModal(); return; }
                 const advSearch = document.getElementById('advSearchModal');
                 if (advSearch && advSearch.classList.contains('open')) { closeAdvancedSearch(); return; }
                 const preview = document.getElementById('previewModal');

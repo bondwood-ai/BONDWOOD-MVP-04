@@ -2848,6 +2848,14 @@
         async function confirmFormReject() {
             if (!currentRfpNumber) return;
             const rejectType = document.querySelector('input[name="formRejectType"]:checked').value;
+            const msg = rejectType === 'permanent'
+                ? 'Are you sure you want to permanently reject this request? This cannot be undone.'
+                : `Are you sure you want to reject this request back to "${FORM_WORKFLOW_LABELS[FORM_WORKFLOW_PREV[currentFormStatus]] || 'previous step'}"?`;
+
+            closeFormRejectModal();
+            const confirmed = await showConfirm(msg, 'Confirm Rejection');
+            if (!confirmed) return;
+
             let newStatus, auditText;
 
             if (rejectType === 'permanent') {
