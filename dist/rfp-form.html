@@ -609,7 +609,7 @@
         .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
 
         /* ============ PDF POPUP OVERLAY ============ */
-        .pdf-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 3000; }
+        .pdf-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 10001; }
         .pdf-overlay.open { display: flex; }
         .pdf-viewer { width: 90vw; height: 90vh; background: var(--card-bg); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 16px 48px rgba(0,0,0,0.3); }
         .pdf-viewer-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
@@ -819,6 +819,11 @@
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
                             Add Row
                         </button>
+                        <button class="add-row-btn" onclick="document.getElementById('captureInvoiceInput').click()" style="background:var(--primary-hex);color:var(--accent-text-color);">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            Capture Invoice
+                        </button>
+                        <input type="file" id="captureInvoiceInput" accept=".pdf" style="display:none;" onchange="handleCaptureInvoice(event)">
                         <button class="btn-primary-sm-alt" onclick="importLineItems()">
                             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                             Import XLSX
@@ -2168,6 +2173,41 @@
             });
         }
 
+        function handleCaptureInvoice(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            event.target.value = ''; // reset for re-use
+
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                showAlert('Capture Invoice only accepts PDF files.', 'Invalid File');
+                return;
+            }
+
+            // Add the PDF as an attachment too
+            const alreadyAttached = attachments.some(a => a.name === file.name && a.size === file.size);
+            if (!alreadyAttached) {
+                const rfpNum = currentRfpNumber;
+                if (rfpNum) {
+                    // Upload to R2 in background
+                    const progressEl = document.getElementById('attProgress');
+                    const progressBar = document.getElementById('attProgressBar');
+                    const progressText = document.getElementById('attProgressText');
+                    progressEl.classList.add('active');
+                    uploadFilesToR2([file], rfpNum, progressBar, progressText, progressEl);
+                } else {
+                    // Queue locally
+                    const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                    const blobUrl = URL.createObjectURL(file);
+                    attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate: new Date(), pending: true });
+                    renderAttachmentsList();
+                    updateAttBadge();
+                }
+            }
+
+            // Extract invoice data
+            extractInvoiceFromPDF(file);
+        }
+
         async function extractInvoiceFromPDF(file) {
             // Show extraction banner
             let banner = document.getElementById('extractionBanner');
@@ -2218,11 +2258,24 @@
                 // Add empty row for continued editing
                 addLineItem();
 
-                // Auto-fill vendor name if available and field is empty
-                if (data.vendorName) {
+                // Auto-fill vendor only if exact match found in vendor list
+                if (data.vendorName && VENDOR_DATA && VENDOR_DATA.length > 0) {
                     const vendorInput = document.getElementById('vendorName');
+                    const vendorNumInput = document.getElementById('vendorNumber');
+                    const vendorAddrInput = document.getElementById('vendorAddress');
                     if (vendorInput && !vendorInput.value.trim()) {
-                        vendorInput.value = data.vendorName;
+                        const extractedName = data.vendorName.trim().toUpperCase();
+                        const match = VENDOR_DATA.find(v => v.n && v.n.trim().toUpperCase() === extractedName);
+                        if (match) {
+                            vendorInput.value = match.n;
+                            if (vendorNumInput) vendorNumInput.value = match.c || '';
+                            if (vendorAddrInput) {
+                                const addr = [match.a, match.ci, match.st, match.z].filter(p => p && p !== '—').join(', ');
+                                vendorAddrInput.value = addr;
+                            }
+                            selectedVendor = match;
+                        }
+                        // If no exact match, leave blank — user will input manually
                     }
                 }
 
@@ -2298,19 +2351,11 @@
                 setTimeout(() => { progressEl.classList.remove('active'); progressBar.style.width = '0%'; }, 2000);
                 renderAttachmentsList();
                 updateAttBadge();
-
-                // Auto-extract invoice data from PDFs
-                const pdfFiles = newFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
-                pdfFiles.forEach(f => extractInvoiceFromPDF(f));
                 return;
             }
 
             // Upload directly to R2
             uploadFilesToR2(newFiles, rfpNum, progressBar, progressText, progressEl);
-
-            // Auto-extract invoice data from PDFs (in parallel with upload)
-            const pdfFiles = newFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
-            pdfFiles.forEach(f => extractInvoiceFromPDF(f));
         }
 
         async function uploadFilesToR2(files, rfpNum, progressBar, progressText, progressEl) {
