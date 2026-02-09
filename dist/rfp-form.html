@@ -2405,6 +2405,10 @@
                 // Clean URL
                 window.history.replaceState({}, '', 'rfp-form.html');
 
+                // Mark form as dirty since we've populated data
+                formDirty = true;
+                document.title = '• ' + document.title;
+
             } catch (e) {
                 console.error('Failed to load captured invoice:', e);
             }
@@ -2497,6 +2501,7 @@
                     ${count} line item${count !== 1 ? 's' : ''} extracted from ${file.name}${data.confidence === 'low' ? ' (low confidence — please verify)' : ''}
                 `;
                 setTimeout(() => { banner.style.transform = 'translateY(-100%)'; }, 4000);
+                markFormDirty();
 
             } catch (err) {
                 console.error('Invoice extraction failed:', err);
