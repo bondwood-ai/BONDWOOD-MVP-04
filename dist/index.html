@@ -301,12 +301,35 @@
         @keyframes spinLoad { to { transform: rotate(360deg); } }
         .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
         #utilityModal .modal-header { border-bottom: none; }
+        #importModal .modal-header { border-bottom: none; }
+        #importModal .modal-footer { border-top: none; }
         #utilityModal .modal-footer { border-top: none; }
 
         /* Import drop zone */
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
 
         /* ============ PREVIEW MODAL ============ */
+        /* ============ ADVANCED SEARCH MODAL ============ */
+        .adv-search-modal { background: var(--card-bg); border-radius: 12px; width: 720px; max-width: 96vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+        .adv-search-modal .modal-header { border-bottom: 1px solid var(--border-color); }
+        .adv-search-section { margin-bottom: 0.75rem; }
+        .adv-search-section-title { font-family: 'Metropolis', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0.5rem; padding: 0 0.125rem; }
+        .adv-search-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.625rem; }
+        .adv-search-field label { display: block; font-family: 'Metropolis', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem; }
+        .adv-search-field input, .adv-search-field select {
+            width: 100%; padding: 0.4rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border-color);
+            border-radius: 6px; background: var(--bg-color); color: var(--text-primary);
+            font-family: 'Open Sauce Sans', sans-serif;
+        }
+        .adv-search-field input:focus, .adv-search-field select:focus { outline: none; border-color: var(--primary-hex); }
+        .adv-search-field input::placeholder { color: var(--text-secondary); opacity: 0.6; }
+        .adv-search-range { display: flex; gap: 0.375rem; align-items: center; }
+        .adv-search-range span { font-size: 0.7rem; color: var(--text-secondary); flex-shrink: 0; }
+        .adv-search-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1.25rem; border-top: 1px solid var(--border-color); }
+        .adv-search-footer .btn-clear { background: none; border: none; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.75rem; border-radius: 6px; font-family: 'Metropolis', sans-serif; font-weight: 500; }
+        .adv-search-footer .btn-clear:hover { color: var(--text-primary); background: var(--bg-color); }
+        .adv-search-active-badge { display: none; background: var(--primary-hex); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 99px; margin-left: 0.35rem; vertical-align: middle; font-family: 'Metropolis', sans-serif; }
+
         .preview-modal { background: var(--card-bg); border-radius: 12px; width: 1050px; max-width: 96vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
         .preview-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: none; }
         .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Metropolis', sans-serif; }
@@ -505,9 +528,9 @@
                     <option value="rejected">Rejected</option>
                     <option value="archived">Archived</option>
                 </select>
-                <button class="btn-secondary" onclick="openAdvancedSearch()">
+                <button class="btn-secondary" onclick="openAdvancedSearch()" id="advSearchBtn">
                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-                    Advanced Search
+                    Advanced Search<span class="adv-search-active-badge" id="advSearchBadge"></span>
                 </button>
 
                 <!-- Column Selector -->
@@ -588,6 +611,159 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeImportModal()">Cancel</button>
                 <button class="btn-primary accent" id="importConfirmBtn" onclick="confirmImport()" disabled>Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ ADVANCED SEARCH MODAL ============ -->
+    <div class="modal-overlay" id="advSearchModal" onclick="if(event.target===this)closeAdvancedSearch()">
+        <div class="adv-search-modal">
+            <div class="modal-header">
+                <h3>Advanced Search</h3>
+                <button class="btn-icon" onclick="closeAdvancedSearch()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="modal-body" style="padding:1rem 1.25rem;">
+
+                <!-- Request Header Fields -->
+                <div class="adv-search-section">
+                    <div class="adv-search-section-title">Request Details</div>
+                    <div class="adv-search-grid">
+                        <div class="adv-search-field">
+                            <label>RFP Number</label>
+                            <input type="text" id="advRfpNumber" placeholder="e.g. 2600001">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Status</label>
+                            <select id="advStatus">
+                                <option value="">Any</option>
+                                <option value="draft">Draft</option>
+                                <option value="submitted">Submitted</option>
+                                <option value="accounting-review">Accounting Review</option>
+                                <option value="ap-review">A/P Review</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Request Type</label>
+                            <select id="advRequestType">
+                                <option value="">Any</option>
+                                <option value="vendor">Vendor Payment</option>
+                                <option value="reimbursement">Employee Reimbursement</option>
+                            </select>
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Submitter</label>
+                            <input type="text" id="advSubmitter" placeholder="Name...">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Assigned To</label>
+                            <input type="text" id="advAssignedTo" placeholder="Name...">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>AP Batch</label>
+                            <input type="text" id="advApBatch" placeholder="Batch #...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vendor Fields -->
+                <div class="adv-search-section">
+                    <div class="adv-search-section-title">Vendor</div>
+                    <div class="adv-search-grid">
+                        <div class="adv-search-field">
+                            <label>Vendor Name</label>
+                            <input type="text" id="advVendorName" placeholder="Name...">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Vendor Number</label>
+                            <input type="text" id="advVendorNumber" placeholder="e.g. 05410">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Submission Date</label>
+                            <div class="adv-search-range">
+                                <input type="date" id="advDateFrom">
+                                <span>to</span>
+                                <input type="date" id="advDateTo">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Item / Form Data Fields -->
+                <div class="adv-search-section">
+                    <div class="adv-search-section-title">Line Item Details</div>
+                    <div class="adv-search-grid">
+                        <div class="adv-search-field">
+                            <label>Description</label>
+                            <input type="text" id="advDescription" placeholder="Line item text...">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Invoice Number</label>
+                            <input type="text" id="advInvoiceNumber" placeholder="Invoice #...">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Invoice Date</label>
+                            <div class="adv-search-range">
+                                <input type="date" id="advInvDateFrom">
+                                <span>to</span>
+                                <input type="date" id="advInvDateTo">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Code Components -->
+                <div class="adv-search-section">
+                    <div class="adv-search-section-title">Budget Code</div>
+                    <div class="adv-search-grid">
+                        <div class="adv-search-field">
+                            <label>Budget Code</label>
+                            <input type="text" id="advBudgetCode" placeholder="Full or partial...">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Account Code</label>
+                            <input type="text" id="advAccountCode" placeholder="e.g. 330">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Fund</label>
+                            <input type="text" id="advFund" placeholder="e.g. 01">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Organization</label>
+                            <input type="text" id="advOrganization" placeholder="e.g. 526">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Program</label>
+                            <input type="text" id="advProgram" placeholder="e.g. 810">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Finance</label>
+                            <input type="text" id="advFinance" placeholder="e.g. 000">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Course</label>
+                            <input type="text" id="advCourse" placeholder="e.g. 000">
+                        </div>
+                        <div class="adv-search-field">
+                            <label>Amount</label>
+                            <div class="adv-search-range">
+                                <input type="number" id="advAmountMin" placeholder="Min" step="0.01">
+                                <span>to</span>
+                                <input type="number" id="advAmountMax" placeholder="Max" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="adv-search-footer">
+                <button class="btn-clear" onclick="clearAdvancedSearch()">Clear All</button>
+                <div style="display:flex;gap:0.5rem;">
+                    <button class="btn-secondary" onclick="closeAdvancedSearch()">Cancel</button>
+                    <button class="btn-primary accent" onclick="executeAdvancedSearch()">Search</button>
+                </div>
             </div>
         </div>
     </div>
@@ -925,6 +1101,12 @@
 
             filteredRFPs = allRFPs.filter(rfp => {
                 if (currentUserRole !== 'admin' && rfp.submitterId !== currentUserId) return false;
+
+                // Advanced search filter
+                if (advancedSearchActive && advancedSearchRfpNumbers) {
+                    if (!advancedSearchRfpNumbers.has(rfp.rfpNumber)) return false;
+                }
+
                 if (statusFilter !== 'all' && rfp.status !== statusFilter) return false;
                 if (searchTerm) {
                     const searchable = [
@@ -1067,8 +1249,98 @@
         /* ========================================
            IMPORT
            ======================================== */
+        let advancedSearchActive = false;
+        let advancedSearchRfpNumbers = null; // null = no filter, Set = filtered
+
         function openAdvancedSearch() {
-            showAlert('Advanced search will be available soon.', 'Coming Soon');
+            document.getElementById('advSearchModal').classList.add('open');
+            // Focus first input
+            setTimeout(() => document.getElementById('advRfpNumber').focus(), 100);
+        }
+        function closeAdvancedSearch() {
+            document.getElementById('advSearchModal').classList.remove('open');
+        }
+
+        function clearAdvancedSearch() {
+            const fields = ['advRfpNumber','advStatus','advRequestType','advSubmitter','advAssignedTo','advApBatch',
+                'advVendorName','advVendorNumber','advDateFrom','advDateTo',
+                'advDescription','advInvoiceNumber','advInvDateFrom','advInvDateTo',
+                'advBudgetCode','advAccountCode','advFund','advOrganization','advProgram','advFinance','advCourse',
+                'advAmountMin','advAmountMax'];
+            fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+            // Clear active filter
+            advancedSearchActive = false;
+            advancedSearchRfpNumbers = null;
+            document.getElementById('advSearchBadge').style.display = 'none';
+
+            closeAdvancedSearch();
+            filterTable();
+        }
+
+        async function executeAdvancedSearch() {
+            const v = id => (document.getElementById(id)?.value || '').trim();
+
+            const criteria = {};
+            // Dashboard fields
+            if (v('advRfpNumber')) criteria.rfp_number = v('advRfpNumber');
+            if (v('advStatus')) criteria.status = v('advStatus');
+            if (v('advRequestType')) criteria.request_type = v('advRequestType');
+            if (v('advSubmitter')) criteria.submitter_name = v('advSubmitter');
+            if (v('advAssignedTo')) criteria.assigned_to = v('advAssignedTo');
+            if (v('advApBatch')) criteria.ap_batch = v('advApBatch');
+            if (v('advVendorName')) criteria.vendor_name = v('advVendorName');
+            if (v('advVendorNumber')) criteria.vendor_number = v('advVendorNumber');
+            if (v('advDateFrom')) criteria.date_from = v('advDateFrom');
+            if (v('advDateTo')) criteria.date_to = v('advDateTo');
+            // Form data fields
+            if (v('advDescription')) criteria.description = v('advDescription');
+            if (v('advInvoiceNumber')) criteria.invoice_number = v('advInvoiceNumber');
+            if (v('advInvDateFrom')) criteria.inv_date_from = v('advInvDateFrom');
+            if (v('advInvDateTo')) criteria.inv_date_to = v('advInvDateTo');
+            if (v('advBudgetCode')) criteria.budget_code = v('advBudgetCode');
+            if (v('advAccountCode')) criteria.account_code = v('advAccountCode');
+            if (v('advFund')) criteria.fund = v('advFund');
+            if (v('advOrganization')) criteria.organization = v('advOrganization');
+            if (v('advProgram')) criteria.program = v('advProgram');
+            if (v('advFinance')) criteria.finance = v('advFinance');
+            if (v('advCourse')) criteria.course = v('advCourse');
+            if (v('advAmountMin')) criteria.amount_min = parseFloat(v('advAmountMin'));
+            if (v('advAmountMax')) criteria.amount_max = parseFloat(v('advAmountMax'));
+
+            const filterCount = Object.keys(criteria).length;
+            if (filterCount === 0) {
+                // No filters = clear
+                clearAdvancedSearch();
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(criteria)
+                });
+                if (!resp.ok) throw new Error(`Search failed (${resp.status})`);
+                const data = await resp.json();
+                const matchingNumbers = new Set((data.rfp_numbers || []).map(Number));
+
+                advancedSearchActive = true;
+                advancedSearchRfpNumbers = matchingNumbers;
+
+                const badge = document.getElementById('advSearchBadge');
+                badge.textContent = filterCount;
+                badge.style.display = 'inline';
+
+                // Reset basic filters
+                document.getElementById('searchInput').value = '';
+                document.getElementById('statusFilter').value = 'all';
+
+                closeAdvancedSearch();
+                filterTable();
+            } catch (err) {
+                showAlert('Search error: ' + err.message, 'Advanced Search');
+            }
         }
 
         /* ========================================
@@ -1408,9 +1680,11 @@
             if (e.target === this) closePreviewModal();
         });
 
-        // Close preview on Esc key
+        // Close modals on Esc key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                const advSearch = document.getElementById('advSearchModal');
+                if (advSearch && advSearch.classList.contains('open')) { closeAdvancedSearch(); return; }
                 const preview = document.getElementById('previewModal');
                 if (preview.classList.contains('open')) { closePreviewModal(); return; }
                 const importM = document.getElementById('importModal');
@@ -2060,6 +2334,11 @@
             loadBrandData();
             buildColumnSelector();
             initDropZone();
+
+            // Enter key in advanced search triggers search
+            document.getElementById('advSearchModal').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); executeAdvancedSearch(); }
+            });
 
             // Fetch logged-in user identity from SSO
             await fetchDashboardUser();

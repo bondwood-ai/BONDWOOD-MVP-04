@@ -130,6 +130,9 @@ export default {
       if (path === '/api/rfps' && method === 'POST') {
         return handleCreateRFP(request, env);
       }
+      if (path === '/api/rfps/search' && method === 'POST') {
+        return handleAdvancedSearch(request, env);
+      }
 
       const rfpMatch = path.match(/^\/api\/rfps\/(\d+)$/);
       if (rfpMatch) {
@@ -338,6 +341,143 @@ async function handleListRFPs(env, url) {
   `).bind(...params, limit, offset).all();
 
   return json({ rfps: results, total, page, limit });
+}
+
+
+/* ========================================
+   RFPs – ADVANCED SEARCH
+   ======================================== */
+async function handleAdvancedSearch(request, env) {
+  const body = await request.json();
+  let where = [];
+  let params = [];
+  let needsJoin = false;
+
+  // Dashboard fields (d.*)
+  if (body.rfp_number) {
+    where.push('CAST(d.rfp_number AS TEXT) LIKE ?');
+    params.push(`%${body.rfp_number}%`);
+  }
+  if (body.status) {
+    where.push('d.status = ?');
+    params.push(body.status);
+  }
+  if (body.request_type) {
+    where.push('d.request_type = ?');
+    params.push(body.request_type);
+  }
+  if (body.submitter_name) {
+    where.push('d.submitter_name LIKE ?');
+    params.push(`%${body.submitter_name}%`);
+  }
+  if (body.assigned_to) {
+    where.push('d.assigned_to LIKE ?');
+    params.push(`%${body.assigned_to}%`);
+  }
+  if (body.ap_batch) {
+    where.push('d.ap_batch LIKE ?');
+    params.push(`%${body.ap_batch}%`);
+  }
+  if (body.vendor_name) {
+    where.push('d.vendor_name LIKE ?');
+    params.push(`%${body.vendor_name}%`);
+  }
+  if (body.vendor_number) {
+    where.push('d.vendor_number LIKE ?');
+    params.push(`%${body.vendor_number}%`);
+  }
+  if (body.date_from) {
+    where.push('d.submission_date >= ?');
+    params.push(body.date_from);
+  }
+  if (body.date_to) {
+    where.push('d.submission_date <= ?');
+    params.push(body.date_to);
+  }
+
+  // Form data fields (f.*) — require JOIN
+  if (body.description) {
+    needsJoin = true;
+    where.push('f.description LIKE ?');
+    params.push(`%${body.description}%`);
+  }
+  if (body.invoice_number) {
+    needsJoin = true;
+    where.push('f.invoice_number LIKE ?');
+    params.push(`%${body.invoice_number}%`);
+  }
+  if (body.inv_date_from) {
+    needsJoin = true;
+    where.push('f.invoice_date >= ?');
+    params.push(body.inv_date_from);
+  }
+  if (body.inv_date_to) {
+    needsJoin = true;
+    where.push('f.invoice_date <= ?');
+    params.push(body.inv_date_to);
+  }
+  if (body.budget_code) {
+    needsJoin = true;
+    where.push('f.budget_code LIKE ?');
+    params.push(`%${body.budget_code}%`);
+  }
+  if (body.account_code) {
+    needsJoin = true;
+    where.push('(f.account_code LIKE ? OR f.object LIKE ?)');
+    params.push(`%${body.account_code}%`, `%${body.account_code}%`);
+  }
+  if (body.fund) {
+    needsJoin = true;
+    where.push('f.fund LIKE ?');
+    params.push(`%${body.fund}%`);
+  }
+  if (body.organization) {
+    needsJoin = true;
+    where.push('f.organization LIKE ?');
+    params.push(`%${body.organization}%`);
+  }
+  if (body.program) {
+    needsJoin = true;
+    where.push('f.program LIKE ?');
+    params.push(`%${body.program}%`);
+  }
+  if (body.finance) {
+    needsJoin = true;
+    where.push('f.finance LIKE ?');
+    params.push(`%${body.finance}%`);
+  }
+  if (body.course) {
+    needsJoin = true;
+    where.push('f.course LIKE ?');
+    params.push(`%${body.course}%`);
+  }
+  if (body.amount_min != null && !isNaN(body.amount_min)) {
+    needsJoin = true;
+    where.push('f.total >= ?');
+    params.push(body.amount_min);
+  }
+  if (body.amount_max != null && !isNaN(body.amount_max)) {
+    needsJoin = true;
+    where.push('f.total <= ?');
+    params.push(body.amount_max);
+  }
+
+  if (where.length === 0) {
+    return json({ rfp_numbers: [], message: 'No criteria provided' }, 400);
+  }
+
+  const joinClause = needsJoin ? 'INNER JOIN form_data f ON d.rfp_number = f.rfp_number' : '';
+  const whereClause = 'WHERE ' + where.join(' AND ');
+
+  const sql = `SELECT DISTINCT d.rfp_number FROM dashboard_data d ${joinClause} ${whereClause} ORDER BY d.rfp_number DESC`;
+
+  try {
+    const { results } = await env.DB.prepare(sql).bind(...params).all();
+    const rfpNumbers = results.map(r => r.rfp_number);
+    return json({ rfp_numbers: rfpNumbers, total: rfpNumbers.length });
+  } catch (e) {
+    return json({ error: 'Search query failed', detail: e.message }, 500);
+  }
 }
 
 
