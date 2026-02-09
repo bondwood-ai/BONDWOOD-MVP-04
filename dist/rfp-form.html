@@ -83,7 +83,6 @@
         body.dark-mode .total-row input[readonly] { background: var(--readonly-bg); }
         body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
         body.dark-mode .theme-toggle svg { fill: #5b7aff; }
-        body.dark-mode .type-option.selected { border-color: var(--primary-hex); background: rgba(255, 255, 255, 0.06); }
 
         /* ============ LOGO ============ */
         .bondwood-logo {
@@ -145,28 +144,14 @@
         }
 
         /* ============ REQUEST TYPE ============ */
-        .type-selector { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
-        .type-option {
-            flex: 1; display: flex; align-items: center; gap: 0.75rem;
-            padding: 1rem 1.25rem; border: 2px solid var(--border-color);
-            border-radius: 10px; cursor: pointer; transition: all 0.2s;
+        .type-selector { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+        .type-selector label { font-weight: 600; font-size: 0.85rem; font-family: 'Metropolis', sans-serif; color: var(--text-primary); white-space: nowrap; }
+        .type-selector select {
+            padding: 0.5rem 2rem 0.5rem 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 0.85rem; font-family: 'Open Sauce Sans', sans-serif;
+            background: var(--field-bg); color: var(--text-primary); cursor: pointer;
+            appearance: auto; min-width: 240px;
         }
-        .type-option:hover { border-color: var(--text-secondary); }
-        .type-option.selected { border-color: var(--primary-hex); background: rgba(0,0,0,0.04); }
-        .type-option .type-radio {
-            width: 20px; height: 20px; border-radius: 50%;
-            border: 2px solid var(--border-color); display: flex;
-            align-items: center; justify-content: center; flex-shrink: 0;
-        }
-        .type-option.selected .type-radio {
-            border-color: var(--primary-hex);
-        }
-        .type-option.selected .type-radio::after {
-            content: ''; width: 10px; height: 10px; border-radius: 50%;
-            background: var(--primary-hex);
-        }
-        .type-option .type-label { font-weight: 600; font-size: 0.9rem; font-family: 'Metropolis', sans-serif; }
-        .type-option .type-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; }
 
         /* ============ VENDOR INFO ============ */
         .vendor-autocomplete { position: relative; }
@@ -681,7 +666,7 @@
         /* ============ RESPONSIVE ============ */
         @media (max-width: 768px) {
             .vendor-section { grid-template-columns: 1fr; }
-            .type-selector { flex-direction: column; }
+            .type-selector select { min-width: unset; width: 100%; }
             .workflow-tracker { flex-direction: column; }
             .total-row { grid-template-columns: 1fr; gap: 0.2rem; }
             .total-row label { text-align: left; }
@@ -733,20 +718,11 @@
 
                 <!-- Request Type -->
                 <div class="type-selector" id="typeSelectorRow">
-                    <div class="type-option selected" data-type="vendor" onclick="selectType('vendor')">
-                        <div class="type-radio"></div>
-                        <div>
-                            <div class="type-label">Vendor Payment</div>
-                            <div class="type-desc">Pay an external vendor or supplier</div>
-                        </div>
-                    </div>
-                    <div class="type-option" data-type="reimbursement" onclick="selectType('reimbursement')">
-                        <div class="type-radio"></div>
-                        <div>
-                            <div class="type-label">Employee Reimbursement</div>
-                            <div class="type-desc">Reimburse an employee for expenses or mileage</div>
-                        </div>
-                    </div>
+                    <label for="requestTypeSelect">Request Type</label>
+                    <select id="requestTypeSelect" onchange="selectType(this.value)">
+                        <option value="vendor">Vendor Payment</option>
+                        <option value="reimbursement">Employee Reimbursement</option>
+                    </select>
                 </div>
 
                 <!-- Vendor Section -->
@@ -1431,9 +1407,10 @@
            ======================================== */
         function selectType(type) {
             currentRequestType = type;
-            document.querySelectorAll('.type-option').forEach(el => {
-                el.classList.toggle('selected', el.dataset.type === type);
-            });
+            // Sync dropdown value
+            const sel = document.getElementById('requestTypeSelect');
+            if (sel && sel.value !== type) sel.value = type;
+
             document.getElementById('vendorSection').style.display = type === 'vendor' ? '' : 'none';
             document.getElementById('employeeSection').style.display = type === 'reimbursement' ? '' : 'none';
             document.getElementById('mileageSection').classList.toggle('visible', type === 'reimbursement');
