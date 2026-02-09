@@ -2578,7 +2578,15 @@
                 `;
             }
             
+            // Store entries for print access
+            window._auditPrintEntries = entries;
+            window._auditPrintRfp = currentRfpNumber || 'N/A';
+            
             document.getElementById('utilityModalFooter').innerHTML = `
+                ${entries.length > 0 ? `<button onclick="printAuditLog(window._auditPrintRfp, window._auditPrintEntries)" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);margin-right:auto;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Print
+                </button>` : ''}
                 <button onclick="closeUtilityModal(true)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);min-width:80px;">OK</button>
             `;
             document.getElementById('utility-modal').style.display = 'flex';
@@ -3162,6 +3170,34 @@
            UTILITIES
            ======================================== */
         function formatNumber(num) { return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+        function printAuditLog(rfpNumber, entries) {
+            const w = window.open('', '_blank', 'width=700,height=600');
+            w.document.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #222; }
+                h1 { font-size: 16px; margin-bottom: 4px; }
+                .subtitle { font-size: 11px; color: #666; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th { background: #f5f5f5; text-align: left; padding: 6px 10px; border-bottom: 2px solid #ddd; font-weight: 700; }
+                td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+                td.num { text-align: right; width: 30px; color: #999; font-weight: 600; }
+                td.ts { width: 150px; color: #666; font-size: 10px; }
+                @media print { body { padding: 20px; } }
+            </style></head><body>
+            <h1>Audit Log – RFP #${rfpNumber}</h1>
+            <div class="subtitle">Printed ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+            <table>
+                <thead><tr><th>#</th><th>Entry</th><th>Timestamp</th></tr></thead>
+                <tbody>
+                    ${entries.map((e, i) => `<tr><td class="num">${i + 1}</td><td>${e.text}</td><td class="ts">${e.timestamp}</td></tr>`).join('')}
+                </tbody>
+            </table>
+            </body></html>`);
+            w.document.close();
+            setTimeout(() => w.print(), 300);
+        }
+
         function formatCurrency(num) { return '$' + formatNumber(num); }
         function parseFormattedNumber(str) { return parseFloat(String(str).replace(/[$,]/g, '')) || 0; }
         function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
