@@ -582,7 +582,6 @@
         .btn-approve-form { background: var(--positive-color); color: #fff; border: none; }
         .btn-approve-form:hover { opacity: 0.85; }
         #approvalButtons .btn { min-width: 130px; }
-        .btn-approve-form:hover { opacity: 0.85; }
         .btn-primary-sm {
             display: inline-flex; align-items: center; gap: 5px;
             padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.2);
@@ -971,8 +970,14 @@
         </div>
         <div class="button-container" id="approvalButtons" style="display:none;">
             <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
-            <button class="btn btn-reject-form" onclick="openFormRejectModal()">Reject</button>
-            <button class="btn btn-approve-form" onclick="approveFormRFP()">Approve</button>
+            <button class="btn btn-reject-form" onclick="openFormRejectModal()">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
+                Reject
+            </button>
+            <button class="btn btn-approve-form" onclick="approveFormRFP()">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+                Approve
+            </button>
         </div>
 
         <!-- Footer -->

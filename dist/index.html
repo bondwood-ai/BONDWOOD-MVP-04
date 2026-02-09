@@ -371,15 +371,15 @@
         .preview-footer { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; }
         .preview-footer-right { display: flex; gap: 0.5rem; align-items: center; }
         .btn-reject {
-            display: inline-flex; align-items: center; gap: 0.4rem;
-            padding: 0.6rem 1.25rem; background: var(--negative-color); color: #fff;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+            padding: 0.6rem 1.25rem; min-width: 120px; background: var(--negative-color); color: #fff;
             border: none; border-radius: 6px; font-family: 'Metropolis', sans-serif;
             font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
         }
         .btn-reject:hover { opacity: 0.85; }
         .btn-approve {
-            display: inline-flex; align-items: center; gap: 0.4rem;
-            padding: 0.6rem 1.25rem; background: var(--positive-color); color: #fff;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+            padding: 0.6rem 1.25rem; min-width: 120px; background: var(--positive-color); color: #fff;
             border: none; border-radius: 6px; font-family: 'Metropolis', sans-serif;
             font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
         }
@@ -899,8 +899,14 @@
                     Open Request for Payment Form
                 </button>
                 <div class="preview-footer-right" id="previewApprovalBtns" style="display:none;">
-                    <button class="btn-reject" id="previewRejectBtn" onclick="openRejectModal()">Reject</button>
-                    <button class="btn-approve" id="previewApproveBtn" onclick="approveRFP()">Approve</button>
+                    <button class="btn-reject" id="previewRejectBtn" onclick="openRejectModal()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
+                        Reject
+                    </button>
+                    <button class="btn-approve" id="previewApproveBtn" onclick="approveRFP()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+                        Approve
+                    </button>
                 </div>
             </div>
         </div>
