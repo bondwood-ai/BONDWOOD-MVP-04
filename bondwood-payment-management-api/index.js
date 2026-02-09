@@ -184,6 +184,11 @@ export default {
         return handleMigrate(env);
       }
 
+      // ── Extract invoice data from PDF via Gemini ──
+      if (path === '/api/extract-invoice' && method === 'POST') {
+        return handleExtractInvoice(request, env);
+      }
+
       // ── Debug schema ──
       if (path === '/api/debug/schema' && method === 'GET') {
         const { results } = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='table'").all();
@@ -1254,5 +1259,108 @@ async function handleMileageCalculate(request, env) {
     });
   } catch (e) {
     return json({ error: 'Failed to calculate distance', detail: e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   INVOICE EXTRACTION (Gemini Flash)
+   ======================================== */
+async function handleExtractInvoice(request, env) {
+  if (!env.GEMINI_API_KEY) {
+    return json({ error: 'GEMINI_API_KEY not configured' }, 500);
+  }
+
+  const body = await request.json();
+  const { pdfBase64, fileName } = body;
+
+  if (!pdfBase64) {
+    return json({ error: 'Missing pdfBase64' }, 400);
+  }
+
+  const prompt = `You are an invoice data extraction assistant. Analyze this PDF document and extract line item details.
+
+Return ONLY valid JSON with this exact structure — no markdown, no code fences, no extra text:
+{
+  "lineItems": [
+    {
+      "description": "Item description (uppercase)",
+      "invoiceNumber": "Invoice number or empty string",
+      "invoiceDate": "MM/DD/YYYY format or empty string",
+      "amount": 123.45
+    }
+  ],
+  "vendorName": "Vendor/company name if found, or empty string",
+  "vendorNumber": "Vendor/account number if found, or empty string",
+  "invoiceTotal": 0.00,
+  "confidence": "high|medium|low"
+}
+
+Rules:
+- Extract ALL line items with their individual amounts
+- Descriptions should be UPPERCASE
+- Dates must be MM/DD/YYYY format
+- Amounts must be numeric (no $ or commas)
+- If a single invoice total is shown but no line items, create one line item with the full description and total
+- If the document is not an invoice or contains no extractable data, return {"lineItems":[],"confidence":"low"}
+- invoiceTotal should be the document's stated total (for verification)`;
+
+  try {
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+
+    const geminiBody = {
+      contents: [{
+        parts: [
+          {
+            inlineData: {
+              mimeType: 'application/pdf',
+              data: pdfBase64,
+            }
+          },
+          { text: prompt }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 4096,
+      }
+    };
+
+    const resp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiBody),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('Gemini API error:', resp.status, errText);
+      return json({ error: 'Gemini API error', status: resp.status, detail: errText }, 502);
+    }
+
+    const geminiData = await resp.json();
+
+    // Extract text from Gemini response
+    const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // Clean any markdown fences
+    const cleaned = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+    let extracted;
+    try {
+      extracted = JSON.parse(cleaned);
+    } catch (parseErr) {
+      return json({ error: 'Failed to parse Gemini response', raw: rawText }, 422);
+    }
+
+    return json({
+      success: true,
+      fileName: fileName || 'unknown',
+      ...extracted,
+    });
+
+  } catch (e) {
+    console.error('Extract invoice error:', e);
+    return json({ error: 'Extraction failed', detail: e.message }, 500);
   }
 }
