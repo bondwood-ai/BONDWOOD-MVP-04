@@ -155,6 +155,7 @@
         .btn-icon:hover { background: var(--bg-color); color: var(--text-primary); }
         .btn-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
         .header-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .header-action-btn { min-width: 150px; justify-content: center; height: 36px; box-sizing: border-box; }
 
         /* ============ STATS GRID ============ */
         .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
@@ -304,6 +305,7 @@
         .preview-loading-spinner { width: 36px; height: 36px; margin: 0 auto; border: 3px solid var(--border-color); border-top-color: var(--primary-hex); border-radius: 50%; opacity: 0; transition: opacity 0.2s ease; animation: spinLoad 0.8s linear infinite; }
         .preview-loading-spinner.visible { opacity: 1; }
         @keyframes spinLoad { to { transform: rotate(360deg); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; }
 
         /* Import drop zone */
@@ -497,11 +499,16 @@
                     <p class="module-subtitle" id="dashboardSubtitle">Viewing your submissions</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn-primary accent" onclick="window.location.href='rfp-form.html'">
+                    <button class="btn-primary accent header-action-btn" onclick="window.location.href='rfp-form.html'">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
                         New Request
                     </button>
-                    <button class="btn-secondary" onclick="openImportModal()">
+                    <button class="btn-primary accent header-action-btn" onclick="document.getElementById('captureInvoiceInput').click()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
+                        Capture Invoice
+                    </button>
+                    <input type="file" id="captureInvoiceInput" accept=".pdf" style="display:none" onchange="dashboardCaptureInvoice(event)">
+                    <button class="btn-secondary header-action-btn" onclick="openImportModal()">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                         Import
                     </button>
@@ -2997,6 +3004,99 @@
                 document.getElementById('columnDropdown').classList.remove('open');
             }
         });
+
+        /* ========================================
+           CAPTURE INVOICE (Dashboard)
+           ======================================== */
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function dashboardCaptureInvoice(event) {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (!file || !file.name.toLowerCase().endsWith('.pdf')) return;
+
+            // Show blocking overlay
+            let overlay = document.getElementById('captureOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'captureOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+                overlay.innerHTML = `
+                    <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <svg id="captureOverlayIcon" viewBox="0 0 24 24" width="36" height="36" stroke="var(--secondary-hex)" stroke-width="2" fill="none" style="animation:spin 1s linear infinite;margin-bottom:1rem;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <div id="captureOverlayTitle" style="font-family:'Metropolis',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Analyzing Invoice...</div>
+                        <div id="captureOverlayMsg" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">This may take a few seconds. Please wait.</div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+            const overlayTitle = document.getElementById('captureOverlayTitle');
+            const overlayMsg = document.getElementById('captureOverlayMsg');
+            const overlayIcon = document.getElementById('captureOverlayIcon');
+
+            try {
+                const base64 = await fileToBase64(file);
+
+                const resp = await fetch(`${API_BASE}/api/extract-invoice`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pdfBase64: base64, fileName: file.name }),
+                });
+
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.error || `Server error ${resp.status}`);
+                }
+
+                const data = await resp.json();
+
+                if (!data.success || !data.lineItems || data.lineItems.length === 0) {
+                    overlayIcon.style.animation = 'none';
+                    overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+                    overlayIcon.setAttribute('stroke', 'var(--warning-color, #d97706)');
+                    overlayTitle.textContent = 'No Data Extracted';
+                    overlayMsg.textContent = 'Could not extract invoice data. Opening blank form instead.';
+                    await new Promise(r => setTimeout(r, 2000));
+                    overlay.style.display = 'none';
+                    window.location.href = 'rfp-form.html';
+                    return;
+                }
+
+                // Store extracted data + PDF in sessionStorage for the form to pick up
+                sessionStorage.setItem('capturedInvoice', JSON.stringify(data));
+                sessionStorage.setItem('capturedPdfName', file.name);
+                sessionStorage.setItem('capturedPdfBase64', base64);
+
+                // Show success briefly
+                overlayIcon.style.animation = 'none';
+                overlayIcon.innerHTML = '<path d="M20 6L9 17l-5-5"/>';
+                overlayIcon.setAttribute('stroke', 'var(--positive-color)');
+                overlayTitle.textContent = `${data.lineItems.length} Line Items Found`;
+                overlayMsg.textContent = 'Opening form with extracted data...';
+                await new Promise(r => setTimeout(r, 1000));
+
+                // Navigate to form with capture flag
+                window.location.href = 'rfp-form.html?capture=1';
+
+            } catch (err) {
+                console.error('Dashboard capture failed:', err);
+                overlayIcon.style.animation = 'none';
+                overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/>';
+                overlayIcon.setAttribute('stroke', 'var(--negative-color)');
+                overlayTitle.textContent = 'Extraction Failed';
+                overlayMsg.textContent = err.message;
+                await new Promise(r => setTimeout(r, 3000));
+                overlay.style.display = 'none';
+            }
+        }
 
         /* ========================================
            INITIALIZATION

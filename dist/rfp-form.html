@@ -1400,6 +1400,8 @@
             const params = new URLSearchParams(window.location.search);
             if (params.get('id')) {
                 loadExistingForm(params.get('id'));
+            } else if (params.get('capture') === '1') {
+                loadCapturedInvoice();
             }
         });
 
@@ -2208,6 +2210,84 @@
 
             // Extract invoice data
             extractInvoiceFromPDF(file);
+        }
+
+        async function loadCapturedInvoice() {
+            try {
+                const raw = sessionStorage.getItem('capturedInvoice');
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                const pdfName = sessionStorage.getItem('capturedPdfName') || 'invoice.pdf';
+                const pdfBase64 = sessionStorage.getItem('capturedPdfBase64');
+
+                // Clear sessionStorage
+                sessionStorage.removeItem('capturedInvoice');
+                sessionStorage.removeItem('capturedPdfName');
+                sessionStorage.removeItem('capturedPdfBase64');
+
+                // Clear the default empty row
+                clearEmptyLineItems();
+
+                // Populate line items
+                if (data.lineItems && data.lineItems.length > 0) {
+                    data.lineItems.forEach(item => {
+                        addLineItem({
+                            description: (item.description || '').toUpperCase(),
+                            invoice: item.invoiceNumber || '',
+                            invoiceDate: item.invoiceDate || '',
+                            amount: item.amount ? formatCurrency(item.amount) : '',
+                        });
+                    });
+                    recalcTotals();
+                    addLineItem(); // Add empty row for continued editing
+                }
+
+                // Wait for vendor data to load (up to 3 seconds)
+                for (let i = 0; i < 30 && VENDOR_DATA.length === 0; i++) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+
+                // Auto-fill vendor if exact match
+                if (data.vendorName && VENDOR_DATA && VENDOR_DATA.length > 0) {
+                    const vendorInput = document.getElementById('vendorName');
+                    const vendorNumInput = document.getElementById('vendorNumber');
+                    const vendorAddrInput = document.getElementById('vendorAddress');
+                    if (vendorInput && !vendorInput.value.trim()) {
+                        const extractedName = data.vendorName.trim().toUpperCase();
+                        const match = VENDOR_DATA.find(v => v.n && v.n.trim().toUpperCase() === extractedName);
+                        if (match) {
+                            vendorInput.value = match.n;
+                            if (vendorNumInput) vendorNumInput.value = match.num || '';
+                            if (vendorAddrInput) vendorAddrInput.value = match.a || '';
+                        }
+                    }
+                }
+
+                // Recreate the PDF file from base64 and attach it
+                if (pdfBase64) {
+                    try {
+                        const byteString = atob(pdfBase64);
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+                        const blob = new Blob([ab], { type: 'application/pdf' });
+                        const file = new File([blob], pdfName, { type: 'application/pdf' });
+                        const id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                        const blobUrl = URL.createObjectURL(file);
+                        attachments.push({ id, name: file.name, size: file.size, type: file.type, blobUrl, file, addedDate: new Date(), pending: true });
+                        renderAttachmentsList();
+                        updateAttBadge();
+                    } catch (e) {
+                        console.warn('Could not reconstruct PDF attachment:', e);
+                    }
+                }
+
+                // Clean URL
+                window.history.replaceState({}, '', 'rfp-form.html');
+
+            } catch (e) {
+                console.error('Failed to load captured invoice:', e);
+            }
         }
 
         async function extractInvoiceFromPDF(file) {
