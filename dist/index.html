@@ -306,20 +306,31 @@
 
         /* ============ PREVIEW MODAL ============ */
         /* ============ ADVANCED SEARCH MODAL ============ */
-        .adv-search-modal { background: var(--card-bg); border-radius: 12px; width: 720px; max-width: 96vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+        .adv-search-modal { background: var(--card-bg); border-radius: 12px; width: 860px; max-width: 96vw; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
+        .adv-search-modal .modal-body { overflow-y: auto; flex: 1; padding: 1rem 1.25rem; }
         .adv-search-section { margin-bottom: 0.75rem; }
         .adv-search-section-title { font-family: 'Metropolis', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0.5rem; padding: 0 0.125rem; }
-        .adv-search-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.625rem; }
-        .adv-search-field label { display: block; font-family: 'Metropolis', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem; }
-        .adv-search-field input, .adv-search-field select {
+        .adv-search-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.625rem; }
+        .adv-search-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+        /* Checklist component */
+        .adv-checklist { border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+        .adv-checklist-label { display: block; font-family: 'Metropolis', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
+        .adv-checklist-filter { width: 100%; padding: 0.35rem 0.5rem; font-size: 0.75rem; border: none; border-bottom: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: 'Open Sauce Sans', sans-serif; outline: none; }
+        .adv-checklist-filter::placeholder { color: var(--text-secondary); opacity: 0.5; }
+        .adv-checklist-items { max-height: 130px; overflow-y: auto; padding: 0.25rem 0.125rem; }
+        .adv-checklist-items label { display: flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.4rem; font-size: 0.72rem; color: var(--text-primary); cursor: pointer; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .adv-checklist-items label:hover { background: var(--bg-color); }
+        .adv-checklist-items input[type="checkbox"] { width: 13px; height: 13px; flex-shrink: 0; accent-color: var(--primary-hex); cursor: pointer; }
+        .adv-checklist-items .adv-no-items { padding: 0.5rem; font-size: 0.7rem; color: var(--text-secondary); text-align: center; font-style: italic; }
+        .adv-checklist-count { display: inline-block; background: var(--primary-hex); color: #fff; font-size: 0.6rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 99px; margin-left: 0.3rem; vertical-align: middle; font-family: 'Metropolis', sans-serif; }
+        /* Range fields */
+        .adv-search-field label { display: block; font-family: 'Metropolis', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
+        .adv-search-field input {
             width: 100%; padding: 0.4rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border-color);
             border-radius: 6px; background: var(--bg-color); color: var(--text-primary);
             font-family: 'Open Sauce Sans', sans-serif;
         }
-        .adv-search-field select[multiple] { padding: 0.25rem; }
-        .adv-search-field select[multiple] option { padding: 0.2rem 0.4rem; border-radius: 4px; margin: 1px 0; font-size: 0.75rem; }
-        .adv-search-field input:focus, .adv-search-field select:focus { outline: none; border-color: var(--primary-hex); }
-        .adv-search-field input::placeholder { color: var(--text-secondary); opacity: 0.6; }
+        .adv-search-field input:focus { outline: none; border-color: var(--primary-hex); }
         .adv-search-range { display: flex; gap: 0.375rem; align-items: center; }
         .adv-search-range span { font-size: 0.7rem; color: var(--text-secondary); flex-shrink: 0; }
         .adv-search-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1.25rem; }
@@ -620,61 +631,68 @@
                 <button class="btn-icon" onclick="closeAdvancedSearch()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
             </div>
             <div class="modal-body" style="padding:1rem 1.25rem;">
+                <div id="advSearchLoading" style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:0.85rem;">Loading options...</div>
+                <div id="advSearchContent" style="display:none;">
 
-                <!-- Request Header Fields -->
+                <!-- Request Details -->
                 <div class="adv-search-section">
                     <div class="adv-search-section-title">Request Details</div>
                     <div class="adv-search-grid">
-                        <div class="adv-search-field">
-                            <label>RFP Number</label>
-                            <input type="text" id="advRfpNumber" placeholder="2600001, 2600002...">
+                        <div>
+                            <span class="adv-checklist-label">Status<span class="adv-checklist-count" id="advStatusCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="status">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advStatusList"></div>
+                            </div>
                         </div>
-                        <div class="adv-search-field">
-                            <label>Status</label>
-                            <select id="advStatus" multiple size="3" style="min-height:5rem;">
-                                <option value="draft">Draft</option>
-                                <option value="submitted">Submitted</option>
-                                <option value="accounting-review">Accounting Review</option>
-                                <option value="ap-review">A/P Review</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="archived">Archived</option>
-                            </select>
+                        <div>
+                            <span class="adv-checklist-label">Request Type<span class="adv-checklist-count" id="advRequestTypeCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="request_type">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advRequestTypeList"></div>
+                            </div>
                         </div>
-                        <div class="adv-search-field">
-                            <label>Request Type</label>
-                            <select id="advRequestType">
-                                <option value="">Any</option>
-                                <option value="vendor">Vendor Payment</option>
-                                <option value="reimbursement">Employee Reimbursement</option>
-                            </select>
+                        <div>
+                            <span class="adv-checklist-label">Submitter<span class="adv-checklist-count" id="advSubmitterCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="submitter_name">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advSubmitterList"></div>
+                            </div>
                         </div>
-                        <div class="adv-search-field">
-                            <label>Submitter</label>
-                            <input type="text" id="advSubmitter" placeholder="Name, name...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Assigned To</label>
-                            <input type="text" id="advAssignedTo" placeholder="Name, name...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>AP Batch</label>
-                            <input type="text" id="advApBatch" placeholder="Batch #, batch #...">
+                        <div>
+                            <span class="adv-checklist-label">Assigned To<span class="adv-checklist-count" id="advAssignedToCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="assigned_to">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advAssignedToList"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Vendor Fields -->
+                <!-- Vendor -->
                 <div class="adv-search-section">
                     <div class="adv-search-section-title">Vendor</div>
                     <div class="adv-search-grid">
-                        <div class="adv-search-field">
-                            <label>Vendor Name</label>
-                            <input type="text" id="advVendorName" placeholder="Name, name...">
+                        <div>
+                            <span class="adv-checklist-label">Vendor Name<span class="adv-checklist-count" id="advVendorNameCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="vendor_name">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advVendorNameList"></div>
+                            </div>
                         </div>
-                        <div class="adv-search-field">
-                            <label>Vendor Number</label>
-                            <input type="text" id="advVendorNumber" placeholder="05410, 32990...">
+                        <div>
+                            <span class="adv-checklist-label">Vendor Number<span class="adv-checklist-count" id="advVendorNumberCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="vendor_number">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advVendorNumberList"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="adv-checklist-label">AP Batch<span class="adv-checklist-count" id="advApBatchCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="ap_batch">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advApBatchList"></div>
+                            </div>
                         </div>
                         <div class="adv-search-field">
                             <label>Submission Date</label>
@@ -687,17 +705,23 @@
                     </div>
                 </div>
 
-                <!-- Line Item / Form Data Fields -->
+                <!-- Line Item Details -->
                 <div class="adv-search-section">
                     <div class="adv-search-section-title">Line Item Details</div>
-                    <div class="adv-search-grid">
-                        <div class="adv-search-field">
-                            <label>Description</label>
-                            <input type="text" id="advDescription" placeholder="Text, text...">
+                    <div class="adv-search-grid cols-3">
+                        <div>
+                            <span class="adv-checklist-label">Description<span class="adv-checklist-count" id="advDescriptionCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="description">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advDescriptionList"></div>
+                            </div>
                         </div>
-                        <div class="adv-search-field">
-                            <label>Invoice Number</label>
-                            <input type="text" id="advInvoiceNumber" placeholder="Inv #, inv #...">
+                        <div>
+                            <span class="adv-checklist-label">Invoice Number<span class="adv-checklist-count" id="advInvoiceNumberCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="invoice_number">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advInvoiceNumberList"></div>
+                            </div>
                         </div>
                         <div class="adv-search-field">
                             <label>Invoice Date</label>
@@ -706,53 +730,77 @@
                                 <span>to</span>
                                 <input type="date" id="advInvDateTo">
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Budget Code Components -->
-                <div class="adv-search-section">
-                    <div class="adv-search-section-title">Budget Code</div>
-                    <div class="adv-search-grid">
-                        <div class="adv-search-field">
-                            <label>Budget Code</label>
-                            <input type="text" id="advBudgetCode" placeholder="01526810..., 01527...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Account Code</label>
-                            <input type="text" id="advAccountCode" placeholder="330, 368...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Fund</label>
-                            <input type="text" id="advFund" placeholder="01, 02...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Organization</label>
-                            <input type="text" id="advOrganization" placeholder="526, 527...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Program</label>
-                            <input type="text" id="advProgram" placeholder="810, 000...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Finance</label>
-                            <input type="text" id="advFinance" placeholder="000, 100...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Course</label>
-                            <input type="text" id="advCourse" placeholder="000, 100...">
-                        </div>
-                        <div class="adv-search-field">
-                            <label>Amount</label>
-                            <div class="adv-search-range">
-                                <input type="number" id="advAmountMin" placeholder="Min" step="0.01">
-                                <span>to</span>
-                                <input type="number" id="advAmountMax" placeholder="Max" step="0.01">
+                            <div style="margin-top:0.625rem;">
+                                <label>Amount</label>
+                                <div class="adv-search-range">
+                                    <input type="number" id="advAmountMin" placeholder="Min" step="0.01">
+                                    <span>to</span>
+                                    <input type="number" id="advAmountMax" placeholder="Max" step="0.01">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Budget Code -->
+                <div class="adv-search-section">
+                    <div class="adv-search-section-title">Budget Code</div>
+                    <div class="adv-search-grid">
+                        <div>
+                            <span class="adv-checklist-label">Budget Code<span class="adv-checklist-count" id="advBudgetCodeCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="budget_code">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advBudgetCodeList"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="adv-checklist-label">Account Code<span class="adv-checklist-count" id="advAccountCodeCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="account_code">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advAccountCodeList"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="adv-checklist-label">Fund<span class="adv-checklist-count" id="advFundCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="fund">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advFundList"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="adv-checklist-label">Organization<span class="adv-checklist-count" id="advOrganizationCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="organization">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advOrganizationList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="adv-search-grid" style="margin-top:0.625rem;">
+                        <div>
+                            <span class="adv-checklist-label">Program<span class="adv-checklist-count" id="advProgramCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="program">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advProgramList"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="adv-checklist-label">Finance<span class="adv-checklist-count" id="advFinanceCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="finance">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advFinanceList"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="adv-checklist-label">Course<span class="adv-checklist-count" id="advCourseCount" style="display:none;"></span></span>
+                            <div class="adv-checklist" data-field="course">
+                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-items" id="advCourseList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                </div><!-- /advSearchContent -->
             </div>
             <div class="adv-search-footer">
                 <button class="btn-clear" onclick="clearAdvancedSearch()">Clear All</button>
@@ -1246,98 +1294,146 @@
            IMPORT
            ======================================== */
         let advancedSearchActive = false;
-        let advancedSearchRfpNumbers = null; // null = no filter, Set = filtered
+        let advancedSearchRfpNumbers = null;
+        let advSearchOptionsCache = null;
 
-        function openAdvancedSearch() {
-            document.getElementById('advSearchModal').classList.add('open');
-            // Focus first input
-            setTimeout(() => document.getElementById('advRfpNumber').focus(), 100);
+        // Checklist field map: field key → { listId, countId, displayLabel }
+        const ADV_FIELDS = {
+            status: { listId: 'advStatusList', countId: 'advStatusCount' },
+            request_type: { listId: 'advRequestTypeList', countId: 'advRequestTypeCount' },
+            submitter_name: { listId: 'advSubmitterList', countId: 'advSubmitterCount' },
+            assigned_to: { listId: 'advAssignedToList', countId: 'advAssignedToCount' },
+            vendor_name: { listId: 'advVendorNameList', countId: 'advVendorNameCount' },
+            vendor_number: { listId: 'advVendorNumberList', countId: 'advVendorNumberCount' },
+            ap_batch: { listId: 'advApBatchList', countId: 'advApBatchCount' },
+            description: { listId: 'advDescriptionList', countId: 'advDescriptionCount' },
+            invoice_number: { listId: 'advInvoiceNumberList', countId: 'advInvoiceNumberCount' },
+            budget_code: { listId: 'advBudgetCodeList', countId: 'advBudgetCodeCount' },
+            account_code: { listId: 'advAccountCodeList', countId: 'advAccountCodeCount' },
+            fund: { listId: 'advFundList', countId: 'advFundCount' },
+            organization: { listId: 'advOrganizationList', countId: 'advOrganizationCount' },
+            program: { listId: 'advProgramList', countId: 'advProgramCount' },
+            finance: { listId: 'advFinanceList', countId: 'advFinanceCount' },
+            course: { listId: 'advCourseList', countId: 'advCourseCount' },
+        };
+
+        // Status display names
+        const STATUS_LABELS = {
+            'draft': 'Draft', 'submitted': 'Submitted', 'accounting-review': 'Accounting Review',
+            'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected', 'archived': 'Archived'
+        };
+        const TYPE_LABELS = { 'vendor': 'Vendor Payment', 'reimbursement': 'Employee Reimbursement' };
+
+        function buildChecklist(listId, values, field) {
+            const container = document.getElementById(listId);
+            if (!container) return;
+            if (!values || values.length === 0) {
+                container.innerHTML = '<div class="adv-no-items">No options</div>';
+                return;
+            }
+            container.innerHTML = values.map(val => {
+                let display = val;
+                if (field === 'status') display = STATUS_LABELS[val] || val;
+                else if (field === 'request_type') display = TYPE_LABELS[val] || val;
+                return `<label><input type="checkbox" value="${val}" onchange="updateChecklistCount(this)">${display}</label>`;
+            }).join('');
         }
+
+        function updateChecklistCount(checkbox) {
+            const items = checkbox.closest('.adv-checklist-items');
+            const field = checkbox.closest('.adv-checklist').dataset.field;
+            const cfg = ADV_FIELDS[field];
+            if (!cfg) return;
+            const count = items.querySelectorAll('input[type="checkbox"]:checked').length;
+            const badge = document.getElementById(cfg.countId);
+            if (count > 0) { badge.textContent = count; badge.style.display = 'inline'; }
+            else { badge.style.display = 'none'; }
+        }
+
+        function filterChecklist(input) {
+            const term = input.value.toLowerCase();
+            const labels = input.closest('.adv-checklist').querySelectorAll('.adv-checklist-items label');
+            labels.forEach(lbl => {
+                const text = lbl.textContent.toLowerCase();
+                lbl.style.display = text.includes(term) ? '' : 'none';
+            });
+        }
+
+        function getCheckedValues(field) {
+            const cfg = ADV_FIELDS[field];
+            if (!cfg) return [];
+            const container = document.getElementById(cfg.listId);
+            if (!container) return [];
+            return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        }
+
+        async function openAdvancedSearch() {
+            document.getElementById('advSearchModal').classList.add('open');
+
+            if (!advSearchOptionsCache) {
+                document.getElementById('advSearchLoading').style.display = '';
+                document.getElementById('advSearchContent').style.display = 'none';
+                try {
+                    const resp = await fetch(`${API_BASE}/api/rfps/search-options`);
+                    if (resp.ok) advSearchOptionsCache = await resp.json();
+                } catch (e) { console.error('Failed to load search options', e); }
+                document.getElementById('advSearchLoading').style.display = 'none';
+                document.getElementById('advSearchContent').style.display = '';
+            }
+
+            if (advSearchOptionsCache) {
+                for (const [field, cfg] of Object.entries(ADV_FIELDS)) {
+                    const vals = advSearchOptionsCache[field] || [];
+                    buildChecklist(cfg.listId, vals, field);
+                }
+            }
+        }
+
         function closeAdvancedSearch() {
             document.getElementById('advSearchModal').classList.remove('open');
         }
 
         function clearAdvancedSearch() {
-            const fields = ['advRfpNumber','advRequestType','advSubmitter','advAssignedTo','advApBatch',
-                'advVendorName','advVendorNumber','advDateFrom','advDateTo',
-                'advDescription','advInvoiceNumber','advInvDateFrom','advInvDateTo',
-                'advBudgetCode','advAccountCode','advFund','advOrganization','advProgram','advFinance','advCourse',
-                'advAmountMin','advAmountMax'];
-            fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-            // Clear multi-select status
-            const statusEl = document.getElementById('advStatus');
-            if (statusEl) Array.from(statusEl.options).forEach(o => o.selected = false);
+            // Uncheck all checkboxes
+            document.querySelectorAll('#advSearchModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+            // Clear filter inputs
+            document.querySelectorAll('#advSearchModal .adv-checklist-filter').forEach(inp => { inp.value = ''; filterChecklist(inp); });
+            // Clear date/amount fields
+            ['advDateFrom','advDateTo','advInvDateFrom','advInvDateTo','advAmountMin','advAmountMax'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+            // Clear count badges
+            for (const cfg of Object.values(ADV_FIELDS)) {
+                const badge = document.getElementById(cfg.countId);
+                if (badge) badge.style.display = 'none';
+            }
 
-            // Clear active filter
             advancedSearchActive = false;
             advancedSearchRfpNumbers = null;
             document.getElementById('advSearchBadge').style.display = 'none';
-
             filterTable();
         }
 
         async function executeAdvancedSearch() {
-            const v = id => (document.getElementById(id)?.value || '').trim();
-            // Parse comma-separated values into array, filtering empties
-            const multi = id => {
-                const raw = (document.getElementById(id)?.value || '').trim();
-                if (!raw) return [];
-                return raw.split(',').map(s => s.trim()).filter(Boolean);
-            };
-            // Get multi-select values
-            const multiSelect = id => {
-                const el = document.getElementById(id);
-                if (!el) return [];
-                return Array.from(el.selectedOptions).map(o => o.value);
-            };
-
             const criteria = {};
-            // Dashboard fields — multi-value
-            const rfpNums = multi('advRfpNumber');
-            if (rfpNums.length) criteria.rfp_number = rfpNums;
-            const statuses = multiSelect('advStatus');
-            if (statuses.length) criteria.status = statuses;
-            if (v('advRequestType')) criteria.request_type = v('advRequestType');
-            const submitters = multi('advSubmitter');
-            if (submitters.length) criteria.submitter_name = submitters;
-            const assignees = multi('advAssignedTo');
-            if (assignees.length) criteria.assigned_to = assignees;
-            const batches = multi('advApBatch');
-            if (batches.length) criteria.ap_batch = batches;
-            const vendorNames = multi('advVendorName');
-            if (vendorNames.length) criteria.vendor_name = vendorNames;
-            const vendorNums = multi('advVendorNumber');
-            if (vendorNums.length) criteria.vendor_number = vendorNums;
-            if (v('advDateFrom')) criteria.date_from = v('advDateFrom');
-            if (v('advDateTo')) criteria.date_to = v('advDateTo');
-            // Form data fields — multi-value
-            const descs = multi('advDescription');
-            if (descs.length) criteria.description = descs;
-            const invNums = multi('advInvoiceNumber');
-            if (invNums.length) criteria.invoice_number = invNums;
-            if (v('advInvDateFrom')) criteria.inv_date_from = v('advInvDateFrom');
-            if (v('advInvDateTo')) criteria.inv_date_to = v('advInvDateTo');
-            // Budget code fields — multi-value
-            const budgetCodes = multi('advBudgetCode');
-            if (budgetCodes.length) criteria.budget_code = budgetCodes;
-            const acctCodes = multi('advAccountCode');
-            if (acctCodes.length) criteria.account_code = acctCodes;
-            const funds = multi('advFund');
-            if (funds.length) criteria.fund = funds;
-            const orgs = multi('advOrganization');
-            if (orgs.length) criteria.organization = orgs;
-            const programs = multi('advProgram');
-            if (programs.length) criteria.program = programs;
-            const finances = multi('advFinance');
-            if (finances.length) criteria.finance = finances;
-            const courses = multi('advCourse');
-            if (courses.length) criteria.course = courses;
-            if (v('advAmountMin')) criteria.amount_min = parseFloat(v('advAmountMin'));
-            if (v('advAmountMax')) criteria.amount_max = parseFloat(v('advAmountMax'));
+            let filterCount = 0;
 
-            const filterCount = Object.keys(criteria).length;
+            // Collect checked values from all checklist fields
+            for (const field of Object.keys(ADV_FIELDS)) {
+                const vals = getCheckedValues(field);
+                if (vals.length) { criteria[field] = vals; filterCount += vals.length; }
+            }
+
+            // Date ranges
+            const v = id => (document.getElementById(id)?.value || '').trim();
+            if (v('advDateFrom')) { criteria.date_from = v('advDateFrom'); filterCount++; }
+            if (v('advDateTo')) { criteria.date_to = v('advDateTo'); filterCount++; }
+            if (v('advInvDateFrom')) { criteria.inv_date_from = v('advInvDateFrom'); filterCount++; }
+            if (v('advInvDateTo')) { criteria.inv_date_to = v('advInvDateTo'); filterCount++; }
+            if (v('advAmountMin')) { criteria.amount_min = parseFloat(v('advAmountMin')); filterCount++; }
+            if (v('advAmountMax')) { criteria.amount_max = parseFloat(v('advAmountMax')); filterCount++; }
+
             if (filterCount === 0) {
-                // No filters = clear
                 clearAdvancedSearch();
                 return;
             }
@@ -1366,7 +1462,6 @@
                 badge.textContent = filterCount;
                 badge.style.display = 'inline';
 
-                // Reset basic filters
                 document.getElementById('searchInput').value = '';
                 document.getElementById('statusFilter').value = 'all';
 

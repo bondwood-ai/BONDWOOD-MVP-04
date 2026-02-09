@@ -133,6 +133,9 @@ export default {
       if (path === '/api/rfps/search' && method === 'POST') {
         return handleAdvancedSearch(request, env);
       }
+      if (path === '/api/rfps/search-options' && method === 'GET') {
+        return handleSearchOptions(env);
+      }
 
       const rfpMatch = path.match(/^\/api\/rfps\/(\d+)$/);
       if (rfpMatch) {
@@ -341,6 +344,61 @@ async function handleListRFPs(env, url) {
   `).bind(...params, limit, offset).all();
 
   return json({ rfps: results, total, page, limit });
+}
+
+
+/* ========================================
+   RFPs – SEARCH OPTIONS (distinct values)
+   ======================================== */
+async function handleSearchOptions(env) {
+  try {
+    const [
+      statusR, typeR, submitterR, assignedR, batchR,
+      vendorNameR, vendorNumR,
+      descR, invNumR,
+      budgetCodeR, acctCodeR, fundR, orgR, progR, finR, courseR
+    ] = await env.DB.batch([
+      env.DB.prepare("SELECT DISTINCT status FROM dashboard_data WHERE status IS NOT NULL AND status != '' ORDER BY status"),
+      env.DB.prepare("SELECT DISTINCT request_type FROM dashboard_data WHERE request_type IS NOT NULL AND request_type != '' ORDER BY request_type"),
+      env.DB.prepare("SELECT DISTINCT submitter_name FROM dashboard_data WHERE submitter_name IS NOT NULL AND submitter_name != '' ORDER BY submitter_name"),
+      env.DB.prepare("SELECT DISTINCT assigned_to FROM dashboard_data WHERE assigned_to IS NOT NULL AND assigned_to != '' ORDER BY assigned_to"),
+      env.DB.prepare("SELECT DISTINCT ap_batch FROM dashboard_data WHERE ap_batch IS NOT NULL AND ap_batch != '' ORDER BY ap_batch"),
+      env.DB.prepare("SELECT DISTINCT vendor_name FROM dashboard_data WHERE vendor_name IS NOT NULL AND vendor_name != '' ORDER BY vendor_name"),
+      env.DB.prepare("SELECT DISTINCT vendor_number FROM dashboard_data WHERE vendor_number IS NOT NULL AND vendor_number != '' ORDER BY vendor_number"),
+      env.DB.prepare("SELECT DISTINCT description FROM form_data WHERE description IS NOT NULL AND description != '' ORDER BY description"),
+      env.DB.prepare("SELECT DISTINCT invoice_number FROM form_data WHERE invoice_number IS NOT NULL AND invoice_number != '' ORDER BY invoice_number"),
+      env.DB.prepare("SELECT DISTINCT budget_code FROM form_data WHERE budget_code IS NOT NULL AND budget_code != '' ORDER BY budget_code"),
+      env.DB.prepare("SELECT DISTINCT COALESCE(account_code, object) as account_code FROM form_data WHERE (account_code IS NOT NULL AND account_code != '') OR (object IS NOT NULL AND object != '') ORDER BY 1"),
+      env.DB.prepare("SELECT DISTINCT fund FROM form_data WHERE fund IS NOT NULL AND fund != '' ORDER BY fund"),
+      env.DB.prepare("SELECT DISTINCT organization FROM form_data WHERE organization IS NOT NULL AND organization != '' ORDER BY organization"),
+      env.DB.prepare("SELECT DISTINCT program FROM form_data WHERE program IS NOT NULL AND program != '' ORDER BY program"),
+      env.DB.prepare("SELECT DISTINCT finance FROM form_data WHERE finance IS NOT NULL AND finance != '' ORDER BY finance"),
+      env.DB.prepare("SELECT DISTINCT course FROM form_data WHERE course IS NOT NULL AND course != '' ORDER BY course"),
+    ]);
+
+    const pluck = (res, col) => res.results.map(r => r[col]).filter(Boolean);
+
+    return json({
+      status: pluck(statusR, 'status'),
+      request_type: pluck(typeR, 'request_type'),
+      submitter_name: pluck(submitterR, 'submitter_name'),
+      assigned_to: pluck(assignedR, 'assigned_to'),
+      ap_batch: pluck(batchR, 'ap_batch'),
+      vendor_name: pluck(vendorNameR, 'vendor_name'),
+      vendor_number: pluck(vendorNumR, 'vendor_number'),
+      description: pluck(descR, 'description'),
+      invoice_number: pluck(invNumR, 'invoice_number'),
+      budget_code: pluck(budgetCodeR, 'budget_code'),
+      account_code: pluck(acctCodeR, 'account_code'),
+      fund: pluck(fundR, 'fund'),
+      organization: pluck(orgR, 'organization'),
+      program: pluck(progR, 'program'),
+      finance: pluck(finR, 'finance'),
+      course: pluck(courseR, 'course'),
+    });
+  } catch (e) {
+    return json({ error: 'Failed to fetch search options', detail: e.message }, 500);
+  }
 }
 
 
