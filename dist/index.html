@@ -575,13 +575,21 @@
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                             Export XLSX
                         </button>
-                        <button class="btn-primary" onclick="archiveSelected()">
+                        <button class="btn-primary" id="bulkArchiveBtn" onclick="archiveSelected()" style="display:none;">
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
                             Archive
                         </button>
-                        <button class="btn-primary danger" onclick="deleteSelected()">
+                        <button class="btn-primary danger" id="bulkDeleteBtn" onclick="deleteSelected()" style="display:none;">
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             Delete
+                        </button>
+                        <button class="btn-primary danger" id="bulkRejectBtn" onclick="bulkReject()" style="display:none;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
+                            Reject
+                        </button>
+                        <button class="btn-primary green" id="bulkApproveBtn" onclick="bulkApprove()" style="display:none;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+                            Approve
                         </button>
                     </div>
                 </div>
@@ -1268,6 +1276,17 @@
             if (count > 0) bulkActions.classList.add('visible');
             else bulkActions.classList.remove('visible');
 
+            // Determine which buttons to show based on selected statuses
+            const selectedRFPs = allRFPs.filter(r => selectedRFPIds.has(r.id));
+            const statuses = new Set(selectedRFPs.map(r => r.status));
+            const allDraft = statuses.size > 0 && [...statuses].every(s => s === 'draft');
+            const allInWorkflow = statuses.size > 0 && [...statuses].every(s => ['submitted', 'accounting-review', 'ap-review'].includes(s));
+
+            document.getElementById('bulkArchiveBtn').style.display = allDraft ? '' : 'none';
+            document.getElementById('bulkDeleteBtn').style.display = allDraft ? '' : 'none';
+            document.getElementById('bulkRejectBtn').style.display = allInWorkflow ? '' : 'none';
+            document.getElementById('bulkApproveBtn').style.display = allInWorkflow ? '' : 'none';
+
             // Update header checkbox state
             const headerCb = document.getElementById('selectAllCheckbox');
             if (headerCb) {
@@ -1338,6 +1357,104 @@
             allRFPs = allRFPs.filter(r => !selectedRFPIds.has(r.id));
             selectedRFPIds.clear();
             filterTable();
+        }
+
+        async function bulkReject() {
+            const selected = allRFPs.filter(r => selectedRFPIds.has(r.id) && isInApprovalWorkflow(r.status));
+            if (selected.length === 0) return;
+
+            // Open reject type picker — reuse the reject modal but adapt for bulk
+            document.getElementById('rejectPrevLabel').textContent = 'Returns each request to its previous workflow step.';
+            document.querySelector('#rejectModal input[value="previous"]').checked = true;
+            document.getElementById('rejectModal').style.display = 'flex';
+
+            // Replace the confirm handler temporarily for bulk
+            const confirmBtn = document.querySelector('#rejectModal .btn-reject');
+            const originalOnclick = confirmBtn.getAttribute('onclick');
+            confirmBtn.setAttribute('onclick', '');
+            confirmBtn.onclick = async function() {
+                const rejectType = document.querySelector('#rejectModal input[name="rejectType"]:checked').value;
+                closeRejectModal();
+
+                const label = rejectType === 'permanent' ? 'permanently reject' : 'reject back to previous step';
+                const confirmed = await showConfirm(
+                    `${label.charAt(0).toUpperCase() + label.slice(1)} ${selected.length} request(s)?`,
+                    'Confirm Bulk Rejection'
+                );
+                if (!confirmed) { confirmBtn.setAttribute('onclick', originalOnclick); confirmBtn.onclick = null; return; }
+
+                for (const rfp of selected) {
+                    const newStatus = rejectType === 'permanent' ? 'rejected' : (WORKFLOW_PREV[rfp.status] || 'draft');
+                    const auditText = rejectType === 'permanent'
+                        ? `${currentUserName || 'Reviewer'} permanently rejected the request (bulk action)`
+                        : `${currentUserName || 'Reviewer'} rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
+
+                    try {
+                        await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}/audit-log`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: rejectType === 'permanent' ? 'rejected' : 'rejected-previous', description: auditText, performed_by: currentUserName || 'Reviewer' })
+                        });
+                    } catch (e) { console.error('Bulk reject error:', e); }
+                }
+
+                // Restore button
+                confirmBtn.setAttribute('onclick', originalOnclick);
+                confirmBtn.onclick = null;
+
+                selectedRFPIds.clear();
+                allRFPs = await loadRFPData();
+                filterTable();
+                showAlert(`${selected.length} request(s) have been ${rejectType === 'permanent' ? 'permanently rejected' : 'rejected to previous step'}.`, 'Bulk Rejection Complete');
+            };
+        }
+
+        async function bulkApprove() {
+            const selected = allRFPs.filter(r => selectedRFPIds.has(r.id) && isInApprovalWorkflow(r.status));
+            if (selected.length === 0) return;
+
+            // Summarize what will happen
+            const summary = selected.map(r => {
+                const next = WORKFLOW_NEXT[r.status];
+                return `#${r.rfpNumber}: ${WORKFLOW_LABELS[r.status]} → ${WORKFLOW_LABELS[next] || next}`;
+            });
+            const confirmed = await showConfirm(
+                `Advance ${selected.length} request(s) to their next workflow step?`,
+                'Confirm Bulk Approval'
+            );
+            if (!confirmed) return;
+
+            for (const rfp of selected) {
+                const newStatus = WORKFLOW_NEXT[rfp.status];
+                if (!newStatus) continue;
+                const isFullApproval = newStatus === 'approved';
+                const auditText = isFullApproval
+                    ? `${currentUserName || 'Reviewer'} approved the request (bulk action)`
+                    : `${currentUserName || 'Reviewer'} advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
+
+                try {
+                    await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}/audit-log`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: isFullApproval ? 'approved' : 'advanced', description: auditText, performed_by: currentUserName || 'Reviewer' })
+                    });
+                } catch (e) { console.error('Bulk approve error:', e); }
+            }
+
+            selectedRFPIds.clear();
+            allRFPs = await loadRFPData();
+            filterTable();
+            showAlert(`${selected.length} request(s) have been advanced.`, 'Bulk Approval Complete');
         }
 
         /* ========================================
