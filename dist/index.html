@@ -219,6 +219,7 @@
         .table-toolbar .selected-info { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
         .bulk-actions { display: none; align-items: center; gap: 0.4rem; margin-left: auto; }
         .bulk-actions.visible { display: flex; }
+        .bulk-actions button { width: 140px; }
         .table-scroll { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 340px); }
         .table-scroll thead th {
             position: sticky; top: -1px; z-index: 2; background: var(--card-bg);
@@ -371,19 +372,19 @@
         .preview-footer { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; }
         .preview-footer-right { display: flex; gap: 0.5rem; align-items: center; }
         .btn-reject {
-            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-            padding: 0.6rem 1.25rem; width: 120px; height: 36px; background: var(--negative-color); color: #fff;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            width: 140px; height: 36px; background: var(--negative-color); color: #fff;
             border: none; border-radius: 6px; font-family: 'Metropolis', sans-serif;
-            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
-            flex: 0 0 auto; box-sizing: border-box;
+            font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: opacity 0.15s;
+            box-sizing: border-box;
         }
         .btn-reject:hover { opacity: 0.85; }
         .btn-approve {
-            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-            padding: 0.6rem 1.25rem; width: 120px; height: 36px; background: var(--positive-color); color: #fff;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            width: 140px; height: 36px; background: var(--positive-color); color: #fff;
             border: none; border-radius: 6px; font-family: 'Metropolis', sans-serif;
-            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
-            flex: 0 0 auto; box-sizing: border-box;
+            font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: opacity 0.15s;
+            box-sizing: border-box;
         }
         .btn-approve:hover { opacity: 0.85; }
         .btn-open-form {
