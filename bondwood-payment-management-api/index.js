@@ -882,6 +882,17 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     await env.DB.batch(statements);
   }
 
+  // Propagate ap_batch to form_data rows when provided
+  if (body.ap_batch) {
+    try {
+      await env.DB.prepare(
+        'UPDATE form_data SET ap_batch = ? WHERE rfp_number = ?'
+      ).bind(body.ap_batch, rfpNumber).run();
+    } catch (e) {
+      console.error('Failed to update form_data ap_batch:', e.message);
+    }
+  }
+
   // Write audit log entries for notable changes
   try {
     const performer = body.performed_by || body.submitter_name || 'System';

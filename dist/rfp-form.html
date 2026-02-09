@@ -2480,6 +2480,32 @@
             });
         }
 
+        function showPrompt(message, title = 'Input', { placeholder = '', confirmText = 'OK' } = {}) {
+            return new Promise(resolve => {
+                _utilityModalResolve = null;
+                document.getElementById('utilityModalTitle').textContent = title;
+                document.getElementById('utilityModalMessage').innerHTML = `
+                    <span style="display:block;margin-bottom:0.75rem;">${message}</span>
+                    <input type="text" id="utilityPromptInput" placeholder="${placeholder}" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.9rem;font-family:'Open Sauce Sans',sans-serif;background:var(--bg-color);color:var(--text-primary);box-sizing:border-box;">
+                `;
+                document.getElementById('utilityModalFooter').innerHTML = `
+                    <button onclick="closeUtilityModal(null)" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);">Cancel</button>
+                    <button onclick="closeUtilityModal(document.getElementById('utilityPromptInput').value.trim()||null)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:#fff;min-width:80px;">${confirmText}</button>
+                `;
+                _utilityModalResolve = resolve;
+                document.getElementById('utility-modal').style.display = 'flex';
+                setTimeout(() => {
+                    const inp = document.getElementById('utilityPromptInput');
+                    if (inp) {
+                        inp.focus();
+                        inp.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') { e.preventDefault(); closeUtilityModal(inp.value.trim() || null); }
+                        });
+                    }
+                }, 100);
+            });
+        }
+
         function closeUtilityModal(result = false) {
             document.getElementById('utility-modal').style.display = 'none';
             // Reset modal width and borders to default
@@ -2903,15 +2929,26 @@
             if (!newStatus) return;
 
             const isFullApproval = newStatus === 'approved';
+            let apBatch = null;
+
+            // Prompt for A/P Batch when approving from A/P Review
+            if (isFullApproval && currentFormStatus === 'ap-review') {
+                apBatch = await showPrompt('Enter the A/P Batch number for this request:', 'A/P Batch', { placeholder: 'e.g. AP-2026-001', confirmText: 'Approve' });
+                if (!apBatch) return; // cancelled
+            }
+
             const auditText = isFullApproval
-                ? 'Reviewer approved the request'
+                ? `Reviewer approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''}`
                 : `Reviewer advanced the request to "${FORM_WORKFLOW_LABELS[newStatus] || newStatus}"`;
 
             try {
+                const updateBody = { status: newStatus };
+                if (apBatch) updateBody.ap_batch = apBatch;
+
                 const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
+                    body: JSON.stringify(updateBody)
                 });
                 if (!resp.ok) throw new Error('Failed to update status');
 

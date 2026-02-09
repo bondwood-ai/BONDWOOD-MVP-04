@@ -1418,30 +1418,40 @@
             const selected = allRFPs.filter(r => selectedRFPIds.has(r.id) && isInApprovalWorkflow(r.status));
             if (selected.length === 0) return;
 
-            // Summarize what will happen
-            const summary = selected.map(r => {
-                const next = WORKFLOW_NEXT[r.status];
-                return `#${r.rfpNumber}: ${WORKFLOW_LABELS[r.status]} → ${WORKFLOW_LABELS[next] || next}`;
-            });
             const confirmed = await showConfirm(
                 `Advance ${selected.length} request(s) to their next workflow step?`,
                 'Confirm Bulk Approval'
             );
             if (!confirmed) return;
 
+            // Check if any are at ap-review (will become approved)
+            const apReviewItems = selected.filter(r => r.status === 'ap-review');
+            let apBatch = null;
+            if (apReviewItems.length > 0) {
+                apBatch = await showPrompt(
+                    `${apReviewItems.length} request(s) will be fully approved. Enter the A/P Batch number:`,
+                    'A/P Batch',
+                    { placeholder: 'e.g. AP-2026-001', confirmText: 'Continue' }
+                );
+                if (!apBatch) return; // cancelled
+            }
+
             for (const rfp of selected) {
                 const newStatus = WORKFLOW_NEXT[rfp.status];
                 if (!newStatus) continue;
                 const isFullApproval = newStatus === 'approved';
                 const auditText = isFullApproval
-                    ? `${currentUserName || 'Reviewer'} approved the request (bulk action)`
+                    ? `${currentUserName || 'Reviewer'} approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''} (bulk action)`
                     : `${currentUserName || 'Reviewer'} advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
 
                 try {
+                    const updateBody = { status: newStatus };
+                    if (isFullApproval && apBatch) updateBody.ap_batch = apBatch;
+
                     await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: newStatus })
+                        body: JSON.stringify(updateBody)
                     });
                     await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}/audit-log`, {
                         method: 'POST',
@@ -2026,15 +2036,26 @@
             if (!newStatus) return;
 
             const isFullApproval = newStatus === 'approved';
+            let apBatch = null;
+
+            // Prompt for A/P Batch when approving from A/P Review
+            if (isFullApproval && previewRfp.status === 'ap-review') {
+                apBatch = await showPrompt('Enter the A/P Batch number for this request:', 'A/P Batch', { placeholder: 'e.g. AP-2026-001', confirmText: 'Approve', required: true });
+                if (!apBatch) return; // cancelled
+            }
+
             const auditText = isFullApproval
-                ? `${currentUserName || 'Reviewer'} approved the request`
+                ? `${currentUserName || 'Reviewer'} approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''}`
                 : `${currentUserName || 'Reviewer'} advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
 
             try {
+                const updateBody = { status: newStatus };
+                if (apBatch) updateBody.ap_batch = apBatch;
+
                 const resp = await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
+                    body: JSON.stringify(updateBody)
                 });
                 if (!resp.ok) throw new Error('Failed to update status');
 
@@ -2635,6 +2656,32 @@
                     <button class="btn-primary ${dangerClass}" onclick="closeUtilityModal(true)" style="min-width:80px;">${confirmText}</button>
                 `;
                 document.getElementById('utilityModal').classList.add('open');
+            });
+        }
+
+        function showPrompt(message, title = 'Input', { placeholder = '', confirmText = 'OK', cancelText = 'Cancel', required = false } = {}) {
+            return new Promise(resolve => {
+                _utilityModalResolve = null;
+                document.getElementById('utilityModalTitle').textContent = title;
+                document.getElementById('utilityModalMessage').innerHTML = `
+                    <span style="display:block;margin-bottom:0.75rem;">${message}</span>
+                    <input type="text" id="utilityPromptInput" placeholder="${placeholder}" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.9rem;font-family:'Open Sauce Sans',sans-serif;background:var(--bg-color);color:var(--text-primary);box-sizing:border-box;">
+                `;
+                document.getElementById('utilityModalFooter').innerHTML = `
+                    <button class="btn-secondary" onclick="closeUtilityModal(null)">Cancel</button>
+                    <button class="btn-primary accent" id="utilityPromptConfirm" onclick="closeUtilityModal(document.getElementById('utilityPromptInput').value.trim() || null)" style="min-width:80px;">${confirmText}</button>
+                `;
+                _utilityModalResolve = resolve;
+                document.getElementById('utilityModal').classList.add('open');
+                setTimeout(() => {
+                    const inp = document.getElementById('utilityPromptInput');
+                    if (inp) {
+                        inp.focus();
+                        inp.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') { e.preventDefault(); closeUtilityModal(inp.value.trim() || null); }
+                        });
+                    }
+                }, 100);
             });
         }
 
