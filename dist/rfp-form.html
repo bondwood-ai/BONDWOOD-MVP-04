@@ -913,6 +913,10 @@
                     <div class="att-progress-track"><div class="att-progress-fill" id="attProgressBar"></div></div>
                     <span class="att-progress-text" id="attProgressText">Uploading...</span>
                 </div>
+                <div id="attSuccessBanner" style="display:none;margin-bottom:0.75rem;padding:0.6rem 1rem;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:0.8rem;font-weight:600;color:#166534;text-align:center;display:none;align-items:center;justify-content:center;gap:0.4rem;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="#166534" stroke-width="2.5" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+                    <span id="attSuccessText"></span>
+                </div>
                 <div class="att-file-list" id="attachmentsList"></div>
             </div>
         </div>
@@ -2562,8 +2566,15 @@
                     progressText.textContent = `Adding ${file.name}...`;
                 });
                 progressBar.style.width = '100%';
-                progressText.textContent = `${newFiles.length} file${newFiles.length !== 1 ? 's' : ''} added`;
+                progressText.textContent = `${newFiles.length} File${newFiles.length !== 1 ? 's' : ''} added`;
                 setTimeout(() => { progressEl.classList.remove('active'); progressBar.style.width = '0%'; }, 2000);
+
+                // Show success banner
+                const banner = document.getElementById('attSuccessBanner');
+                const bannerText = document.getElementById('attSuccessText');
+                bannerText.textContent = `${newFiles.length} File${newFiles.length !== 1 ? 's' : ''} Added Successfully — will upload on submit`;
+                banner.style.display = 'flex';
+                setTimeout(() => { banner.style.display = 'none'; }, 6000);
                 renderAttachmentsList();
                 updateAttBadge();
                 return;
@@ -2602,7 +2613,15 @@
                 }
 
                 progressBar.style.width = '100%';
-                progressText.textContent = `${data.count || files.length} file${files.length !== 1 ? 's' : ''} uploaded`;
+                const uploadCount = data.count || files.length;
+                progressText.textContent = `${uploadCount} File${uploadCount !== 1 ? 's' : ''} uploaded`;
+
+                // Show success banner
+                const banner = document.getElementById('attSuccessBanner');
+                const bannerText = document.getElementById('attSuccessText');
+                bannerText.textContent = `${uploadCount} File${uploadCount !== 1 ? 's' : ''} Uploaded Successfully — safe to continue`;
+                banner.style.display = 'flex';
+                setTimeout(() => { banner.style.display = 'none'; }, 6000);
             } catch (err) {
                 console.error('Attachment upload failed:', err);
                 progressText.textContent = 'Upload failed — files queued locally';
@@ -2842,7 +2861,7 @@
         function updateAttBadge() {
             const badge = document.getElementById('attBadge');
             if (attachments.length > 0) {
-                badge.textContent = attachments.length + ' file' + (attachments.length !== 1 ? 's' : '');
+                badge.textContent = attachments.length + ' File' + (attachments.length !== 1 ? 's' : '');
                 badge.style.display = 'inline';
                 // Compute badge colors from primary-hex
                 const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary-hex').trim();
