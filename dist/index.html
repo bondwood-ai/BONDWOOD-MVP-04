@@ -366,7 +366,22 @@
         .preview-total-row { display: flex; justify-content: flex-end; gap: 1.5rem; padding: 0.6rem 0.6rem 0; font-size: 0.85rem; font-weight: 600; }
         .preview-total-row .total-label { color: var(--text-secondary); }
         .preview-total-row .total-value { color: var(--text-primary); }
-        .preview-footer { display: flex; justify-content: flex-start; padding: 1rem 1.25rem; }
+        .preview-footer { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; }
+        .preview-footer-right { display: flex; gap: 0.5rem; align-items: center; }
+        .btn-reject {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.6rem 1.25rem; background: var(--card-bg); color: var(--negative-color);
+            border: 1px solid var(--negative-color); border-radius: 6px; font-family: 'Metropolis', sans-serif;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-reject:hover { background: var(--negative-color); color: #fff; }
+        .btn-approve {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.6rem 1.25rem; background: var(--positive-color); color: #fff;
+            border: none; border-radius: 6px; font-family: 'Metropolis', sans-serif;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
+        }
+        .btn-approve:hover { opacity: 0.85; }
         .btn-open-form {
             display: inline-flex; align-items: center; gap: 0.5rem;
             padding: 0.6rem 1.25rem; background: var(--primary-hex); color: var(--accent-text-color);
@@ -623,6 +638,37 @@
         </div>
     </div>
 
+    <!-- ============ REJECT MODAL ============ -->
+    <div class="modal-overlay" id="rejectModal" onclick="if(event.target===this)closeRejectModal()">
+        <div class="modal" style="width:440px;">
+            <div class="modal-header">
+                <h3>Reject Request</h3>
+                <button class="btn-icon" onclick="closeRejectModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="modal-body" style="padding:1rem 1.25rem;">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Choose how to reject this request:</p>
+                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;margin-bottom:0.5rem;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--primary-hex)'" onmouseleave="if(!this.querySelector('input').checked)this.style.borderColor='var(--border-color)'" id="rejectOptPrev">
+                    <input type="radio" name="rejectType" value="previous" style="margin-top:2px;accent-color:var(--primary-hex);" checked>
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Metropolis',sans-serif;">Reject to Previous Step</div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;" id="rejectPrevLabel">Returns the request to the previous workflow step.</div>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--negative-color)'" onmouseleave="if(!this.querySelector('input').checked)this.style.borderColor='var(--border-color)'" id="rejectOptPerm">
+                    <input type="radio" name="rejectType" value="permanent" style="margin-top:2px;accent-color:var(--negative-color);">
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Metropolis',sans-serif;">Reject Permanently</div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;">Permanently rejects the request. This cannot be undone.</div>
+                    </div>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeRejectModal()">Cancel</button>
+                <button class="btn-reject" onclick="confirmReject()" style="padding:0.5rem 1.25rem;">Confirm Reject</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ============ ADVANCED SEARCH MODAL ============ -->
     <div class="modal-overlay" id="advSearchModal" onclick="if(event.target===this)closeAdvancedSearch()">
         <div class="adv-search-modal">
@@ -842,6 +888,10 @@
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     Open Request for Payment Form
                 </button>
+                <div class="preview-footer-right" id="previewApprovalBtns" style="display:none;">
+                    <button class="btn-reject" id="previewRejectBtn" onclick="openRejectModal()">Reject</button>
+                    <button class="btn-approve" id="previewApproveBtn" onclick="approveRFP()">Approve</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1563,10 +1613,19 @@
             const body = document.getElementById('previewBody');
             const badge = document.getElementById('previewStatusBadge');
             const openBtn = document.getElementById('previewOpenBtn');
+            previewRfp = rfp; // track for approval workflow
 
             badge.className = `status-badge ${rfp.status}`;
             badge.textContent = formatStatus(rfp.status);
             openBtn.onclick = () => { window.location.href = `rfp-form.html?id=${rfp.rfpNumber}`; };
+
+            // Show/hide approval buttons
+            const approvalBtns = document.getElementById('previewApprovalBtns');
+            if (isInApprovalWorkflow(rfp.status)) {
+                approvalBtns.style.display = '';
+            } else {
+                approvalBtns.style.display = 'none';
+            }
 
             // Show loading state
             body.innerHTML = `<div class="preview-loading">
@@ -1768,6 +1827,113 @@
             document.getElementById('previewModal').classList.remove('open');
         }
 
+        /* ========================================
+           APPROVAL WORKFLOW
+           ======================================== */
+        const WORKFLOW_NEXT = { 'submitted': 'accounting-review', 'accounting-review': 'ap-review', 'ap-review': 'approved' };
+        const WORKFLOW_PREV = { 'submitted': 'draft', 'accounting-review': 'submitted', 'ap-review': 'accounting-review' };
+        const WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected' };
+        let previewRfp = null; // currently viewed RFP in preview modal
+
+        function isInApprovalWorkflow(status) {
+            return status === 'submitted' || status === 'accounting-review' || status === 'ap-review';
+        }
+
+        function openRejectModal() {
+            if (!previewRfp) return;
+            const prevStatus = WORKFLOW_PREV[previewRfp.status];
+            document.getElementById('rejectPrevLabel').textContent = prevStatus
+                ? `Returns the request to "${WORKFLOW_LABELS[prevStatus] || prevStatus}".`
+                : 'Returns the request to the previous workflow step.';
+            document.querySelector('#rejectModal input[value="previous"]').checked = true;
+            document.getElementById('rejectModal').classList.add('open');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.remove('open');
+        }
+
+        async function confirmReject() {
+            if (!previewRfp) return;
+            const rejectType = document.querySelector('input[name="rejectType"]:checked').value;
+            let newStatus;
+            let auditText;
+
+            if (rejectType === 'permanent') {
+                newStatus = 'rejected';
+                auditText = `${currentUserName || 'Reviewer'} permanently rejected the request`;
+            } else {
+                newStatus = WORKFLOW_PREV[previewRfp.status] || 'draft';
+                auditText = `${currentUserName || 'Reviewer'} rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
+            }
+
+            try {
+                // Update status
+                const resp = await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!resp.ok) throw new Error('Failed to update status');
+
+                // Add audit log entry
+                await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}/audit-log`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: rejectType === 'permanent' ? 'rejected' : 'rejected-previous',
+                        description: auditText,
+                        performed_by: currentUserName || 'Reviewer'
+                    })
+                });
+
+                closeRejectModal();
+                closePreviewModal();
+                allRFPs = await loadRFPData();
+                filterTable();
+                showAlert(`Request #${previewRfp.rfpNumber} has been ${rejectType === 'permanent' ? 'permanently rejected' : 'sent back to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, 'Request Rejected');
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'Reject Failed');
+            }
+        }
+
+        async function approveRFP() {
+            if (!previewRfp) return;
+            const newStatus = WORKFLOW_NEXT[previewRfp.status];
+            if (!newStatus) return;
+
+            const isFullApproval = newStatus === 'approved';
+            const auditText = isFullApproval
+                ? `${currentUserName || 'Reviewer'} approved the request`
+                : `${currentUserName || 'Reviewer'} advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!resp.ok) throw new Error('Failed to update status');
+
+                await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}/audit-log`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: isFullApproval ? 'approved' : 'advanced',
+                        description: auditText,
+                        performed_by: currentUserName || 'Reviewer'
+                    })
+                });
+
+                closePreviewModal();
+                allRFPs = await loadRFPData();
+                filterTable();
+                showAlert(`Request #${previewRfp.rfpNumber} has been ${isFullApproval ? 'approved' : 'advanced to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, isFullApproval ? 'Approved' : 'Advanced');
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'Approve Failed');
+            }
+        }
+
         async function handleAttachmentClick(url, name, ext) {
             var isPdf = ext === 'pdf';
             var isImage = (ext === 'png' || ext === 'jpg' || ext === 'jpeg');
@@ -1812,6 +1978,8 @@
         // Close modals on Esc key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                const rejectM = document.getElementById('rejectModal');
+                if (rejectM && rejectM.classList.contains('open')) { closeRejectModal(); return; }
                 const advSearch = document.getElementById('advSearchModal');
                 if (advSearch && advSearch.classList.contains('open')) { closeAdvancedSearch(); return; }
                 const preview = document.getElementById('previewModal');

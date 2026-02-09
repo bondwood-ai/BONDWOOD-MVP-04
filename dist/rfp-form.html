@@ -577,6 +577,10 @@
         .btn-save:hover { background: var(--bg-color); }
         .btn-audit { background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
         .btn-audit:hover { background: var(--bg-color); }
+        .btn-reject-form { background: var(--card-bg); color: #DC2626; border: 1px solid #DC2626; padding: 0.75rem 2.5rem; font-size: 1rem; }
+        .btn-reject-form:hover { background: #DC2626; color: #fff; }
+        .btn-approve-form { background: #16A34A; color: #fff; padding: 0.75rem 2.5rem; font-size: 1rem; }
+        .btn-approve-form:hover { opacity: 0.9; }
         .btn-primary-sm {
             display: inline-flex; align-items: center; gap: 5px;
             padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.2);
@@ -958,10 +962,15 @@
 
 
         <!-- Submit Buttons -->
-        <div class="button-container">
+        <div class="button-container" id="draftButtons">
             <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
             <button class="btn btn-save" onclick="saveDraft()">Save Draft</button>
             <button class="btn btn-submit" onclick="submitForm()">Submit for Approval</button>
+        </div>
+        <div class="button-container" id="approvalButtons" style="display:none;">
+            <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
+            <button class="btn btn-reject-form" onclick="openFormRejectModal()">Reject</button>
+            <button class="btn btn-approve-form" onclick="approveFormRFP()">Approve</button>
         </div>
 
         <!-- Footer -->
@@ -995,6 +1004,37 @@
             <div class="sig-modal-footer">
                 <button class="btn-cancel" onclick="closeSignatureModal()">Cancel</button>
                 <button class="btn-confirm" id="sigConfirmBtn" disabled onclick="confirmSubmission()">Sign &amp; Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ REJECT MODAL ============ -->
+    <div id="formRejectModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:9997;backdrop-filter:blur(2px);" onclick="if(event.target===this)closeFormRejectModal()">
+        <div style="background:var(--card-bg);border-radius:14px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;">
+                <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:'Metropolis',sans-serif;margin:0;">Reject Request</h3>
+                <button onclick="closeFormRejectModal()" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);display:flex;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0 0 1rem;">Choose how to reject this request:</p>
+                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;margin-bottom:0.5rem;">
+                    <input type="radio" name="formRejectType" value="previous" style="margin-top:2px;accent-color:var(--primary-hex);" checked>
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Metropolis',sans-serif;">Reject to Previous Step</div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;" id="formRejectPrevLabel">Returns the request to the previous workflow step.</div>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;">
+                    <input type="radio" name="formRejectType" value="permanent" style="margin-top:2px;accent-color:#DC2626;">
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Metropolis',sans-serif;">Reject Permanently</div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;">Permanently rejects the request. This cannot be undone.</div>
+                    </div>
+                </label>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:0.5rem;padding:1rem 1.25rem;">
+                <button onclick="closeFormRejectModal()" style="padding:0.5rem 1rem;background:var(--card-bg);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;font-family:'Metropolis',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;">Cancel</button>
+                <button onclick="confirmFormReject()" style="padding:0.5rem 1.25rem;background:var(--card-bg);color:#DC2626;border:1px solid #DC2626;border-radius:6px;font-family:'Metropolis',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;">Confirm Reject</button>
             </div>
         </div>
     </div>
@@ -2766,6 +2806,118 @@
             }
         }
 
+        /* ========================================
+           APPROVAL WORKFLOW (FORM)
+           ======================================== */
+        const FORM_WORKFLOW_NEXT = { 'submitted': 'accounting-review', 'accounting-review': 'ap-review', 'ap-review': 'approved' };
+        const FORM_WORKFLOW_PREV = { 'submitted': 'draft', 'accounting-review': 'submitted', 'ap-review': 'accounting-review' };
+        const FORM_WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected' };
+        let currentFormStatus = 'draft';
+
+        function showApprovalButtons(status) {
+            currentFormStatus = status;
+            const isApproval = status === 'submitted' || status === 'accounting-review' || status === 'ap-review';
+            document.getElementById('draftButtons').style.display = isApproval ? 'none' : '';
+            document.getElementById('approvalButtons').style.display = isApproval ? '' : 'none';
+        }
+
+        function openFormRejectModal() {
+            const prevStatus = FORM_WORKFLOW_PREV[currentFormStatus];
+            document.getElementById('formRejectPrevLabel').textContent = prevStatus
+                ? `Returns the request to "${FORM_WORKFLOW_LABELS[prevStatus] || prevStatus}".`
+                : 'Returns the request to the previous workflow step.';
+            document.querySelector('#formRejectModal input[value="previous"]').checked = true;
+            document.getElementById('formRejectModal').style.display = 'flex';
+        }
+
+        function closeFormRejectModal() {
+            document.getElementById('formRejectModal').style.display = 'none';
+        }
+
+        async function confirmFormReject() {
+            if (!currentRfpNumber) return;
+            const rejectType = document.querySelector('input[name="formRejectType"]:checked').value;
+            let newStatus, auditText;
+
+            if (rejectType === 'permanent') {
+                newStatus = 'rejected';
+                auditText = 'Reviewer permanently rejected the request';
+            } else {
+                newStatus = FORM_WORKFLOW_PREV[currentFormStatus] || 'draft';
+                auditText = `Reviewer rejected the request back to "${FORM_WORKFLOW_LABELS[newStatus] || newStatus}"`;
+            }
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!resp.ok) throw new Error('Failed to update status');
+
+                await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}/audit-log`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: rejectType === 'permanent' ? 'rejected' : 'rejected-previous',
+                        description: auditText,
+                        performed_by: 'Reviewer'
+                    })
+                });
+
+                closeFormRejectModal();
+                showAlert(
+                    rejectType === 'permanent'
+                        ? `Request #${currentRfpNumber} has been permanently rejected.`
+                        : `Request #${currentRfpNumber} has been sent back to ${FORM_WORKFLOW_LABELS[newStatus] || newStatus}.`,
+                    'Request Rejected'
+                );
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'Reject Failed');
+            }
+        }
+
+        async function approveFormRFP() {
+            if (!currentRfpNumber) return;
+            const newStatus = FORM_WORKFLOW_NEXT[currentFormStatus];
+            if (!newStatus) return;
+
+            const isFullApproval = newStatus === 'approved';
+            const auditText = isFullApproval
+                ? 'Reviewer approved the request'
+                : `Reviewer advanced the request to "${FORM_WORKFLOW_LABELS[newStatus] || newStatus}"`;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!resp.ok) throw new Error('Failed to update status');
+
+                await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}/audit-log`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: isFullApproval ? 'approved' : 'advanced',
+                        description: auditText,
+                        performed_by: 'Reviewer'
+                    })
+                });
+
+                showAlert(
+                    isFullApproval
+                        ? `Request #${currentRfpNumber} has been approved.`
+                        : `Request #${currentRfpNumber} has been advanced to ${FORM_WORKFLOW_LABELS[newStatus] || newStatus}.`,
+                    isFullApproval ? 'Approved' : 'Advanced'
+                );
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'Approve Failed');
+            }
+        }
+
         async function loadExistingForm(rfpNumber) {
             console.log('[LOAD] Starting load for RFP:', rfpNumber);
             currentRfpNumber = rfpNumber;
@@ -2899,6 +3051,11 @@
 
                 // Load attachments
                 loadExistingAttachments(rfpNumber);
+
+                // Swap buttons if in approval workflow
+                if (data.status) {
+                    showApprovalButtons(data.status);
+                }
 
                 console.log('[LOAD] Complete');
             } catch (err) {
