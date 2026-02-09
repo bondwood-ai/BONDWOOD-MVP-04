@@ -470,6 +470,9 @@ async function handleAdvancedSearch(request, env) {
   const whereClause = 'WHERE ' + where.join(' AND ');
 
   const sql = `SELECT DISTINCT d.rfp_number FROM dashboard_data d ${joinClause} ${whereClause} ORDER BY d.rfp_number DESC`;
+  console.log('[ADV SEARCH] SQL:', sql);
+  console.log('[ADV SEARCH] Params:', params);
+  console.log('[ADV SEARCH] Body:', JSON.stringify(body));
 
   try {
     const { results } = await env.DB.prepare(sql).bind(...params).all();

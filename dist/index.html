@@ -1311,13 +1311,20 @@
             }
 
             try {
+                console.log('[ADV SEARCH] Criteria:', JSON.stringify(criteria));
                 const resp = await fetch(`${API_BASE}/api/rfps/search`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(criteria)
                 });
-                if (!resp.ok) throw new Error(`Search failed (${resp.status})`);
+                console.log('[ADV SEARCH] Response status:', resp.status);
+                if (!resp.ok) {
+                    const errText = await resp.text();
+                    console.error('[ADV SEARCH] Error body:', errText);
+                    throw new Error(`Search failed (${resp.status}): ${errText}`);
+                }
                 const data = await resp.json();
+                console.log('[ADV SEARCH] Results:', data);
                 const matchingNumbers = new Set((data.rfp_numbers || []).map(Number));
 
                 advancedSearchActive = true;
