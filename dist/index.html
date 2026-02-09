@@ -1326,18 +1326,80 @@
         /* ========================================
            BULK ACTIONS
            ======================================== */
-        function exportSelectedToXLSX() {
+        async function exportSelectedToXLSX() {
             const selected = allRFPs.filter(r => selectedRFPIds.has(r.id));
             if (selected.length === 0) return;
-            const wsData = [
-                ['RFP No.', 'Submitter', 'Date', 'Vendor', 'Amount', 'Status', 'A/P Batch']
+
+            // Fetch full form_data for each selected RFP
+            const rfpDetails = await Promise.all(
+                selected.map(async rfp => {
+                    try {
+                        const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`);
+                        if (resp.ok) return await resp.json();
+                    } catch (e) { console.error('Export fetch error:', e); }
+                    return null;
+                })
+            );
+
+            // Build Summary sheet
+            const summaryData = [
+                ['RFP No.', 'Submitter', 'Date', 'Request Type', 'Vendor', 'Amount', 'Status', 'A/P Batch', 'Assigned To']
             ];
             selected.forEach(r => {
-                wsData.push([r.rfpNumber, r.submitter, r.submissionDate, r.vendor, r.amount, formatStatus(r.status), r.apBatch]);
+                summaryData.push([r.rfpNumber, r.submitter, r.submissionDate, r.type, r.vendor, r.amount, formatStatus(r.status), r.apBatch || '', r.assignedTo || '']);
             });
+
+            // Build Line Items sheet
+            const lineData = [
+                ['RFP No.', 'Line #', 'Description', 'Invoice No.', 'Invoice Date', 'Budget Code', 'Account Code', 'Fund', 'Organization', 'Program', 'Finance', 'Course', 'Qty', 'Unit Price', 'Total', 'A/P Batch']
+            ];
+
+            // Build Mileage sheet
+            const mileageData = [
+                ['RFP No.', 'Trip #', 'Trip Date', 'From', 'To', 'Miles', 'Rate', 'Amount', 'Budget Code', 'Account Code', 'A/P Batch']
+            ];
+
+            for (const detail of rfpDetails) {
+                if (!detail) continue;
+                const rfpNum = detail.rfp_number;
+                const apBatch = detail.ap_batch || '';
+
+                if (detail.lineItems) {
+                    for (const item of detail.lineItems) {
+                        lineData.push([
+                            rfpNum, item.line_number, item.description || '', item.invoice_number || '', item.invoice_date || '',
+                            item.budget_code || '', item.account_code || item.object || '', item.fund || '', item.organization || '',
+                            item.program || '', item.finance || '', item.course || '', item.quantity || '', item.unit_price || '', item.total || '',
+                            item.ap_batch || apBatch
+                        ]);
+                    }
+                }
+
+                if (detail.mileageTrips) {
+                    for (const trip of detail.mileageTrips) {
+                        mileageData.push([
+                            rfpNum, trip.trip_number, trip.trip_date || '', trip.from_location || '', trip.to_location || '',
+                            trip.miles || '', trip.rate || '', trip.amount || '',
+                            trip.budget_code || '', trip.account_code || '', apBatch
+                        ]);
+                    }
+                }
+            }
+
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            XLSX.utils.book_append_sheet(wb, ws, 'RFP Export');
+            const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+            if (lineData.length > 1) {
+                const wsLines = XLSX.utils.aoa_to_sheet(lineData);
+                XLSX.utils.book_append_sheet(wb, wsLines, 'Line Items');
+            }
+
+            if (mileageData.length > 1) {
+                const wsMileage = XLSX.utils.aoa_to_sheet(mileageData);
+                XLSX.utils.book_append_sheet(wb, wsMileage, 'Mileage');
+            }
+
             XLSX.writeFile(wb, `rfp-export-${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
