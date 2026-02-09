@@ -59,6 +59,8 @@
         body.dark-mode .vendor-dropdown { box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3); }
         body.dark-mode .section-header { background: var(--primary-hex); }
         body.dark-mode input, body.dark-mode select, body.dark-mode textarea { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .btn-primary-sm-alt { background: #333; color: #fff; border-color: #333; }
+        body.dark-mode .btn-primary-sm-alt:hover { background: #444; }
         body.dark-mode input[readonly], body.dark-mode .readonly-field { background: var(--readonly-bg); }
         body.dark-mode select option { background: var(--card-bg); }
         body.dark-mode .items-table th { background: var(--primary-hex); }
@@ -595,12 +597,12 @@
         .btn-primary-sm svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
         .btn-primary-sm-alt {
             display: inline-flex; align-items: center; gap: 5px;
-            padding: 0.35rem 0.75rem; background: var(--primary-hex);
-            color: var(--accent-text-color); border: 1px solid var(--primary-hex);
+            padding: 0.35rem 0.75rem; background: #d1d5db;
+            color: #000; border: 1px solid #d1d5db;
             border-radius: 5px; font-size: 0.75rem; font-weight: 600;
             cursor: pointer; font-family: 'Metropolis', sans-serif; transition: all 0.15s;
         }
-        .btn-primary-sm-alt:hover { opacity: 0.85; }
+        .btn-primary-sm-alt:hover { background: #9ca3af; }
         .btn-primary-sm-alt svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ============ FOOTER ============ */
@@ -1108,6 +1110,21 @@
 
     <script>
         /* ========================================
+           UNSAVED CHANGES TRACKING
+           ======================================== */
+        let formDirty = false;
+        let formSubmitting = false;
+
+        window.addEventListener('beforeunload', function(e) {
+            if (formDirty && !formSubmitting) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        function markFormDirty() { formDirty = true; }
+
+        /* ========================================
            VENDOR AUTOCOMPLETE
            ======================================== */
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
@@ -1403,6 +1420,10 @@
             } else if (params.get('capture') === '1') {
                 loadCapturedInvoice();
             }
+
+            // Track unsaved changes — listen for any input/select/textarea changes
+            document.querySelector('.form-container').addEventListener('input', markFormDirty);
+            document.querySelector('.form-container').addEventListener('change', markFormDirty);
         });
 
         /* ========================================
@@ -2839,6 +2860,7 @@
            FORM ACTIONS
            ======================================== */
         function saveDraft() {
+            formDirty = false;
             showAlert('Draft saved.', 'Saved');
         }
 
@@ -3132,6 +3154,7 @@
                 }
             }
 
+            formSubmitting = true;
             try {
                 let url, method;
                 if (currentRfpNumber) {
@@ -3162,9 +3185,11 @@
                     await uploadPendingAttachments(rfpNum);
                     showSuccessModal(rfpNum);
                 } else {
+                    formSubmitting = false;
                     showAlert('Submission failed: ' + (result.error || JSON.stringify(result)), 'Error');
                 }
             } catch (e) {
+                formSubmitting = false;
                 showAlert('Submission error: ' + e.message, 'Error');
             }
         }
@@ -3442,6 +3467,8 @@
                 }
 
                 console.log('[LOAD] Complete');
+                // Reset dirty flag — form was just loaded, not modified by user
+                formDirty = false;
             } catch (err) {
                 console.error('[LOAD] Error:', err);
             }
@@ -3473,6 +3500,8 @@
         }
 
         function showSuccessModal(rfpNumber) {
+            formDirty = false;
+            formSubmitting = false;
             document.getElementById('successRfpNumber').textContent = '#' + rfpNumber;
             document.getElementById('success-modal').classList.add('open');
             // Update URL so the form is now addressable
