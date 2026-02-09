@@ -1094,9 +1094,41 @@
         window.addEventListener('beforeunload', function(e) {
             if (formDirty && !formSubmitting) {
                 e.preventDefault();
-                e.returnValue = '';
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
             }
         });
+
+        // Push a history entry so back button triggers popstate instead of immediately leaving
+        history.pushState({ formPage: true }, '');
+
+        window.addEventListener('popstate', function(e) {
+            if (formDirty && !formSubmitting) {
+                // Re-push state to prevent navigation
+                history.pushState({ formPage: true }, '');
+                // Show custom warning modal
+                showUnsavedWarningModal();
+            } else {
+                history.back();
+            }
+        });
+
+        function showUnsavedWarningModal() {
+            const modalHtml = `
+                <div id="unsavedWarningModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);">
+                    <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--warning-color, #d97706)" stroke-width="2" fill="none" style="margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <div style="font-family:'Metropolis',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">Unsaved Changes</div>
+                        <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes that will be lost. Would you like to save as draft before leaving?</div>
+                        <div style="display:flex;gap:0.5rem;justify-content:center;">
+                            <button onclick="document.getElementById('unsavedWarningModal').remove()" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Metropolis',sans-serif;">Stay on Page</button>
+                            <button onclick="formDirty=false;document.getElementById('unsavedWarningModal').remove();history.back();" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color);color:#fff;font-family:'Metropolis',sans-serif;">Leave Without Saving</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
 
         function markFormDirty() { formDirty = true; }
 
@@ -1398,8 +1430,12 @@
             }
 
             // Track unsaved changes — listen for any input/select/textarea changes
-            document.querySelector('.form-container').addEventListener('input', markFormDirty);
-            document.querySelector('.form-container').addEventListener('change', markFormDirty);
+            document.addEventListener('input', function(e) {
+                if (e.target.closest('.form-container')) markFormDirty();
+            });
+            document.addEventListener('change', function(e) {
+                if (e.target.closest('.form-container')) markFormDirty();
+            });
         });
 
         /* ========================================
