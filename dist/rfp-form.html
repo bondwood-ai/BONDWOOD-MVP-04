@@ -568,7 +568,7 @@
             padding: 0.65rem 1.5rem; border: none; border-radius: 6px;
             font-family: 'Metropolis', sans-serif; font-weight: 600; font-size: 0.9rem;
             cursor: pointer; transition: all 0.2s; display: inline-flex;
-            align-items: center; gap: 6px;
+            align-items: center; justify-content: center; gap: 6px;
         }
         .btn:hover { transform: translateY(-1px); }
         .btn-submit { background: var(--primary-hex); color: var(--accent-text-color); padding: 0.75rem 2.5rem; font-size: 1rem; }
@@ -577,9 +577,9 @@
         .btn-save:hover { background: var(--bg-color); }
         .btn-audit { background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
         .btn-audit:hover { background: var(--bg-color); }
-        .btn-reject-form { background: var(--negative-color); color: #fff; border: none; padding: 0.75rem 2.5rem; font-size: 1rem; }
+        .btn-reject-form { background: var(--negative-color); color: #fff; border: none; padding: 0.75rem 2.5rem; font-size: 1rem; min-width: 180px; text-align: center; }
         .btn-reject-form:hover { opacity: 0.85; }
-        .btn-approve-form { background: var(--positive-color); color: #fff; border: none; padding: 0.75rem 2.5rem; font-size: 1rem; }
+        .btn-approve-form { background: var(--positive-color); color: #fff; border: none; padding: 0.75rem 2.5rem; font-size: 1rem; min-width: 180px; text-align: center; }
         .btn-approve-form:hover { opacity: 0.85; }
         .btn-primary-sm {
             display: inline-flex; align-items: center; gap: 5px;
