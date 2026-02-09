@@ -507,7 +507,7 @@
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
                         Capture Invoice
                     </button>
-                    <input type="file" id="captureInvoiceInput" accept=".pdf" style="display:none" onchange="dashboardCaptureInvoice(event)">
+                    <input type="file" id="captureInvoiceInput" accept=".pdf" multiple style="display:none" onchange="dashboardCaptureInvoice(event)">
                     <button class="btn-primary header-action-btn" onclick="openImportModal()">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                         Import XLSX
@@ -3017,12 +3017,233 @@
             });
         }
 
-        async function dashboardCaptureInvoice(event) {
-            const file = event.target.files?.[0];
-            event.target.value = '';
-            if (!file || !file.name.toLowerCase().endsWith('.pdf')) return;
+        // Smart vendor matching for captured invoices
+        function findBestVendorMatch(extractedName, vendorList) {
+            if (!extractedName || !vendorList || vendorList.length === 0) return null;
+            const clean = (s) => s.trim().toUpperCase().replace(/[.,'"]/g, '');
+            const stripSuffix = (s) => s.replace(/\b(LLC|INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|LTD|LIMITED|LP|LLP|PC|PLLC|GROUP|SERVICES|ENTERPRISES|SOLUTIONS|INTERNATIONAL|INTL)\b/g, '').replace(/\s+/g, ' ').trim();
+            const getWords = (s) => s.split(/\s+/).filter(w => w.length > 1);
+            const extracted = clean(extractedName);
+            const extractedStripped = stripSuffix(extracted);
+            const extractedWords = getWords(extractedStripped);
+            let bestMatch = null, bestScore = 0;
+            for (const v of vendorList) {
+                const vn = v.vendor_name || '';
+                if (!vn) continue;
+                const vName = clean(vn);
+                const vStripped = stripSuffix(vName);
+                let score = 0;
+                if (vName === extracted) return { vendor: v, score: 100 };
+                if (vStripped === extractedStripped && extractedStripped.length > 2) score = Math.max(score, 95);
+                if (vStripped.length > 3 && extractedStripped.length > 3) {
+                    if (vStripped.includes(extractedStripped)) score = Math.max(score, 90);
+                    else if (extractedStripped.includes(vStripped)) score = Math.max(score, 85);
+                }
+                const minLen = Math.min(vStripped.length, extractedStripped.length);
+                if (minLen > 4 && vStripped.substring(0, Math.min(minLen, 10)) === extractedStripped.substring(0, Math.min(minLen, 10))) score = Math.max(score, 75);
+                if (extractedWords.length > 0) {
+                    const vWords = getWords(vStripped);
+                    if (vWords.length > 0) {
+                        const matched = extractedWords.filter(ew => vWords.some(vw => vw === ew || vw.includes(ew) || ew.includes(vw)));
+                        score = Math.max(score, Math.round((matched.length / Math.max(extractedWords.length, vWords.length)) * 80));
+                    }
+                }
+                if (score > bestScore) { bestScore = score; bestMatch = { vendor: v, score }; }
+            }
+            return bestScore >= 50 ? bestMatch : null;
+        }
 
-            // Show blocking overlay
+        async function dashboardCaptureInvoice(event) {
+            const files = Array.from(event.target.files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+            event.target.value = '';
+            if (files.length === 0) return;
+
+            // Single file → old behavior (navigate to form)
+            if (files.length === 1) {
+                return dashboardCaptureSingle(files[0]);
+            }
+
+            // Multi-file → batch extract + create drafts
+            let overlay = document.getElementById('captureOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'captureOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+                overlay.innerHTML = `
+                    <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <svg id="captureOverlayIcon" viewBox="0 0 24 24" width="36" height="36" stroke="var(--secondary-hex)" stroke-width="2" fill="none" style="animation:spin 1s linear infinite;margin-bottom:1rem;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <div id="captureOverlayTitle" style="font-family:'Metropolis',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;"></div>
+                        <div id="captureOverlayMsg" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;"></div>
+                        <div id="captureOverlayProgress" style="margin-top:1rem;background:var(--border-color);border-radius:4px;height:6px;overflow:hidden;">
+                            <div id="captureOverlayBar" style="height:100%;background:var(--primary-hex);border-radius:4px;transition:width 0.3s;width:0%;"></div>
+                        </div>
+                        <div id="captureOverlayLog" style="margin-top:1rem;text-align:left;max-height:200px;overflow-y:auto;font-size:0.75rem;color:var(--text-secondary);line-height:1.7;"></div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+            const overlayTitle = document.getElementById('captureOverlayTitle');
+            const overlayMsg = document.getElementById('captureOverlayMsg');
+            const overlayIcon = document.getElementById('captureOverlayIcon');
+            const overlayBar = document.getElementById('captureOverlayBar');
+            const overlayLog = document.getElementById('captureOverlayLog');
+            document.getElementById('captureOverlayProgress').style.display = 'block';
+
+            overlayIcon.style.animation = 'spin 1s linear infinite';
+            overlayIcon.innerHTML = '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>';
+            overlayIcon.setAttribute('stroke', 'var(--secondary-hex)');
+            overlayTitle.textContent = `Processing ${files.length} Invoices...`;
+            overlayMsg.textContent = 'Extracting data and creating drafts.';
+            overlayBar.style.width = '0%';
+            overlayLog.innerHTML = '';
+
+            // Load vendor data for matching
+            let vendorList = [];
+            try {
+                const vResp = await fetch(`${API_BASE}/api/vendors?limit=5000`);
+                const vData = await vResp.json();
+                vendorList = vData.vendors || vData || [];
+            } catch (e) { console.warn('[CAPTURE] Could not fetch vendors:', e); }
+
+            let created = 0;
+            let failed = 0;
+            const results = [];
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const pct = ((i) / files.length * 100).toFixed(0);
+                overlayBar.style.width = `${pct}%`;
+                overlayMsg.textContent = `Extracting ${i + 1} of ${files.length}: ${file.name}`;
+
+                try {
+                    // Extract invoice data
+                    const base64 = await fileToBase64(file);
+                    const resp = await fetch(`${API_BASE}/api/extract-invoice`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pdfBase64: base64, fileName: file.name }),
+                    });
+
+                    if (!resp.ok) {
+                        const errData = await resp.json().catch(() => ({}));
+                        throw new Error(errData.error || `Server error ${resp.status}`);
+                    }
+
+                    const data = await resp.json();
+                    if (!data.success || !data.lineItems || data.lineItems.length === 0) {
+                        throw new Error('No data extracted');
+                    }
+
+                    // Match vendor
+                    let vendorName = null, vendorNumber = null, vendorAddress = null;
+                    if (data.vendorName && vendorList.length > 0) {
+                        const match = findBestVendorMatch(data.vendorName, vendorList);
+                        if (match) {
+                            const v = match.vendor;
+                            vendorName = v.vendor_name || null;
+                            vendorNumber = v.vendor_number || null;
+                            vendorAddress = [v.vendor_address, v.vendor_city, v.vendor_state, v.vendor_zip].filter(Boolean).join(', ') || null;
+                            console.log(`[CAPTURE] Matched "${data.vendorName}" → "${vendorName}" (score: ${match.score})`);
+                        }
+                    }
+
+                    // Build line items
+                    const lineItems = data.lineItems.map(item => ({
+                        description: (item.description || '').toUpperCase(),
+                        invoice_number: item.invoiceNumber || '',
+                        invoice_date: item.invoiceDate || '',
+                        budget_code: item.budgetCode || '',
+                        account_code: item.accountCode || '',
+                        total: parseFloat(item.amount) || 0,
+                        quantity: 1,
+                        unit_price: parseFloat(item.amount) || 0,
+                    }));
+
+                    // Create draft RFP
+                    const payload = {
+                        submitter_name: currentUserName,
+                        submitter_id: currentUserId,
+                        request_type: 'vendor',
+                        vendor_name: vendorName,
+                        vendor_number: vendorNumber,
+                        vendor_address: vendorAddress,
+                        status: 'draft',
+                        lineItems: lineItems,
+                    };
+
+                    const createResp = await fetch(`${API_BASE}/api/rfps`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!createResp.ok) {
+                        const errText = await createResp.text();
+                        throw new Error(`Create failed: ${errText}`);
+                    }
+
+                    const result = await createResp.json();
+                    const rfpNum = result.rfp_number;
+
+                    // Upload PDF as attachment
+                    try {
+                        const formData = new FormData();
+                        formData.append('files', file);
+                        await fetch(`${API_BASE}/api/rfps/${rfpNum}/attachments`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+                    } catch (e) {
+                        console.warn(`[CAPTURE] Attachment upload failed for ${rfpNum}:`, e);
+                    }
+
+                    created++;
+                    results.push({ file: file.name, rfp: rfpNum, items: lineItems.length, vendor: vendorName });
+                    overlayLog.innerHTML += `<div style="color:var(--positive-color);">✓ ${file.name} → RFP #${rfpNum}${vendorName ? ' (' + vendorName + ')' : ''} — ${lineItems.length} items</div>`;
+
+                } catch (err) {
+                    failed++;
+                    results.push({ file: file.name, error: err.message });
+                    overlayLog.innerHTML += `<div style="color:var(--negative-color);">✗ ${file.name} — ${err.message}</div>`;
+                    console.error(`[CAPTURE] Failed for ${file.name}:`, err);
+                }
+            }
+
+            // Complete
+            overlayBar.style.width = '100%';
+            overlayIcon.style.animation = 'none';
+
+            if (created > 0 && failed === 0) {
+                overlayIcon.innerHTML = '<path d="M20 6L9 17l-5-5"/>';
+                overlayIcon.setAttribute('stroke', 'var(--positive-color)');
+                overlayTitle.textContent = `${created} Draft${created !== 1 ? 's' : ''} Created`;
+                overlayMsg.textContent = 'All invoices processed successfully.';
+            } else if (created > 0 && failed > 0) {
+                overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+                overlayIcon.setAttribute('stroke', 'var(--warning-color, #d97706)');
+                overlayTitle.textContent = `${created} Created, ${failed} Failed`;
+                overlayMsg.textContent = 'Some invoices could not be processed.';
+            } else {
+                overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/>';
+                overlayIcon.setAttribute('stroke', 'var(--negative-color)');
+                overlayTitle.textContent = 'All Extractions Failed';
+                overlayMsg.textContent = 'No drafts were created.';
+            }
+
+            // Refresh dashboard
+            if (created > 0) {
+                allRFPs = await loadRFPData();
+                filterTable();
+            }
+
+            // Auto-close after delay
+            await new Promise(r => setTimeout(r, created > 0 ? 4000 : 3000));
+            overlay.style.display = 'none';
+        }
+
+        // Single file capture → navigate to form (original behavior)
+        async function dashboardCaptureSingle(file) {
             let overlay = document.getElementById('captureOverlay');
             if (!overlay) {
                 overlay = document.createElement('div');
@@ -3038,9 +3259,20 @@
                 document.body.appendChild(overlay);
             }
             overlay.style.display = 'flex';
+            // Reset overlay for single mode (hide progress bar/log if they exist)
+            const progEl = document.getElementById('captureOverlayProgress');
+            const logEl = document.getElementById('captureOverlayLog');
+            if (progEl) progEl.style.display = 'none';
+            if (logEl) logEl.innerHTML = '';
+
             const overlayTitle = document.getElementById('captureOverlayTitle');
             const overlayMsg = document.getElementById('captureOverlayMsg');
             const overlayIcon = document.getElementById('captureOverlayIcon');
+            overlayIcon.style.animation = 'spin 1s linear infinite';
+            overlayIcon.innerHTML = '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>';
+            overlayIcon.setAttribute('stroke', 'var(--secondary-hex)');
+            overlayTitle.textContent = 'Analyzing Invoice...';
+            overlayMsg.textContent = 'This may take a few seconds. Please wait.';
 
             try {
                 const base64 = await fileToBase64(file);
@@ -3070,20 +3302,16 @@
                     return;
                 }
 
-                // Store extracted data + PDF in sessionStorage for the form to pick up
                 sessionStorage.setItem('capturedInvoice', JSON.stringify(data));
                 sessionStorage.setItem('capturedPdfName', file.name);
                 sessionStorage.setItem('capturedPdfBase64', base64);
 
-                // Show success briefly
                 overlayIcon.style.animation = 'none';
                 overlayIcon.innerHTML = '<path d="M20 6L9 17l-5-5"/>';
                 overlayIcon.setAttribute('stroke', 'var(--positive-color)');
                 overlayTitle.textContent = `${data.lineItems.length} Line Items Found`;
                 overlayMsg.textContent = 'Opening form with extracted data...';
                 await new Promise(r => setTimeout(r, 1000));
-
-                // Navigate to form with capture flag
                 window.location.href = 'rfp-form.html?capture=1';
 
             } catch (err) {
