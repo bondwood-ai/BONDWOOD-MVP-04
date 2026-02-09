@@ -1169,6 +1169,70 @@
                 console.error('Failed to load vendor data:', e);
             }
         }
+
+        // Smart vendor matching — tries multiple strategies to find the best match
+        function findBestVendorMatch(extractedName) {
+            if (!extractedName || !VENDOR_DATA || VENDOR_DATA.length === 0) return null;
+
+            const clean = (s) => s.trim().toUpperCase().replace(/[.,'"]/g, '');
+            const stripSuffix = (s) => s.replace(/\b(LLC|INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|LTD|LIMITED|LP|LLP|PC|PLLC|GROUP|SERVICES|ENTERPRISES|SOLUTIONS|INTERNATIONAL|INTL)\b/g, '').replace(/\s+/g, ' ').trim();
+            const getWords = (s) => s.split(/\s+/).filter(w => w.length > 1);
+
+            const extracted = clean(extractedName);
+            const extractedStripped = stripSuffix(extracted);
+            const extractedWords = getWords(extractedStripped);
+
+            let bestMatch = null;
+            let bestScore = 0;
+
+            for (const v of VENDOR_DATA) {
+                if (!v.n || v.n === '—') continue;
+                const vName = clean(v.n);
+                const vStripped = stripSuffix(vName);
+
+                let score = 0;
+
+                // 1. Exact match (100)
+                if (vName === extracted) { return { vendor: v, score: 100, method: 'exact' }; }
+
+                // 2. Exact match after stripping suffixes (95)
+                if (vStripped === extractedStripped && extractedStripped.length > 2) { score = Math.max(score, 95); }
+
+                // 3. One contains the other (80-90)
+                if (vStripped.length > 3 && extractedStripped.length > 3) {
+                    if (vStripped.includes(extractedStripped)) { score = Math.max(score, 90); }
+                    else if (extractedStripped.includes(vStripped)) { score = Math.max(score, 85); }
+                }
+
+                // 4. Starts with same prefix (75)
+                const minLen = Math.min(vStripped.length, extractedStripped.length);
+                if (minLen > 4) {
+                    const prefix = Math.min(minLen, 10);
+                    if (vStripped.substring(0, prefix) === extractedStripped.substring(0, prefix)) {
+                        score = Math.max(score, 75);
+                    }
+                }
+
+                // 5. Word overlap scoring (up to 80)
+                if (extractedWords.length > 0) {
+                    const vWords = getWords(vStripped);
+                    if (vWords.length > 0) {
+                        const matchedWords = extractedWords.filter(ew => vWords.some(vw => vw === ew || vw.includes(ew) || ew.includes(vw)));
+                        const overlapRatio = matchedWords.length / Math.max(extractedWords.length, vWords.length);
+                        const wordScore = Math.round(overlapRatio * 80);
+                        score = Math.max(score, wordScore);
+                    }
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = { vendor: v, score, method: score >= 95 ? 'stripped' : score >= 80 ? 'contains' : score >= 75 ? 'prefix' : 'words' };
+                }
+            }
+
+            // Only return matches above a threshold
+            return bestScore >= 50 ? bestMatch : null;
+        }
         loadVendorData();
 
         let vendorActiveIndex = -1;
@@ -2298,18 +2362,23 @@
                     await new Promise(r => setTimeout(r, 100));
                 }
 
-                // Auto-fill vendor if exact match
+                // Auto-fill vendor using smart matching
                 if (data.vendorName && VENDOR_DATA && VENDOR_DATA.length > 0) {
                     const vendorInput = document.getElementById('vendorName');
                     const vendorNumInput = document.getElementById('vendorNumber');
                     const vendorAddrInput = document.getElementById('vendorAddress');
                     if (vendorInput && !vendorInput.value.trim()) {
-                        const extractedName = data.vendorName.trim().toUpperCase();
-                        const match = VENDOR_DATA.find(v => v.n && v.n.trim().toUpperCase() === extractedName);
-                        if (match) {
+                        const result = findBestVendorMatch(data.vendorName);
+                        if (result) {
+                            const match = result.vendor;
                             vendorInput.value = match.n;
-                            if (vendorNumInput) vendorNumInput.value = match.num || '';
-                            if (vendorAddrInput) vendorAddrInput.value = match.a || '';
+                            if (vendorNumInput) vendorNumInput.value = match.c || '';
+                            if (vendorAddrInput) {
+                                const addr = [match.a, match.ci, match.st, match.z].filter(p => p && p !== '—').join(', ');
+                                vendorAddrInput.value = addr;
+                            }
+                            selectedVendor = match;
+                            console.log(`[CAPTURE] Vendor matched: "${data.vendorName}" → "${match.n}" (score: ${result.score}, method: ${result.method})`);
                         }
                     }
                 }
@@ -2397,15 +2466,15 @@
                 // Add empty row for continued editing
                 addLineItem();
 
-                // Auto-fill vendor only if exact match found in vendor list
+                // Auto-fill vendor using smart matching
                 if (data.vendorName && VENDOR_DATA && VENDOR_DATA.length > 0) {
                     const vendorInput = document.getElementById('vendorName');
                     const vendorNumInput = document.getElementById('vendorNumber');
                     const vendorAddrInput = document.getElementById('vendorAddress');
                     if (vendorInput && !vendorInput.value.trim()) {
-                        const extractedName = data.vendorName.trim().toUpperCase();
-                        const match = VENDOR_DATA.find(v => v.n && v.n.trim().toUpperCase() === extractedName);
-                        if (match) {
+                        const result = findBestVendorMatch(data.vendorName);
+                        if (result) {
+                            const match = result.vendor;
                             vendorInput.value = match.n;
                             if (vendorNumInput) vendorNumInput.value = match.c || '';
                             if (vendorAddrInput) {
@@ -2413,8 +2482,10 @@
                                 vendorAddrInput.value = addr;
                             }
                             selectedVendor = match;
+                            console.log(`[CAPTURE] Vendor matched: "${data.vendorName}" → "${match.n}" (score: ${result.score}, method: ${result.method})`);
+                        } else {
+                            console.log(`[CAPTURE] No vendor match for: "${data.vendorName}"`);
                         }
-                        // If no exact match, leave blank — user will input manually
                     }
                 }
 
