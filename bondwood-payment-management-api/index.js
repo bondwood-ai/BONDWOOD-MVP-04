@@ -257,7 +257,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT * FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -266,17 +266,23 @@ async function handleMe(request, env, url) {
 
   const u = results[0];
 
-  // Fetch roles from user_roles table
-  const { results: roleResults } = await env.DB.prepare(
-    'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
-  ).bind(email.toLowerCase().trim()).all();
-  const roles = roleResults.map(r => r.role);
+  // Fetch roles from user_roles table (may not exist yet)
+  let roles = [];
+  try {
+    const { results: roleResults } = await env.DB.prepare(
+      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
+    ).bind(email.toLowerCase().trim()).all();
+    roles = roleResults.map(r => r.role);
+  } catch (e) {}
 
   return json({
     user_id: u.user_id,
     first_name: u.user_first_name,
     last_name: u.user_last_name,
     email: u.user_email,
+    phone_number: u.phone_number || '',
+    department: u.department || '',
+    title: u.title || '',
     profile_picture_key: u.profile_picture_key || null,
     roles: roles,
   });
@@ -394,7 +400,7 @@ async function handleGetProfile(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT * FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -403,10 +409,14 @@ async function handleGetProfile(request, env, url) {
 
   const u = results[0];
 
-  // Fetch roles
-  const { results: roleResults } = await env.DB.prepare(
-    'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
-  ).bind(email.toLowerCase().trim()).all();
+  // Fetch roles (may not exist yet)
+  let roles = [];
+  try {
+    const { results: roleResults } = await env.DB.prepare(
+      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
+    ).bind(email.toLowerCase().trim()).all();
+    roles = roleResults.map(r => r.role);
+  } catch (e) {}
 
   return json({
     user_id: u.user_id,
@@ -417,7 +427,7 @@ async function handleGetProfile(request, env, url) {
     department: u.department || '',
     title: u.title || '',
     profile_picture_key: u.profile_picture_key || null,
-    roles: roleResults.map(r => r.role),
+    roles: roles,
   });
 }
 
@@ -452,9 +462,13 @@ async function handleUpdateProfile(request, env) {
     return json({ error: 'No fields to update' }, 400);
   }
 
-  await env.DB.prepare(
-    `UPDATE user_data SET ${setClauses.join(', ')} WHERE LOWER(user_email) = ?`
-  ).bind(...setParams, email.toLowerCase().trim()).run();
+  try {
+    await env.DB.prepare(
+      `UPDATE user_data SET ${setClauses.join(', ')} WHERE LOWER(user_email) = ?`
+    ).bind(...setParams, email.toLowerCase().trim()).run();
+  } catch (e) {
+    return json({ error: 'Failed to update profile. Some columns may not exist yet.', detail: e.message }, 500);
+  }
 
   return json({ message: 'Profile updated' });
 }
@@ -481,13 +495,14 @@ async function handleUploadProfilePicture(request, env) {
   const key = `profiles/${emailLower.replace(/[^a-z0-9._@-]/g, '_')}.${ext}`;
 
   // Delete old picture if exists
-  const { results } = await env.DB.prepare(
-    'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
-  ).bind(emailLower).all();
-
-  if (results.length && results[0].profile_picture_key) {
-    try { await env.BUCKET.delete(results[0].profile_picture_key); } catch (e) {}
-  }
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(emailLower).all();
+    if (results.length && results[0].profile_picture_key) {
+      try { await env.BUCKET.delete(results[0].profile_picture_key); } catch (e) {}
+    }
+  } catch (e) {}
 
   // Upload new picture
   await env.BUCKET.put(key, file.stream(), {
@@ -495,9 +510,11 @@ async function handleUploadProfilePicture(request, env) {
   });
 
   // Save key in user_data
-  await env.DB.prepare(
-    'UPDATE user_data SET profile_picture_key = ? WHERE LOWER(user_email) = ?'
-  ).bind(key, emailLower).run();
+  try {
+    await env.DB.prepare(
+      'UPDATE user_data SET profile_picture_key = ? WHERE LOWER(user_email) = ?'
+    ).bind(key, emailLower).run();
+  } catch (e) {}
 
   return json({ message: 'Profile picture uploaded', key }, 201);
 }
@@ -507,15 +524,19 @@ async function handleGetProfilePicture(email, env) {
     return json({ error: 'R2 bucket not configured' }, 500);
   }
 
-  const { results } = await env.DB.prepare(
-    'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
-  ).bind(email.toLowerCase().trim()).all();
+  let picKey = null;
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(email.toLowerCase().trim()).all();
+    if (results.length) picKey = results[0].profile_picture_key;
+  } catch (e) {}
 
-  if (!results.length || !results[0].profile_picture_key) {
+  if (!picKey) {
     return json({ error: 'No profile picture' }, 404);
   }
 
-  const object = await env.BUCKET.get(results[0].profile_picture_key);
+  const object = await env.BUCKET.get(picKey);
   if (!object) {
     return json({ error: 'Picture not found in storage' }, 404);
   }
