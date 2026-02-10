@@ -154,6 +154,26 @@ export default {
         if (method === 'DELETE') return handleDeleteAttachment(key, env);
       }
 
+      // ── Users ──
+      if (path === '/api/users' && method === 'GET') {
+        return handleGetUsers(env);
+      }
+      if (path === '/api/users/status' && method === 'PUT') {
+        return handleUpdateUserStatus(request, env);
+      }
+
+      // ── Profile ──
+      if (path === '/api/profile' && method === 'PUT') {
+        return handleUpdateProfile(request, env);
+      }
+      if (path === '/api/profile/picture' && method === 'POST') {
+        return handleUploadProfilePicture(request, env);
+      }
+      const picMatch = path.match(/^\/api\/profile\/picture\/(.+)$/);
+      if (picMatch && method === 'GET') {
+        return handleGetProfilePicture(decodeURIComponent(picMatch[1]), env);
+      }
+
       // ── Migrate ──
       if (path === '/api/migrate' && method === 'POST') {
         return handleMigrate(env);
@@ -717,4 +737,142 @@ async function handleDownloadAttachment(key, env) {
 async function handleDeleteAttachment(key, env) {
   await env.BUCKET.delete(key);
   return json({ message: 'Attachment deleted', key });
+}
+
+
+/* ========================================
+   USER MANAGEMENT – LIST
+   ======================================== */
+async function handleGetUsers(env) {
+  const { results: users } = await env.DB.prepare(
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status FROM user_data ORDER BY user_first_name ASC'
+  ).all();
+
+  let allRoles = [];
+  try {
+    const { results: roleResults } = await env.DB.prepare(
+      'SELECT user_email, role FROM user_roles ORDER BY user_email, role'
+    ).all();
+    allRoles = roleResults;
+  } catch (e) { /* user_roles table may not exist yet */ }
+
+  const roleMap = {};
+  for (const r of allRoles) {
+    const email = r.user_email.toLowerCase();
+    if (!roleMap[email]) roleMap[email] = [];
+    roleMap[email].push(r.role);
+  }
+
+  const merged = users.map(u => ({
+    user_id: u.user_id,
+    first_name: u.user_first_name,
+    last_name: u.user_last_name,
+    email: u.user_email,
+    phone_number: u.phone_number || '',
+    department: u.department || '',
+    title: u.title || '',
+    profile_picture_key: u.profile_picture_key || null,
+    status: u.status || 'active',
+    roles: roleMap[u.user_email.toLowerCase()] || [],
+  }));
+
+  return json({ users: merged, total: merged.length });
+}
+
+
+/* ========================================
+   USER MANAGEMENT – UPDATE STATUS
+   ======================================== */
+async function handleUpdateUserStatus(request, env) {
+  const body = await request.json();
+  const { email, status } = body;
+
+  if (!email || !status) return json({ error: 'email and status are required' }, 400);
+  if (!['active', 'inactive'].includes(status)) return json({ error: 'status must be active or inactive' }, 400);
+
+  try {
+    await env.DB.prepare(
+      'UPDATE user_data SET status = ? WHERE LOWER(user_email) = ?'
+    ).bind(status, email.toLowerCase().trim()).run();
+    return json({ message: 'Status updated', email, status });
+  } catch (e) {
+    return json({ error: 'Failed to update status: ' + e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   PROFILE – UPDATE
+   ======================================== */
+async function handleUpdateProfile(request, env) {
+  const body = await request.json();
+  const { email, phone_number, department, title } = body;
+
+  if (!email) return json({ error: 'email is required' }, 400);
+
+  try {
+    await env.DB.prepare(
+      'UPDATE user_data SET phone_number = ?, department = ?, title = ? WHERE LOWER(user_email) = ?'
+    ).bind(phone_number || '', department || '', title || '', email.toLowerCase().trim()).run();
+    return json({ message: 'Profile updated' });
+  } catch (e) {
+    return json({ error: 'Failed to update profile: ' + e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   PROFILE PICTURE – GET
+   ======================================== */
+async function handleGetProfilePicture(email, env) {
+  if (!env.BUCKET) return json({ error: 'R2 bucket not configured' }, 500);
+
+  // Look up the user's profile_picture_key
+  const { results } = await env.DB.prepare(
+    'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+  ).bind(email.toLowerCase().trim()).all();
+
+  const key = results[0]?.profile_picture_key;
+  if (!key) return json({ error: 'No profile picture' }, 404);
+
+  const object = await env.BUCKET.get(key);
+  if (!object) return json({ error: 'Picture not found in storage' }, 404);
+
+  const contentType = object.httpMetadata?.contentType || 'image/jpeg';
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=3600',
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+
+/* ========================================
+   PROFILE PICTURE – UPLOAD
+   ======================================== */
+async function handleUploadProfilePicture(request, env) {
+  if (!env.BUCKET) return json({ error: 'R2 bucket not configured' }, 500);
+
+  const formData = await request.formData();
+  const file = formData.get('file');
+  const email = formData.get('email');
+
+  if (!file || !email) return json({ error: 'file and email are required' }, 400);
+
+  const ext = (file.name || 'photo.jpg').split('.').pop().toLowerCase();
+  const key = `profile-pictures/${email.toLowerCase().trim()}.${ext}`;
+
+  await env.BUCKET.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type || 'image/jpeg' },
+    customMetadata: { email: email.toLowerCase().trim(), uploadedAt: new Date().toISOString() },
+  });
+
+  // Update user_data with the key
+  await env.DB.prepare(
+    'UPDATE user_data SET profile_picture_key = ? WHERE LOWER(user_email) = ?'
+  ).bind(key, email.toLowerCase().trim()).run();
+
+  return json({ message: 'Profile picture uploaded', key });
 }
