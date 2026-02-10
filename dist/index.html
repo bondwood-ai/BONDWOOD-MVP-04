@@ -2358,14 +2358,78 @@
                         });
                     });
                 } else {
-                    data.forEach(cells => {
-                        if (cells.every(c => String(c).trim() === '')) return;
-                        const mapped = {};
-                        EXPECTED_ORDER.forEach((field, i) => {
-                            mapped[field] = i < cells.length ? String(cells[i]).trim() : '';
+                    // No headers — use smart column detection
+                    console.log('[IMPORT] Using smart column detection (no headers)');
+                    const colCount = Math.max(...data.map(r => r.length));
+
+                    function analyzeColumn(colIdx) {
+                        const vals = data.map(r => String(r[colIdx] || '').trim()).filter(v => v);
+                        if (vals.length === 0) return { empty: true };
+                        const isAllNumeric = vals.every(v => /^[\d,.]+$/.test(v));
+                        const hasDecimals = vals.some(v => /\.\d{1,2}$/.test(v.replace(/,/g, '')));
+                        const looksLikeDate = vals.every(v => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v) || /^\d{4}-\d{2}-\d{2}/.test(v) || !isNaN(Date.parse(v)));
+                        const looksLikeBudgetCode = vals.every(v => /^\d{10,14}$/.test(v));
+                        const looksLikeAccount = vals.every(v => /^\d{2,4}$/.test(v) && v.length <= 4);
+                        const looksLikeVendor = vals.every(v => /^\d{4,5}$/.test(v));
+                        const avgLen = vals.reduce((s, v) => s + v.length, 0) / vals.length;
+                        const hasLetters = vals.some(v => /[a-zA-Z]/.test(v));
+                        return { isAllNumeric, hasDecimals, looksLikeDate, looksLikeBudgetCode, looksLikeAccount, looksLikeVendor, avgLen, hasLetters };
+                    }
+
+                    const colAnalysis = [];
+                    for (let i = 0; i < colCount; i++) colAnalysis.push(analyzeColumn(i));
+
+                    const used = new Set();
+                    function pickCol(testFn) {
+                        for (let i = 0; i < colCount; i++) {
+                            if (used.has(i)) continue;
+                            if (testFn(colAnalysis[i], i)) { used.add(i); return i; }
+                        }
+                        return -1;
+                    }
+
+                    const bcCol = pickCol(a => a.looksLikeBudgetCode);
+                    const acctCol = pickCol(a => a.looksLikeAccount && !a.hasDecimals);
+                    const amtCol = pickCol(a => a.isAllNumeric && a.hasDecimals);
+                    const invDateCol = pickCol(a => a.looksLikeDate);
+                    const vendorCol = pickCol(a => a.looksLikeVendor && !a.hasDecimals);
+                    const invCol = pickCol(a => a.hasLetters && a.avgLen < 30 && !a.looksLikeDate);
+                    let descCol = -1;
+                    let maxAvgLen = 0;
+                    for (let i = 0; i < colCount; i++) {
+                        if (used.has(i)) continue;
+                        if (colAnalysis[i].avgLen > maxAvgLen) { maxAvgLen = colAnalysis[i].avgLen; descCol = i; }
+                    }
+                    if (descCol >= 0) used.add(descCol);
+
+                    console.log('[IMPORT] Smart mapping → vendor:', vendorCol, 'desc:', descCol, 'inv:', invCol, 'invDate:', invDateCol, 'bc:', bcCol, 'acct:', acctCol, 'amt:', amtCol);
+
+                    const detectedCount = [vendorCol, descCol, invCol, invDateCol, bcCol, acctCol, amtCol].filter(c => c >= 0).length;
+                    if (detectedCount < 3) {
+                        console.log('[IMPORT] Smart detection insufficient, falling back to positional');
+                        data.forEach(cells => {
+                            if (cells.every(c => String(c).trim() === '')) return;
+                            const mapped = {};
+                            EXPECTED_ORDER.forEach((field, i) => {
+                                mapped[field] = i < cells.length ? String(cells[i]).trim() : '';
+                            });
+                            rows.push(mapped);
                         });
-                        rows.push(mapped);
-                    });
+                    } else {
+                        const g = (cells, idx) => idx >= 0 && idx < cells.length ? String(cells[idx]).trim() : '';
+                        data.forEach(cells => {
+                            if (cells.every(c => String(c).trim() === '')) return;
+                            rows.push({
+                                vendorNumber: g(cells, vendorCol),
+                                description: g(cells, descCol),
+                                invoice: g(cells, invCol),
+                                invoiceDate: g(cells, invDateCol),
+                                budgetCode: g(cells, bcCol),
+                                account: g(cells, acctCol),
+                                amount: g(cells, amtCol)
+                            });
+                        });
+                    }
                 }
 
                 if (rows.length === 0) { showAlert('No data rows found in file.', 'Import Error'); btn.textContent = 'Import'; btn.disabled = false; return; }
