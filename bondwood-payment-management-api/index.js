@@ -15,7 +15,7 @@ const CORS_HEADERS = {
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS },
   });
 }
 
@@ -130,12 +130,6 @@ export default {
       if (path === '/api/rfps' && method === 'POST') {
         return handleCreateRFP(request, env);
       }
-      if (path === '/api/rfps/search' && method === 'POST') {
-        return handleAdvancedSearch(request, env);
-      }
-      if (path === '/api/rfps/search-options' && method === 'GET') {
-        return handleSearchOptions(env);
-      }
 
       const rfpMatch = path.match(/^\/api\/rfps\/(\d+)$/);
       if (rfpMatch) {
@@ -153,14 +147,6 @@ export default {
         if (method === 'POST') return handleUploadAttachment(rfpNumber, request, env);
       }
 
-      // ── Audit Logs ──
-      const auditMatch = path.match(/^\/api\/rfps\/(\d+)\/audit-log$/);
-      if (auditMatch) {
-        const rfpNumber = parseInt(auditMatch[1]);
-        if (method === 'GET') return handleGetAuditLog(rfpNumber, env);
-        if (method === 'POST') return handleAddAuditLog(rfpNumber, request, env);
-      }
-
       const attItemMatch = path.match(/^\/api\/attachments\/(.+)$/);
       if (attItemMatch) {
         const key = decodeURIComponent(attItemMatch[1]);
@@ -168,59 +154,9 @@ export default {
         if (method === 'DELETE') return handleDeleteAttachment(key, env);
       }
 
-      // ── Mileage ──
-      if (path === '/api/mileage/sites' && method === 'GET') {
-        return handleMileageSites(env);
-      }
-      if (path === '/api/mileage/distance' && method === 'GET') {
-        return handleMileageDistance(env, url);
-      }
-      if (path === '/api/mileage/calculate' && method === 'POST') {
-        return handleMileageCalculate(request, env);
-      }
-
       // ── Migrate ──
       if (path === '/api/migrate' && method === 'POST') {
         return handleMigrate(env);
-      }
-
-      // ── Extract invoice data from PDF via Gemini ──
-      if (path === '/api/extract-invoice' && method === 'POST') {
-        return handleExtractInvoice(request, env);
-      }
-
-      // ── User Roles ──
-      if (path === '/api/user-roles' && method === 'GET') {
-        return handleGetUserRoles(env, url);
-      }
-      if (path === '/api/user-roles' && method === 'POST') {
-        return handleAddUserRole(request, env);
-      }
-      if (path === '/api/user-roles' && method === 'DELETE') {
-        return handleDeleteUserRole(request, env);
-      }
-
-      // ── Profile ──
-      if (path === '/api/profile' && method === 'GET') {
-        return handleGetProfile(request, env, url);
-      }
-      if (path === '/api/profile' && method === 'PUT') {
-        return handleUpdateProfile(request, env);
-      }
-      if (path === '/api/profile/picture' && method === 'POST') {
-        return handleUploadProfilePicture(request, env);
-      }
-      const profilePicMatch = path.match(/^\/api\/profile\/picture\/(.+)$/);
-      if (profilePicMatch && method === 'GET') {
-        return handleGetProfilePicture(decodeURIComponent(profilePicMatch[1]), env);
-      }
-
-      // ── Users (admin) ──
-      if (path === '/api/users' && method === 'GET') {
-        return handleGetUsers(env);
-      }
-      if (path === '/api/users/status' && method === 'PUT') {
-        return handleUpdateUserStatus(request, env);
       }
 
       // ── Debug schema ──
@@ -265,7 +201,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT * FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -273,26 +209,11 @@ async function handleMe(request, env, url) {
   }
 
   const u = results[0];
-
-  // Fetch roles from user_roles table (may not exist yet)
-  let roles = [];
-  try {
-    const { results: roleResults } = await env.DB.prepare(
-      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
-    ).bind(email.toLowerCase().trim()).all();
-    roles = roleResults.map(r => r.role);
-  } catch (e) {}
-
   return json({
     user_id: u.user_id,
     first_name: u.user_first_name,
     last_name: u.user_last_name,
     email: u.user_email,
-    phone_number: u.phone_number || '',
-    department: u.department || '',
-    title: u.title || '',
-    profile_picture_key: u.profile_picture_key || null,
-    roles: roles,
   });
 }
 
@@ -313,251 +234,6 @@ async function handleGetVendors(env, url) {
   const total = countResult[0]?.total || 0;
 
   return json({ vendors: results, total, page, limit });
-}
-
-
-/* ========================================
-   USER ROLES
-   ======================================== */
-async function handleGetUserRoles(env, url) {
-  const email = url.searchParams.get('email');
-
-  if (email) {
-    // Get roles for a specific user
-    const { results } = await env.DB.prepare(
-      'SELECT id, user_email, role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
-    ).bind(email.toLowerCase().trim()).all();
-    return json({ roles: results });
-  }
-
-  // Get all roles (grouped by user)
-  const { results } = await env.DB.prepare(
-    'SELECT id, user_email, role FROM user_roles ORDER BY user_email, role'
-  ).all();
-  return json({ roles: results });
-}
-
-async function handleAddUserRole(request, env) {
-  const body = await request.json();
-  const { user_email, email, role } = body;
-  const rawEmail = user_email || email;
-
-  if (!rawEmail || !role) {
-    return json({ error: 'user_email (or email) and role are required' }, 400);
-  }
-
-  const emailLower = rawEmail.toLowerCase().trim();
-  const roleLower = role.toLowerCase().trim();
-
-  // Check for duplicate
-  const { results: existing } = await env.DB.prepare(
-    'SELECT id FROM user_roles WHERE LOWER(user_email) = ? AND LOWER(role) = ?'
-  ).bind(emailLower, roleLower).all();
-
-  if (existing.length > 0) {
-    return json({ error: 'Role already assigned to this user' }, 409);
-  }
-
-  await env.DB.prepare(
-    'INSERT INTO user_roles (user_email, role) VALUES (?, ?)'
-  ).bind(emailLower, roleLower).run();
-
-  return json({ message: 'Role added', user_email: emailLower, role: roleLower }, 201);
-}
-
-async function handleDeleteUserRole(request, env) {
-  const body = await request.json();
-  const { user_email, email, role, id } = body;
-  const rawEmail = user_email || email;
-
-  if (id) {
-    // Delete by ID
-    await env.DB.prepare('DELETE FROM user_roles WHERE id = ?').bind(id).run();
-    return json({ message: 'Role deleted', id });
-  }
-
-  if (!rawEmail || !role) {
-    return json({ error: 'Provide id, or user_email/email and role' }, 400);
-  }
-
-  await env.DB.prepare(
-    'DELETE FROM user_roles WHERE LOWER(user_email) = ? AND LOWER(role) = ?'
-  ).bind(rawEmail.toLowerCase().trim(), role.toLowerCase().trim()).run();
-
-  return json({ message: 'Role deleted', user_email, role });
-}
-
-
-/* ========================================
-   PROFILE
-   ======================================== */
-async function handleGetProfile(request, env, url) {
-  let email = url.searchParams.get('email');
-
-  if (!email) {
-    const cookie = request.headers.get('Cookie') || '';
-    const match = cookie.match(/CF_Authorization=([^;]+)/);
-    if (match) {
-      try {
-        const payload = JSON.parse(atob(match[1].split('.')[1]));
-        email = payload.email;
-      } catch (e) {}
-    }
-  }
-
-  if (!email) {
-    return json({ error: 'No email provided' }, 400);
-  }
-
-  const { results } = await env.DB.prepare(
-    'SELECT * FROM user_data WHERE LOWER(user_email) = ?'
-  ).bind(email.toLowerCase().trim()).all();
-
-  if (!results.length) {
-    return json({ error: 'User not found' }, 404);
-  }
-
-  const u = results[0];
-
-  // Fetch roles (may not exist yet)
-  let roles = [];
-  try {
-    const { results: roleResults } = await env.DB.prepare(
-      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
-    ).bind(email.toLowerCase().trim()).all();
-    roles = roleResults.map(r => r.role);
-  } catch (e) {}
-
-  return json({
-    user_id: u.user_id,
-    first_name: u.user_first_name,
-    last_name: u.user_last_name,
-    email: u.user_email,
-    phone_number: u.phone_number || '',
-    department: u.department || '',
-    title: u.title || '',
-    profile_picture_key: u.profile_picture_key || null,
-    roles: roles,
-  });
-}
-
-async function handleUpdateProfile(request, env) {
-  const body = await request.json();
-  const { email } = body;
-
-  if (!email) {
-    return json({ error: 'email is required' }, 400);
-  }
-
-  const updatableFields = ['user_first_name', 'user_last_name', 'phone_number', 'department', 'title'];
-  const fieldMap = {
-    first_name: 'user_first_name',
-    last_name: 'user_last_name',
-    phone_number: 'phone_number',
-    department: 'department',
-    title: 'title',
-  };
-
-  const setClauses = [];
-  const setParams = [];
-
-  for (const [bodyKey, dbCol] of Object.entries(fieldMap)) {
-    if (body[bodyKey] !== undefined) {
-      setClauses.push(`${dbCol} = ?`);
-      setParams.push(body[bodyKey]);
-    }
-  }
-
-  if (setClauses.length === 0) {
-    return json({ error: 'No fields to update' }, 400);
-  }
-
-  try {
-    await env.DB.prepare(
-      `UPDATE user_data SET ${setClauses.join(', ')} WHERE LOWER(user_email) = ?`
-    ).bind(...setParams, email.toLowerCase().trim()).run();
-  } catch (e) {
-    return json({ error: 'Failed to update profile. Some columns may not exist yet.', detail: e.message }, 500);
-  }
-
-  return json({ message: 'Profile updated' });
-}
-
-async function handleUploadProfilePicture(request, env) {
-  if (!env.BUCKET) {
-    return json({ error: 'R2 bucket not configured' }, 500);
-  }
-
-  const formData = await request.formData();
-  const file = formData.get('file');
-  const email = formData.get('email');
-
-  if (!file || !email) {
-    return json({ error: 'file and email are required' }, 400);
-  }
-
-  const ext = (file.name || '').split('.').pop().toLowerCase();
-  if (!['png', 'jpg', 'jpeg', 'svg'].includes(ext)) {
-    return json({ error: 'Only .png, .jpg, .jpeg, .svg allowed' }, 400);
-  }
-
-  const emailLower = email.toLowerCase().trim();
-  const key = `profiles/${emailLower.replace(/[^a-z0-9._@-]/g, '_')}.${ext}`;
-
-  // Delete old picture if exists
-  try {
-    const { results } = await env.DB.prepare(
-      'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
-    ).bind(emailLower).all();
-    if (results.length && results[0].profile_picture_key) {
-      try { await env.BUCKET.delete(results[0].profile_picture_key); } catch (e) {}
-    }
-  } catch (e) {}
-
-  // Upload new picture
-  await env.BUCKET.put(key, file.stream(), {
-    httpMetadata: { contentType: file.type || 'image/' + ext },
-  });
-
-  // Save key in user_data
-  try {
-    await env.DB.prepare(
-      'UPDATE user_data SET profile_picture_key = ? WHERE LOWER(user_email) = ?'
-    ).bind(key, emailLower).run();
-  } catch (e) {}
-
-  return json({ message: 'Profile picture uploaded', key }, 201);
-}
-
-async function handleGetProfilePicture(email, env) {
-  if (!env.BUCKET) {
-    return json({ error: 'R2 bucket not configured' }, 500);
-  }
-
-  let picKey = null;
-  try {
-    const { results } = await env.DB.prepare(
-      'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
-    ).bind(email.toLowerCase().trim()).all();
-    if (results.length) picKey = results[0].profile_picture_key;
-  } catch (e) {}
-
-  if (!picKey) {
-    return json({ error: 'No profile picture' }, 404);
-  }
-
-  const object = await env.BUCKET.get(picKey);
-  if (!object) {
-    return json({ error: 'Picture not found in storage' }, 404);
-  }
-
-  return new Response(object.body, {
-    headers: {
-      'Content-Type': object.httpMetadata?.contentType || 'image/png',
-      'Cache-Control': 'public, max-age=3600',
-      ...CORS_HEADERS,
-    },
-  });
 }
 
 
@@ -647,226 +323,22 @@ async function handleListRFPs(env, url) {
 
 
 /* ========================================
-   RFPs – SEARCH OPTIONS (distinct values)
-   ======================================== */
-async function handleSearchOptions(env) {
-  try {
-    const [
-      statusR, typeR, submitterR, assignedR, batchR,
-      vendorNameR, vendorNumR,
-      descR, invNumR,
-      budgetCodeR, acctCodeR, fundR, orgR, progR, finR, courseR
-    ] = await env.DB.batch([
-      env.DB.prepare("SELECT DISTINCT status FROM dashboard_data WHERE status IS NOT NULL AND status != '' ORDER BY status"),
-      env.DB.prepare("SELECT DISTINCT request_type FROM dashboard_data WHERE request_type IS NOT NULL AND request_type != '' ORDER BY request_type"),
-      env.DB.prepare("SELECT DISTINCT submitter_name FROM dashboard_data WHERE submitter_name IS NOT NULL AND submitter_name != '' ORDER BY submitter_name"),
-      env.DB.prepare("SELECT DISTINCT assigned_to FROM dashboard_data WHERE assigned_to IS NOT NULL AND assigned_to != '' ORDER BY assigned_to"),
-      env.DB.prepare("SELECT DISTINCT ap_batch FROM dashboard_data WHERE ap_batch IS NOT NULL AND ap_batch != '' ORDER BY ap_batch"),
-      env.DB.prepare("SELECT DISTINCT vendor_name FROM dashboard_data WHERE vendor_name IS NOT NULL AND vendor_name != '' ORDER BY vendor_name"),
-      env.DB.prepare("SELECT DISTINCT vendor_number FROM dashboard_data WHERE vendor_number IS NOT NULL AND vendor_number != '' ORDER BY vendor_number"),
-      env.DB.prepare("SELECT DISTINCT description FROM form_data WHERE description IS NOT NULL AND description != '' ORDER BY description"),
-      env.DB.prepare("SELECT DISTINCT invoice_number FROM form_data WHERE invoice_number IS NOT NULL AND invoice_number != '' ORDER BY invoice_number"),
-      env.DB.prepare("SELECT DISTINCT budget_code FROM form_data WHERE budget_code IS NOT NULL AND budget_code != '' ORDER BY budget_code"),
-      env.DB.prepare("SELECT DISTINCT COALESCE(account_code, object) as account_code FROM form_data WHERE (account_code IS NOT NULL AND account_code != '') OR (object IS NOT NULL AND object != '') ORDER BY 1"),
-      env.DB.prepare("SELECT DISTINCT fund FROM form_data WHERE fund IS NOT NULL AND fund != '' ORDER BY fund"),
-      env.DB.prepare("SELECT DISTINCT organization FROM form_data WHERE organization IS NOT NULL AND organization != '' ORDER BY organization"),
-      env.DB.prepare("SELECT DISTINCT program FROM form_data WHERE program IS NOT NULL AND program != '' ORDER BY program"),
-      env.DB.prepare("SELECT DISTINCT finance FROM form_data WHERE finance IS NOT NULL AND finance != '' ORDER BY finance"),
-      env.DB.prepare("SELECT DISTINCT course FROM form_data WHERE course IS NOT NULL AND course != '' ORDER BY course"),
-    ]);
-
-    const pluck = (res, col) => res.results.map(r => r[col]).filter(Boolean);
-
-    return json({
-      status: pluck(statusR, 'status'),
-      request_type: pluck(typeR, 'request_type'),
-      submitter_name: pluck(submitterR, 'submitter_name'),
-      assigned_to: pluck(assignedR, 'assigned_to'),
-      ap_batch: pluck(batchR, 'ap_batch'),
-      vendor_name: pluck(vendorNameR, 'vendor_name'),
-      vendor_number: pluck(vendorNumR, 'vendor_number'),
-      description: pluck(descR, 'description'),
-      invoice_number: pluck(invNumR, 'invoice_number'),
-      budget_code: pluck(budgetCodeR, 'budget_code'),
-      account_code: pluck(acctCodeR, 'account_code'),
-      fund: pluck(fundR, 'fund'),
-      organization: pluck(orgR, 'organization'),
-      program: pluck(progR, 'program'),
-      finance: pluck(finR, 'finance'),
-      course: pluck(courseR, 'course'),
-    });
-  } catch (e) {
-    return json({ error: 'Failed to fetch search options', detail: e.message }, 500);
-  }
-}
-
-
-/* ========================================
-   RFPs – ADVANCED SEARCH
-   ======================================== */
-async function handleAdvancedSearch(request, env) {
-  const body = await request.json();
-  let where = [];
-  let params = [];
-  let needsJoin = false;
-
-  // Helper: build OR clause for multi-value fields
-  // values can be a string or array; uses LIKE for partial matching
-  function addLikeOr(column, values, join) {
-    const arr = Array.isArray(values) ? values : [values];
-    const filtered = arr.map(v => String(v).trim()).filter(Boolean);
-    if (!filtered.length) return;
-    if (join) needsJoin = true;
-    if (filtered.length === 1) {
-      where.push(`${column} LIKE ?`);
-      params.push(`%${filtered[0]}%`);
-    } else {
-      const clauses = filtered.map(() => `${column} LIKE ?`);
-      where.push(`(${clauses.join(' OR ')})`);
-      filtered.forEach(v => params.push(`%${v}%`));
-    }
-  }
-
-  // Helper: exact match OR for multi-value fields
-  function addExactOr(column, values, join) {
-    const arr = Array.isArray(values) ? values : [values];
-    const filtered = arr.map(v => String(v).trim()).filter(Boolean);
-    if (!filtered.length) return;
-    if (join) needsJoin = true;
-    if (filtered.length === 1) {
-      where.push(`${column} = ?`);
-      params.push(filtered[0]);
-    } else {
-      where.push(`${column} IN (${filtered.map(() => '?').join(',')})`);
-      filtered.forEach(v => params.push(v));
-    }
-  }
-
-  // Dashboard fields
-  if (body.rfp_number) addLikeOr('CAST(d.rfp_number AS TEXT)', body.rfp_number, false);
-  if (body.status) addExactOr('d.status', body.status, false);
-  if (body.request_type) {
-    where.push('d.request_type = ?');
-    params.push(body.request_type);
-  }
-  if (body.submitter_name) addLikeOr('d.submitter_name', body.submitter_name, false);
-  if (body.assigned_to) addLikeOr('d.assigned_to', body.assigned_to, false);
-  if (body.ap_batch) addLikeOr('d.ap_batch', body.ap_batch, false);
-  if (body.vendor_name) addLikeOr('d.vendor_name', body.vendor_name, false);
-  if (body.vendor_number) addLikeOr('d.vendor_number', body.vendor_number, false);
-  if (body.date_from) {
-    where.push('d.submission_date >= ?');
-    params.push(body.date_from);
-  }
-  if (body.date_to) {
-    where.push('d.submission_date <= ?');
-    params.push(body.date_to);
-  }
-
-  // Form data fields
-  if (body.description) addLikeOr('f.description', body.description, true);
-  if (body.invoice_number) addLikeOr('f.invoice_number', body.invoice_number, true);
-  if (body.inv_date_from) {
-    needsJoin = true;
-    where.push('f.invoice_date >= ?');
-    params.push(body.inv_date_from);
-  }
-  if (body.inv_date_to) {
-    needsJoin = true;
-    where.push('f.invoice_date <= ?');
-    params.push(body.inv_date_to);
-  }
-  if (body.budget_code) addLikeOr('f.budget_code', body.budget_code, true);
-
-  // Account code — check both account_code and object columns
-  if (body.account_code) {
-    const arr = Array.isArray(body.account_code) ? body.account_code : [body.account_code];
-    const filtered = arr.map(v => String(v).trim()).filter(Boolean);
-    if (filtered.length) {
-      needsJoin = true;
-      const clauses = filtered.map(() => `(f.account_code LIKE ? OR f.object LIKE ?)`);
-      where.push(`(${clauses.join(' OR ')})`);
-      filtered.forEach(v => { params.push(`%${v}%`); params.push(`%${v}%`); });
-    }
-  }
-
-  if (body.fund) addLikeOr('f.fund', body.fund, true);
-  if (body.organization) addLikeOr('f.organization', body.organization, true);
-  if (body.program) addLikeOr('f.program', body.program, true);
-  if (body.finance) addLikeOr('f.finance', body.finance, true);
-  if (body.course) addLikeOr('f.course', body.course, true);
-  if (body.amount_min != null && !isNaN(body.amount_min)) {
-    needsJoin = true;
-    where.push('f.total >= ?');
-    params.push(body.amount_min);
-  }
-  if (body.amount_max != null && !isNaN(body.amount_max)) {
-    needsJoin = true;
-    where.push('f.total <= ?');
-    params.push(body.amount_max);
-  }
-
-  if (where.length === 0) {
-    return json({ rfp_numbers: [], message: 'No criteria provided' }, 400);
-  }
-
-  const joinClause = needsJoin ? 'INNER JOIN form_data f ON d.rfp_number = f.rfp_number' : '';
-  const whereClause = 'WHERE ' + where.join(' AND ');
-
-  const sql = `SELECT DISTINCT d.rfp_number FROM dashboard_data d ${joinClause} ${whereClause} ORDER BY d.rfp_number DESC`;
-  console.log('[ADV SEARCH] SQL:', sql);
-  console.log('[ADV SEARCH] Params:', params);
-
-  try {
-    const { results } = await env.DB.prepare(sql).bind(...params).all();
-    const rfpNumbers = results.map(r => r.rfp_number);
-    return json({ rfp_numbers: rfpNumbers, total: rfpNumbers.length });
-  } catch (e) {
-    return json({ error: 'Search query failed', detail: e.message }, 500);
-  }
-}
-
-
-/* ========================================
    RFPs – GET SINGLE
    ======================================== */
 async function handleGetRFP(rfpNumber, env) {
-  // Run all queries in parallel using D1 batch
-  const [headerResult, rowsResult, auditResult] = await env.DB.batch([
-    env.DB.prepare('SELECT * FROM dashboard_data WHERE rfp_number = ?').bind(rfpNumber),
-    env.DB.prepare('SELECT * FROM form_data WHERE rfp_number = ? ORDER BY line_number').bind(rfpNumber),
-    env.DB.prepare('SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC').bind(rfpNumber),
-  ]);
+  const { results: header } = await env.DB.prepare(
+    'SELECT * FROM dashboard_data WHERE rfp_number = ?'
+  ).bind(rfpNumber).all();
 
-  const header = headerResult.results;
   if (!header.length) {
     return json({ error: 'RFP not found' }, 404);
   }
 
-  // Split into line items vs mileage trips
-  const lineItems = [];
-  const mileageTrips = [];
-  for (const row of rowsResult.results) {
-    if (row.description === 'BUSINESS MILEAGE') {
-      mileageTrips.push({
-        trip_number: row.line_number,
-        trip_date: row.invoice_date,
-        from_location: row.mileage_from,
-        to_location: row.mileage_to,
-        miles: row.quantity,
-        rate: row.unit_price,
-        amount: row.total,
-        budget_code: row.budget_code,
-        account_code: row.account_code,
-      });
-    } else {
-      lineItems.push(row);
-    }
-  }
+  const { results: lineItems } = await env.DB.prepare(
+    'SELECT * FROM form_data WHERE rfp_number = ? ORDER BY line_number'
+  ).bind(rfpNumber).all();
 
-  const auditLogs = auditResult.results || [];
-
-  return json({ ...header[0], lineItems, mileageTrips, auditLogs });
+  return json({ ...header[0], lineItems });
 }
 
 
@@ -890,8 +362,8 @@ async function handleCreateRFP(request, env) {
       rfp_number, submitter_name, submitter_id, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
-      description, status, assigned_to, ap_batch, mileage_total, check_number
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      description, status, assigned_to, ap_batch, mileage_total
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
@@ -912,50 +384,28 @@ async function handleCreateRFP(request, env) {
     body.assigned_to || null,
     body.ap_batch || null,
     body.mileage_total || 0,
-    body.check_number || null,
   ];
 
   const statements = [headerStmt.bind(...headerParams)];
 
-  // Helper: parse budget code into components
-  // Fund=digits 1-2, Org=3-5, Program=6-8, Finance=9-11, Course=12-14
-  function parseBudgetCode(bc) {
-    const s = (bc || '').replace(/\D/g, '');
-    return {
-      fund: s.substring(0, 2) || null,
-      organization: s.substring(2, 5) || null,
-      program: s.substring(5, 8) || null,
-      finance: s.substring(8, 11) || null,
-      course: s.substring(11, 14) || null,
-    };
-  }
-
-  const submissionType = body.request_type === 'reimbursement' ? 'employee_reimbursement' : 'vendor_payment';
-  let lineNum = 0;
-
   if (body.lineItems && body.lineItems.length) {
     for (const item of body.lineItems) {
-      lineNum++;
-      const bc = parseBudgetCode(item.budget_code);
       statements.push(
         env.DB.prepare(`
           INSERT INTO form_data (
-            rfp_number, submission_type, line_number, description, fund, organization,
-            program, finance, object, course, quantity, unit_price, total,
-            invoice_number, invoice_date, budget_code, account_code,
-            mileage_from, mileage_to, check_number
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            rfp_number, line_number, description, fund, organization,
+            program, finance, object, quantity, unit_price, total,
+            invoice_number, invoice_date, budget_code, account_code
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           nextRfp,
-          submissionType,
-          lineNum,
+          item.line_number || 0,
           item.description || '',
-          bc.fund,
-          bc.organization,
-          bc.program,
-          bc.finance,
-          item.account_code || null,
-          bc.course,
+          item.fund || null,
+          item.organization || null,
+          item.program || null,
+          item.finance || null,
+          item.object || item.account_code || null,
           item.quantity || 1,
           item.unit_price || item.total || 0,
           item.total || 0,
@@ -963,79 +413,12 @@ async function handleCreateRFP(request, env) {
           item.invoice_date || null,
           item.budget_code || null,
           item.account_code || null,
-          null,
-          null,
-          body.check_number || null,
-        )
-      );
-    }
-  }
-
-  // Mileage trips go into form_data as well
-  if (body.mileageTrips && body.mileageTrips.length) {
-    for (const trip of body.mileageTrips) {
-      lineNum++;
-      const bc = parseBudgetCode(trip.budget_code);
-      statements.push(
-        env.DB.prepare(`
-          INSERT INTO form_data (
-            rfp_number, submission_type, line_number, description, fund, organization,
-            program, finance, object, course, quantity, unit_price, total,
-            invoice_number, invoice_date, budget_code, account_code,
-            mileage_from, mileage_to, check_number
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          nextRfp,
-          submissionType,
-          lineNum,
-          'BUSINESS MILEAGE',
-          bc.fund,
-          bc.organization,
-          bc.program,
-          bc.finance,
-          trip.account_code || null,
-          bc.course,
-          trip.miles || 0,
-          trip.rate || 0,
-          trip.amount || 0,
-          null,
-          trip.trip_date || null,
-          trip.budget_code || null,
-          trip.account_code || null,
-          trip.from_location || null,
-          trip.to_location || null,
-          body.check_number || null,
         )
       );
     }
   }
 
   await env.DB.batch(statements);
-
-  // Write audit log entry
-  const submitter = (body.submitter_name && body.submitter_name.trim()) || 'Unknown User';
-  const payee = body.request_type === 'vendor'
-    ? (body.vendor_name || 'an unknown vendor')
-    : 'Employee Reimbursement';
-  let totalAmount = 0;
-  if (body.lineItems) body.lineItems.forEach(i => { totalAmount += (i.total || 0); });
-  if (body.mileageTrips) body.mileageTrips.forEach(t => { totalAmount += (t.amount || 0); });
-  if (totalAmount === 0) totalAmount = body.mileage_total || 0;
-  const amountStr = '$' + totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-  const auditAction = status === 'draft' ? 'created a draft' : 'submitted';
-  const auditDesc = `${submitter} ${auditAction} request for payment with ${payee} for ${amountStr}`;
-  try {
-    await buildAuditInsert(env, nextRfp, status === 'draft' ? 'draft-created' : 'submitted', auditDesc, submitter, {
-      request_type: body.request_type,
-      vendor_name: body.vendor_name || null,
-      employee_name: body.employee_name || null,
-      total_amount: totalAmount,
-      status: status,
-    }).run();
-  } catch (e) {
-    console.error('Audit log insert failed:', e.message);
-  }
 
   return json({ rfp_number: nextRfp, status, message: 'RFP created' }, 201);
 }
@@ -1059,7 +442,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     'submitter_name', 'submitter_id', 'budget_approver', 'submission_date',
     'request_type', 'vendor_name', 'vendor_number', 'vendor_address',
     'invoice_number', 'employee_name', 'employee_id', 'description',
-    'status', 'assigned_to', 'ap_batch', 'mileage_total', 'check_number',
+    'status', 'assigned_to', 'ap_batch', 'mileage_total',
   ];
 
   const setClauses = [];
@@ -1082,149 +465,43 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     );
   }
 
-  // Helper: parse budget code into components
-  function parseBudgetCode(bc) {
-    const s = (bc || '').replace(/\D/g, '');
-    return {
-      fund: s.substring(0, 2) || null,
-      organization: s.substring(2, 5) || null,
-      program: s.substring(5, 8) || null,
-      finance: s.substring(8, 11) || null,
-      course: s.substring(11, 14) || null,
-    };
-  }
-
-  const submissionType = body.request_type === 'reimbursement' ? 'employee_reimbursement'
-    : body.request_type === 'vendor' ? 'vendor_payment' : null;
-
-  // Replace line items and mileage if provided
-  if (body.lineItems || body.mileageTrips) {
+  // Replace line items if provided
+  if (body.lineItems) {
     statements.push(
       env.DB.prepare('DELETE FROM form_data WHERE rfp_number = ?').bind(rfpNumber)
     );
 
-    let lineNum = 0;
-
-    if (body.lineItems) {
-      for (const item of body.lineItems) {
-        lineNum++;
-        const bc = parseBudgetCode(item.budget_code);
-        statements.push(
-          env.DB.prepare(`
-            INSERT INTO form_data (
-              rfp_number, submission_type, line_number, description, fund, organization,
-              program, finance, object, course, quantity, unit_price, total,
-              invoice_number, invoice_date, budget_code, account_code,
-              mileage_from, mileage_to, check_number
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(
-            rfpNumber,
-            submissionType,
-            lineNum,
-            item.description || '',
-            bc.fund,
-            bc.organization,
-            bc.program,
-            bc.finance,
-            item.account_code || null,
-            bc.course,
-            item.quantity || 1,
-            item.unit_price || item.total || 0,
-            item.total || 0,
-            item.invoice_number || null,
-            item.invoice_date || null,
-            item.budget_code || null,
-            item.account_code || null,
-            null,
-            null,
-            body.check_number || null,
-          )
-        );
-      }
-    }
-
-    if (body.mileageTrips) {
-      for (const trip of body.mileageTrips) {
-        lineNum++;
-        const bc = parseBudgetCode(trip.budget_code);
-        statements.push(
-          env.DB.prepare(`
-            INSERT INTO form_data (
-              rfp_number, submission_type, line_number, description, fund, organization,
-              program, finance, object, course, quantity, unit_price, total,
-              invoice_number, invoice_date, budget_code, account_code,
-              mileage_from, mileage_to, check_number
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(
-            rfpNumber,
-            submissionType,
-            lineNum,
-            'BUSINESS MILEAGE',
-            bc.fund,
-            bc.organization,
-            bc.program,
-            bc.finance,
-            trip.account_code || null,
-            bc.course,
-            trip.miles || 0,
-            trip.rate || 0,
-            trip.amount || 0,
-            null,
-            trip.trip_date || null,
-            trip.budget_code || null,
-            trip.account_code || null,
-            trip.from_location || null,
-            trip.to_location || null,
-            body.check_number || null,
-          )
-        );
-      }
+    for (const item of body.lineItems) {
+      statements.push(
+        env.DB.prepare(`
+          INSERT INTO form_data (
+            rfp_number, line_number, description, fund, organization,
+            program, finance, object, quantity, unit_price, total,
+            invoice_number, invoice_date, budget_code, account_code
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          rfpNumber,
+          item.line_number || 0,
+          item.description || '',
+          item.fund || null,
+          item.organization || null,
+          item.program || null,
+          item.finance || null,
+          item.object || item.account_code || null,
+          item.quantity || 1,
+          item.unit_price || item.total || 0,
+          item.total || 0,
+          item.invoice_number || null,
+          item.invoice_date || null,
+          item.budget_code || null,
+          item.account_code || null,
+        )
+      );
     }
   }
 
   if (statements.length) {
     await env.DB.batch(statements);
-  }
-
-  // Propagate ap_batch to form_data rows when provided
-  if (body.ap_batch) {
-    try {
-      await env.DB.prepare(
-        'UPDATE form_data SET ap_batch = ? WHERE rfp_number = ?'
-      ).bind(body.ap_batch, rfpNumber).run();
-    } catch (e) {
-      console.error('Failed to update form_data ap_batch:', e.message);
-    }
-  }
-
-  // Write audit log entries for notable changes
-  try {
-    const performer = body.performed_by || body.submitter_name || 'System';
-
-    // Status change
-    if (body.status) {
-      const statusLabels = {
-        'draft': 'Draft', 'submitted': 'Submitted', 'pending': 'Pending Review',
-        'accounting-review': 'Accounting Review',
-        'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected',
-        'archived': 'Archived',
-      };
-      const label = statusLabels[body.status] || body.status;
-      await buildAuditInsert(env, rfpNumber, 'status_change',
-        `Request status changed to ${label}`, performer,
-        { new_status: body.status }
-      ).run();
-    }
-
-    // Assignment change
-    if (body.assigned_to) {
-      await buildAuditInsert(env, rfpNumber, 'assigned',
-        `Request assigned to ${body.assigned_to}`, performer,
-        { assigned_to: body.assigned_to }
-      ).run();
-    }
-  } catch (e) {
-    console.error('Audit log insert failed:', e.message);
   }
 
   return json({ rfp_number: rfpNumber, message: 'RFP updated' });
@@ -1261,10 +538,6 @@ async function handleMigrate(env) {
     'ALTER TABLE form_data ADD COLUMN invoice_date TEXT',
     'ALTER TABLE form_data ADD COLUMN budget_code TEXT',
     'ALTER TABLE form_data ADD COLUMN account_code TEXT',
-    'ALTER TABLE form_data ADD COLUMN submission_type TEXT',
-    'ALTER TABLE form_data ADD COLUMN course TEXT',
-    'ALTER TABLE form_data ADD COLUMN mileage_from TEXT',
-    'ALTER TABLE form_data ADD COLUMN mileage_to TEXT',
   ];
 
   const results = [];
@@ -1278,62 +551,6 @@ async function handleMigrate(env) {
   }
 
   return json({ message: 'Migration complete', results });
-}
-
-
-/* ========================================
-   AUDIT LOGS – GET
-   ======================================== */
-async function handleGetAuditLog(rfpNumber, env) {
-  const { results } = await env.DB.prepare(
-    'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC'
-  ).bind(rfpNumber).all();
-
-  return json({ audit_logs: results, count: results.length });
-}
-
-
-/* ========================================
-   AUDIT LOGS – ADD
-   ======================================== */
-async function handleAddAuditLog(rfpNumber, request, env) {
-  const body = await request.json();
-
-  if (!body.action || !body.description) {
-    return json({ error: 'action and description are required' }, 400);
-  }
-
-  await env.DB.prepare(`
-    INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at, metadata)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).bind(
-    rfpNumber,
-    body.action,
-    body.description,
-    body.performed_by || null,
-    body.performed_at || new Date().toISOString(),
-    body.metadata ? JSON.stringify(body.metadata) : null,
-  ).run();
-
-  return json({ message: 'Audit log entry added', rfp_number: rfpNumber }, 201);
-}
-
-
-/* ========================================
-   AUDIT LOGS – HELPER (internal use)
-   ======================================== */
-function buildAuditInsert(env, rfpNumber, action, description, performedBy, metadata) {
-  return env.DB.prepare(`
-    INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at, metadata)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).bind(
-    rfpNumber,
-    action,
-    description,
-    performedBy || null,
-    new Date().toISOString(),
-    metadata ? JSON.stringify(metadata) : null,
-  );
 }
 
 
@@ -1469,347 +686,4 @@ async function handleDownloadAttachment(key, env) {
 async function handleDeleteAttachment(key, env) {
   await env.BUCKET.delete(key);
   return json({ message: 'Attachment deleted', key });
-}
-
-
-/* ========================================
-   MILEAGE – SITES LIST
-   ======================================== */
-async function handleMileageSites(env) {
-  const { results } = await env.DB.prepare(
-    'SELECT DISTINCT from_site AS site FROM mileage_table UNION SELECT DISTINCT to_site AS site FROM mileage_table ORDER BY site'
-  ).all();
-  return json({ sites: results.map(r => r.site) });
-}
-
-
-/* ========================================
-   MILEAGE – DISTANCE LOOKUP
-   ======================================== */
-async function handleMileageDistance(env, url) {
-  const from = url.searchParams.get('from');
-  const to = url.searchParams.get('to');
-  if (!from || !to) return json({ error: 'Missing from/to parameters' }, 400);
-
-  const { results } = await env.DB.prepare(
-    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
-  ).bind(from, to).all();
-
-  if (results.length > 0) {
-    return json({ from, to, distance: results[0].distance, source: 'district' });
-  }
-
-  // Try reverse
-  const { results: rev } = await env.DB.prepare(
-    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
-  ).bind(to, from).all();
-
-  if (rev.length > 0) {
-    return json({ from, to, distance: rev[0].distance, source: 'district' });
-  }
-
-  return json({ error: 'Route not found', from, to }, 404);
-}
-
-
-/* ========================================
-   MILEAGE – GOOGLE MAPS CALCULATE
-   ======================================== */
-async function handleMileageCalculate(request, env) {
-  const body = await request.json();
-  const fromAddr = body.from;
-  const toAddr = body.to;
-
-  if (!fromAddr || !toAddr) {
-    return json({ error: 'Missing from/to addresses' }, 400);
-  }
-
-  const apiKey = env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) {
-    return json({ error: 'Google Maps API key not configured' }, 500);
-  }
-
-  try {
-    const dmUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(fromAddr)}&destinations=${encodeURIComponent(toAddr)}&units=imperial&key=${apiKey}`;
-
-    const resp = await fetch(dmUrl);
-    const data = await resp.json();
-
-    if (data.status !== 'OK') {
-      return json({ error: 'Google API error', detail: data.status, errorMessage: data.error_message || null }, 502);
-    }
-
-    const element = data.rows?.[0]?.elements?.[0];
-    if (!element || element.status !== 'OK') {
-      return json({ error: 'No route found', detail: element?.status || 'unknown' }, 404);
-    }
-
-    // distance.value is in meters, convert to miles
-    const meters = element.distance.value;
-    const miles = meters / 1609.344;
-
-    return json({
-      from: fromAddr,
-      to: toAddr,
-      distance: Math.round(miles * 10) / 10,
-      distanceText: element.distance.text,
-      durationText: element.duration.text,
-      source: 'google',
-    });
-  } catch (e) {
-    return json({ error: 'Failed to calculate distance', detail: e.message }, 500);
-  }
-}
-
-
-/* ========================================
-   INVOICE EXTRACTION (Gemini Flash)
-   ======================================== */
-async function handleExtractInvoice(request, env) {
-  if (!env.GEMINI_API_KEY) {
-    return json({ error: 'GEMINI_API_KEY not configured' }, 500);
-  }
-
-  const body = await request.json();
-  const { pdfBase64, fileName } = body;
-
-  if (!pdfBase64) {
-    return json({ error: 'Missing pdfBase64' }, 400);
-  }
-
-  const prompt = `You are a highly accurate invoice data extraction system. Your job is to analyze this PDF and extract every piece of financial data.
-
-CRITICAL INSTRUCTIONS:
-1. Look at EVERY page of the document carefully
-2. Find ALL line items, charges, fees, or amounts listed
-3. Find the vendor/company name (the entity ISSUING the invoice, not the recipient)
-4. Find the invoice number and date
-5. Find the invoice total
-
-Return this exact JSON structure:
-{
-  "lineItems": [
-    {
-      "description": "ITEM DESCRIPTION IN UPPERCASE",
-      "invoiceNumber": "INV-12345",
-      "invoiceDate": "01/15/2026",
-      "amount": 123.45
-    }
-  ],
-  "vendorName": "VENDOR NAME IN UPPERCASE",
-  "vendorNumber": "",
-  "invoiceTotal": 123.45,
-  "confidence": "high"
-}
-
-RULES:
-- Extract ALL line items. Every charge, fee, product, or service listed should be a separate line item.
-- ALL descriptions and vendor names must be UPPERCASE
-- Dates must be MM/DD/YYYY format
-- Amounts must be plain numbers (no $ signs, no commas). Example: 1234.56
-- If there is a single total but no itemized lines, create ONE line item with the full description and total amount
-- The invoiceNumber should be the same for all line items from the same invoice
-- The invoiceDate should be the invoice date (not due date, not ship date)
-- invoiceTotal is the document's stated grand total
-- confidence should be "high" if you found clear line items, "medium" if you had to interpret, "low" if the document doesn't appear to be an invoice
-- NEVER return an empty lineItems array if there are ANY amounts visible in the document
-- If you see a table with items and amounts, extract EVERY row`;
-
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-
-  const geminiBody = {
-    contents: [{
-      parts: [
-        {
-          inlineData: {
-            mimeType: 'application/pdf',
-            data: pdfBase64,
-          }
-        },
-        { text: prompt }
-      ]
-    }],
-    generationConfig: {
-      temperature: 0.0,
-      maxOutputTokens: 4096,
-      responseMimeType: 'application/json',
-    }
-  };
-
-  // Retry up to 2 times on failure or empty results
-  const MAX_RETRIES = 2;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      console.log(`[EXTRACT] Attempt ${attempt}/${MAX_RETRIES} for ${fileName || 'unknown'}`);
-
-      const resp = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiBody),
-      });
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        console.error(`[EXTRACT] Gemini API error (attempt ${attempt}):`, resp.status, errText);
-        if (attempt === MAX_RETRIES) {
-          return json({ error: 'Gemini API error', status: resp.status, detail: errText }, 502);
-        }
-        await new Promise(r => setTimeout(r, 500 * attempt));
-        continue;
-      }
-
-      const geminiData = await resp.json();
-
-      // Check for blocked or empty responses
-      const candidate = geminiData.candidates?.[0];
-      if (!candidate || candidate.finishReason === 'SAFETY' || candidate.finishReason === 'RECITATION') {
-        console.warn(`[EXTRACT] Blocked response (attempt ${attempt}): ${candidate?.finishReason}`);
-        if (attempt === MAX_RETRIES) {
-          return json({ error: 'Content blocked by Gemini', reason: candidate?.finishReason }, 422);
-        }
-        await new Promise(r => setTimeout(r, 500 * attempt));
-        continue;
-      }
-
-      const rawText = candidate.content?.parts?.[0]?.text || '';
-      if (!rawText.trim()) {
-        console.warn(`[EXTRACT] Empty response (attempt ${attempt})`);
-        if (attempt === MAX_RETRIES) {
-          return json({ error: 'Empty response from Gemini' }, 422);
-        }
-        await new Promise(r => setTimeout(r, 500 * attempt));
-        continue;
-      }
-
-      // Clean any markdown fences (shouldn't be needed with responseMimeType but just in case)
-      const cleaned = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-      let extracted;
-      try {
-        extracted = JSON.parse(cleaned);
-      } catch (parseErr) {
-        console.error(`[EXTRACT] JSON parse failed (attempt ${attempt}):`, parseErr.message, rawText.substring(0, 200));
-        if (attempt === MAX_RETRIES) {
-          return json({ error: 'Failed to parse Gemini response', raw: rawText.substring(0, 500) }, 422);
-        }
-        await new Promise(r => setTimeout(r, 500 * attempt));
-        continue;
-      }
-
-      // If we got an empty result, retry (Gemini sometimes returns empty on first try)
-      if ((!extracted.lineItems || extracted.lineItems.length === 0) && attempt < MAX_RETRIES) {
-        console.warn(`[EXTRACT] Empty lineItems (attempt ${attempt}), retrying...`);
-        await new Promise(r => setTimeout(r, 500 * attempt));
-        continue;
-      }
-
-      console.log(`[EXTRACT] Success on attempt ${attempt}: ${extracted.lineItems?.length || 0} line items`);
-
-      return json({
-        success: true,
-        fileName: fileName || 'unknown',
-        attempt,
-        ...extracted,
-      });
-
-    } catch (e) {
-      console.error(`[EXTRACT] Error (attempt ${attempt}):`, e.message);
-      if (attempt === MAX_RETRIES) {
-        return json({ error: 'Extraction failed', detail: e.message }, 500);
-      }
-      await new Promise(r => setTimeout(r, 500 * attempt));
-    }
-  }
-
-  return json({ error: 'Extraction failed after all retries' }, 500);
-}
-
-
-/* ========================================
-   USERS – LIST ALL (admin)
-   ======================================== */
-async function handleGetUsers(env) {
-  // Get all users from user_data
-  let users = [];
-  try {
-    const { results } = await env.DB.prepare(
-      'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status FROM user_data ORDER BY user_first_name ASC'
-    ).all();
-    users = results;
-  } catch (e) {
-    // Fallback if status column doesn't exist yet
-    try {
-      const { results } = await env.DB.prepare(
-        'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data ORDER BY user_first_name ASC'
-      ).all();
-      users = results;
-    } catch (e2) {
-      // Fallback if profile columns don't exist yet
-      const { results } = await env.DB.prepare(
-        'SELECT user_id, user_first_name, user_last_name, user_email FROM user_data ORDER BY user_first_name ASC'
-      ).all();
-      users = results;
-    }
-  }
-
-  // Get all roles in one query
-  let allRoles = [];
-  try {
-    const { results: roleResults } = await env.DB.prepare(
-      'SELECT user_email, role FROM user_roles ORDER BY user_email, role'
-    ).all();
-    allRoles = roleResults;
-  } catch (e) {
-    // user_roles table may not exist yet
-  }
-
-  // Build role lookup map
-  const roleMap = {};
-  for (const r of allRoles) {
-    const email = r.user_email.toLowerCase();
-    if (!roleMap[email]) roleMap[email] = [];
-    roleMap[email].push(r.role);
-  }
-
-  // Merge users with roles
-  const merged = users.map(u => ({
-    user_id: u.user_id,
-    first_name: u.user_first_name,
-    last_name: u.user_last_name,
-    email: u.user_email,
-    phone_number: u.phone_number || '',
-    department: u.department || '',
-    title: u.title || '',
-    profile_picture_key: u.profile_picture_key || null,
-    status: u.status || 'active',
-    roles: roleMap[(u.user_email || '').toLowerCase()] || [],
-  }));
-
-  return json({ users: merged, total: merged.length });
-}
-
-
-/* ========================================
-   USERS – UPDATE STATUS (admin)
-   ======================================== */
-async function handleUpdateUserStatus(request, env) {
-  const body = await request.json();
-  const { email, status } = body;
-
-  if (!email || !status) {
-    return json({ error: 'email and status are required' }, 400);
-  }
-
-  if (!['active', 'inactive'].includes(status)) {
-    return json({ error: 'status must be active or inactive' }, 400);
-  }
-
-  try {
-    await env.DB.prepare(
-      'UPDATE user_data SET status = ? WHERE LOWER(user_email) = ?'
-    ).bind(status, email.toLowerCase().trim()).run();
-    return json({ message: 'Status updated', email, status });
-  } catch (e) {
-    return json({ error: 'Failed to update status: ' + e.message }, 500);
-  }
 }

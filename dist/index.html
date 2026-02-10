@@ -2509,7 +2509,7 @@
                 // Fetch vendor data for lookup
                 let vendorLookup = {};
                 try {
-                    const vResp = await fetch(`${API_BASE}/api/vendors?limit=5000`);
+                    const vResp = await fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`);
                     const vData = await vResp.json();
                     (vData.vendors || []).forEach(v => {
                         vendorLookup[String(v.vendor_number).trim()] = v;
@@ -3252,7 +3252,7 @@
             let vendorList = vendorListCache || [];
             if (vendorList.length === 0) {
                 try {
-                    const vResp = await fetch(`${API_BASE}/api/vendors?limit=5000`);
+                    const vResp = await fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`);
                     const vData = await vResp.json();
                     vendorList = vData.vendors || vData || [];
                     vendorListCache = vendorList;
@@ -3514,7 +3514,7 @@
             filterTable();
 
             // Preload vendor data in background for Capture Invoice
-            fetch(`${API_BASE}/api/vendors?limit=5000`)
+            fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`)
                 .then(r => r.json())
                 .then(d => { vendorListCache = d.vendors || d || []; console.log(`[INIT] Preloaded ${vendorListCache.length} vendors`); })
                 .catch(e => console.warn('[INIT] Vendor preload failed:', e));

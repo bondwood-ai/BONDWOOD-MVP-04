@@ -1350,7 +1350,7 @@
         // Load vendor data from API
         async function loadVendorData() {
             try {
-                const response = await fetch(`${API_BASE}/api/vendors?limit=2000`);
+                const response = await fetch(`${API_BASE}/api/vendors?limit=2000&_t=${Date.now()}`);
                 if (!response.ok) throw new Error(`Vendor API returned ${response.status}`);
                 const raw = await response.json();
                 const vendors = Array.isArray(raw) ? raw : (raw.vendors || raw.data || raw.results || []);
