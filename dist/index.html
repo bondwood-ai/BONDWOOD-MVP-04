@@ -64,8 +64,8 @@
         body.dark-mode .stat-icon.amber svg { stroke: #fbbf24; }
         body.dark-mode .positive { color: #4ade80; }
         body.dark-mode .negative { color: #f87171; }
-        body.dark-mode th { background: var(--card-bg); }
-        body.dark-mode th:hover { background: #252525; }
+        body.dark-mode th { background: var(--primary-hex); }
+        body.dark-mode th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
         body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
         body.dark-mode tbody tr.selected { background: rgba(91, 122, 255, 0.15); }
         body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
@@ -217,33 +217,33 @@
 
         /* ============ TABLE ============ */
         .table-card { background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.06); overflow: hidden; }
-        .table-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-bottom: 1px solid var(--border-color); min-height: 44px; }
+        .table-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; min-height: 36px; }
         .table-toolbar .selected-info { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
         .bulk-actions { display: none; align-items: center; gap: 0.4rem; margin-left: auto; }
         .bulk-actions.visible { display: flex; }
         .bulk-actions button { width: 140px; }
         .table-scroll { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 340px); }
         .table-scroll thead th {
-            position: sticky; top: -1px; z-index: 2; background: var(--card-bg);
-            box-shadow: 0 1px 0 var(--border-color);
+            position: sticky; top: -1px; z-index: 2; background: var(--primary-hex);
         }
         .table-scroll thead th::before {
             content: ''; position: absolute; top: -5px; left: 0; right: 0; height: 6px;
-            background: var(--card-bg);
+            background: var(--primary-hex);
         }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th {
-            text-align: left; padding: 0.6rem 0.75rem; background: var(--card-bg);
-            font-weight: 600; color: var(--text-primary); border-bottom: 2px solid var(--border-color);
+            text-align: left; padding: 0.6rem 0.75rem; background: var(--primary-hex);
+            font-weight: 600; color: #ffffff; border-bottom: none;
             cursor: pointer; user-select: none; position: sticky; top: -1px; z-index: 2;
             white-space: nowrap; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em;
             font-family: 'Reddit Sans', sans-serif;
         }
-        th:hover { background: var(--bg-color); }
-        th .sort-arrow { display: inline-block; margin-left: 4px; font-size: 0.65rem; opacity: 0.4; }
+        th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
+        th .sort-arrow { display: inline-block; margin-left: 4px; font-size: 0.65rem; opacity: 0.6; }
         th.sorted .sort-arrow { opacity: 1; }
         th.no-sort { cursor: default; }
-        th.no-sort:hover { background: var(--card-bg); }
+        th.no-sort:hover { background: var(--primary-hex); }
+        th input[type="checkbox"] { accent-color: #ffffff; }
         tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
         tbody tr:last-child { border-bottom: none; }
         tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
@@ -604,32 +604,32 @@
             </div>
 
             <!-- Data Table -->
-            <div class="table-card">
-                <div class="table-toolbar">
-                    <span class="selected-info" id="selectedInfo">0 selected</span>
-                    <div class="bulk-actions" id="bulkActions">
-                        <button class="btn-primary" onclick="exportSelectedToXLSX()" style="font-family:'Reddit Sans',sans-serif;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-                            Export XLSX
-                        </button>
-                        <button class="btn-primary" id="bulkArchiveBtn" onclick="archiveSelected()" style="display:none;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
-                            Archive
-                        </button>
-                        <button class="btn-primary danger" id="bulkDeleteBtn" onclick="deleteSelected()" style="display:none;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                            Delete
-                        </button>
-                        <button class="btn-reject" id="bulkRejectBtn" onclick="bulkReject()" style="display:none;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
-                            Reject
-                        </button>
-                        <button class="btn-approve" id="bulkApproveBtn" onclick="bulkApprove()" style="display:none;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
-                            Approve
-                        </button>
-                    </div>
+            <div class="table-toolbar" id="tableToolbar">
+                <span class="selected-info" id="selectedInfo">0 selected</span>
+                <div class="bulk-actions" id="bulkActions">
+                    <button class="btn-primary" onclick="exportSelectedToXLSX()" style="font-family:'Reddit Sans',sans-serif;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                        Export XLSX
+                    </button>
+                    <button class="btn-primary" id="bulkArchiveBtn" onclick="archiveSelected()" style="display:none;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                        Archive
+                    </button>
+                    <button class="btn-primary danger" id="bulkDeleteBtn" onclick="deleteSelected()" style="display:none;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Delete
+                    </button>
+                    <button class="btn-reject" id="bulkRejectBtn" onclick="bulkReject()" style="display:none;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
+                        Reject
+                    </button>
+                    <button class="btn-approve" id="bulkApproveBtn" onclick="bulkApprove()" style="display:none;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+                        Approve
+                    </button>
                 </div>
+            </div>
+            <div class="table-card">
                 <div class="table-scroll">
                     <table id="rfpTable">
                         <thead>

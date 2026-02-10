@@ -55,8 +55,8 @@
             --field-bg: #222;
             --readonly-bg: #1e1e1e;
         }
-        body.dark-mode th { background: var(--card-bg); }
-        body.dark-mode th:hover { background: #252525; }
+        body.dark-mode th { background: var(--primary-hex); }
+        body.dark-mode th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
         body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
         body.dark-mode tbody tr.selected { background: rgba(91, 122, 255, 0.15); }
         body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
@@ -139,16 +139,17 @@
         .search-input::placeholder { color: var(--text-secondary); }
 
         .table-scroll { overflow-x: auto; }
+        .table-card { background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.06); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
         thead th {
             position: sticky; top: 0; z-index: 10;
-            background: var(--card-bg); padding: 0.65rem 1rem;
+            background: var(--primary-hex); padding: 0.65rem 1rem;
             font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; color: var(--text-secondary);
-            text-align: left; border-bottom: 2px solid var(--border-color);
+            letter-spacing: 0.04em; color: #ffffff;
+            text-align: left; border-bottom: none;
             white-space: nowrap; cursor: pointer; user-select: none;
         }
-        thead th:hover { background: var(--bg-color); }
+        thead th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
         tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
         tbody tr:last-child { border-bottom: none; }
         tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
@@ -464,6 +465,7 @@
                 <input type="text" class="search-input" id="searchInput" placeholder="Search by name, email, or employee ID..." oninput="applyFilters()">
             </div>
 
+            <div class="table-card">
             <div class="table-scroll">
                 <table id="usersTable">
                     <thead>
@@ -484,6 +486,7 @@
             <div class="pagination-bar">
                 <div class="pagination-info" id="paginationInfo">—</div>
                 <div class="pagination-controls" id="paginationControls"></div>
+            </div>
             </div>
         </div>
     </main>
