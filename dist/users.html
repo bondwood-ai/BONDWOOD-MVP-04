@@ -97,14 +97,9 @@
         }
 
         /* ============ TABLE ============ */
-        .module-container {
-            background: var(--card-bg); border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
-        }
         .module-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem 0; border-bottom: none;
         }
         .module-title { font-size: 1.75rem; font-weight: 700; font-family: 'Reddit Sans', sans-serif; }
         .module-subtitle { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem; }
@@ -127,7 +122,7 @@
         .btn-primary.danger:hover { opacity: 0.88; }
 
         .search-wrapper {
-            padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);
+            padding: 0 0 0.75rem 0; 
             display: flex; gap: 0.5rem; align-items: center;
         }
         .search-input {
@@ -437,7 +432,6 @@
 
     <!-- ============ MAIN CONTENT ============ -->
     <main style="max-width:100%;margin:0 auto;">
-        <div class="module-container">
             <header class="module-header">
                 <div>
                     <h2 class="module-title">User Management</h2>
@@ -488,7 +482,6 @@
                 <div class="pagination-controls" id="paginationControls"></div>
             </div>
             </div>
-        </div>
     </main>
 
     <!-- ============ USER DETAIL PANEL ============ -->
