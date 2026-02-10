@@ -179,6 +179,11 @@ export default {
         return handleMigrate(env);
       }
 
+      // ── Extract invoice data from PDF via Gemini ──
+      if (path === '/api/extract-invoice' && method === 'POST') {
+        return handleExtractInvoice(request, env);
+      }
+
       // ── Debug schema ──
       if (path === '/api/debug/schema' && method === 'GET') {
         const { results } = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='table'").all();
@@ -890,4 +895,167 @@ async function handleUploadProfilePicture(request, env) {
   ).bind(key, email.toLowerCase().trim()).run();
 
   return json({ message: 'Profile picture uploaded', key });
+}
+
+
+/* ========================================
+   INVOICE EXTRACTION (Gemini Flash)
+   ======================================== */
+async function handleExtractInvoice(request, env) {
+  if (!env.GEMINI_API_KEY) {
+    return json({ error: 'GEMINI_API_KEY not configured' }, 500);
+  }
+
+  const body = await request.json();
+  const { pdfBase64, fileName } = body;
+
+  if (!pdfBase64) {
+    return json({ error: 'Missing pdfBase64' }, 400);
+  }
+
+  const prompt = `You are a highly accurate invoice data extraction system. Your job is to analyze this PDF and extract every piece of financial data.
+
+CRITICAL INSTRUCTIONS:
+1. Look at EVERY page of the document carefully
+2. Find ALL line items, charges, fees, or amounts listed
+3. Find the vendor/company name (the entity ISSUING the invoice, not the recipient)
+4. Find the invoice number and date
+5. Find the invoice total
+
+Return this exact JSON structure:
+{
+  "lineItems": [
+    {
+      "description": "ITEM DESCRIPTION IN UPPERCASE",
+      "invoiceNumber": "INV-12345",
+      "invoiceDate": "01/15/2026",
+      "amount": 123.45
+    }
+  ],
+  "vendorName": "VENDOR NAME IN UPPERCASE",
+  "vendorNumber": "",
+  "invoiceTotal": 123.45,
+  "confidence": "high"
+}
+
+RULES:
+- Extract ALL line items. Every charge, fee, product, or service listed should be a separate line item.
+- ALL descriptions and vendor names must be UPPERCASE
+- Dates must be MM/DD/YYYY format
+- Amounts must be plain numbers (no $ signs, no commas). Example: 1234.56
+- If there is a single total but no itemized lines, create ONE line item with the full description and total amount
+- The invoiceNumber should be the same for all line items from the same invoice
+- The invoiceDate should be the invoice date (not due date, not ship date)
+- invoiceTotal is the document's stated grand total
+- confidence should be "high" if you found clear line items, "medium" if you had to interpret, "low" if the document doesn't appear to be an invoice
+- NEVER return an empty lineItems array if there are ANY amounts visible in the document
+- If you see a table with items and amounts, extract EVERY row`;
+
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+
+  const geminiBody = {
+    contents: [{
+      parts: [
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: pdfBase64,
+          }
+        },
+        { text: prompt }
+      ]
+    }],
+    generationConfig: {
+      temperature: 0.0,
+      maxOutputTokens: 8192,
+      responseMimeType: 'application/json',
+    }
+  };
+
+  // Retry up to 3 times on failure or empty results
+  const MAX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`[EXTRACT] Attempt ${attempt}/${MAX_RETRIES} for ${fileName || 'unknown'}`);
+
+      const resp = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiBody),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error(`[EXTRACT] Gemini API error (attempt ${attempt}):`, resp.status, errText);
+        if (attempt === MAX_RETRIES) {
+          return json({ error: 'Gemini API error', status: resp.status, detail: errText }, 502);
+        }
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+
+      const geminiData = await resp.json();
+
+      // Check for blocked or empty responses
+      const candidate = geminiData.candidates?.[0];
+      if (!candidate || candidate.finishReason === 'SAFETY' || candidate.finishReason === 'RECITATION') {
+        console.warn(`[EXTRACT] Blocked response (attempt ${attempt}): ${candidate?.finishReason}`);
+        if (attempt === MAX_RETRIES) {
+          return json({ error: 'Content blocked by Gemini', reason: candidate?.finishReason }, 422);
+        }
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+
+      const rawText = candidate.content?.parts?.[0]?.text || '';
+      if (!rawText.trim()) {
+        console.warn(`[EXTRACT] Empty response (attempt ${attempt})`);
+        if (attempt === MAX_RETRIES) {
+          return json({ error: 'Empty response from Gemini' }, 422);
+        }
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+
+      // Clean any markdown fences
+      const cleaned = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+      let extracted;
+      try {
+        extracted = JSON.parse(cleaned);
+      } catch (parseErr) {
+        console.error(`[EXTRACT] JSON parse failed (attempt ${attempt}):`, parseErr.message, rawText.substring(0, 200));
+        if (attempt === MAX_RETRIES) {
+          return json({ error: 'Failed to parse Gemini response', raw: rawText.substring(0, 500) }, 422);
+        }
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+
+      // If we got an empty result, retry
+      if ((!extracted.lineItems || extracted.lineItems.length === 0) && attempt < MAX_RETRIES) {
+        console.warn(`[EXTRACT] Empty lineItems (attempt ${attempt}), retrying...`);
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+
+      console.log(`[EXTRACT] Success on attempt ${attempt}: ${extracted.lineItems?.length || 0} line items`);
+
+      return json({
+        success: true,
+        fileName: fileName || 'unknown',
+        attempt,
+        ...extracted,
+      });
+
+    } catch (e) {
+      console.error(`[EXTRACT] Error (attempt ${attempt}):`, e.message);
+      if (attempt === MAX_RETRIES) {
+        return json({ error: 'Extraction failed', detail: e.message }, 500);
+      }
+      await new Promise(r => setTimeout(r, 1000 * attempt));
+    }
+  }
+
+  return json({ error: 'Extraction failed after all retries' }, 500);
 }
