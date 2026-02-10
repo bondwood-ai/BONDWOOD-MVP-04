@@ -189,6 +189,17 @@ export default {
         return handleExtractInvoice(request, env);
       }
 
+      // ── User Roles ──
+      if (path === '/api/user-roles' && method === 'GET') {
+        return handleGetUserRoles(env, url);
+      }
+      if (path === '/api/user-roles' && method === 'POST') {
+        return handleAddUserRole(request, env);
+      }
+      if (path === '/api/user-roles' && method === 'DELETE') {
+        return handleDeleteUserRole(request, env);
+      }
+
       // ── Debug schema ──
       if (path === '/api/debug/schema' && method === 'GET') {
         const { results } = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='table'").all();
@@ -239,11 +250,19 @@ async function handleMe(request, env, url) {
   }
 
   const u = results[0];
+
+  // Fetch roles from user_roles table
+  const { results: roleResults } = await env.DB.prepare(
+    'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
+  ).bind(email.toLowerCase().trim()).all();
+  const roles = roleResults.map(r => r.role);
+
   return json({
     user_id: u.user_id,
     first_name: u.user_first_name,
     last_name: u.user_last_name,
     email: u.user_email,
+    roles: roles,
   });
 }
 
@@ -264,6 +283,76 @@ async function handleGetVendors(env, url) {
   const total = countResult[0]?.total || 0;
 
   return json({ vendors: results, total, page, limit });
+}
+
+
+/* ========================================
+   USER ROLES
+   ======================================== */
+async function handleGetUserRoles(env, url) {
+  const email = url.searchParams.get('email');
+
+  if (email) {
+    // Get roles for a specific user
+    const { results } = await env.DB.prepare(
+      'SELECT id, user_email, role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
+    ).bind(email.toLowerCase().trim()).all();
+    return json({ roles: results });
+  }
+
+  // Get all roles (grouped by user)
+  const { results } = await env.DB.prepare(
+    'SELECT id, user_email, role FROM user_roles ORDER BY user_email, role'
+  ).all();
+  return json({ roles: results });
+}
+
+async function handleAddUserRole(request, env) {
+  const body = await request.json();
+  const { user_email, role } = body;
+
+  if (!user_email || !role) {
+    return json({ error: 'user_email and role are required' }, 400);
+  }
+
+  const emailLower = user_email.toLowerCase().trim();
+  const roleLower = role.toLowerCase().trim();
+
+  // Check for duplicate
+  const { results: existing } = await env.DB.prepare(
+    'SELECT id FROM user_roles WHERE LOWER(user_email) = ? AND LOWER(role) = ?'
+  ).bind(emailLower, roleLower).all();
+
+  if (existing.length > 0) {
+    return json({ error: 'Role already assigned to this user' }, 409);
+  }
+
+  await env.DB.prepare(
+    'INSERT INTO user_roles (user_email, role) VALUES (?, ?)'
+  ).bind(emailLower, roleLower).run();
+
+  return json({ message: 'Role added', user_email: emailLower, role: roleLower }, 201);
+}
+
+async function handleDeleteUserRole(request, env) {
+  const body = await request.json();
+  const { user_email, role, id } = body;
+
+  if (id) {
+    // Delete by ID
+    await env.DB.prepare('DELETE FROM user_roles WHERE id = ?').bind(id).run();
+    return json({ message: 'Role deleted', id });
+  }
+
+  if (!user_email || !role) {
+    return json({ error: 'Provide id, or user_email and role' }, 400);
+  }
+
+  await env.DB.prepare(
+    'DELETE FROM user_roles WHERE LOWER(user_email) = ? AND LOWER(role) = ?'
+  ).bind(user_email.toLowerCase().trim(), role.toLowerCase().trim()).run();
+
+  return json({ message: 'Role deleted', user_email, role });
 }
 
 

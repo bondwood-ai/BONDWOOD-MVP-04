@@ -937,6 +937,7 @@
         let currentUserRole = 'admin'; // 'user' or 'admin'
         let currentUserId = '';
         let currentUserName = '';
+        let currentUserRoles = [];
         let vendorListCache = null;
         let _dashboardEmployee = null;
 
@@ -951,7 +952,8 @@
                     _dashboardEmployee = user;
                     currentUserName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
                     currentUserId = user.user_id ? `E${user.user_id}` : '';
-                    console.log('[SSO] Logged in as:', currentUserName, currentUserId);
+                    currentUserRoles = user.roles || [];
+                    console.log('[SSO] Logged in as:', currentUserName, currentUserId, 'Roles:', currentUserRoles);
                 }
             } catch (e) {
                 console.warn('[SSO] Could not fetch user identity:', e);
