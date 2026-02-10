@@ -552,7 +552,7 @@ async function handleMigrate(env) {
   const results = [];
   for (const sql of migrations) {
     try {
-      await env.DB.exec(sql);
+      await env.DB.prepare(sql).run();
       results.push({ sql: sql.substring(0, 60), status: 'applied' });
     } catch (e) {
       results.push({ sql: sql.substring(0, 60), status: 'skipped', reason: e.message });
