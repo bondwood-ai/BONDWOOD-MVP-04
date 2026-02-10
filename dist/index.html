@@ -310,6 +310,23 @@
         /* Import drop zone */
         .drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
 
+        /* Capture Invoice Modal */
+        .capture-drop-zone {
+            border: 2px dashed var(--border-color); border-radius: 10px; padding: 2rem 1.5rem;
+            text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+        }
+        .capture-drop-zone:hover, .capture-drop-zone.dragover { border-color: var(--primary-hex); background: rgba(0,0,0,0.02); }
+        body.dark-mode .capture-drop-zone:hover, body.dark-mode .capture-drop-zone.dragover { background: rgba(255,255,255,0.04); }
+        .capture-notice {
+            display: flex; align-items: flex-start; gap: 0.6rem;
+            background: color-mix(in srgb, var(--primary-hex) 6%, var(--card-bg));
+            border: 1px solid color-mix(in srgb, var(--primary-hex) 20%, var(--border-color));
+            border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; text-align: left;
+        }
+        .capture-notice svg { flex-shrink: 0; margin-top: 1px; }
+        .capture-notice p { margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; }
+        .capture-notice strong { color: var(--text-primary); }
+
         /* ============ PREVIEW MODAL ============ */
         /* ============ ADVANCED SEARCH MODAL ============ */
         .adv-search-modal { background: var(--card-bg); border-radius: 12px; width: 860px; max-width: 96vw; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
@@ -510,11 +527,10 @@
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
                         New Request
                     </button>
-                    <button class="btn-primary accent header-action-btn" onclick="document.getElementById('captureInvoiceInput').click()">
+                    <button class="btn-primary accent header-action-btn" onclick="openCaptureInvoiceModal()">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
                         Capture Invoice
                     </button>
-                    <input type="file" id="captureInvoiceInput" accept=".pdf" multiple style="display:none" onchange="dashboardCaptureInvoice(event)">
                     <button class="btn-primary header-action-btn" onclick="openImportModal()">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                         Import XLSX
@@ -930,6 +946,37 @@
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
                         Approve
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CAPTURE INVOICE MODAL ============ -->
+    <div class="modal-overlay" id="captureInvoiceModal" onclick="if(event.target===this)closeCaptureInvoiceModal()">
+        <div class="modal" style="width:480px;">
+            <div class="modal-header">
+                <h3 style="display:flex;align-items:center;gap:0.5rem;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
+                    Capture Invoice
+                </h3>
+                <button class="btn-icon" onclick="closeCaptureInvoiceModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="modal-body" style="padding-top:0.5rem;">
+                <div class="capture-notice">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <div>
+                        <p><strong>PDF files only.</strong> The invoice must be a <strong>digital PDF</strong> — not a scanned or photographed copy. The AI extraction requires selectable text to read invoice data accurately.</p>
+                    </div>
+                </div>
+                <div class="capture-drop-zone" id="captureDrop"
+                     onclick="document.getElementById('captureInvoiceInput').click()"
+                     ondragover="event.preventDefault();this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="event.preventDefault();this.classList.remove('dragover');handleCaptureInvoiceDrop(event)">
+                    <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;margin-bottom:0.25rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="color:var(--text-primary);font-size:0.875rem;font-weight:500;margin:0.5rem 0 0;">Drop PDF files here or <span style="color:var(--primary-hex);font-weight:600;">browse</span></p>
+                    <p style="margin:0.3rem 0 0;color:var(--text-secondary);font-size:0.75rem;opacity:0.6;">.pdf only</p>
+                    <input type="file" id="captureInvoiceInput" accept=".pdf" multiple style="display:none" onchange="handleCaptureInvoiceSelect(event)">
                 </div>
             </div>
         </div>
@@ -3135,10 +3182,31 @@
             return bestScore >= 50 ? bestMatch : null;
         }
 
-        async function dashboardCaptureInvoice(event) {
+        /* ========================================
+           CAPTURE INVOICE MODAL
+           ======================================== */
+        function openCaptureInvoiceModal() {
+            document.getElementById('captureInvoiceModal').classList.add('open');
+        }
+        function closeCaptureInvoiceModal() {
+            document.getElementById('captureInvoiceModal').classList.remove('open');
+        }
+        function handleCaptureInvoiceSelect(event) {
             const files = Array.from(event.target.files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
             event.target.value = '';
             if (files.length === 0) return;
+            closeCaptureInvoiceModal();
+            dashboardCaptureInvoice(files);
+        }
+        function handleCaptureInvoiceDrop(event) {
+            const files = Array.from(event.dataTransfer.files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+            if (files.length === 0) return;
+            closeCaptureInvoiceModal();
+            dashboardCaptureInvoice(files);
+        }
+
+        async function dashboardCaptureInvoice(files) {
+            if (!files || files.length === 0) return;
 
             // Single file → old behavior (navigate to form)
             if (files.length === 1) {

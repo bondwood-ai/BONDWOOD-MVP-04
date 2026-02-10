@@ -786,12 +786,14 @@
                 // Initials
                 const initials = ((profileData.first_name || '')[0] || '') + ((profileData.last_name || '')[0] || '');
                 document.getElementById('avatarInitials').textContent = initials.toUpperCase() || '?';
-                document.getElementById('avatarContainer').style.visibility = 'visible';
 
-                // Profile picture
+                // Profile picture — keep avatar hidden until we know what to show
                 if (profileData.profile_picture_key) {
-                    document.getElementById('avatarContainer').style.visibility = 'hidden';
+                    // Leave hidden, loadProfilePicture will show it once image is ready
                     loadProfilePicture(profileData.email);
+                } else {
+                    // No picture — show initials immediately
+                    document.getElementById('avatarContainer').style.visibility = 'visible';
                 }
 
                 // Roles

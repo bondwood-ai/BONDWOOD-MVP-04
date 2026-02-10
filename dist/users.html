@@ -177,6 +177,7 @@
             font-size: 0.68rem; font-weight: 700; color: #fff;
             background: var(--secondary-hex); overflow: hidden;
         }
+        .user-avatar:empty { background: transparent; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-cell { display: flex; align-items: center; gap: 0.75rem; }
         .user-name { font-weight: 600; font-size: 0.84rem; color: var(--text-primary); }
@@ -244,6 +245,7 @@
             background: var(--secondary-hex); overflow: hidden;
             border: 3px solid var(--border-color);
         }
+        .detail-avatar:empty { background: transparent; border-color: transparent; }
         .detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .detail-identity h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.1rem; }
         .detail-identity .detail-email { font-size: 0.78rem; color: var(--text-secondary); }

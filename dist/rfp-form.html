@@ -598,6 +598,23 @@
         .att-drop-zone .att-drop-main { color: var(--text-primary); font-size: 0.875rem; font-weight: 500; margin-top: 0.5rem; }
         .att-drop-zone .att-drop-hint { margin-top: 0.3rem; color: var(--text-secondary); font-size: 0.75rem; opacity: 0.6; }
 
+        /* Capture Invoice Modal */
+        #captureInvoiceModal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 10002; backdrop-filter: blur(2px); }
+        #captureInvoiceModal.open { display: flex; }
+        .capture-modal-box { background: var(--card-bg); border-radius: 12px; width: 480px; max-width: 90vw; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+        .capture-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; }
+        .capture-modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; margin: 0; }
+        .capture-modal-body { padding: 0 1.25rem 1.25rem; }
+        .capture-notice {
+            display: flex; align-items: flex-start; gap: 0.6rem;
+            background: color-mix(in srgb, var(--primary-hex) 6%, var(--card-bg));
+            border: 1px solid color-mix(in srgb, var(--primary-hex) 20%, var(--border-color));
+            border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; text-align: left;
+        }
+        .capture-notice svg { flex-shrink: 0; margin-top: 1px; }
+        .capture-notice p { margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; }
+        .capture-notice strong { color: var(--text-primary); }
+
         /* Progress */
         .att-progress { display: none; margin-bottom: 1rem; align-items: center; gap: 0.5rem; }
         .att-progress.active { display: flex; }
@@ -936,11 +953,10 @@
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
                             Add Row
                         </button>
-                        <button class="add-row-btn" onclick="document.getElementById('captureInvoiceInput').click()" style="background:var(--primary-hex);color:var(--accent-text-color);">
+                        <button class="add-row-btn" onclick="openCaptureInvoiceModal()" style="background:var(--primary-hex);color:var(--accent-text-color);">
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                             Capture Invoice
                         </button>
-                        <input type="file" id="captureInvoiceInput" accept=".pdf" style="display:none;" onchange="handleCaptureInvoice(event)">
                         <button class="btn-primary-sm-alt" onclick="importLineItems()">
                             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                             Import XLSX
@@ -1085,6 +1101,39 @@
                 <div class="import-modal-footer">
                     <button class="import-btn-cancel" onclick="closeImportFileModal()">Cancel</button>
                     <button class="import-btn-confirm" id="importConfirmBtn" disabled onclick="executeImport()">Import</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Capture Invoice Modal -->
+        <div id="captureInvoiceModal" onclick="if(event.target===this)closeCaptureInvoiceModal()">
+            <div class="capture-modal-box">
+                <div class="capture-modal-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
+                        Capture Invoice
+                    </h3>
+                    <button class="att-close-btn" onclick="closeCaptureInvoiceModal()">&times;</button>
+                </div>
+                <div class="capture-modal-body">
+                    <div class="capture-notice">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <p><strong>PDF files only.</strong> The invoice must be a <strong>digital PDF</strong> — not a scanned or photographed copy. The AI extraction requires selectable text to read invoice data accurately.</p>
+                        </div>
+                    </div>
+                    <div class="att-drop-zone" id="captureDropZone"
+                         onclick="document.getElementById('captureInvoiceInput').click()"
+                         ondragover="event.preventDefault();this.classList.add('dragover')"
+                         ondragleave="this.classList.remove('dragover')"
+                         ondrop="event.preventDefault();this.classList.remove('dragover');handleCaptureInvoiceDrop(event)">
+                        <div class="att-drop-icon">
+                            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <p class="att-drop-main">Drop your PDF here or <span style="color:var(--primary-hex);font-weight:600;">browse</span></p>
+                        <p class="att-drop-hint">.pdf only</p>
+                        <input type="file" id="captureInvoiceInput" accept=".pdf" style="display:none;" onchange="handleCaptureInvoiceSelect(event)">
+                    </div>
                 </div>
             </div>
         </div>
@@ -2543,17 +2592,38 @@
             });
         }
 
-        function handleCaptureInvoice(event) {
+        /* ========================================
+           CAPTURE INVOICE MODAL
+           ======================================== */
+        function openCaptureInvoiceModal() {
+            document.getElementById('captureInvoiceModal').classList.add('open');
+        }
+        function closeCaptureInvoiceModal() {
+            document.getElementById('captureInvoiceModal').classList.remove('open');
+        }
+        function handleCaptureInvoiceSelect(event) {
             const file = event.target.files[0];
+            event.target.value = '';
             if (!file) return;
-            event.target.value = ''; // reset for re-use
-
             if (!file.name.toLowerCase().endsWith('.pdf')) {
                 showAlert('Capture Invoice only accepts PDF files.', 'Invalid File');
                 return;
             }
+            closeCaptureInvoiceModal();
+            processCapturedInvoice(file);
+        }
+        function handleCaptureInvoiceDrop(event) {
+            const files = Array.from(event.dataTransfer.files || []);
+            const file = files.find(f => f.name.toLowerCase().endsWith('.pdf'));
+            if (!file) {
+                showAlert('Capture Invoice only accepts PDF files.', 'Invalid File');
+                return;
+            }
+            closeCaptureInvoiceModal();
+            processCapturedInvoice(file);
+        }
 
-            // Add the PDF as an attachment too
+        function processCapturedInvoice(file) {            // Add the PDF as an attachment too
             const alreadyAttached = attachments.some(a => a.name === file.name && a.size === file.size);
             if (!alreadyAttached) {
                 const rfpNum = currentRfpNumber;
