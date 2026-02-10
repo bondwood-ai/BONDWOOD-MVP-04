@@ -294,7 +294,7 @@
             <!-- Header: Avatar + Identity -->
             <div class="profile-header">
                 <div class="avatar-container">
-                    <div class="avatar" id="avatarContainer">
+                    <div class="avatar" id="avatarContainer" style="visibility:hidden;">
                         <div class="avatar-initials" id="avatarInitials">?</div>
                     </div>
                     <button class="avatar-upload-btn" onclick="openUploadModal()" title="Change picture">
@@ -579,9 +579,11 @@
                 // Initials
                 const initials = ((profileData.first_name || '')[0] || '') + ((profileData.last_name || '')[0] || '');
                 document.getElementById('avatarInitials').textContent = initials.toUpperCase() || '?';
+                document.getElementById('avatarContainer').style.visibility = 'visible';
 
                 // Profile picture
                 if (profileData.profile_picture_key) {
+                    document.getElementById('avatarContainer').style.visibility = 'hidden';
                     loadProfilePicture(profileData.email);
                 }
 
@@ -622,6 +624,10 @@
                 imgEl.src = img.src;
                 imgEl.alt = 'Profile';
                 container.appendChild(imgEl);
+                container.style.visibility = 'visible';
+            };
+            img.onerror = function () {
+                document.getElementById('avatarContainer').style.visibility = 'visible';
             };
             img.src = `${API_BASE}/api/profile/picture/${encodeURIComponent(email)}?t=${Date.now()}`;
         }
