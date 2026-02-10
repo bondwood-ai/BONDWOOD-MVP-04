@@ -177,6 +177,62 @@
         .vendor-dropdown-item .vd-code { font-size: 0.72rem; color: var(--text-secondary); font-family: 'Reddit Sans', sans-serif; flex-shrink: 0; background: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.02em; }
         .vendor-dropdown-empty { padding: 0.6rem 0.75rem; font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
         .input-error { border-color: #FA050F !important; box-shadow: 0 0 0 2px rgba(250, 5, 15, 0.15) !important; }
+        /* ============ CUSTOM DATE PICKER ============ */
+        .bw-datepicker {
+            position: fixed; z-index: 10000; display: none;
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 10px; box-shadow: 0 12px 36px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+            width: 280px; font-family: 'Reddit Sans', sans-serif;
+            padding: 0.75rem; user-select: none;
+        }
+        .bw-datepicker.open { display: block; }
+        .bw-dp-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 0.6rem;
+        }
+        .bw-dp-header button {
+            background: none; border: none; cursor: pointer; padding: 0.3rem;
+            border-radius: 6px; color: var(--text-primary); display: flex; align-items: center; justify-content: center;
+        }
+        .bw-dp-header button:hover { background: var(--bg-color); }
+        .bw-dp-month-label {
+            font-size: 0.88rem; font-weight: 700; color: var(--text-primary);
+            font-family: 'Reddit Sans', sans-serif;
+        }
+        .bw-dp-weekdays {
+            display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
+            margin-bottom: 0.25rem;
+        }
+        .bw-dp-weekdays span {
+            font-size: 0.65rem; font-weight: 700; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.04em; padding: 0.2rem 0;
+        }
+        .bw-dp-days {
+            display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 2px;
+        }
+        .bw-dp-day {
+            font-size: 0.78rem; font-weight: 500; padding: 0.35rem 0;
+            border-radius: 6px; cursor: pointer; color: var(--text-primary);
+            transition: background 0.12s, color 0.12s;
+            font-family: 'Reddit Sans', sans-serif;
+        }
+        .bw-dp-day:hover { background: var(--bg-color); }
+        .bw-dp-day.today { font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--secondary-hex); }
+        .bw-dp-day.selected { background: var(--primary-hex); color: #fff; font-weight: 700; }
+        .bw-dp-day.other-month { color: var(--text-secondary); opacity: 0.4; }
+        .bw-dp-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);
+        }
+        .bw-dp-footer button {
+            background: none; border: none; cursor: pointer; font-family: 'Reddit Sans', sans-serif;
+            font-size: 0.72rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;
+        }
+        .bw-dp-clear { color: var(--text-secondary); }
+        .bw-dp-clear:hover { background: var(--bg-color); color: var(--text-primary); }
+        .bw-dp-today-btn { color: var(--secondary-hex); }
+        .bw-dp-today-btn:hover { background: color-mix(in srgb, var(--secondary-hex) 8%, var(--card-bg)); }
+
         .vendor-error-msg {
             grid-column: 1 / -1; padding: 0.5rem 1rem; font-size: 0.78rem; color: #FA050F;
             background: rgba(250, 5, 15, 0.06); display: none;
@@ -1087,6 +1143,27 @@
         </div>
     </div>
 
+    <!-- Custom Date Picker -->
+    <div class="bw-datepicker" id="bwDatepicker">
+        <div class="bw-dp-header">
+            <button onclick="bwDpNav(-1)" title="Previous month">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span class="bw-dp-month-label" id="bwDpMonthLabel"></span>
+            <button onclick="bwDpNav(1)" title="Next month">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+        </div>
+        <div class="bw-dp-weekdays">
+            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+        </div>
+        <div class="bw-dp-days" id="bwDpDays"></div>
+        <div class="bw-dp-footer">
+            <button class="bw-dp-clear" onclick="bwDpClear()">Clear</button>
+            <button class="bw-dp-today-btn" onclick="bwDpToday()">Today</button>
+        </div>
+    </div>
+
     <script>
         /* ========================================
            UNSAVED CHANGES TRACKING
@@ -1733,7 +1810,7 @@
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><textarea class="line-desc" rows="1" cols="18" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
                 <td class="invoice-col"><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
-                <td class="invoice-col"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"><input type="date" class="line-invoice-date-picker" tabindex="-1" style="position:absolute;visibility:hidden;width:0;height:0;"></td>
+                <td class="invoice-col"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;cursor:pointer;" autocomplete="off" readonly></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Enter Budget Code"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;" autocomplete="off" placeholder="—"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
@@ -1760,19 +1837,9 @@
             // Init date auto-advance
             initDateAutoAdvance(tr.querySelector('.line-invoice-date'));
 
-            // Wire calendar picker: click text input → open native date picker
-            var invDateInput = tr.querySelector('.line-invoice-date');
-            var invDatePicker = tr.querySelector('.line-invoice-date-picker');
-            invDateInput.addEventListener('click', function() {
-                try { invDatePicker.showPicker(); } catch(e) { invDatePicker.focus(); }
-            });
-            invDatePicker.addEventListener('change', function() {
-                if (this.value) {
-                    var parts = this.value.split('-');
-                    invDateInput.value = parts[1] + '/' + parts[2] + '/' + parts[0];
-                    invDateInput.dispatchEvent(new Event('input'));
-                    invDateInput.dispatchEvent(new Event('change'));
-                }
+            // Wire custom calendar picker
+            tr.querySelector('.line-invoice-date').addEventListener('click', function(e) {
+                openBwDatepicker(this, e);
             });
 
             // Auto-grow: when all fields in the last row are filled, add a new row
@@ -3954,6 +4021,21 @@
                     : UNIQUE_BUDGET_CODES.slice(0, 2000);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
+                // Scroll to current value if it exists
+                if (q) {
+                    const drop = this.parentElement.querySelector('.bc-dropdown');
+                    if (drop) {
+                        const items = drop.querySelectorAll('.bc-dropdown-item');
+                        for (let i = 0; i < items.length; i++) {
+                            if (items[i].dataset.code === q) {
+                                bcActiveIndex = i;
+                                items[i].classList.add('active');
+                                items[i].scrollIntoView({ block: 'center' });
+                                break;
+                            }
+                        }
+                    }
+                }
             });
 
             bcInput.addEventListener('blur', function() {
@@ -4033,6 +4115,21 @@
                         : validAccounts.slice(0, 20);
                     acActiveIndex = -1;
                     renderBcDropdown(this, matches, q);
+                    // Scroll to current value
+                    if (q) {
+                        const drop = this.parentElement.querySelector('.bc-dropdown');
+                        if (drop) {
+                            const items = drop.querySelectorAll('.bc-dropdown-item');
+                            for (let i = 0; i < items.length; i++) {
+                                if (items[i].dataset.code === q) {
+                                    acActiveIndex = i;
+                                    items[i].classList.add('active');
+                                    items[i].scrollIntoView({ block: 'center' });
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
@@ -4325,6 +4422,176 @@
         // Keyboard shortcut: Escape to close PDF viewer
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closePdfViewer();
+        });
+
+        /* ============================================================
+           CUSTOM DATE PICKER
+           ============================================================ */
+        let bwDpTarget = null;       // the text input to write back to
+        let bwDpYear = 2026;
+        let bwDpMonth = 1;           // 0-indexed
+        const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        function openBwDatepicker(inputEl, evt) {
+            const dp = document.getElementById('bwDatepicker');
+            bwDpTarget = inputEl;
+
+            // Parse existing value
+            const val = inputEl.value.trim();
+            const now = new Date();
+            if (val && val.length === 10 && val.includes('/')) {
+                const p = val.split('/');
+                bwDpMonth = parseInt(p[0], 10) - 1;
+                bwDpYear = parseInt(p[2], 10);
+            } else {
+                bwDpMonth = now.getMonth();
+                bwDpYear = now.getFullYear();
+            }
+
+            renderBwDp();
+
+            // Position near the input
+            const rect = inputEl.getBoundingClientRect();
+            let top = rect.bottom + 4;
+            let left = rect.left;
+
+            // Keep within viewport
+            if (top + 320 > window.innerHeight) top = rect.top - 320;
+            if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+            if (left < 4) left = 4;
+            if (top < 4) top = 4;
+
+            dp.style.top = top + 'px';
+            dp.style.left = left + 'px';
+            dp.classList.add('open');
+
+            // Close on outside click (deferred so this click doesn't close it)
+            setTimeout(() => {
+                document.addEventListener('click', bwDpOutsideClick);
+            }, 10);
+        }
+
+        function bwDpOutsideClick(e) {
+            const dp = document.getElementById('bwDatepicker');
+            if (!dp.contains(e.target) && e.target !== bwDpTarget) {
+                closeBwDatepicker();
+            }
+        }
+
+        function closeBwDatepicker() {
+            document.getElementById('bwDatepicker').classList.remove('open');
+            document.removeEventListener('click', bwDpOutsideClick);
+            bwDpTarget = null;
+        }
+
+        function bwDpNav(delta) {
+            bwDpMonth += delta;
+            if (bwDpMonth > 11) { bwDpMonth = 0; bwDpYear++; }
+            if (bwDpMonth < 0) { bwDpMonth = 11; bwDpYear--; }
+            renderBwDp();
+        }
+
+        function renderBwDp() {
+            document.getElementById('bwDpMonthLabel').textContent = MONTH_NAMES[bwDpMonth] + ' ' + bwDpYear;
+
+            const container = document.getElementById('bwDpDays');
+            container.innerHTML = '';
+
+            const firstDay = new Date(bwDpYear, bwDpMonth, 1).getDay();
+            const daysInMonth = new Date(bwDpYear, bwDpMonth + 1, 0).getDate();
+            const daysInPrev = new Date(bwDpYear, bwDpMonth, 0).getDate();
+
+            const today = new Date();
+            const todayStr = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
+
+            // Selected value
+            let selectedStr = '';
+            if (bwDpTarget) {
+                const v = bwDpTarget.value.trim();
+                if (v.length === 10) selectedStr = v;
+            }
+
+            // Previous month padding
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const d = daysInPrev - i;
+                const el = document.createElement('div');
+                el.className = 'bw-dp-day other-month';
+                el.textContent = d;
+                const pm = bwDpMonth === 0 ? 11 : bwDpMonth - 1;
+                const py = bwDpMonth === 0 ? bwDpYear - 1 : bwDpYear;
+                el.dataset.date = (pm + 1) + '/' + d + '/' + py;
+                el.addEventListener('click', bwDpSelect);
+                container.appendChild(el);
+            }
+
+            // Current month
+            for (let d = 1; d <= daysInMonth; d++) {
+                const el = document.createElement('div');
+                el.className = 'bw-dp-day';
+                el.textContent = d;
+                const dateStr = (bwDpMonth + 1) + '/' + d + '/' + bwDpYear;
+                const fmtStr = String(bwDpMonth + 1).padStart(2, '0') + '/' + String(d).padStart(2, '0') + '/' + bwDpYear;
+                el.dataset.date = fmtStr;
+                if (fmtStr === selectedStr) el.classList.add('selected');
+                if ((bwDpMonth + 1) === (today.getMonth() + 1) && d === today.getDate() && bwDpYear === today.getFullYear()) {
+                    el.classList.add('today');
+                }
+                el.addEventListener('click', bwDpSelect);
+                container.appendChild(el);
+            }
+
+            // Next month padding
+            const totalCells = firstDay + daysInMonth;
+            const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let d = 1; d <= remaining; d++) {
+                const el = document.createElement('div');
+                el.className = 'bw-dp-day other-month';
+                el.textContent = d;
+                const nm = bwDpMonth === 11 ? 0 : bwDpMonth + 1;
+                const ny = bwDpMonth === 11 ? bwDpYear + 1 : bwDpYear;
+                el.dataset.date = (nm + 1) + '/' + d + '/' + ny;
+                el.addEventListener('click', bwDpSelect);
+                container.appendChild(el);
+            }
+        }
+
+        function bwDpSelect(e) {
+            const raw = e.target.dataset.date;
+            if (!raw || !bwDpTarget) return;
+            // Ensure MM/DD/YYYY with zero padding
+            const p = raw.split('/');
+            const formatted = p[0].padStart(2, '0') + '/' + p[1].padStart(2, '0') + '/' + p[2];
+            bwDpTarget.value = formatted;
+            bwDpTarget.dispatchEvent(new Event('input'));
+            bwDpTarget.dispatchEvent(new Event('change'));
+            closeBwDatepicker();
+        }
+
+        function bwDpClear() {
+            if (bwDpTarget) {
+                bwDpTarget.value = '';
+                bwDpTarget.dispatchEvent(new Event('input'));
+                bwDpTarget.dispatchEvent(new Event('change'));
+            }
+            closeBwDatepicker();
+        }
+
+        function bwDpToday() {
+            const now = new Date();
+            const formatted = String(now.getMonth() + 1).padStart(2, '0') + '/' + String(now.getDate()).padStart(2, '0') + '/' + now.getFullYear();
+            if (bwDpTarget) {
+                bwDpTarget.value = formatted;
+                bwDpTarget.dispatchEvent(new Event('input'));
+                bwDpTarget.dispatchEvent(new Event('change'));
+            }
+            closeBwDatepicker();
+        }
+
+        // Close datepicker on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('bwDatepicker').classList.contains('open')) {
+                closeBwDatepicker();
+            }
         });
     </script>
 </body>
