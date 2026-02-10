@@ -1342,8 +1342,8 @@ RULES:
     }
   };
 
-  // Retry up to 3 times on failure or empty results
-  const MAX_RETRIES = 3;
+  // Retry up to 2 times on failure or empty results
+  const MAX_RETRIES = 2;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       console.log(`[EXTRACT] Attempt ${attempt}/${MAX_RETRIES} for ${fileName || 'unknown'}`);
@@ -1360,7 +1360,7 @@ RULES:
         if (attempt === MAX_RETRIES) {
           return json({ error: 'Gemini API error', status: resp.status, detail: errText }, 502);
         }
-        await new Promise(r => setTimeout(r, 1000 * attempt));
+        await new Promise(r => setTimeout(r, 500 * attempt));
         continue;
       }
 
@@ -1373,7 +1373,7 @@ RULES:
         if (attempt === MAX_RETRIES) {
           return json({ error: 'Content blocked by Gemini', reason: candidate?.finishReason }, 422);
         }
-        await new Promise(r => setTimeout(r, 1000 * attempt));
+        await new Promise(r => setTimeout(r, 500 * attempt));
         continue;
       }
 
@@ -1383,7 +1383,7 @@ RULES:
         if (attempt === MAX_RETRIES) {
           return json({ error: 'Empty response from Gemini' }, 422);
         }
-        await new Promise(r => setTimeout(r, 1000 * attempt));
+        await new Promise(r => setTimeout(r, 500 * attempt));
         continue;
       }
 
@@ -1398,14 +1398,14 @@ RULES:
         if (attempt === MAX_RETRIES) {
           return json({ error: 'Failed to parse Gemini response', raw: rawText.substring(0, 500) }, 422);
         }
-        await new Promise(r => setTimeout(r, 1000 * attempt));
+        await new Promise(r => setTimeout(r, 500 * attempt));
         continue;
       }
 
       // If we got an empty result, retry (Gemini sometimes returns empty on first try)
       if ((!extracted.lineItems || extracted.lineItems.length === 0) && attempt < MAX_RETRIES) {
         console.warn(`[EXTRACT] Empty lineItems (attempt ${attempt}), retrying...`);
-        await new Promise(r => setTimeout(r, 1000 * attempt));
+        await new Promise(r => setTimeout(r, 500 * attempt));
         continue;
       }
 
@@ -1423,7 +1423,7 @@ RULES:
       if (attempt === MAX_RETRIES) {
         return json({ error: 'Extraction failed', detail: e.message }, 500);
       }
-      await new Promise(r => setTimeout(r, 1000 * attempt));
+      await new Promise(r => setTimeout(r, 500 * attempt));
     }
   }
 

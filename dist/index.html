@@ -937,6 +937,7 @@
         let currentUserRole = 'admin'; // 'user' or 'admin'
         let currentUserId = '';
         let currentUserName = '';
+        let vendorListCache = null;
         let _dashboardEmployee = null;
 
         async function fetchDashboardUser() {
@@ -3098,13 +3099,16 @@
             overlayBar.style.width = '0%';
             overlayLog.innerHTML = '';
 
-            // Load vendor data for matching
-            let vendorList = [];
-            try {
-                const vResp = await fetch(`${API_BASE}/api/vendors?limit=5000`);
-                const vData = await vResp.json();
-                vendorList = vData.vendors || vData || [];
-            } catch (e) { console.warn('[CAPTURE] Could not fetch vendors:', e); }
+            // Use preloaded vendor data (or fetch as fallback)
+            let vendorList = vendorListCache || [];
+            if (vendorList.length === 0) {
+                try {
+                    const vResp = await fetch(`${API_BASE}/api/vendors?limit=5000`);
+                    const vData = await vResp.json();
+                    vendorList = vData.vendors || vData || [];
+                    vendorListCache = vendorList;
+                } catch (e) { console.warn('[CAPTURE] Could not fetch vendors:', e); }
+            }
 
             let created = 0;
             let failed = 0;
@@ -3210,7 +3214,7 @@
             }
 
             // Run up to 3 extractions concurrently
-            const CONCURRENCY = 3;
+            const CONCURRENCY = 5;
             const queue = [...files];
             const workers = [];
             for (let w = 0; w < Math.min(CONCURRENCY, queue.length); w++) {
@@ -3251,7 +3255,7 @@
             }
 
             // Auto-close after delay
-            await new Promise(r => setTimeout(r, created > 0 ? 4000 : 3000));
+            await new Promise(r => setTimeout(r, 2000));
             overlay.style.display = 'none';
         }
 
@@ -3359,6 +3363,12 @@
             // Load real data from bondwood-api
             allRFPs = await loadRFPData();
             filterTable();
+
+            // Preload vendor data in background for Capture Invoice
+            fetch(`${API_BASE}/api/vendors?limit=5000`)
+                .then(r => r.json())
+                .then(d => { vendorListCache = d.vendors || d || []; console.log(`[INIT] Preloaded ${vendorListCache.length} vendors`); })
+                .catch(e => console.warn('[INIT] Vendor preload failed:', e));
         });
     </script>
 </body>
