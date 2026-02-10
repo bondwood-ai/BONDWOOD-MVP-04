@@ -219,6 +219,25 @@
         }
         #uploadSuccessBanner.visible { display: flex; }
 
+        #uploadErrorBanner {
+            display: none; margin-bottom: 0.75rem; padding: 0.6rem 1rem;
+            background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 600; color: #991b1b; text-align: center;
+            align-items: center; justify-content: center; gap: 0.4rem;
+        }
+        #uploadErrorBanner.visible { display: flex; }
+
+        /* General toast for non-modal errors */
+        .toast-error {
+            position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+            background: #991b1b; color: #fff; padding: 0.65rem 1.25rem; border-radius: 8px;
+            font-size: 0.82rem; font-weight: 600; font-family: 'Reddit Sans', sans-serif;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 10000;
+            display: flex; align-items: center; gap: 0.5rem;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .toast-error.visible { opacity: 1; pointer-events: auto; }
+
         .upload-preview { display: none; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: 8px; margin-bottom: 1rem; }
         .upload-preview.visible { display: flex; }
         .upload-preview-icon { width: 40px; height: 40px; border-radius: 8px; background: var(--secondary-hex); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -375,7 +394,16 @@
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="#166534" stroke-width="2.5" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
                 <span>Profile picture updated!</span>
             </div>
+            <div id="uploadErrorBanner">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="#991b1b" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <span id="uploadErrorText">Upload failed. Please try again.</span>
+            </div>
         </div>
+    </div>
+
+    <div class="toast-error" id="toastError">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <span id="toastErrorText"></span>
     </div>
 
     <script>
@@ -383,6 +411,13 @@
         let profileData = null;
         let formDirty = false;
         let selectedFile = null;
+
+        function showToast(msg, duration = 4000) {
+            const el = document.getElementById('toastError');
+            document.getElementById('toastErrorText').textContent = msg;
+            el.classList.add('visible');
+            setTimeout(() => el.classList.remove('visible'), duration);
+        }
 
         /* ========================================
            THEME
@@ -595,6 +630,7 @@
             document.getElementById('uploadPreview').classList.remove('visible');
             document.getElementById('uploadProgress').classList.remove('active');
             document.getElementById('uploadSuccessBanner').classList.remove('visible');
+            document.getElementById('uploadErrorBanner').classList.remove('visible');
             document.getElementById('uploadDropZone').style.display = '';
             document.getElementById('upload-modal').classList.add('open');
         }
@@ -618,7 +654,7 @@
         function stageFile(file) {
             const ext = file.name.split('.').pop().toLowerCase();
             if (!['png', 'jpg', 'jpeg', 'svg'].includes(ext)) {
-                alert('Only .png, .jpg, .jpeg, .svg files allowed.');
+                showToast('Only .png, .jpg, .jpeg, .svg files allowed.');
                 return;
             }
             selectedFile = file;
@@ -627,6 +663,7 @@
             document.getElementById('uploadPreview').classList.add('visible');
             document.getElementById('uploadDropZone').style.display = 'none';
             document.getElementById('uploadSuccessBanner').classList.remove('visible');
+            document.getElementById('uploadErrorBanner').classList.remove('visible');
 
             // Auto-upload
             uploadProfilePicture();
@@ -687,7 +724,9 @@
                 clearInterval(interval);
                 progress.classList.remove('active');
                 console.error('[ACCOUNT] Picture upload failed:', err);
-                alert('Failed to upload picture. Please try again.');
+                document.getElementById('uploadErrorText').textContent = 'Upload failed. Please try again.';
+                document.getElementById('uploadErrorBanner').classList.add('visible');
+                clearSelectedFile();
             }
         }
 
@@ -722,7 +761,7 @@
                 setTimeout(() => status.classList.remove('visible'), 3000);
             } catch (err) {
                 console.error('[ACCOUNT] Save failed:', err);
-                alert('Failed to save profile. Please try again.');
+                showToast('Failed to save profile. Please try again.');
                 btn.disabled = false;
             }
 
