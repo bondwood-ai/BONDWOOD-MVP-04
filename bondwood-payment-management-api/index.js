@@ -348,11 +348,16 @@ async function handleGetRFP(rfpNumber, env) {
 async function handleCreateRFP(request, env) {
   const body = await request.json();
 
-  // Generate next RFP number
-  const { results: maxRow } = await env.DB.prepare(
-    'SELECT MAX(rfp_number) as max_num FROM dashboard_data'
+  // Atomic next RFP number from sequences table
+  const { results: seqRows } = await env.DB.prepare(
+    "UPDATE sequences SET value = value + 1 WHERE name = 'rfp_no' RETURNING value"
   ).all();
-  const nextRfp = (maxRow[0]?.max_num || 2600000) + 1;
+
+  if (!seqRows.length) {
+    return json({ error: 'Sequence rfp_no not found. Run POST /api/migrate first.' }, 500);
+  }
+
+  const nextRfp = seqRows[0].value;
 
   const status = body.status || 'draft';
   const submissionDate = body.submission_date || new Date().toISOString().split('T')[0];
@@ -538,16 +543,42 @@ async function handleMigrate(env) {
     'ALTER TABLE form_data ADD COLUMN invoice_date TEXT',
     'ALTER TABLE form_data ADD COLUMN budget_code TEXT',
     'ALTER TABLE form_data ADD COLUMN account_code TEXT',
+    `CREATE TABLE IF NOT EXISTS sequences (
+      name TEXT PRIMARY KEY,
+      value INTEGER NOT NULL DEFAULT 0
+    )`,
   ];
 
   const results = [];
   for (const sql of migrations) {
     try {
       await env.DB.exec(sql);
-      results.push({ sql, status: 'applied' });
+      results.push({ sql: sql.substring(0, 60), status: 'applied' });
     } catch (e) {
-      results.push({ sql, status: 'skipped', reason: e.message });
+      results.push({ sql: sql.substring(0, 60), status: 'skipped', reason: e.message });
     }
+  }
+
+  // Seed rfp_no sequence from current max if not yet set
+  try {
+    const { results: existing } = await env.DB.prepare(
+      "SELECT value FROM sequences WHERE name = 'rfp_no'"
+    ).all();
+
+    if (!existing.length) {
+      const { results: maxRow } = await env.DB.prepare(
+        'SELECT MAX(rfp_number) as max_num FROM dashboard_data'
+      ).all();
+      const seed = maxRow[0]?.max_num || 2600000;
+      await env.DB.prepare(
+        "INSERT INTO sequences (name, value) VALUES ('rfp_no', ?)"
+      ).bind(seed).run();
+      results.push({ sql: 'SEED sequences.rfp_no', status: 'applied', value: seed });
+    } else {
+      results.push({ sql: 'SEED sequences.rfp_no', status: 'skipped', reason: `already set to ${existing[0].value}` });
+    }
+  } catch (e) {
+    results.push({ sql: 'SEED sequences.rfp_no', status: 'error', reason: e.message });
   }
 
   return json({ message: 'Migration complete', results });
