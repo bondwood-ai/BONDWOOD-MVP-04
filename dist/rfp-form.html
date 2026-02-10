@@ -2335,7 +2335,7 @@
             tr.innerHTML = ''
                 + '<td class="mileage-checkbox-cell"><input type="checkbox" class="mileage-checkbox" onchange="updateMileageSelection()"></td>'
                 + '<td><input type="text" class="text-right" value="' + mileageCounter + '" readonly style="width:40px;"></td>'
-                + '<td style="position:relative;"><input type="text" class="trip-date" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"><input type="date" class="trip-date-picker" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;"></td>'
+                + '<td><input type="text" class="trip-date" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;cursor:pointer;" autocomplete="off" readonly></td>'
                 + '<td>'
                 +   '<select class="trip-from">' + opts + '</select>'
                 +   '<input type="text" class="trip-from-addr" placeholder="Enter from address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
@@ -2353,25 +2353,12 @@
             // Init date auto-advance
             initDateAutoAdvance(tr.querySelector('.trip-date'));
 
-            // Sync hidden date picker with text field
+            // Wire custom calendar picker (same as invoice date)
+            tr.querySelector('.trip-date').addEventListener('click', function(e) {
+                openBwDatepicker(this, e);
+            });
             var tripDateInput = tr.querySelector('.trip-date');
-            var tripDatePicker = tr.querySelector('.trip-date-picker');
-            tripDatePicker.addEventListener('change', function() {
-                if (this.value) {
-                    var parts = this.value.split('-');
-                    tripDateInput.value = parts[1] + '/' + parts[2] + '/' + parts[0];
-                    tripDateInput.dispatchEvent(new Event('blur'));
-                }
-            });
-            tripDateInput.addEventListener('input', function() {
-                // If user types a full date, sync to picker
-                var v = this.value.trim();
-                if (v.length === 10 && v.includes('/')) {
-                    var p = v.split('/');
-                    tripDatePicker.value = p[2] + '-' + p[0].padStart(2,'0') + '-' + p[1].padStart(2,'0');
-                }
-            });
-            tripDateInput.addEventListener('blur', function() {
+            tripDateInput.addEventListener('change', function() {
                 var d = this.value.trim();
                 if (d.length === 10) {
                     var rate = getMileageRate(d);
