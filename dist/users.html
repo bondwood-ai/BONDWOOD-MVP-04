@@ -496,7 +496,7 @@
             </button>
         </div>
         <div class="detail-profile" id="detailProfile">
-            <div class="detail-avatar" id="detailAvatar"><span id="detailInitials">?</span></div>
+            <div class="detail-avatar" id="detailAvatar"><span>?</span></div>
             <div class="detail-identity">
                 <h4 id="detailName">—</h4>
                 <div class="detail-email" id="detailEmail">—</div>
@@ -602,17 +602,56 @@
         /* ========================================
            LOAD USERS
            ======================================== */
+        const avatarCache = {}; // email → { status: 'loading'|'loaded'|'failed', src: url }
+
         async function loadUsers() {
             try {
                 const resp = await fetch(`${API_BASE}/api/users`);
                 if (!resp.ok) throw new Error('Failed to load users');
                 const data = await resp.json();
                 allUsers = data.users || data || [];
+                // Start preloading all profile pictures immediately
+                preloadAllAvatars(allUsers);
                 applyFilters();
             } catch (e) {
                 console.error('[USERS] Load error:', e);
                 document.getElementById('usersBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">Failed to load users. The /api/users endpoint may need to be deployed.</td></tr>';
             }
+        }
+
+        function preloadAllAvatars(users) {
+            const ts = Date.now();
+            users.forEach(u => {
+                if (!u.profile_picture_key || avatarCache[u.email]) return;
+                avatarCache[u.email] = { status: 'loading', src: null };
+                const url = `${API_BASE}/api/profile/picture/${encodeURIComponent(u.email)}?t=${ts}`;
+                const img = new Image();
+                img.onload = () => {
+                    avatarCache[u.email] = { status: 'loaded', src: url };
+                    // Update table avatar if visible
+                    const emailKey = encodeURIComponent(u.email || '');
+                    const avatarEl = document.getElementById('avatar-' + emailKey);
+                    if (avatarEl) {
+                        avatarEl.innerHTML = `<img src="${url}" alt="">`;
+                    }
+                    // Update detail avatar if this user is selected
+                    if (selectedUser && selectedUser.email === u.email) {
+                        const detailAv = document.getElementById('detailAvatar');
+                        if (detailAv) detailAv.innerHTML = `<img src="${url}" alt="">`;
+                    }
+                };
+                img.onerror = () => {
+                    avatarCache[u.email] = { status: 'failed', src: null };
+                    // Show initials as fallback
+                    const emailKey = encodeURIComponent(u.email || '');
+                    const avatarEl = document.getElementById('avatar-' + emailKey);
+                    if (avatarEl && !avatarEl.querySelector('img')) {
+                        const initials = ((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '');
+                        avatarEl.textContent = initials.toUpperCase() || '?';
+                    }
+                };
+                img.src = url;
+            });
         }
 
         /* ========================================
@@ -726,10 +765,21 @@
                     ? roles.map((r, i) => `<span class="role-badge role-badge-${i % 4}">${ROLE_LABELS[r] || r}</span>`).join('')
                     : '<span style="font-size:0.72rem;color:var(--text-secondary);">No roles</span>';
 
+                // Avatar: cached image → show immediately; loading → blank; no pic or failed → initials
+                let avatarContent;
+                const cached = avatarCache[u.email];
+                if (cached && cached.status === 'loaded') {
+                    avatarContent = `<img src="${cached.src}" alt="">`;
+                } else if (u.profile_picture_key && (!cached || cached.status === 'loading')) {
+                    avatarContent = ''; // blank while loading
+                } else {
+                    avatarContent = initials.toUpperCase() || '?';
+                }
+
                 return `<tr onclick="openDetail('${emailKey}')">
                     <td>
                         <div class="user-cell">
-                            <div class="user-avatar" id="avatar-${emailKey}">${initials.toUpperCase() || '?'}</div>
+                            <div class="user-avatar" id="avatar-${emailKey}">${avatarContent}</div>
                             <div>
                                 <div class="user-name">${escHtml(name)}</div>
                                 <div class="user-email">${escHtml(email)}</div>
@@ -750,24 +800,6 @@
 
             document.getElementById('userCount').textContent = `${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''}`;
             renderPagination();
-            loadTableAvatars(page);
-        }
-
-        function loadTableAvatars(users) {
-            users.forEach(u => {
-                if (!u.profile_picture_key) return;
-                const emailKey = encodeURIComponent(u.email || '');
-                const avatarEl = document.getElementById('avatar-' + emailKey);
-                if (!avatarEl) return;
-                const img = new Image();
-                img.onload = () => {
-                    avatarEl.innerHTML = '';
-                    const imgEl = document.createElement('img');
-                    imgEl.src = img.src;
-                    avatarEl.appendChild(imgEl);
-                };
-                img.src = `${API_BASE}/api/profile/picture/${encodeURIComponent(u.email)}?t=${Date.now()}`;
-            });
         }
 
         function renderPagination() {
@@ -816,7 +848,6 @@
             document.getElementById('detailName').textContent = name;
             document.getElementById('detailEmail').textContent = user.email || '—';
             document.getElementById('detailEid').textContent = user.user_id ? 'Employee ID: E' + user.user_id : '';
-            document.getElementById('detailInitials').textContent = initials.toUpperCase() || '?';
             document.getElementById('detailDept').textContent = user.department || '—';
             document.getElementById('detailJobTitle').textContent = user.title || '—';
             document.getElementById('detailPhone').textContent = user.phone_number || '—';
@@ -836,18 +867,15 @@
                 btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Activate Account';
             }
 
-            // Profile picture
+            // Profile picture — use cache for instant display
             const avatarEl = document.getElementById('detailAvatar');
-            avatarEl.innerHTML = `<span id="detailInitials">${initials.toUpperCase() || '?'}</span>`;
-            if (user.profile_picture_key) {
-                const img = new Image();
-                img.onload = () => {
-                    avatarEl.innerHTML = '';
-                    const imgEl = document.createElement('img');
-                    imgEl.src = img.src;
-                    avatarEl.appendChild(imgEl);
-                };
-                img.src = `${API_BASE}/api/profile/picture/${encodeURIComponent(user.email)}?t=${Date.now()}`;
+            const cached = avatarCache[user.email];
+            if (cached && cached.status === 'loaded') {
+                avatarEl.innerHTML = `<img src="${cached.src}" alt="">`;
+            } else if (user.profile_picture_key && (!cached || cached.status === 'loading')) {
+                avatarEl.innerHTML = ''; // blank while loading, preloader will fill in
+            } else {
+                avatarEl.innerHTML = `<span>${initials.toUpperCase() || '?'}</span>`;
             }
 
             // Roles
@@ -857,15 +885,27 @@
             loadUserRfps(user.email, name);
 
             // Open panel
-            document.getElementById('detailOverlay').classList.add('open');
-            document.getElementById('detailPanel').classList.add('open');
+            const overlay = document.getElementById('detailOverlay');
+            const panel = document.getElementById('detailPanel');
+            overlay.style.display = 'block';
+            panel.offsetHeight; // force reflow
+            panel.classList.add('open');
         }
 
         function closeDetail() {
-            document.getElementById('detailOverlay').classList.remove('open');
-            document.getElementById('detailPanel').classList.remove('open');
+            const panel = document.getElementById('detailPanel');
+            const overlay = document.getElementById('detailOverlay');
+            panel.classList.remove('open');
+            overlay.style.display = 'none';
             selectedUser = null;
         }
+
+        // Close detail panel on Esc key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && selectedUser) {
+                closeDetail();
+            }
+        });
 
         /* ========================================
            ROLE MANAGEMENT
