@@ -10,3 +10,6 @@ database_id = "3f38ad36-36c9-4d05-935e-3070096152c5"
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "bondwood-payment-management"
+
+[triggers]
+crons = ["0 * * * *"]

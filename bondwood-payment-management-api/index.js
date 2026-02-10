@@ -195,6 +195,55 @@ export default {
       return json({ error: 'Internal error', detail: e.message }, 500);
     }
   },
+
+  /* ========================================
+     SCHEDULED CLEANUP – Cron Trigger
+     Purges soft-deleted RFPs (DB + R2) after 8 hours
+     ======================================== */
+  async scheduled(event, env, ctx) {
+    const RETENTION_HOURS = 8;
+    const cutoff = new Date(Date.now() - RETENTION_HOURS * 60 * 60 * 1000).toISOString();
+
+    console.log(`[CLEANUP] Running scheduled purge. Cutoff: ${cutoff}`);
+
+    // Find soft-deleted RFPs older than retention period
+    const { results: stale } = await env.DB.prepare(
+      'SELECT rfp_number FROM dashboard_data WHERE deleted_at IS NOT NULL AND deleted_at < ?'
+    ).bind(cutoff).all();
+
+    if (!stale.length) {
+      console.log('[CLEANUP] No stale records to purge.');
+      return;
+    }
+
+    console.log(`[CLEANUP] Purging ${stale.length} soft-deleted RFPs...`);
+    let r2Deleted = 0;
+
+    for (const row of stale) {
+      const rfpNumber = row.rfp_number;
+
+      // Clean up R2 attachments
+      if (env.BUCKET) {
+        try {
+          const listed = await env.BUCKET.list({ prefix: `rfp/${rfpNumber}/` });
+          if (listed.objects.length > 0) {
+            await Promise.all(listed.objects.map(obj => env.BUCKET.delete(obj.key)));
+            r2Deleted += listed.objects.length;
+          }
+        } catch (e) {
+          console.error(`[CLEANUP] R2 error for RFP ${rfpNumber}:`, e.message);
+        }
+      }
+
+      // Hard delete DB rows
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM form_data WHERE rfp_number = ?').bind(rfpNumber),
+        env.DB.prepare('DELETE FROM dashboard_data WHERE rfp_number = ?').bind(rfpNumber),
+      ]);
+    }
+
+    console.log(`[CLEANUP] Done. Purged ${stale.length} RFPs, ${r2Deleted} R2 objects.`);
+  },
 };
 
 
@@ -324,7 +373,7 @@ async function handleListRFPs(env, url) {
   const allowedSorts = ['rfp_number', 'submission_date', 'submitter_name', 'vendor_name', 'status'];
   const sortCol = allowedSorts.includes(sort) ? sort : 'rfp_number';
 
-  let where = [];
+  let where = ['d.deleted_at IS NULL'];
   let params = [];
 
   if (status && status !== 'all') {
@@ -367,8 +416,7 @@ async function handleListRFPs(env, url) {
    ======================================== */
 async function handleGetRFP(rfpNumber, env) {
   const { results: header } = await env.DB.prepare(
-    'SELECT * FROM dashboard_data WHERE rfp_number = ?'
-  ).bind(rfpNumber).all();
+    'SELECT * FROM dashboard_data WHERE rfp_number = ? AND deleted_at IS NULL'  ).bind(rfpNumber).all();
 
   if (!header.length) {
     return json({ error: 'RFP not found' }, 404);
@@ -566,10 +614,10 @@ async function handleDeleteRFP(rfpNumber, env) {
     return json({ error: 'RFP not found' }, 404);
   }
 
-  await env.DB.batch([
-    env.DB.prepare('DELETE FROM form_data WHERE rfp_number = ?').bind(rfpNumber),
-    env.DB.prepare('DELETE FROM dashboard_data WHERE rfp_number = ?').bind(rfpNumber),
-  ]);
+  // Soft delete — mark with timestamp, cleanup cron purges after 8 hours
+  await env.DB.prepare(
+    'UPDATE dashboard_data SET deleted_at = ? WHERE rfp_number = ?'
+  ).bind(new Date().toISOString(), rfpNumber).run();
 
   return json({ message: 'RFP deleted', rfp_number: rfpNumber });
 }
@@ -585,6 +633,7 @@ async function handleMigrate(env) {
     'ALTER TABLE form_data ADD COLUMN budget_code TEXT',
     'ALTER TABLE form_data ADD COLUMN account_code TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN creation_source TEXT',
+    'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     `CREATE TABLE IF NOT EXISTS sequences (
       name TEXT PRIMARY KEY,
       value INTEGER NOT NULL DEFAULT 0
