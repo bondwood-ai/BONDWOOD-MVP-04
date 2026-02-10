@@ -330,22 +330,16 @@
         .status-badge.inactive { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
 
         /* ============ FOOTER ============ */
-        .footer {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1.5rem 0 0.5rem; max-width: 100%;
-        }
-        .footer-brand {
-            display: flex; align-items: center; gap: 0.5rem;
-            font-size: 0.68rem; color: var(--text-secondary); font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.05em;
-        }
+        .footer { padding: 1.5rem 0 0.5rem; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Reddit Sans', sans-serif; }
         .theme-toggle {
             background: var(--card-bg); border: 1px solid var(--border-color);
             border-radius: 50%; width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: all 0.3s ease;
         }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
 
         /* ============ LOADING ============ */
         .loading-spinner {
@@ -417,6 +411,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden Brand Selector -->
+    <select id="brandSelector" onchange="updateBrandColors()" style="display:none;">
+        <option value="">-- Default --</option>
+    </select>
 
     <!-- ============ HEADER BANNER ============ -->
     <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
@@ -541,13 +540,12 @@
 
     <!-- ============ FOOTER ============ -->
     <div class="footer">
-        <div class="footer-brand">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            POWERED BY BONDWOOD
+        <div class="ownership-text">
+            <span>POWERED BY BONDWOOD</span>
+            <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">
+                <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
+            </button>
         </div>
-        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
     </div>
 
     <!-- Toast -->
@@ -575,32 +573,41 @@
            INIT
            ======================================== */
         document.addEventListener('DOMContentLoaded', async () => {
-            loadBrand();
-            loadDarkMode();
+            initTheme();
+            loadBrandData();
             await fetchCurrentUser();
             await loadUsers();
         });
 
         async function fetchCurrentUser() {
             try {
-                const resp = await fetch('/api/me');
-                if (!resp.ok) return;
+                // Try Cloudflare Access proxy first, then API_BASE
+                let resp = await fetch('/api/me');
+                let ct = resp.headers.get('content-type') || '';
+                if (!resp.ok || !ct.includes('application/json')) {
+                    // Fallback to API_BASE
+                    resp = await fetch(`${API_BASE}/api/me`);
+                    ct = resp.headers.get('content-type') || '';
+                }
+                if (!resp.ok || !ct.includes('application/json')) return;
                 const user = await resp.json();
+                if (user.error) return; // No user found, allow access (fail open)
                 currentUserEmail = user.email || '';
                 currentUserRoles = user.roles || [];
-                // Check if user has admin/owner role
-                if (!currentUserRoles.includes('admin') && !currentUserRoles.includes('owner')) {
+                // Check if user has admin/owner role — only block if we got a valid user WITH roles that exclude admin/owner
+                if (currentUserRoles.length > 0 && !currentUserRoles.includes('admin') && !currentUserRoles.includes('owner')) {
                     document.querySelector('.module-container').innerHTML = `
                         <div style="padding:3rem;text-align:center;">
                             <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:1rem;">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                             </svg>
                             <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Access Restricted</h3>
-                            <p style="font-size:0.85rem;color:var(--text-secondary);">User Management is only available to Admins and Owners.</p>
+                            <p style="font-size:0.85rem;color:var(--text-secondary);">User Management is only available to Admins.</p>
                         </div>`;
                 }
             } catch (e) {
                 console.warn('[AUTH] Could not verify user:', e);
+                // Fail open — allow access if auth check fails
             }
         }
 
@@ -993,104 +1000,255 @@
         }
 
         /* ========================================
-           BRAND / DARK MODE
+           BRAND / DARK MODE (matches dashboard)
            ======================================== */
-        function loadBrand() {
-            const saved = localStorage.getItem('bondwood-brand');
-            if (saved) {
-                try {
-                    const brand = JSON.parse(saved);
-                    applyBrand(brand);
-                } catch (e) {}
-            }
-        }
+        let brandDistrictData = [];
 
-        function applyBrand(brand) {
-            if (!brand) return;
-            const num = String(brand.district_number || '');
-            let primary = brand.primary_color || brand.color || '#000000';
-            let bannerBg = primary;
-
-            // District-specific overrides
-            if (num === '6') { primary = '#121517'; bannerBg = '#121517'; }
-            if (num === '111') { primary = '#181e21'; bannerBg = '#181e21'; }
-            if (num === '277') { primary = '#DA2B1F'; bannerBg = '#DA2B1F'; }
-
-            document.documentElement.style.setProperty('--primary-hex', primary);
-            document.getElementById('headerBanner').style.background = bannerBg;
-
-            // Luminance check for text color
-            const hex = primary.replace('#', '');
-            const r = parseInt(hex.substring(0, 2), 16) / 255;
-            const g = parseInt(hex.substring(2, 4), 16) / 255;
-            const b = parseInt(hex.substring(4, 6), 16) / 255;
-            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            const textColor = lum > 0.5 ? '#000000' : '#ffffff';
-            document.documentElement.style.setProperty('--accent-text-color', textColor);
-
-            // Banner text
-            document.getElementById('bannerTitle').style.color = textColor;
-            document.getElementById('hamburgerBtn').style.color = textColor;
-
-            // Hamburger menu bg
-            const hmMenu = document.getElementById('hamburgerMenu');
-            hmMenu.style.background = primary;
-            if (lum > 0.5) {
-                hmMenu.classList.add('dark-text');
-            } else {
-                hmMenu.classList.remove('dark-text');
-            }
-
-            // Section headers
-            document.querySelectorAll('.section-header').forEach(el => {
-                el.style.background = primary;
-                el.style.color = textColor;
-            });
-
-            // Secondary / accent
-            if (brand.secondary_color) {
-                document.documentElement.style.setProperty('--secondary-hex', brand.secondary_color);
-                document.getElementById('bannerAccent').style.background = brand.secondary_color;
-            }
-
-            // Logo
-            if (brand.logo_url) {
-                const logo = document.getElementById('bannerLogo');
-                const img = new Image();
-                img.onload = () => { logo.src = brand.logo_url; };
-                img.src = brand.logo_url;
-            }
-
-            // Brand selector sync
-            const selMenu = document.getElementById('brandSelectorMenu');
-            if (selMenu && num) {
-                for (let opt of selMenu.options) {
-                    if (opt.value === num) { opt.selected = true; break; }
+        async function loadBrandData(retries = 2) {
+            try {
+                let response = await fetch(`${API_BASE}/api/districts`);
+                if (!response.ok) {
+                    console.warn('Brand API returned', response.status);
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 3000); }
+                    return;
                 }
+                const raw = await response.json();
+                const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);
+                if (!data.length) {
+                    console.warn('Brand API returned empty data');
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+                    return;
+                }
+                brandDistrictData = data.filter(d => d.District_Name && d.Primary_Hex);
+
+                const memberOrgDistricts = {};
+                data.forEach(item => {
+                    if (item.Member_Org) {
+                        if (!memberOrgDistricts[item.Member_Org]) memberOrgDistricts[item.Member_Org] = [];
+                        memberOrgDistricts[item.Member_Org].push(Number(item.District_Number));
+                    }
+                });
+                const amsdNumbers = memberOrgDistricts['AMSD'] || [];
+
+                const amsdDistricts = brandDistrictData.filter(d => amsdNumbers.includes(Number(d.District_Number)));
+                const otherDistricts = brandDistrictData.filter(d => !amsdNumbers.includes(Number(d.District_Number)));
+                amsdDistricts.sort((a, b) => Number(a.District_Number) - Number(b.District_Number));
+                otherDistricts.sort((a, b) => (a.District_Name || '').localeCompare(b.District_Name || ''));
+
+                const menuSelect = document.getElementById('brandSelectorMenu');
+                const hiddenSelect = document.getElementById('brandSelector');
+
+                while (menuSelect.options.length > 1) menuSelect.remove(1);
+                while (hiddenSelect.options.length > 1) hiddenSelect.remove(1);
+
+                function addOption(d, select) {
+                    const opt = new Option(`${d.District_Name} (${d.District_Number})`, d.District_Number);
+                    let sec = d.Secondary_Hex || d.Primary_Hex;
+                    if (sec.toLowerCase() === '#000000' || sec.toLowerCase() === '#ffffff') sec = d.Primary_Hex;
+                    opt.dataset.primaryHex = d.Primary_Hex;
+                    opt.dataset.secondaryHex = sec;
+                    select.appendChild(opt);
+                }
+
+                amsdDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
+
+                const sep1 = document.createElement('option');
+                sep1.disabled = true;
+                sep1.textContent = '───────────────';
+                menuSelect.appendChild(sep1);
+                const sep2 = sep1.cloneNode(true);
+                hiddenSelect.appendChild(sep2);
+
+                otherDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
+
+                // Restore brand from localStorage
+                const brandParam = localStorage.getItem('bondwood-brand');
+                if (brandParam) {
+                    for (let i = 0; i < menuSelect.options.length; i++) {
+                        if (String(menuSelect.options[i].value) === String(brandParam)) {
+                            menuSelect.selectedIndex = i;
+                            hiddenSelect.value = brandParam;
+                            updateBrandColorsFromMenu();
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Brand data load failed:', e);
+                if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
             }
         }
 
         function updateBrandColorsFromMenu() {
             const sel = document.getElementById('brandSelectorMenu');
-            const val = sel.value;
-            if (!val) {
-                localStorage.removeItem('bondwood-brand');
-                location.reload();
-                return;
-            }
-            // This would need brand data loaded — for now just reload
-            location.reload();
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
         }
 
-        function loadDarkMode() {
-            if (localStorage.getItem('bondwood-dark-mode') === 'true') {
-                document.body.classList.add('dark-mode');
+        function updateBrandColors() {
+            const sel = document.getElementById('brandSelector');
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
+        }
+
+        function needsDarkText(hex) {
+            if (!hex) return false;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
+            const isYellowish = r > 200 && g > 180 && b < 100;
+            const isBrightGreen = g > 200 && r > 150 && b < 100;
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return isYellowish || isBrightGreen || luminance > 0.85;
+        }
+
+        function hexToRgba(hex, alpha) {
+            if (!hex || hex.length < 7) return `rgba(100,100,100,${alpha})`;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r},${g},${b},${alpha})`;
+        }
+
+        function applyBrand(primaryHex, secondaryHex, districtNumber) {
+            const banner = document.getElementById('headerBanner');
+            const accent = document.getElementById('bannerAccent');
+            const logo = document.getElementById('bannerLogo');
+            const title = document.getElementById('bannerTitle');
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+            if (!primaryHex) {
+                banner.style.background = '#000000';
+                accent.style.background = '#0728eb';
+                logo.src = 'bondwood-logo-modern-dark.png';
+                logo.style.display = 'block';
+                document.documentElement.style.setProperty('--primary-hex', '#000000');
+                document.documentElement.style.setProperty('--secondary-hex', '#0728eb');
+                document.documentElement.style.setProperty('--row-hover-bg', hexToRgba('#0728eb', 0.08));
+                if (title) title.style.color = '#fff';
+                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
+                updateHamburgerMenuColors('#000000', '#0728eb');
+                localStorage.removeItem('bondwood-brand');
+                return;
             }
+
+            if (districtNumber === '6') primaryHex = '#121517';
+            if (districtNumber === '111') primaryHex = '#181e21';
+            if (districtNumber === '277') primaryHex = '#DA2B1F';
+
+            banner.style.background = primaryHex;
+            accent.style.background = secondaryHex || primaryHex;
+            document.documentElement.style.setProperty('--primary-hex', primaryHex);
+            document.documentElement.style.setProperty('--secondary-hex', secondaryHex || primaryHex);
+            const hoverColor = (secondaryHex && secondaryHex !== '#000000' && secondaryHex !== '#000') ? secondaryHex : primaryHex;
+            document.documentElement.style.setProperty('--row-hover-bg', hexToRgba(hoverColor, 0.08));
+
+            if (needsDarkText(primaryHex)) {
+                if (title) title.style.color = '#000000';
+                if (hamburgerBtn) hamburgerBtn.style.color = '#000000';
+            } else {
+                if (title) title.style.color = '#fff';
+                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
+            }
+
+            if (districtNumber) {
+                const logoPath = `district-logos/${districtNumber}.png`;
+                const preloadImg = new Image();
+                logo.dataset.pendingLogo = logoPath;
+                logo.style.display = 'none';
+                preloadImg.onload = function() {
+                    if (logo.dataset.pendingLogo === logoPath) {
+                        logo.src = logoPath;
+                        logo.style.display = 'block';
+                        delete logo.dataset.pendingLogo;
+                    }
+                };
+                preloadImg.onerror = function() {
+                    if (logo.dataset.pendingLogo === logoPath) {
+                        logo.src = 'bondwood-logo-modern-dark.png';
+                        logo.style.display = 'block';
+                        delete logo.dataset.pendingLogo;
+                    }
+                };
+                preloadImg.src = logoPath;
+            }
+
+            updateHamburgerMenuColors(primaryHex, secondaryHex);
+
+            if (districtNumber) {
+                localStorage.setItem('bondwood-brand', districtNumber);
+            }
+        }
+
+        function updateHamburgerMenuColors(primaryHex, secondaryHex) {
+            const menu = document.getElementById('hamburgerMenu');
+            if (!menu) return;
+
+            let menuColor = primaryHex || '#000000';
+            let highlightHover, highlightActive;
+
+            let r, g, b;
+            if (menuColor.startsWith('#') && menuColor.length >= 7) {
+                r = parseInt(menuColor.slice(1, 3), 16);
+                g = parseInt(menuColor.slice(3, 5), 16);
+                b = parseInt(menuColor.slice(5, 7), 16);
+            }
+
+            if (r !== undefined && !isNaN(r)) {
+                if (needsDarkText(menuColor)) {
+                    menu.classList.add('dark-text');
+                } else {
+                    menu.classList.remove('dark-text');
+                }
+
+                if (secondaryHex && secondaryHex.startsWith('#') && secondaryHex.length >= 7) {
+                    const sr = parseInt(secondaryHex.slice(1, 3), 16);
+                    const sg = parseInt(secondaryHex.slice(3, 5), 16);
+                    const sb = parseInt(secondaryHex.slice(5, 7), 16);
+                    if (!isNaN(sr) && !isNaN(sg) && !isNaN(sb)) {
+                        highlightHover = `rgba(${sr}, ${sg}, ${sb}, 0.25)`;
+                        highlightActive = `rgba(${sr}, ${sg}, ${sb}, 0.40)`;
+                    }
+                }
+                if (!highlightHover) {
+                    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    if (luminance > 0.5) {
+                        highlightHover = 'rgba(0, 0, 0, 0.10)';
+                        highlightActive = 'rgba(0, 0, 0, 0.18)';
+                    } else {
+                        highlightHover = 'rgba(255, 255, 255, 0.15)';
+                        highlightActive = 'rgba(255, 255, 255, 0.25)';
+                    }
+                }
+            } else {
+                menu.classList.remove('dark-text');
+                highlightHover = 'rgba(255, 255, 255, 0.15)';
+                highlightActive = 'rgba(255, 255, 255, 0.25)';
+            }
+
+            menu.style.background = menuColor;
+            menu.style.setProperty('--menu-highlight-hover', highlightHover);
+            menu.style.setProperty('--menu-highlight-active', highlightActive);
         }
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
-            localStorage.setItem('bondwood-dark-mode', document.body.classList.contains('dark-mode'));
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function initTheme() {
+            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const savedTheme = localStorage.getItem('theme');
+            if (systemPrefersDark) document.body.classList.add('dark-mode');
+            if (savedTheme === 'dark' && !systemPrefersDark) document.body.classList.add('dark-mode');
+            else if (savedTheme === 'light' && systemPrefersDark) document.body.classList.remove('dark-mode');
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    document.body.classList.toggle('dark-mode', e.matches);
+                }
+            });
         }
 
         /* ========================================
@@ -1099,12 +1257,14 @@
         function toggleHamburgerMenu() {
             const menu = document.getElementById('hamburgerMenu');
             const overlay = document.getElementById('hamburgerOverlay');
-            if (menu.style.display === 'none') {
+            if (menu.classList.contains('open')) {
+                closeHamburgerMenu();
+            } else {
                 menu.style.display = 'block';
                 overlay.style.display = 'block';
-                requestAnimationFrame(() => { menu.style.transform = 'translateX(0)'; });
-            } else {
-                closeHamburgerMenu();
+                menu.offsetHeight; // force reflow
+                menu.classList.add('open');
+                menu.style.transform = 'translateX(0)';
             }
         }
 
@@ -1112,6 +1272,7 @@
             const menu = document.getElementById('hamburgerMenu');
             const overlay = document.getElementById('hamburgerOverlay');
             menu.style.transform = 'translateX(-100%)';
+            menu.classList.remove('open');
             setTimeout(() => { menu.style.display = 'none'; overlay.style.display = 'none'; }, 200);
         }
 
