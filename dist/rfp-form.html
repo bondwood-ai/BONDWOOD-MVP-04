@@ -2065,6 +2065,16 @@
 
                     let rows = [];
 
+                    // Helper to normalize date formats to MM/DD/YYYY
+                    function normalizeDate(val) {
+                        if (!val) return '';
+                        val = val.trim();
+                        var m = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                        if (m) return m[2] + '/' + m[3] + '/' + m[1];
+                        if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(val)) return val;
+                        return val;
+                    }
+
                     if (hasHeaders) {
                         // Use header-based mapping
                         const data = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' });
@@ -2092,7 +2102,7 @@
                             rows.push({
                                 description: val(row, colDesc),
                                 invoice: val(row, colInv),
-                                invoiceDate: val(row, colInvDate),
+                                invoiceDate: normalizeDate(val(row, colInvDate)),
                                 budgetCode: val(row, colBC),
                                 account: val(row, colAcct),
                                 amount: val(row, colAmt)
@@ -2102,27 +2112,26 @@
                         // No headers — use smart column detection
                         console.log('[IMPORT] Using smart column detection (no headers)');
                         const colCount = Math.max(...allRows.map(r => r.length));
-                        console.log('[IMPORT] Column count:', colCount);
 
-                        // Analyze each column across all rows to detect type
                         function analyzeColumn(colIdx) {
                             const vals = allRows.map(r => String(r[colIdx] || '').trim()).filter(v => v);
-                            if (vals.length === 0) return 'empty';
+                            if (vals.length === 0) return { empty: true };
                             const isAllNumeric = vals.every(v => /^[\d,.]+$/.test(v));
                             const hasDecimals = vals.some(v => /\.\d{1,2}$/.test(v.replace(/,/g, '')));
-                            const looksLikeDate = vals.every(v => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v) || /^\d{4}-\d{2}-\d{2}/.test(v) || !isNaN(Date.parse(v)));
+                            // Strict date detection: only explicit date formats, no Date.parse fallback
+                            const looksLikeDate = vals.every(v => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v) || /^\d{4}-\d{2}-\d{2}/.test(v));
                             const looksLikeBudgetCode = vals.every(v => /^\d{10,14}$/.test(v));
                             const looksLikeAccount = vals.every(v => /^\d{2,4}$/.test(v) && v.length <= 4);
+                            const looksLikeVendor = vals.every(v => /^\d{4,5}$/.test(v));
                             const avgLen = vals.reduce((s, v) => s + v.length, 0) / vals.length;
                             const hasLetters = vals.some(v => /[a-zA-Z]/.test(v));
-                            return { isAllNumeric, hasDecimals, looksLikeDate, looksLikeBudgetCode, looksLikeAccount, avgLen, hasLetters };
+                            return { isAllNumeric, hasDecimals, looksLikeDate, looksLikeBudgetCode, looksLikeAccount, looksLikeVendor, avgLen, hasLetters };
                         }
 
                         const colAnalysis = [];
                         for (let i = 0; i < colCount; i++) colAnalysis.push(analyzeColumn(i));
                         console.log('[IMPORT] Column analysis:', colAnalysis);
 
-                        // Find best column for each field
                         const used = new Set();
                         function pickCol(testFn) {
                             for (let i = 0; i < colCount; i++) {
@@ -2132,31 +2141,22 @@
                             return -1;
                         }
 
-                        // 1. Budget code: all digits, 10-14 chars
                         const bcCol = pickCol(a => a.looksLikeBudgetCode);
-                        // 2. Account: short numeric, 2-4 digits
                         const acctCol = pickCol(a => a.looksLikeAccount && !a.hasDecimals);
-                        // 3. Amount: numeric with decimals
                         const amtCol = pickCol(a => a.isAllNumeric && a.hasDecimals);
-                        // 4. Invoice date: date-like values
                         const invDateCol = pickCol(a => a.looksLikeDate);
-                        // 5. Invoice: has letters + numbers (alphanumeric codes)
-                        const invCol = pickCol(a => a.hasLetters && a.avgLen < 30 && !a.looksLikeDate);
-                        // 6. Description: longest remaining text column
+                        const vendorCol = pickCol(a => a.looksLikeVendor && !a.hasDecimals);
+                        const invCol = pickCol(a => a.hasLetters && a.avgLen < 30);
                         let descCol = -1;
                         let maxAvgLen = 0;
                         for (let i = 0; i < colCount; i++) {
                             if (used.has(i)) continue;
-                            if (colAnalysis[i].avgLen > maxAvgLen) {
-                                maxAvgLen = colAnalysis[i].avgLen;
-                                descCol = i;
-                            }
+                            if (colAnalysis[i].avgLen > maxAvgLen) { maxAvgLen = colAnalysis[i].avgLen; descCol = i; }
                         }
                         if (descCol >= 0) used.add(descCol);
 
-                        console.log('[IMPORT] Smart mapping → desc:', descCol, 'inv:', invCol, 'invDate:', invDateCol, 'bc:', bcCol, 'acct:', acctCol, 'amt:', amtCol);
+                        console.log('[IMPORT] Smart mapping → vendor:', vendorCol, 'desc:', descCol, 'inv:', invCol, 'invDate:', invDateCol, 'bc:', bcCol, 'acct:', acctCol, 'amt:', amtCol);
 
-                        // If smart detection found fewer than 3 columns, fall back to positional
                         const detectedCount = [descCol, invCol, invDateCol, bcCol, acctCol, amtCol].filter(c => c >= 0).length;
                         if (detectedCount < 3) {
                             console.log('[IMPORT] Smart detection insufficient, falling back to positional');
@@ -2173,9 +2173,10 @@
                             allRows.forEach(cells => {
                                 if (cells.every(c => String(c).trim() === '')) return;
                                 rows.push({
+                                    vendorNumber: g(cells, vendorCol),
                                     description: g(cells, descCol),
                                     invoice: g(cells, invCol),
-                                    invoiceDate: g(cells, invDateCol),
+                                    invoiceDate: normalizeDate(g(cells, invDateCol)),
                                     budgetCode: g(cells, bcCol),
                                     account: g(cells, acctCol),
                                     amount: g(cells, amtCol)
@@ -2185,6 +2186,22 @@
                     }
 
                     if (rows.length === 0) { showAlert('No data found in file.', 'Import Error'); return; }
+
+                    // Auto-populate vendor if detected from import
+                    if (rows[0].vendorNumber && typeof VENDOR_DATA !== 'undefined') {
+                        const vn = rows[0].vendorNumber;
+                        const paddedVn = vn.length === 4 ? '0' + vn : vn;
+                        const match = VENDOR_DATA.find(v => v.number === paddedVn || v.number === vn);
+                        if (match) {
+                            const vnInput = document.getElementById('vendorNumber');
+                            const vnameInput = document.getElementById('vendorName');
+                            if (vnInput && !vnInput.value.trim()) vnInput.value = match.number;
+                            if (vnameInput && !vnameInput.value.trim()) vnameInput.value = match.name;
+                            console.log('[IMPORT] Auto-populated vendor:', match.number, match.name);
+                        } else {
+                            console.log('[IMPORT] Vendor number', vn, 'not found in VENDOR_DATA');
+                        }
+                    }
 
                     // Clear existing rows
                     document.getElementById('lineItemsBody').innerHTML = '';

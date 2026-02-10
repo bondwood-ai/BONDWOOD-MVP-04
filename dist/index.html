@@ -2320,6 +2320,16 @@
 
                 let rows = [];
 
+                // Helper to normalize date formats to MM/DD/YYYY
+                function normalizeDate(val) {
+                    if (!val) return '';
+                    val = val.trim();
+                    var m = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (m) return m[2] + '/' + m[3] + '/' + m[1];
+                    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(val)) return val;
+                    return val;
+                }
+
                 if (hasHeaders) {
                     // Re-parse with headers using same workbook data
                     const buf = await file.arrayBuffer();
@@ -2351,7 +2361,7 @@
                             vendorNumber: val(row, colVendor),
                             description: val(row, colDesc),
                             invoice: val(row, colInv),
-                            invoiceDate: val(row, colInvDate),
+                            invoiceDate: normalizeDate(val(row, colInvDate)),
                             budgetCode: val(row, colBC),
                             account: val(row, colAcct),
                             amount: val(row, colAmt)
@@ -2367,7 +2377,7 @@
                         if (vals.length === 0) return { empty: true };
                         const isAllNumeric = vals.every(v => /^[\d,.]+$/.test(v));
                         const hasDecimals = vals.some(v => /\.\d{1,2}$/.test(v.replace(/,/g, '')));
-                        const looksLikeDate = vals.every(v => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v) || /^\d{4}-\d{2}-\d{2}/.test(v) || !isNaN(Date.parse(v)));
+                        const looksLikeDate = vals.every(v => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v) || /^\d{4}-\d{2}-\d{2}/.test(v));
                         const looksLikeBudgetCode = vals.every(v => /^\d{10,14}$/.test(v));
                         const looksLikeAccount = vals.every(v => /^\d{2,4}$/.test(v) && v.length <= 4);
                         const looksLikeVendor = vals.every(v => /^\d{4,5}$/.test(v));
@@ -2423,7 +2433,7 @@
                                 vendorNumber: g(cells, vendorCol),
                                 description: g(cells, descCol),
                                 invoice: g(cells, invCol),
-                                invoiceDate: g(cells, invDateCol),
+                                invoiceDate: normalizeDate(g(cells, invDateCol)),
                                 budgetCode: g(cells, bcCol),
                                 account: g(cells, acctCol),
                                 amount: g(cells, amtCol)
