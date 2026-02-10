@@ -320,7 +320,8 @@
         .adv-search-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
         /* Checklist component */
         .adv-checklist { border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
-        .adv-checklist-label { display: block; font-family: 'Reddit Sans', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
+        .adv-checklist-header { background: var(--primary-hex); color: #fff; padding: 0.35rem 0.6rem; font-family: 'Reddit Sans', sans-serif; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+        .adv-checklist-count { display: inline-block; background: rgba(255,255,255,0.25); color: #fff; font-size: 0.58rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 99px; margin-left: 0.3rem; font-family: 'Reddit Sans', sans-serif; }
         .adv-checklist-filter { width: 100%; padding: 0.35rem 0.5rem; font-size: 0.75rem; border: none; border-bottom: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: 'Reddit Sans', sans-serif; outline: none; }
         .adv-checklist-filter::placeholder { color: var(--text-secondary); opacity: 0.5; }
         .adv-checklist-items { max-height: 130px; overflow-y: auto; padding: 0.25rem 0.125rem; }
@@ -328,7 +329,6 @@
         .adv-checklist-items label:hover { background: var(--bg-color); }
         .adv-checklist-items input[type="checkbox"] { width: 13px; height: 13px; flex-shrink: 0; accent-color: var(--primary-hex); cursor: pointer; }
         .adv-checklist-items .adv-no-items { padding: 0.5rem; font-size: 0.7rem; color: var(--text-secondary); text-align: center; font-style: italic; }
-        .adv-checklist-count { display: inline-block; background: var(--primary-hex); color: #fff; font-size: 0.6rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 99px; margin-left: 0.3rem; vertical-align: middle; font-family: 'Reddit Sans', sans-serif; }
         /* Range fields */
         .adv-search-field label { display: block; font-family: 'Reddit Sans', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
         .adv-search-field input {
@@ -710,30 +710,30 @@
                     <div class="adv-search-section-title">Request Details</div>
                     <div class="adv-search-grid">
                         <div>
-                            <span class="adv-checklist-label">Status<span class="adv-checklist-count" id="advStatusCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="status">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Status<span class="adv-checklist-count" id="advStatusCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advStatusList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Request Type<span class="adv-checklist-count" id="advRequestTypeCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="request_type">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Request Type<span class="adv-checklist-count" id="advRequestTypeCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advRequestTypeList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Submitter<span class="adv-checklist-count" id="advSubmitterCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="submitter_name">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Submitter<span class="adv-checklist-count" id="advSubmitterCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advSubmitterList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Assigned To<span class="adv-checklist-count" id="advAssignedToCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="assigned_to">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Assigned To<span class="adv-checklist-count" id="advAssignedToCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advAssignedToList"></div>
                             </div>
                         </div>
@@ -745,23 +745,23 @@
                     <div class="adv-search-section-title">Vendor</div>
                     <div class="adv-search-grid">
                         <div>
-                            <span class="adv-checklist-label">Vendor Name<span class="adv-checklist-count" id="advVendorNameCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="vendor_name">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Vendor Name<span class="adv-checklist-count" id="advVendorNameCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advVendorNameList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Vendor Number<span class="adv-checklist-count" id="advVendorNumberCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="vendor_number">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Vendor Number<span class="adv-checklist-count" id="advVendorNumberCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advVendorNumberList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">AP Batch<span class="adv-checklist-count" id="advApBatchCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="ap_batch">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">AP Batch<span class="adv-checklist-count" id="advApBatchCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advApBatchList"></div>
                             </div>
                         </div>
@@ -781,16 +781,16 @@
                     <div class="adv-search-section-title">Line Item Details</div>
                     <div class="adv-search-grid cols-3">
                         <div>
-                            <span class="adv-checklist-label">Description<span class="adv-checklist-count" id="advDescriptionCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="description">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Description<span class="adv-checklist-count" id="advDescriptionCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advDescriptionList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Invoice Number<span class="adv-checklist-count" id="advInvoiceNumberCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="invoice_number">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Invoice Number<span class="adv-checklist-count" id="advInvoiceNumberCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advInvoiceNumberList"></div>
                             </div>
                         </div>
@@ -818,53 +818,53 @@
                     <div class="adv-search-section-title">Budget Code</div>
                     <div class="adv-search-grid">
                         <div>
-                            <span class="adv-checklist-label">Budget Code<span class="adv-checklist-count" id="advBudgetCodeCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="budget_code">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Budget Code<span class="adv-checklist-count" id="advBudgetCodeCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advBudgetCodeList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Account Code<span class="adv-checklist-count" id="advAccountCodeCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="account_code">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Account Code<span class="adv-checklist-count" id="advAccountCodeCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advAccountCodeList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Fund<span class="adv-checklist-count" id="advFundCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="fund">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Fund<span class="adv-checklist-count" id="advFundCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advFundList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Organization<span class="adv-checklist-count" id="advOrganizationCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="organization">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Organization<span class="adv-checklist-count" id="advOrganizationCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advOrganizationList"></div>
                             </div>
                         </div>
                     </div>
                     <div class="adv-search-grid" style="margin-top:0.625rem;">
                         <div>
-                            <span class="adv-checklist-label">Program<span class="adv-checklist-count" id="advProgramCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="program">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Program<span class="adv-checklist-count" id="advProgramCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advProgramList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Finance<span class="adv-checklist-count" id="advFinanceCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="finance">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Finance<span class="adv-checklist-count" id="advFinanceCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advFinanceList"></div>
                             </div>
                         </div>
                         <div>
-                            <span class="adv-checklist-label">Course<span class="adv-checklist-count" id="advCourseCount" style="display:none;"></span></span>
                             <div class="adv-checklist" data-field="course">
-                                <input class="adv-checklist-filter" placeholder="Filter..." oninput="filterChecklist(this)">
+                                <div class="adv-checklist-header">Course<span class="adv-checklist-count" id="advCourseCount" style="display:none;"></span></div>
+                                <input class="adv-checklist-filter" placeholder="Search..." oninput="filterChecklist(this)">
                                 <div class="adv-checklist-items" id="advCourseList"></div>
                             </div>
                         </div>
