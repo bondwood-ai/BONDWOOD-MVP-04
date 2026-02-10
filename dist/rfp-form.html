@@ -2188,18 +2188,18 @@
                     if (rows.length === 0) { showAlert('No data found in file.', 'Import Error'); return; }
 
                     // Auto-populate vendor if detected from import
-                    if (rows[0].vendorNumber && typeof VENDOR_DATA !== 'undefined') {
+                    if (rows[0].vendorNumber && VENDOR_DATA && VENDOR_DATA.length > 0) {
                         const vn = rows[0].vendorNumber;
                         const paddedVn = vn.length === 4 ? '0' + vn : vn;
-                        const match = VENDOR_DATA.find(v => v.number === paddedVn || v.number === vn);
+                        const match = VENDOR_DATA.find(v => v.c === paddedVn || v.c === vn);
                         if (match) {
                             const vnInput = document.getElementById('vendorNumber');
                             const vnameInput = document.getElementById('vendorName');
-                            if (vnInput && !vnInput.value.trim()) vnInput.value = match.number;
-                            if (vnameInput && !vnameInput.value.trim()) vnameInput.value = match.name;
-                            console.log('[IMPORT] Auto-populated vendor:', match.number, match.name);
+                            if (vnInput && !vnInput.value.trim()) vnInput.value = match.c;
+                            if (vnameInput && !vnameInput.value.trim()) vnameInput.value = match.n;
+                            console.log('[IMPORT] Auto-populated vendor:', match.c, match.n);
                         } else {
-                            console.log('[IMPORT] Vendor number', vn, 'not found in VENDOR_DATA');
+                            console.log('[IMPORT] Vendor number', paddedVn, 'not found in VENDOR_DATA');
                         }
                     }
 
