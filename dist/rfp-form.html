@@ -2195,8 +2195,11 @@
                         if (match) {
                             const vnInput = document.getElementById('vendorNumber');
                             const vnameInput = document.getElementById('vendorName');
+                            const vaddrInput = document.getElementById('vendorAddress');
                             if (vnInput && !vnInput.value.trim()) vnInput.value = match.c;
                             if (vnameInput && !vnameInput.value.trim()) vnameInput.value = match.n;
+                            if (vaddrInput && !vaddrInput.value.trim()) vaddrInput.value = match.a + '\n' + match.ci + ', ' + match.st + ' ' + match.z;
+                            selectedVendor = match;
                             console.log('[IMPORT] Auto-populated vendor:', match.c, match.n);
                         } else {
                             console.log('[IMPORT] Vendor number', paddedVn, 'not found in VENDOR_DATA');
