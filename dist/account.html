@@ -83,19 +83,9 @@
         .bondwood-logo { height: 100px; max-height: 100px; width: auto; flex-shrink: 0; margin-top: -40px; margin-bottom: -40px; object-fit: contain; }
 
         /* ============ MAIN CONTENT ============ */
-        .main-content { max-width: 1100px; margin: 0 auto; }
-        .page-title { font-family: 'Reddit Sans', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; }
-
-        /* ============ BACK BUTTON ============ */
-        .back-btn {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 0.45rem 0.85rem; background: var(--card-bg); color: var(--text-primary);
-            border: 1px solid var(--border-color); border-radius: 6px;
-            font-size: 0.8rem; font-weight: 500; cursor: pointer;
-            font-family: 'Reddit Sans', sans-serif; transition: all 0.15s; margin-bottom: 1rem;
-        }
-        .back-btn:hover { background: var(--bg-color); }
-        .back-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .main-content { padding: 0; }
+        .account-content-wrapper { max-width: 1100px; margin: 0 auto; }
+        .page-title { font-family: 'Reddit Sans', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem 0; }
 
         /* ============ PROFILE CONTAINER ============ */
         .profile-container {
@@ -364,10 +354,7 @@
     <main class="main-content">
         <h2 class="page-title">My Account</h2>
 
-        <button class="back-btn" onclick="window.location.href='index.html'">
-            <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Back to Dashboard
-        </button>
+        <div class="account-content-wrapper">
 
         <!-- Profile Card -->
         <div class="profile-container">
@@ -431,6 +418,7 @@
         </div>
 
         <!-- Footer -->
+        </div><!-- /account-content-wrapper -->
         <div class="footer">
             <div class="ownership-text">
                 <span>POWERED BY BONDWOOD</span>
