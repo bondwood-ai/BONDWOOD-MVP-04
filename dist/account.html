@@ -82,7 +82,7 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             overflow: visible;
-            margin: 0 auto 1.5rem;
+            margin: 10vh auto 1.5rem;
             max-width: 780px;
         }
 
@@ -379,7 +379,7 @@
     </div>
 
     <script>
-        const API_BASE = '';
+        const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let profileData = null;
         let formDirty = false;
         let selectedFile = null;
@@ -524,7 +524,7 @@
            ======================================== */
         async function loadProfile() {
             try {
-                const resp = await fetch(`${API_BASE}/api/me`);
+                const resp = await fetch('/api/me');
                 if (!resp.ok) throw new Error('Failed to load profile');
                 const ct = resp.headers.get('content-type') || '';
                 if (!ct.includes('application/json')) throw new Error('Invalid response');
