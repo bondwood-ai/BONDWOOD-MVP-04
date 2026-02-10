@@ -215,6 +215,14 @@ export default {
         return handleGetProfilePicture(decodeURIComponent(profilePicMatch[1]), env);
       }
 
+      // ── Users (admin) ──
+      if (path === '/api/users' && method === 'GET') {
+        return handleGetUsers(env);
+      }
+      if (path === '/api/users/status' && method === 'PUT') {
+        return handleUpdateUserStatus(request, env);
+      }
+
       // ── Debug schema ──
       if (path === '/api/debug/schema' && method === 'GET') {
         const { results } = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='table'").all();
@@ -331,13 +339,14 @@ async function handleGetUserRoles(env, url) {
 
 async function handleAddUserRole(request, env) {
   const body = await request.json();
-  const { user_email, role } = body;
+  const { user_email, email, role } = body;
+  const rawEmail = user_email || email;
 
-  if (!user_email || !role) {
-    return json({ error: 'user_email and role are required' }, 400);
+  if (!rawEmail || !role) {
+    return json({ error: 'user_email (or email) and role are required' }, 400);
   }
 
-  const emailLower = user_email.toLowerCase().trim();
+  const emailLower = rawEmail.toLowerCase().trim();
   const roleLower = role.toLowerCase().trim();
 
   // Check for duplicate
@@ -358,7 +367,8 @@ async function handleAddUserRole(request, env) {
 
 async function handleDeleteUserRole(request, env) {
   const body = await request.json();
-  const { user_email, role, id } = body;
+  const { user_email, email, role, id } = body;
+  const rawEmail = user_email || email;
 
   if (id) {
     // Delete by ID
@@ -366,13 +376,13 @@ async function handleDeleteUserRole(request, env) {
     return json({ message: 'Role deleted', id });
   }
 
-  if (!user_email || !role) {
-    return json({ error: 'Provide id, or user_email and role' }, 400);
+  if (!rawEmail || !role) {
+    return json({ error: 'Provide id, or user_email/email and role' }, 400);
   }
 
   await env.DB.prepare(
     'DELETE FROM user_roles WHERE LOWER(user_email) = ? AND LOWER(role) = ?'
-  ).bind(user_email.toLowerCase().trim(), role.toLowerCase().trim()).run();
+  ).bind(rawEmail.toLowerCase().trim(), role.toLowerCase().trim()).run();
 
   return json({ message: 'Role deleted', user_email, role });
 }
@@ -1712,4 +1722,94 @@ RULES:
   }
 
   return json({ error: 'Extraction failed after all retries' }, 500);
+}
+
+
+/* ========================================
+   USERS – LIST ALL (admin)
+   ======================================== */
+async function handleGetUsers(env) {
+  // Get all users from user_data
+  let users = [];
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status FROM user_data ORDER BY user_first_name ASC'
+    ).all();
+    users = results;
+  } catch (e) {
+    // Fallback if status column doesn't exist yet
+    try {
+      const { results } = await env.DB.prepare(
+        'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data ORDER BY user_first_name ASC'
+      ).all();
+      users = results;
+    } catch (e2) {
+      // Fallback if profile columns don't exist yet
+      const { results } = await env.DB.prepare(
+        'SELECT user_id, user_first_name, user_last_name, user_email FROM user_data ORDER BY user_first_name ASC'
+      ).all();
+      users = results;
+    }
+  }
+
+  // Get all roles in one query
+  let allRoles = [];
+  try {
+    const { results: roleResults } = await env.DB.prepare(
+      'SELECT user_email, role FROM user_roles ORDER BY user_email, role'
+    ).all();
+    allRoles = roleResults;
+  } catch (e) {
+    // user_roles table may not exist yet
+  }
+
+  // Build role lookup map
+  const roleMap = {};
+  for (const r of allRoles) {
+    const email = r.user_email.toLowerCase();
+    if (!roleMap[email]) roleMap[email] = [];
+    roleMap[email].push(r.role);
+  }
+
+  // Merge users with roles
+  const merged = users.map(u => ({
+    user_id: u.user_id,
+    first_name: u.user_first_name,
+    last_name: u.user_last_name,
+    email: u.user_email,
+    phone_number: u.phone_number || '',
+    department: u.department || '',
+    title: u.title || '',
+    profile_picture_key: u.profile_picture_key || null,
+    status: u.status || 'active',
+    roles: roleMap[(u.user_email || '').toLowerCase()] || [],
+  }));
+
+  return json({ users: merged, total: merged.length });
+}
+
+
+/* ========================================
+   USERS – UPDATE STATUS (admin)
+   ======================================== */
+async function handleUpdateUserStatus(request, env) {
+  const body = await request.json();
+  const { email, status } = body;
+
+  if (!email || !status) {
+    return json({ error: 'email and status are required' }, 400);
+  }
+
+  if (!['active', 'inactive'].includes(status)) {
+    return json({ error: 'status must be active or inactive' }, 400);
+  }
+
+  try {
+    await env.DB.prepare(
+      'UPDATE user_data SET status = ? WHERE LOWER(user_email) = ?'
+    ).bind(status, email.toLowerCase().trim()).run();
+    return json({ message: 'Status updated', email, status });
+  } catch (e) {
+    return json({ error: 'Failed to update status: ' + e.message }, 500);
+  }
 }

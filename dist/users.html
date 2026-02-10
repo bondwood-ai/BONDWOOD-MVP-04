@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-color: #000000;
+            --accent-color-hover: #333333;
+            --accent-color-light: rgba(0, 0, 0, 0.08);
+            --accent-text-color: #ffffff;
+            --primary-hex: #000000;
+            --secondary-hex: #0728eb;
+            --checkbox-color: #034694;
+            --positive-color: #2B6D51;
+            --negative-color: #FA050F;
+            --warning-color: #d97706;
+            --border-color: #e0e0e0;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #555555;
+            --pale-accent: rgba(7, 40, 235, 0.06);
+            --row-hover-bg: rgba(7, 40, 235, 0.08);
+            --field-bg: #ffffff;
+            --readonly-bg: #f0f2f5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Reddit Sans', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            padding: 1rem;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ============ DARK MODE ============ */
+        body.dark-mode {
+            --bg-color: #121517;
+            --card-bg: #1a1a1a;
+            --border-color: #2c2c2c;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a0a0a0;
+            --accent-color-light: rgba(255, 255, 255, 0.1);
+            --pale-accent: rgba(91, 122, 255, 0.12);
+            --field-bg: #222;
+            --readonly-bg: #1e1e1e;
+        }
+        body.dark-mode th { background: var(--card-bg); }
+        body.dark-mode th:hover { background: #252525; }
+        body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
+        body.dark-mode tbody tr.selected { background: rgba(91, 122, 255, 0.15); }
+        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
+        body.dark-mode .theme-toggle svg { fill: #5b7aff; }
+        body.dark-mode .btn-primary { background: #333; color: #fff; }
+        body.dark-mode .btn-primary:hover { background: #444; }
+        body.dark-mode .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
+        body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
+        body.dark-mode input, body.dark-mode select { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); }
+        body.dark-mode .user-detail-panel { background: var(--card-bg); border-color: var(--border-color); }
+        body.dark-mode .att-close-btn:hover { background: rgba(255,255,255,0.08); }
+
+        /* ============ HAMBURGER MENU ============ */
+        .hamburger-menu-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            width: 100%; padding: 0.7rem 0.85rem; border: none;
+            background: transparent; color: rgba(255,255,255,0.85);
+            cursor: pointer; border-radius: 8px;
+            font-family: 'Reddit Sans', sans-serif;
+            font-size: 0.88rem; font-weight: 500;
+            transition: background 0.15s ease, color 0.15s ease; text-align: left;
+        }
+        .hamburger-menu-item:hover { background: var(--menu-highlight-hover, rgba(255,255,255,0.12)); }
+        .hamburger-menu-item.active { background: var(--menu-highlight-active, rgba(255,255,255,0.18)); color: #ffffff; font-weight: 600; }
+        .hamburger-menu-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+        #hamburgerMenu.dark-text .hamburger-menu-item,
+        #hamburgerMenu.dark-text .hamburger-menu-title,
+        #hamburgerMenu.dark-text button[onclick*="closeHamburger"] { color: #000000 !important; }
+        #hamburgerMenu.dark-text .hamburger-menu-item.active { color: #000000 !important; }
+        #hamburgerMenu.dark-text div[style*="uppercase"] { color: rgba(0,0,0,0.5) !important; }
+        #hamburgerMenu.dark-text #brandSelectorMenu { color: #000 !important; border-color: rgba(0,0,0,0.3) !important; background: rgba(0,0,0,0.08) !important; }
+        #hamburgerMenu.dark-text #brandSelectorMenu option { color: #000; background: #fff; }
+
+        .bondwood-logo {
+            height: 100px; max-height: 100px; margin-top: -40px; margin-bottom: -40px;
+            object-fit: contain; display: block;
+        }
+
+        /* ============ TABLE ============ */
+        .module-container {
+            background: var(--card-bg); border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+        }
+        .module-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+        }
+        .module-title { font-size: 1.15rem; font-weight: 700; font-family: 'Reddit Sans', sans-serif; }
+        .module-subtitle { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem; }
+
+        .header-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.45rem 1rem; border-radius: 8px; border: 1px solid var(--border-color);
+            background: var(--card-bg); color: var(--text-primary); cursor: pointer;
+            font-family: 'Reddit Sans', sans-serif; font-size: 0.78rem; font-weight: 600;
+            transition: all 0.12s ease; white-space: nowrap;
+        }
+        .btn-primary:hover { background: var(--bg-color); }
+        .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); }
+        .btn-primary.accent:hover { opacity: 0.88; }
+        .btn-primary.green { background: var(--positive-color); color: #fff; border-color: var(--positive-color); }
+        .btn-primary.green:hover { opacity: 0.88; }
+        .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
+        .btn-primary.danger:hover { opacity: 0.88; }
+
+        .search-wrapper {
+            padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);
+            display: flex; gap: 0.5rem; align-items: center;
+        }
+        .search-input {
+            flex: 1; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; font-family: inherit; font-size: 0.82rem;
+            background: var(--field-bg); color: var(--text-primary); outline: none;
+        }
+        .search-input:focus { border-color: var(--secondary-hex); }
+        .search-input::placeholder { color: var(--text-secondary); }
+
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            position: sticky; top: 0; z-index: 10;
+            background: var(--card-bg); padding: 0.65rem 1rem;
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-secondary);
+            text-align: left; border-bottom: 2px solid var(--border-color);
+            white-space: nowrap; cursor: pointer; user-select: none;
+        }
+        thead th:hover { background: var(--bg-color); }
+        tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
+        tbody tr.selected { background: var(--pale-accent); }
+        td { padding: 0.7rem 1rem; font-size: 0.82rem; vertical-align: middle; }
+
+        .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; }
+        .pagination-info { font-size: 0.8rem; color: var(--text-secondary); }
+        .pagination-controls { display: flex; gap: 0.25rem; }
+        .pagination-btn {
+            display: flex; align-items: center; justify-content: center;
+            min-width: 32px; height: 32px; padding: 0 0.4rem;
+            border: 1px solid var(--border-color); border-radius: 6px;
+            background: var(--card-bg); color: var(--text-primary);
+            font-size: 0.8rem; font-weight: 500; cursor: pointer;
+            transition: all 0.12s ease; font-family: inherit;
+        }
+        .pagination-btn:hover:not(:disabled):not(.active) { background: var(--bg-color); }
+        .pagination-btn.active { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); font-weight: 600; }
+        .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ============ USER ROW ============ */
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.68rem; font-weight: 700; color: #fff;
+            background: var(--secondary-hex); overflow: hidden;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-cell { display: flex; align-items: center; gap: 0.75rem; }
+        .user-name { font-weight: 600; font-size: 0.84rem; color: var(--text-primary); }
+        .user-email { font-size: 0.72rem; color: var(--text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .status-active { color: var(--positive-color); font-weight: 600; font-size: 0.78rem; display: flex; align-items: center; gap: 0.35rem; }
+        .status-inactive { color: var(--text-secondary); font-weight: 600; font-size: 0.78rem; display: flex; align-items: center; gap: 0.35rem; }
+
+        /* ============ ROLE BADGES ============ */
+        .role-badge {
+            display: inline-block; padding: 2px 9px; border-radius: 99px;
+            font-size: 0.62rem; font-weight: 700; font-family: 'Reddit Sans', sans-serif;
+            text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff;
+        }
+        .role-badge-0 { background: #00babc; }
+        .role-badge-1 { background: #f57f2f; }
+        .role-badge-2 { background: #cb3694; }
+        .role-badge-3 { background: #4e59a5; }
+        .roles-cell { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+
+        /* ============ SECTION HEADER ============ */
+        .section-header {
+            background: var(--primary-hex); color: var(--accent-text-color);
+            padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem;
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: 'Reddit Sans', sans-serif;
+        }
+
+        /* ============ USER DETAIL PANEL (Slide-out) ============ */
+        .detail-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 5000;
+        }
+        .detail-overlay.open { display: block; }
+        .user-detail-panel {
+            position: fixed; top: 0; right: 0; width: 560px; max-width: 95vw; height: 100%;
+            background: var(--card-bg); z-index: 5001;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+            transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+            overflow-y: auto; display: flex; flex-direction: column;
+        }
+        .user-detail-panel.open { transform: translateX(0); }
+
+        .detail-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; background: var(--card-bg); z-index: 2;
+        }
+        .detail-header h3 { font-size: 1rem; font-weight: 700; }
+        .detail-close {
+            background: none; border: none; cursor: pointer; padding: 0.3rem;
+            border-radius: 6px; color: var(--text-secondary); display: flex;
+        }
+        .detail-close:hover { background: var(--bg-color); color: var(--text-primary); }
+
+        .detail-profile {
+            padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .detail-avatar {
+            width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; font-weight: 700; color: #fff;
+            background: var(--secondary-hex); overflow: hidden;
+            border: 3px solid var(--border-color);
+        }
+        .detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .detail-identity h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.1rem; }
+        .detail-identity .detail-email { font-size: 0.78rem; color: var(--text-secondary); }
+        .detail-identity .detail-eid { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.1rem; }
+
+        .detail-section { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); }
+        .detail-section-title {
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.75rem;
+        }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .detail-field label {
+            font-size: 0.68rem; font-weight: 600; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .detail-field .value {
+            font-size: 0.84rem; font-weight: 500; color: var(--text-primary); margin-top: 0.15rem;
+        }
+
+        /* Role management in detail panel */
+        .role-manage-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);
+        }
+        .role-manage-row:last-child { border-bottom: none; }
+        .role-manage-name { font-size: 0.82rem; font-weight: 600; }
+        .role-toggle {
+            position: relative; width: 38px; height: 20px; border-radius: 99px;
+            background: var(--border-color); cursor: pointer; transition: background 0.2s;
+            border: none; padding: 0;
+        }
+        .role-toggle.on { background: var(--positive-color); }
+        .role-toggle::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #fff; transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .role-toggle.on::after { transform: translateX(18px); }
+
+        /* RFP mini-table in detail panel */
+        .detail-rfp-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        .detail-rfp-table th {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: var(--text-secondary); text-align: left;
+            padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color);
+            position: static; background: transparent;
+        }
+        .detail-rfp-table td {
+            font-size: 0.78rem; padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .detail-rfp-table tbody tr { cursor: default; }
+        .detail-rfp-table tbody tr:hover { background: var(--row-hover-bg); }
+        .detail-rfp-empty { font-size: 0.8rem; color: var(--text-secondary); padding: 1rem 0; text-align: center; }
+
+        /* ============ ROLE MODAL ============ */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); z-index: 6000;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-card {
+            background: var(--card-bg); border-radius: 12px; width: 420px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+        }
+        .modal-header h3 { font-size: 0.95rem; font-weight: 700; }
+        .modal-body { padding: 1.25rem; }
+        .modal-footer {
+            display: flex; justify-content: flex-end; gap: 0.5rem;
+            padding: 1rem 1.25rem; border-top: 1px solid var(--border-color);
+        }
+
+        /* ============ STATUS BADGE ============ */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 3px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600;
+        }
+        .status-badge.active { background: rgba(43,109,81,0.1); color: var(--positive-color); }
+        .status-badge.inactive { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
+
+        /* ============ FOOTER ============ */
+        .footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1.5rem 0 0.5rem; max-width: 100%;
+        }
+        .footer-brand {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.68rem; color: var(--text-secondary); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .theme-toggle {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 50%; width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        /* ============ LOADING ============ */
+        .loading-spinner {
+            display: flex; align-items: center; justify-content: center; padding: 3rem;
+            color: var(--text-secondary); font-size: 0.85rem; gap: 0.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner-icon { width: 20px; height: 20px; border: 2px solid var(--border-color); border-top-color: var(--secondary-hex); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+        /* ============ TOAST ============ */
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+            padding: 0.65rem 1.25rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+            font-family: 'Reddit Sans', sans-serif; z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s;
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { background: var(--positive-color); color: #fff; }
+        .toast.error { background: var(--negative-color); color: #fff; }
+    </style>
+</head>
+<body>
+    <!-- Hamburger Overlay -->
+    <div id="hamburgerOverlay" onclick="closeHamburgerMenu()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
+
+    <!-- Hamburger Slide-out Menu -->
+    <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
+        <div style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Reddit Sans',sans-serif;">Menu</h3>
+                <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+                </button>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item" onclick="window.location.href='index.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                        Dashboard
+                    </button>
+                    <button class="hamburger-menu-item" onclick="window.location.href='rfp-form.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                        New Request
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item" onclick="window.location.href='account.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        My Account
+                    </button>
+                    <button class="hamburger-menu-item active" onclick="window.location.href='users.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        User Management
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Brand</div>
+                <select id="brandSelectorMenu" onchange="updateBrandColorsFromMenu()" style="width:100%;padding:0.5rem;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:0.85rem;background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;">
+                    <option value="">-- Bondwood Default --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ HEADER BANNER ============ -->
+    <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
+        <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
+            <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
+                <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+            </div>
+            <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
+        </div>
+        <div id="bannerAccent" style="height:4px;background:#0728eb;margin:0 -2rem;"></div>
+    </div>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main style="max-width:100%;margin:0 auto;">
+        <div class="module-container">
+            <header class="module-header">
+                <div>
+                    <h2 class="module-title">User Management</h2>
+                    <p class="module-subtitle" id="userCount">Loading users...</p>
+                </div>
+                <div class="header-actions">
+                    <select id="statusFilter" onchange="applyFilters()" style="padding:0.45rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;font-size:0.78rem;font-weight:600;background:var(--card-bg);color:var(--text-primary);cursor:pointer;">
+                        <option value="all">All Users</option>
+                        <option value="active" selected>Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <select id="roleFilter" onchange="applyFilters()" style="padding:0.45rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;font-size:0.78rem;font-weight:600;background:var(--card-bg);color:var(--text-primary);cursor:pointer;">
+                        <option value="all">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="owner">Owner</option>
+                        <option value="accountant">Accountant</option>
+                        <option value="form_builder">Form Builder</option>
+                        <option value="form_viewer">Form Viewer</option>
+                    </select>
+                </div>
+            </header>
+
+            <div class="search-wrapper">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search by name, email, or employee ID..." oninput="applyFilters()">
+            </div>
+
+            <div class="table-scroll">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th style="width:260px;" onclick="sortUsers('name')">Account <span id="sort-name"></span></th>
+                            <th style="width:100px;" onclick="sortUsers('status')">Status <span id="sort-status"></span></th>
+                            <th style="width:280px;" onclick="sortUsers('roles')">Roles <span id="sort-roles"></span></th>
+                            <th style="width:150px;" onclick="sortUsers('department')">Department <span id="sort-department"></span></th>
+                            <th style="width:120px;" onclick="sortUsers('title')">Title <span id="sort-title"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersBody">
+                        <tr><td colspan="5"><div class="loading-spinner"><div class="spinner-icon"></div> Loading users...</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-bar">
+                <div class="pagination-info" id="paginationInfo">—</div>
+                <div class="pagination-controls" id="paginationControls"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============ USER DETAIL PANEL ============ -->
+    <div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
+    <div class="user-detail-panel" id="detailPanel">
+        <div class="detail-header">
+            <h3 id="detailTitle">User Details</h3>
+            <button class="detail-close" onclick="closeDetail()">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="detail-profile" id="detailProfile">
+            <div class="detail-avatar" id="detailAvatar"><span id="detailInitials">?</span></div>
+            <div class="detail-identity">
+                <h4 id="detailName">—</h4>
+                <div class="detail-email" id="detailEmail">—</div>
+                <div class="detail-eid" id="detailEid">—</div>
+            </div>
+        </div>
+
+        <!-- Account Info Section -->
+        <div class="detail-section">
+            <div class="detail-section-title">Account Information</div>
+            <div class="detail-grid">
+                <div class="detail-field"><label>Department</label><div class="value" id="detailDept">—</div></div>
+                <div class="detail-field"><label>Title</label><div class="value" id="detailJobTitle">—</div></div>
+                <div class="detail-field"><label>Phone</label><div class="value" id="detailPhone">—</div></div>
+                <div class="detail-field">
+                    <label>Status</label>
+                    <div class="value" id="detailStatus">—</div>
+                </div>
+            </div>
+            <div style="margin-top:1rem;display:flex;gap:0.5rem;" id="detailStatusActions">
+                <button class="btn-primary danger" id="btnDeactivate" onclick="toggleUserStatus()" style="font-size:0.75rem;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                    Deactivate Account
+                </button>
+            </div>
+        </div>
+
+        <!-- Roles Section -->
+        <div class="detail-section">
+            <div class="detail-section-title">Role Management</div>
+            <div id="detailRoles"></div>
+        </div>
+
+        <!-- RFPs Section -->
+        <div class="detail-section" style="border-bottom:none;flex:1;">
+            <div class="detail-section-title">Submitted Requests <span id="detailRfpCount" style="font-weight:400;color:var(--text-secondary);"></span></div>
+            <div id="detailRfps">
+                <div class="detail-rfp-empty">No requests found</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ FOOTER ============ -->
+    <div class="footer">
+        <div class="footer-brand">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            POWERED BY BONDWOOD
+        </div>
+        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* ========================================
+           CONFIGURATION & STATE
+           ======================================== */
+        const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
+        const AVAILABLE_ROLES = ['admin', 'owner', 'accountant', 'form_builder', 'form_viewer'];
+        const ROLE_LABELS = { admin: 'Admin', owner: 'Owner', accountant: 'Accountant', form_builder: 'Form Builder', form_viewer: 'Form Viewer' };
+        const ROLE_COLORS = ['#00babc', '#f57f2f', '#cb3694', '#4e59a5', '#00babc'];
+
+        let allUsers = [];
+        let filteredUsers = [];
+        let currentSort = { column: 'name', direction: 'asc' };
+        let currentPage = 1;
+        const PAGE_SIZE = 50;
+        let selectedUser = null;
+        let currentUserEmail = '';
+        let currentUserRoles = [];
+
+        /* ========================================
+           INIT
+           ======================================== */
+        document.addEventListener('DOMContentLoaded', async () => {
+            loadBrand();
+            loadDarkMode();
+            await fetchCurrentUser();
+            await loadUsers();
+        });
+
+        async function fetchCurrentUser() {
+            try {
+                const resp = await fetch('/api/me');
+                if (!resp.ok) return;
+                const user = await resp.json();
+                currentUserEmail = user.email || '';
+                currentUserRoles = user.roles || [];
+                // Check if user has admin/owner role
+                if (!currentUserRoles.includes('admin') && !currentUserRoles.includes('owner')) {
+                    document.querySelector('.module-container').innerHTML = `
+                        <div style="padding:3rem;text-align:center;">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:1rem;">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Access Restricted</h3>
+                            <p style="font-size:0.85rem;color:var(--text-secondary);">User Management is only available to Admins and Owners.</p>
+                        </div>`;
+                }
+            } catch (e) {
+                console.warn('[AUTH] Could not verify user:', e);
+            }
+        }
+
+        /* ========================================
+           LOAD USERS
+           ======================================== */
+        async function loadUsers() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/users`);
+                if (!resp.ok) throw new Error('Failed to load users');
+                const data = await resp.json();
+                allUsers = data.users || data || [];
+                applyFilters();
+            } catch (e) {
+                console.error('[USERS] Load error:', e);
+                document.getElementById('usersBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">Failed to load users. The /api/users endpoint may need to be deployed.</td></tr>';
+            }
+        }
+
+        /* ========================================
+           FILTER & SORT
+           ======================================== */
+        function applyFilters() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const roleFilter = document.getElementById('roleFilter').value;
+
+            filteredUsers = allUsers.filter(u => {
+                const fullName = ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase();
+                const email = (u.email || '').toLowerCase();
+                const eid = (u.user_id || '').toString();
+                const matchSearch = !query || fullName.includes(query) || email.includes(query) || eid.includes(query);
+
+                const isActive = u.status !== 'inactive';
+                const matchStatus = statusFilter === 'all' || (statusFilter === 'active' && isActive) || (statusFilter === 'inactive' && !isActive);
+
+                const roles = u.roles || [];
+                const matchRole = roleFilter === 'all' || roles.includes(roleFilter);
+
+                return matchSearch && matchStatus && matchRole;
+            });
+
+            applySorting();
+            currentPage = 1;
+            renderTable();
+        }
+
+        function applySorting() {
+            const dir = currentSort.direction === 'asc' ? 1 : -1;
+            filteredUsers.sort((a, b) => {
+                let va, vb;
+                switch (currentSort.column) {
+                    case 'name':
+                        va = ((a.first_name || '') + ' ' + (a.last_name || '')).toLowerCase();
+                        vb = ((b.first_name || '') + ' ' + (b.last_name || '')).toLowerCase();
+                        break;
+                    case 'status':
+                        va = a.status === 'inactive' ? 1 : 0;
+                        vb = b.status === 'inactive' ? 1 : 0;
+                        break;
+                    case 'roles':
+                        va = (a.roles || []).length;
+                        vb = (b.roles || []).length;
+                        break;
+                    case 'department':
+                        va = (a.department || '').toLowerCase();
+                        vb = (b.department || '').toLowerCase();
+                        break;
+                    case 'title':
+                        va = (a.title || '').toLowerCase();
+                        vb = (b.title || '').toLowerCase();
+                        break;
+                    default:
+                        va = ''; vb = '';
+                }
+                if (va < vb) return -dir;
+                if (va > vb) return dir;
+                return 0;
+            });
+        }
+
+        function sortUsers(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            applySorting();
+            renderTable();
+            updateSortIndicators();
+        }
+
+        function updateSortIndicators() {
+            ['name', 'status', 'roles', 'department', 'title'].forEach(col => {
+                const el = document.getElementById('sort-' + col);
+                if (el) el.textContent = currentSort.column === col ? (currentSort.direction === 'asc' ? '▲' : '▼') : '';
+            });
+        }
+
+        /* ========================================
+           RENDER TABLE
+           ======================================== */
+        function renderTable() {
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, filteredUsers.length);
+            const page = filteredUsers.slice(start, end);
+
+            const tbody = document.getElementById('usersBody');
+            if (page.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">No users found</td></tr>';
+                document.getElementById('userCount').textContent = `${filteredUsers.length} users`;
+                renderPagination();
+                return;
+            }
+
+            tbody.innerHTML = page.map(u => {
+                const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || 'Unknown';
+                const initials = ((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '');
+                const email = u.email || '—';
+                const isActive = u.status !== 'inactive';
+                const roles = u.roles || [];
+                const dept = u.department || '—';
+                const title = u.title || '—';
+                const emailKey = encodeURIComponent(u.email || '');
+
+                const roleBadges = roles.length > 0
+                    ? roles.map((r, i) => `<span class="role-badge role-badge-${i % 4}">${ROLE_LABELS[r] || r}</span>`).join('')
+                    : '<span style="font-size:0.72rem;color:var(--text-secondary);">No roles</span>';
+
+                return `<tr onclick="openDetail('${emailKey}')">
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar" id="avatar-${emailKey}">${initials.toUpperCase() || '?'}</div>
+                            <div>
+                                <div class="user-name">${escHtml(name)}</div>
+                                <div class="user-email">${escHtml(email)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${isActive ? 'active' : 'inactive'}">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">${isActive ? '<path d="M20 6L9 17l-5-5"/>' : '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>'}</svg>
+                            ${isActive ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td><div class="roles-cell">${roleBadges}</div></td>
+                    <td style="font-size:0.8rem;color:var(--text-secondary);">${escHtml(dept)}</td>
+                    <td style="font-size:0.8rem;color:var(--text-secondary);">${escHtml(title)}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('userCount').textContent = `${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''}`;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
+            const start = (currentPage - 1) * PAGE_SIZE + 1;
+            const end = Math.min(currentPage * PAGE_SIZE, filteredUsers.length);
+
+            document.getElementById('paginationInfo').textContent = filteredUsers.length > 0
+                ? `${start} – ${end} of ${filteredUsers.length}`
+                : 'No results';
+
+            const controls = document.getElementById('paginationControls');
+            if (totalPages <= 1) { controls.innerHTML = ''; return; }
+
+            let html = `<button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+            for (let p = 1; p <= totalPages; p++) {
+                if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2) {
+                    html += `<button class="pagination-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                } else if (Math.abs(p - currentPage) === 3) {
+                    html += '<button class="pagination-btn" disabled>…</button>';
+                }
+            }
+            html += `<button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+            controls.innerHTML = html;
+        }
+
+        function goToPage(p) {
+            const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
+            if (p < 1 || p > totalPages) return;
+            currentPage = p;
+            renderTable();
+        }
+
+        /* ========================================
+           DETAIL PANEL
+           ======================================== */
+        async function openDetail(emailKey) {
+            const email = decodeURIComponent(emailKey);
+            const user = allUsers.find(u => u.email === email);
+            if (!user) return;
+            selectedUser = user;
+
+            // Profile info
+            const name = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || 'Unknown';
+            const initials = ((user.first_name || '')[0] || '') + ((user.last_name || '')[0] || '');
+            document.getElementById('detailName').textContent = name;
+            document.getElementById('detailEmail').textContent = user.email || '—';
+            document.getElementById('detailEid').textContent = user.user_id ? 'Employee ID: E' + user.user_id : '';
+            document.getElementById('detailInitials').textContent = initials.toUpperCase() || '?';
+            document.getElementById('detailDept').textContent = user.department || '—';
+            document.getElementById('detailJobTitle').textContent = user.title || '—';
+            document.getElementById('detailPhone').textContent = user.phone_number || '—';
+
+            const isActive = user.status !== 'inactive';
+            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${isActive ? 'active' : 'inactive'}">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">${isActive ? '<path d="M20 6L9 17l-5-5"/>' : '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>'}</svg>
+                ${isActive ? 'Active' : 'Inactive'}
+            </span>`;
+
+            const btn = document.getElementById('btnDeactivate');
+            if (isActive) {
+                btn.className = 'btn-primary danger';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg> Deactivate Account';
+            } else {
+                btn.className = 'btn-primary green';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Activate Account';
+            }
+
+            // Profile picture
+            const avatarEl = document.getElementById('detailAvatar');
+            avatarEl.innerHTML = `<span id="detailInitials">${initials.toUpperCase() || '?'}</span>`;
+            if (user.profile_picture_key) {
+                const img = new Image();
+                img.onload = () => {
+                    avatarEl.innerHTML = '';
+                    const imgEl = document.createElement('img');
+                    imgEl.src = img.src;
+                    avatarEl.appendChild(imgEl);
+                };
+                img.src = `${API_BASE}/api/profile/picture/${encodeURIComponent(user.email)}?t=${Date.now()}`;
+            }
+
+            // Roles
+            renderRoleToggles(user);
+
+            // Load RFPs for this user
+            loadUserRfps(user.email, name);
+
+            // Open panel
+            document.getElementById('detailOverlay').classList.add('open');
+            document.getElementById('detailPanel').classList.add('open');
+        }
+
+        function closeDetail() {
+            document.getElementById('detailOverlay').classList.remove('open');
+            document.getElementById('detailPanel').classList.remove('open');
+            selectedUser = null;
+        }
+
+        /* ========================================
+           ROLE MANAGEMENT
+           ======================================== */
+        function renderRoleToggles(user) {
+            const roles = user.roles || [];
+            const container = document.getElementById('detailRoles');
+            container.innerHTML = AVAILABLE_ROLES.map(role => {
+                const isOn = roles.includes(role);
+                return `<div class="role-manage-row">
+                    <span class="role-manage-name">${ROLE_LABELS[role] || role}</span>
+                    <button class="role-toggle ${isOn ? 'on' : ''}" onclick="toggleRole('${role}', this)" data-role="${role}"></button>
+                </div>`;
+            }).join('');
+        }
+
+        async function toggleRole(role, btn) {
+            if (!selectedUser) return;
+            const isOn = btn.classList.contains('on');
+
+            try {
+                if (isOn) {
+                    // Remove role
+                    const resp = await fetch(`${API_BASE}/api/user-roles`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: selectedUser.email, role: role })
+                    });
+                    if (!resp.ok) throw new Error('Failed to remove role');
+                    btn.classList.remove('on');
+                    selectedUser.roles = (selectedUser.roles || []).filter(r => r !== role);
+                } else {
+                    // Add role
+                    const resp = await fetch(`${API_BASE}/api/user-roles`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: selectedUser.email, role: role })
+                    });
+                    if (!resp.ok) throw new Error('Failed to add role');
+                    btn.classList.add('on');
+                    if (!selectedUser.roles) selectedUser.roles = [];
+                    selectedUser.roles.push(role);
+                }
+                showToast(`${ROLE_LABELS[role]} role ${isOn ? 'removed' : 'added'}`, 'success');
+                renderTable(); // Refresh table badges
+            } catch (e) {
+                showToast('Failed to update role: ' + e.message, 'error');
+            }
+        }
+
+        /* ========================================
+           ACTIVATE / DEACTIVATE
+           ======================================== */
+        async function toggleUserStatus() {
+            if (!selectedUser) return;
+            const isActive = selectedUser.status !== 'inactive';
+            const newStatus = isActive ? 'inactive' : 'active';
+            const action = isActive ? 'deactivate' : 'activate';
+
+            if (!confirm(`Are you sure you want to ${action} ${selectedUser.first_name} ${selectedUser.last_name}?`)) return;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: selectedUser.email, status: newStatus })
+                });
+                if (!resp.ok) throw new Error('Failed to update status');
+                selectedUser.status = newStatus;
+                showToast(`Account ${action}d`, 'success');
+                openDetail(encodeURIComponent(selectedUser.email)); // refresh panel
+                renderTable();
+            } catch (e) {
+                showToast('Failed to update status: ' + e.message, 'error');
+            }
+        }
+
+        /* ========================================
+           LOAD USER RFPs
+           ======================================== */
+        async function loadUserRfps(email, userName) {
+            const container = document.getElementById('detailRfps');
+            container.innerHTML = '<div class="loading-spinner" style="padding:1rem;"><div class="spinner-icon"></div> Loading requests...</div>';
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps`);
+                if (!resp.ok) throw new Error('Failed to load RFPs');
+                const data = await resp.json();
+                const allRfps = data.rfps || data || [];
+
+                // Filter by submitter name or email
+                const nameUpper = userName.toUpperCase();
+                const emailLower = email.toLowerCase();
+                const userRfps = allRfps.filter(r => {
+                    const sub = (r.submitter || '').toUpperCase();
+                    const em = (r.submitter_email || '').toLowerCase();
+                    return sub === nameUpper || em === emailLower || sub.includes(nameUpper);
+                });
+
+                document.getElementById('detailRfpCount').textContent = `(${userRfps.length})`;
+
+                if (userRfps.length === 0) {
+                    container.innerHTML = '<div class="detail-rfp-empty">No requests found for this user</div>';
+                    return;
+                }
+
+                // Sort by RFP number descending
+                userRfps.sort((a, b) => (b.rfp_number || 0) - (a.rfp_number || 0));
+
+                container.innerHTML = `<table class="detail-rfp-table">
+                    <thead><tr>
+                        <th>RFP #</th>
+                        <th>Status</th>
+                        <th>Vendor</th>
+                        <th style="text-align:right;">Amount</th>
+                        <th>Date</th>
+                    </tr></thead>
+                    <tbody>${userRfps.slice(0, 50).map(r => {
+                        const status = (r.status || 'draft').replace(/-/g, ' ');
+                        const statusColor = r.status === 'approved' ? 'var(--positive-color)' :
+                                           r.status === 'rejected' ? 'var(--negative-color)' :
+                                           'var(--text-secondary)';
+                        return `<tr>
+                            <td style="font-weight:600;">${r.rfp_number || '—'}</td>
+                            <td style="color:${statusColor};font-weight:600;text-transform:capitalize;font-size:0.75rem;">${status}</td>
+                            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.vendor_name || '—')}</td>
+                            <td style="text-align:right;font-weight:600;">$${formatAmount(r.total_amount || r.amount || 0)}</td>
+                            <td style="font-size:0.75rem;color:var(--text-secondary);">${r.submission_date || '—'}</td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>`;
+                if (userRfps.length > 50) {
+                    container.innerHTML += `<div style="text-align:center;padding:0.5rem;font-size:0.75rem;color:var(--text-secondary);">Showing 50 of ${userRfps.length} requests</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="detail-rfp-empty">Unable to load requests</div>';
+            }
+        }
+
+        /* ========================================
+           BRAND / DARK MODE
+           ======================================== */
+        function loadBrand() {
+            const saved = localStorage.getItem('bondwood-brand');
+            if (saved) {
+                try {
+                    const brand = JSON.parse(saved);
+                    applyBrand(brand);
+                } catch (e) {}
+            }
+        }
+
+        function applyBrand(brand) {
+            if (!brand) return;
+            const num = String(brand.district_number || '');
+            let primary = brand.primary_color || brand.color || '#000000';
+            let bannerBg = primary;
+
+            // District-specific overrides
+            if (num === '6') { primary = '#121517'; bannerBg = '#121517'; }
+            if (num === '111') { primary = '#181e21'; bannerBg = '#181e21'; }
+            if (num === '277') { primary = '#DA2B1F'; bannerBg = '#DA2B1F'; }
+
+            document.documentElement.style.setProperty('--primary-hex', primary);
+            document.getElementById('headerBanner').style.background = bannerBg;
+
+            // Luminance check for text color
+            const hex = primary.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16) / 255;
+            const g = parseInt(hex.substring(2, 4), 16) / 255;
+            const b = parseInt(hex.substring(4, 6), 16) / 255;
+            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            const textColor = lum > 0.5 ? '#000000' : '#ffffff';
+            document.documentElement.style.setProperty('--accent-text-color', textColor);
+
+            // Banner text
+            document.getElementById('bannerTitle').style.color = textColor;
+            document.getElementById('hamburgerBtn').style.color = textColor;
+
+            // Hamburger menu bg
+            const hmMenu = document.getElementById('hamburgerMenu');
+            hmMenu.style.background = primary;
+            if (lum > 0.5) {
+                hmMenu.classList.add('dark-text');
+            } else {
+                hmMenu.classList.remove('dark-text');
+            }
+
+            // Section headers
+            document.querySelectorAll('.section-header').forEach(el => {
+                el.style.background = primary;
+                el.style.color = textColor;
+            });
+
+            // Secondary / accent
+            if (brand.secondary_color) {
+                document.documentElement.style.setProperty('--secondary-hex', brand.secondary_color);
+                document.getElementById('bannerAccent').style.background = brand.secondary_color;
+            }
+
+            // Logo
+            if (brand.logo_url) {
+                const logo = document.getElementById('bannerLogo');
+                const img = new Image();
+                img.onload = () => { logo.src = brand.logo_url; };
+                img.src = brand.logo_url;
+            }
+
+            // Brand selector sync
+            const selMenu = document.getElementById('brandSelectorMenu');
+            if (selMenu && num) {
+                for (let opt of selMenu.options) {
+                    if (opt.value === num) { opt.selected = true; break; }
+                }
+            }
+        }
+
+        function updateBrandColorsFromMenu() {
+            const sel = document.getElementById('brandSelectorMenu');
+            const val = sel.value;
+            if (!val) {
+                localStorage.removeItem('bondwood-brand');
+                location.reload();
+                return;
+            }
+            // This would need brand data loaded — for now just reload
+            location.reload();
+        }
+
+        function loadDarkMode() {
+            if (localStorage.getItem('bondwood-dark-mode') === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('bondwood-dark-mode', document.body.classList.contains('dark-mode'));
+        }
+
+        /* ========================================
+           HAMBURGER MENU
+           ======================================== */
+        function toggleHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            const overlay = document.getElementById('hamburgerOverlay');
+            if (menu.style.display === 'none') {
+                menu.style.display = 'block';
+                overlay.style.display = 'block';
+                requestAnimationFrame(() => { menu.style.transform = 'translateX(0)'; });
+            } else {
+                closeHamburgerMenu();
+            }
+        }
+
+        function closeHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            const overlay = document.getElementById('hamburgerOverlay');
+            menu.style.transform = 'translateX(-100%)';
+            setTimeout(() => { menu.style.display = 'none'; overlay.style.display = 'none'; }, 200);
+        }
+
+        /* ========================================
+           UTILITIES
+           ======================================== */
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function formatAmount(val) {
+            const n = parseFloat(val) || 0;
+            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + (type || 'success');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
