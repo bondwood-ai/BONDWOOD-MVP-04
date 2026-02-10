@@ -3214,7 +3214,7 @@
             }
 
             // Run up to 3 extractions concurrently
-            const CONCURRENCY = 5;
+            const CONCURRENCY = 8;
             const queue = [...files];
             const workers = [];
             for (let w = 0; w < Math.min(CONCURRENCY, queue.length); w++) {
