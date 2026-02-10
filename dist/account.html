@@ -59,7 +59,7 @@
         body.dark-mode .att-drop-zone:hover, body.dark-mode .att-drop-zone.dragover { background: rgba(255,255,255,0.04); }
 
         /* ============ LOGO ============ */
-        .bondwood-logo { height: 2.25rem; width: auto; max-width: 170px; object-fit: contain; }
+        .bondwood-logo { height: 100px; max-height: 100px; width: auto; flex-shrink: 0; margin-top: -40px; margin-bottom: -40px; object-fit: contain; }
 
         /* ============ MAIN CONTENT ============ */
         .main-content { max-width: 1100px; margin: 0 auto; }
@@ -143,8 +143,12 @@
             display: inline-block; padding: 2px 9px; border-radius: 99px;
             font-size: 0.62rem; font-weight: 700; font-family: 'Reddit Sans', sans-serif;
             text-transform: uppercase; letter-spacing: 0.03em;
-            background: rgba(7, 40, 235, 0.08); color: var(--secondary-hex);
+            color: #ffffff;
         }
+        .role-badge-0 { background: #00babc; }
+        .role-badge-1 { background: #f57f2f; }
+        .role-badge-2 { background: #cb3694; }
+        .role-badge-3 { background: #4e59a5; }
 
         /* ============ FORM ============ */
         .profile-form { padding: 1.25rem 1.5rem 1.5rem; }
@@ -584,9 +588,9 @@
                 // Roles
                 const rolesContainer = document.getElementById('profileRoles');
                 rolesContainer.innerHTML = '';
-                (profileData.roles || []).forEach(role => {
+                (profileData.roles || []).forEach((role, i) => {
                     const badge = document.createElement('span');
-                    badge.className = 'role-badge';
+                    badge.className = 'role-badge role-badge-' + (i % 4);
                     badge.textContent = role.replace(/_/g, ' ');
                     rolesContainer.appendChild(badge);
                 });
