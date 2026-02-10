@@ -1260,7 +1260,7 @@
                     document.getElementById('vendorAddress').value = '';
                     return;
                 }
-                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 200);
+                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 2000);
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
@@ -1273,8 +1273,8 @@
                 vendorActiveIndex = -1;
                 const q = nameInput.value.trim().toUpperCase();
                 const matches = q.length >= 1
-                    ? VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 200)
-                    : VENDOR_DATA.slice(0, 200);
+                    ? VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 2000)
+                    : VENDOR_DATA.slice(0, 2000);
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
@@ -1288,7 +1288,7 @@
                         if (!isOpen) {
                             const q = nameInput.value.trim();
                             if (q.length >= 1) {
-                                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 200);
+                                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 2000);
                                 renderVendorDropdown(nameDrop, matches, q.toUpperCase(), 'name');
                             }
                             vendorActiveIndex = -1;
@@ -3921,7 +3921,7 @@
                 clearBcError(this);
                 const q = this.value.trim();
                 if (q.length < 1 || !budgetDataLoaded) { closeBcDropdown(this); return; }
-                const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 200);
+                const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 2000);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
             });
@@ -3930,8 +3930,8 @@
                 if (!budgetDataLoaded) return;
                 const q = this.value.trim();
                 const matches = q.length >= 1
-                    ? UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 200)
-                    : UNIQUE_BUDGET_CODES.slice(0, 200);
+                    ? UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 2000)
+                    : UNIQUE_BUDGET_CODES.slice(0, 2000);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
             });
