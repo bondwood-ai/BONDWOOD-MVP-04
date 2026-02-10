@@ -221,7 +221,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -229,11 +229,26 @@ async function handleMe(request, env, url) {
   }
 
   const u = results[0];
+
+  // Fetch roles
+  let roles = [];
+  try {
+    const { results: roleResults } = await env.DB.prepare(
+      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
+    ).bind(email.toLowerCase().trim()).all();
+    roles = roleResults.map(r => r.role);
+  } catch (e) { /* user_roles table may not exist yet */ }
+
   return json({
     user_id: u.user_id,
     first_name: u.user_first_name,
     last_name: u.user_last_name,
     email: u.user_email,
+    phone_number: u.phone_number || '',
+    department: u.department || '',
+    title: u.title || '',
+    profile_picture_key: u.profile_picture_key || null,
+    roles,
   });
 }
 

@@ -766,6 +766,17 @@
                 profileData = await resp.json();
                 if (profileData.error) throw new Error(profileData.error);
 
+                // Enrich with full profile from Worker (includes profile_picture_key, roles, etc.)
+                try {
+                    const enrichResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(profileData.email)}`);
+                    if (enrichResp.ok) {
+                        const enriched = await enrichResp.json();
+                        if (!enriched.error) {
+                            profileData = { ...profileData, ...enriched };
+                        }
+                    }
+                } catch (e) { console.warn('[ACCOUNT] Worker enrich failed:', e); }
+
                 // Identity
                 const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
                 document.getElementById('profileFullName').textContent = fullName || 'Unknown User';
