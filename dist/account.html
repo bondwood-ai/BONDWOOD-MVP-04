@@ -58,11 +58,33 @@
         body.dark-mode .att-close-btn:hover { background: rgba(255,255,255,0.08); }
         body.dark-mode .att-drop-zone:hover, body.dark-mode .att-drop-zone.dragover { background: rgba(255,255,255,0.04); }
 
+        /* ============ HAMBURGER MENU ============ */
+        .hamburger-menu-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            width: 100%; padding: 0.65rem 0.75rem; border: none;
+            background: none; color: rgba(255,255,255,0.85);
+            cursor: pointer; border-radius: 6px;
+            font-family: 'Reddit Sans', sans-serif;
+            font-size: 0.9rem; font-weight: 500;
+            transition: all 0.15s ease; text-align: left;
+        }
+        .hamburger-menu-item:hover { background: var(--menu-highlight-hover, rgba(255,255,255,0.12)); }
+        .hamburger-menu-item.active { background: var(--menu-highlight-active, rgba(255,255,255,0.18)); color: #ffffff; font-weight: 600; }
+        .hamburger-menu-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+        #hamburgerMenu.dark-text .hamburger-menu-item,
+        #hamburgerMenu.dark-text .hamburger-menu-title,
+        #hamburgerMenu.dark-text button[onclick*="closeHamburger"] { color: #000000 !important; }
+        #hamburgerMenu.dark-text .hamburger-menu-item.active { color: #000000 !important; }
+        #hamburgerMenu.dark-text div[style*="uppercase"] { color: rgba(0,0,0,0.5) !important; }
+        #hamburgerMenu.dark-text #brandSelectorMenu { color: #000 !important; border-color: rgba(0,0,0,0.3) !important; background: rgba(0,0,0,0.08) !important; }
+        #hamburgerMenu.dark-text #brandSelectorMenu option { color: #000; background: #fff; }
+
         /* ============ LOGO ============ */
         .bondwood-logo { height: 100px; max-height: 100px; width: auto; flex-shrink: 0; margin-top: -40px; margin-bottom: -40px; object-fit: contain; }
 
         /* ============ MAIN CONTENT ============ */
         .main-content { max-width: 1100px; margin: 0 auto; }
+        .page-title { font-family: 'Reddit Sans', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; }
 
         /* ============ BACK BUTTON ============ */
         .back-btn {
@@ -269,11 +291,69 @@
     </style>
 </head>
 <body>
+    <!-- Hamburger Overlay -->
+    <div id="hamburgerOverlay" onclick="closeHamburgerMenu()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
+
+    <!-- Hamburger Slide-out Menu -->
+    <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
+        <div style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Reddit Sans',sans-serif;">Menu</h3>
+                <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+                </button>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item" onclick="window.location.href='index.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                        Dashboard
+                    </button>
+                    <button class="hamburger-menu-item" onclick="window.location.href='rfp-form.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                        New Request
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item active" onclick="window.location.href='account.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        My Account
+                    </button>
+                    <button class="hamburger-menu-item" onclick="window.location.href='users.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        User Management
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Brand</div>
+                <select id="brandSelectorMenu" onchange="updateBrandColorsFromMenu()" style="width:100%;padding:0.5rem;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:0.85rem;background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;">
+                    <option value="">-- Bondwood Default --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Brand Selector -->
+    <select id="brandSelector" onchange="updateBrandColors()" style="display:none;">
+        <option value="">-- Default --</option>
+    </select>
+
     <!-- ============ HEADER BANNER ============ -->
     <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
         <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
             <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">My Account</h1>
+                <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
             <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
         </div>
@@ -282,6 +362,8 @@
 
     <!-- ============ MAIN CONTENT ============ -->
     <main class="main-content">
+        <h2 class="page-title">My Account</h2>
+
         <button class="back-btn" onclick="window.location.href='index.html'">
             <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Back to Dashboard
@@ -442,8 +524,85 @@
         }
 
         /* ========================================
-           BRAND
+           BRAND (full version matching dashboard)
            ======================================== */
+        let brandDistrictData = [];
+
+        async function loadBrandData(retries = 2) {
+            try {
+                let response = await fetch(`${API_BASE}/api/districts`);
+                if (!response.ok) {
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 3000); }
+                    return;
+                }
+                const raw = await response.json();
+                const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);
+                if (!data.length) {
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+                    return;
+                }
+                brandDistrictData = data.filter(d => d.District_Name && d.Primary_Hex);
+
+                const memberOrgDistricts = {};
+                data.forEach(item => {
+                    if (item.Member_Org) {
+                        if (!memberOrgDistricts[item.Member_Org]) memberOrgDistricts[item.Member_Org] = [];
+                        memberOrgDistricts[item.Member_Org].push(Number(item.District_Number));
+                    }
+                });
+                const amsdNumbers = memberOrgDistricts['AMSD'] || [];
+                const amsdDistricts = brandDistrictData.filter(d => amsdNumbers.includes(Number(d.District_Number)));
+                const otherDistricts = brandDistrictData.filter(d => !amsdNumbers.includes(Number(d.District_Number)));
+                amsdDistricts.sort((a, b) => Number(a.District_Number) - Number(b.District_Number));
+                otherDistricts.sort((a, b) => (a.District_Name || '').localeCompare(b.District_Name || ''));
+
+                const menuSelect = document.getElementById('brandSelectorMenu');
+                const hiddenSelect = document.getElementById('brandSelector');
+                while (menuSelect.options.length > 1) menuSelect.remove(1);
+                while (hiddenSelect.options.length > 1) hiddenSelect.remove(1);
+
+                function addOption(d, select) {
+                    const opt = new Option(`${d.District_Name} (${d.District_Number})`, d.District_Number);
+                    let sec = d.Secondary_Hex || d.Primary_Hex;
+                    if (sec.toLowerCase() === '#000000' || sec.toLowerCase() === '#ffffff') sec = d.Primary_Hex;
+                    opt.dataset.primaryHex = d.Primary_Hex;
+                    opt.dataset.secondaryHex = sec;
+                    select.appendChild(opt);
+                }
+                amsdDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
+                const sep1 = document.createElement('option'); sep1.disabled = true; sep1.textContent = '───────────────';
+                menuSelect.appendChild(sep1); hiddenSelect.appendChild(sep1.cloneNode(true));
+                otherDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
+
+                const brandParam = localStorage.getItem('bondwood-brand');
+                if (brandParam) {
+                    for (let i = 0; i < menuSelect.options.length; i++) {
+                        if (String(menuSelect.options[i].value) === String(brandParam)) {
+                            menuSelect.selectedIndex = i;
+                            hiddenSelect.value = brandParam;
+                            updateBrandColorsFromMenu();
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Brand data load failed:', e);
+                if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+            }
+        }
+
+        function updateBrandColorsFromMenu() {
+            const sel = document.getElementById('brandSelectorMenu');
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
+        }
+
+        function updateBrandColors() {
+            const sel = document.getElementById('brandSelector');
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
+        }
+
         function needsDarkText(hex) {
             if (!hex) return false;
             const r = parseInt(hex.slice(1, 3), 16);
@@ -456,11 +615,20 @@
             return isYellowish || isBrightGreen || luminance > 0.85;
         }
 
+        function hexToRgba(hex, alpha) {
+            if (!hex || hex.length < 7) return `rgba(100,100,100,${alpha})`;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r},${g},${b},${alpha})`;
+        }
+
         function applyBrand(primaryHex, secondaryHex, districtNumber) {
             const banner = document.getElementById('headerBanner');
             const accent = document.getElementById('bannerAccent');
             const logo = document.getElementById('bannerLogo');
             const title = document.getElementById('bannerTitle');
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
             const sectionHeader = document.getElementById('sectionHeader');
 
             if (!primaryHex) {
@@ -471,11 +639,13 @@
                 document.documentElement.style.setProperty('--primary-hex', '#000000');
                 document.documentElement.style.setProperty('--secondary-hex', '#0728eb');
                 if (title) title.style.color = '#fff';
+                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
                 if (sectionHeader) { sectionHeader.style.background = '#000000'; sectionHeader.style.color = '#fff'; }
+                updateHamburgerMenuColors('#000000', '#0728eb');
+                localStorage.removeItem('bondwood-brand');
                 return;
             }
 
-            // Override banner color for specific districts
             if (districtNumber === '6') primaryHex = '#121517';
             if (districtNumber === '111') primaryHex = '#181e21';
             if (districtNumber === '277') primaryHex = '#DA2B1F';
@@ -487,49 +657,86 @@
 
             const dark = needsDarkText(primaryHex);
             if (title) title.style.color = dark ? '#000' : '#fff';
+            if (hamburgerBtn) hamburgerBtn.style.color = dark ? '#000' : '#fff';
             if (sectionHeader) { sectionHeader.style.background = primaryHex; sectionHeader.style.color = dark ? '#000' : '#fff'; }
 
-            // Load district logo with preloading
             if (districtNumber) {
                 const logoPath = `district-logos/${districtNumber}.png`;
                 const preloadImg = new Image();
                 logo.dataset.pendingLogo = logoPath;
                 logo.style.display = 'none';
                 preloadImg.onload = function() {
-                    if (logo.dataset.pendingLogo === logoPath) {
-                        logo.src = logoPath;
-                        logo.style.display = 'block';
-                        delete logo.dataset.pendingLogo;
-                    }
+                    if (logo.dataset.pendingLogo === logoPath) { logo.src = logoPath; logo.style.display = 'block'; delete logo.dataset.pendingLogo; }
                 };
                 preloadImg.onerror = function() {
-                    if (logo.dataset.pendingLogo === logoPath) {
-                        logo.src = 'bondwood-logo-modern-dark.png';
-                        logo.style.display = 'block';
-                        delete logo.dataset.pendingLogo;
-                    }
+                    if (logo.dataset.pendingLogo === logoPath) { logo.src = 'bondwood-logo-modern-dark.png'; logo.style.display = 'block'; delete logo.dataset.pendingLogo; }
                 };
                 preloadImg.src = logoPath;
             }
+
+            updateHamburgerMenuColors(primaryHex, secondaryHex);
+            if (districtNumber) localStorage.setItem('bondwood-brand', districtNumber);
         }
 
-        function loadBrand(retries = 2) {
-            const brand = localStorage.getItem('bondwood-brand');
-            if (!brand) return;
-            fetch(`${API_BASE}/api/districts`)
-                .then(r => r.json())
-                .then(raw => {
-                    const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);
-                    const district = data.find(d => String(d.District_Number) === String(brand));
-                    if (district && district.Primary_Hex) {
-                        let secondaryHex = district.Secondary_Hex || district.Primary_Hex;
-                        if (secondaryHex.toLowerCase() === '#000000' || secondaryHex.toLowerCase() === '#ffffff') secondaryHex = district.Primary_Hex;
-                        applyBrand(district.Primary_Hex, secondaryHex, String(brand));
+        function updateHamburgerMenuColors(primaryHex, secondaryHex) {
+            const menu = document.getElementById('hamburgerMenu');
+            if (!menu) return;
+            let menuColor = primaryHex || '#000000';
+            let highlightHover, highlightActive;
+            let r, g, b;
+            if (menuColor.startsWith('#') && menuColor.length >= 7) {
+                r = parseInt(menuColor.slice(1, 3), 16);
+                g = parseInt(menuColor.slice(3, 5), 16);
+                b = parseInt(menuColor.slice(5, 7), 16);
+            }
+            if (r !== undefined && !isNaN(r)) {
+                if (needsDarkText(menuColor)) { menu.classList.add('dark-text'); } else { menu.classList.remove('dark-text'); }
+                if (secondaryHex && secondaryHex.startsWith('#') && secondaryHex.length >= 7) {
+                    const sr = parseInt(secondaryHex.slice(1, 3), 16);
+                    const sg = parseInt(secondaryHex.slice(3, 5), 16);
+                    const sb = parseInt(secondaryHex.slice(5, 7), 16);
+                    if (!isNaN(sr) && !isNaN(sg) && !isNaN(sb)) {
+                        highlightHover = `rgba(${sr}, ${sg}, ${sb}, 0.25)`;
+                        highlightActive = `rgba(${sr}, ${sg}, ${sb}, 0.40)`;
                     }
-                })
-                .catch(() => {
-                    if (retries > 0) setTimeout(() => loadBrand(retries - 1), 2000);
-                });
+                }
+                if (!highlightHover) {
+                    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    if (luminance > 0.5) { highlightHover = 'rgba(0,0,0,0.10)'; highlightActive = 'rgba(0,0,0,0.18)'; }
+                    else { highlightHover = 'rgba(255,255,255,0.15)'; highlightActive = 'rgba(255,255,255,0.25)'; }
+                }
+            } else {
+                menu.classList.remove('dark-text');
+                highlightHover = 'rgba(255,255,255,0.15)';
+                highlightActive = 'rgba(255,255,255,0.25)';
+            }
+            menu.style.background = menuColor;
+            menu.style.setProperty('--menu-highlight-hover', highlightHover);
+            menu.style.setProperty('--menu-highlight-active', highlightActive);
+        }
+
+        /* ========================================
+           HAMBURGER MENU
+           ======================================== */
+        function toggleHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            const overlay = document.getElementById('hamburgerOverlay');
+            if (menu.classList.contains('open')) {
+                closeHamburgerMenu();
+            } else {
+                menu.style.display = 'block';
+                overlay.style.display = 'block';
+                menu.offsetHeight;
+                menu.classList.add('open');
+                menu.style.transform = 'translateX(0)';
+            }
+        }
+        function closeHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            const overlay = document.getElementById('hamburgerOverlay');
+            menu.style.transform = 'translateX(-100%)';
+            menu.classList.remove('open');
+            setTimeout(() => { menu.style.display = 'none'; overlay.style.display = 'none'; }, 200);
         }
 
         /* ========================================
@@ -783,7 +990,7 @@
            ======================================== */
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
-            loadBrand();
+            loadBrandData();
             loadProfile();
         });
     </script>
