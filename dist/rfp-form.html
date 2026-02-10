@@ -4016,11 +4016,9 @@
             bcInput.addEventListener('focus', function() {
                 if (!budgetDataLoaded) return;
                 const q = this.value.trim();
-                const matches = q.length >= 1
-                    ? UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 2000)
-                    : UNIQUE_BUDGET_CODES.slice(0, 2000);
+                const matches = UNIQUE_BUDGET_CODES.slice(0, 2000);
                 bcActiveIndex = -1;
-                renderBcDropdown(this, matches, q);
+                renderBcDropdown(this, matches, '');
                 // Scroll to current value if it exists
                 if (q) {
                     const drop = this.parentElement.querySelector('.bc-dropdown');
