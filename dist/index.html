@@ -1067,6 +1067,7 @@
                         vendor: (r.request_type === 'reimbursement' && r.employee_id) ? r.employee_id : (r.vendor_name || r.vendor_number || '—'),
                         amount: r.total_amount || r.amount || r.mileage_total || 0,
                         type: r.request_type || r.type || 'vendor',
+                        creationSource: r.creation_source || null,
                     };
                 });
             } catch (e) {
@@ -1830,15 +1831,20 @@
 
             const amountStr = formatCurrency(totalAmount || rfp.amount || 0);
 
+            // Source suffix
+            const sourceLabel = rfp.creationSource === 'import' ? ' using the <strong>Import</strong> function'
+                : rfp.creationSource === 'capture' ? ' using the <strong>Capture Invoice</strong> function'
+                : '';
+
             // Entry 1: Submission
             if (rfp.status !== 'draft') {
                 entries.push({
-                    text: `<strong>${submitterDisplay}</strong> submitted a request for payment with <strong>${payeeDesc}</strong> for <strong>${amountStr}</strong>`,
+                    text: `<strong>${submitterDisplay}</strong> submitted a request for payment with <strong>${payeeDesc}</strong> for <strong>${amountStr}</strong>${sourceLabel}`,
                     timestamp: rfp.submissionDate ? formatDate(rfp.submissionDate) : '—'
                 });
             } else {
                 entries.push({
-                    text: `<strong>${submitterDisplay}</strong> created a draft request for payment with <strong>${payeeDesc}</strong> for <strong>${amountStr}</strong>`,
+                    text: `<strong>${submitterDisplay}</strong> created a draft request for payment with <strong>${payeeDesc}</strong> for <strong>${amountStr}</strong>${sourceLabel}`,
                     timestamp: rfp.submissionDate ? formatDate(rfp.submissionDate) : '—'
                 });
             }
@@ -2547,7 +2553,8 @@
                         vendor_number: vendorNum !== 'UNKNOWN' ? vendorNum : null,
                         vendor_address: vendorAddress || null,
                         status: 'draft',
-                        lineItems: lineItems
+                        lineItems: lineItems,
+                        creation_source: 'import',
                     };
 
                     try {
@@ -3325,6 +3332,7 @@
                         vendor_address: vendorAddress,
                         status: 'draft',
                         lineItems: lineItems,
+                        creation_source: 'capture',
                     };
 
                     const createResp = await fetch(`${API_BASE}/api/rfps`, {

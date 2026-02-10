@@ -1700,6 +1700,7 @@
             if (params.get('id')) {
                 loadExistingForm(params.get('id'));
             } else if (params.get('capture') === '1') {
+                window._creationSource = 'capture';
                 loadCapturedInvoice();
             }
 
@@ -3553,6 +3554,7 @@
                 status: 'submitted',
                 description: document.getElementById('description').value.trim() || null,
                 lineItems: lineItems,
+                creation_source: window._creationSource || null,
             };
 
             // Add vendor or employee fields

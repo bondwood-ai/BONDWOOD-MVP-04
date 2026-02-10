@@ -407,8 +407,8 @@ async function handleCreateRFP(request, env) {
       rfp_number, submitter_name, submitter_id, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
-      description, status, assigned_to, ap_batch, mileage_total
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      description, status, assigned_to, ap_batch, mileage_total, creation_source
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
@@ -429,6 +429,7 @@ async function handleCreateRFP(request, env) {
     body.assigned_to || null,
     body.ap_batch || null,
     body.mileage_total || 0,
+    body.creation_source || null,
   ];
 
   const statements = [headerStmt.bind(...headerParams)];
@@ -583,6 +584,7 @@ async function handleMigrate(env) {
     'ALTER TABLE form_data ADD COLUMN invoice_date TEXT',
     'ALTER TABLE form_data ADD COLUMN budget_code TEXT',
     'ALTER TABLE form_data ADD COLUMN account_code TEXT',
+    'ALTER TABLE dashboard_data ADD COLUMN creation_source TEXT',
     `CREATE TABLE IF NOT EXISTS sequences (
       name TEXT PRIMARY KEY,
       value INTEGER NOT NULL DEFAULT 0
