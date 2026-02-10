@@ -1733,7 +1733,7 @@
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><textarea class="line-desc" rows="1" cols="18" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
                 <td class="invoice-col"><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
-                <td class="invoice-col"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"></td>
+                <td class="invoice-col" style="position:relative;"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;" autocomplete="off"><input type="date" class="line-invoice-date-picker" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Enter Budget Code"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;" autocomplete="off" placeholder="—"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>
@@ -1759,6 +1759,25 @@
 
             // Init date auto-advance
             initDateAutoAdvance(tr.querySelector('.line-invoice-date'));
+
+            // Sync hidden date picker with text field (same pattern as trip date)
+            var invDateInput = tr.querySelector('.line-invoice-date');
+            var invDatePicker = tr.querySelector('.line-invoice-date-picker');
+            invDatePicker.addEventListener('change', function() {
+                if (this.value) {
+                    var parts = this.value.split('-');
+                    invDateInput.value = parts[1] + '/' + parts[2] + '/' + parts[0];
+                    invDateInput.dispatchEvent(new Event('input'));
+                    invDateInput.dispatchEvent(new Event('change'));
+                }
+            });
+            invDateInput.addEventListener('input', function() {
+                var v = this.value.trim();
+                if (v.length === 10 && v.includes('/')) {
+                    var p = v.split('/');
+                    invDatePicker.value = p[2] + '-' + p[0].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+                }
+            });
 
             // Auto-grow: when all fields in the last row are filled, add a new row
             const checkAutoGrow = () => {
