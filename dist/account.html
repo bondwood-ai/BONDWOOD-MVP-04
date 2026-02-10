@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-color: #000000;
+            --accent-color-hover: #333333;
+            --primary-hex: #000000;
+            --secondary-hex: #0728eb;
+            --positive-color: #2B6D51;
+            --negative-color: #FA050F;
+            --border-color: #e0e0e0;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #555555;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --card-bg: #2a2a2a;
+                --text-primary: #e0e0e0;
+                --text-secondary: #999999;
+                --border-color: #3a3a3a;
+            }
+        }
+
+        /* Banner */
+        .banner {
+            background: var(--primary-hex);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .banner-back {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+        }
+        .banner-back:hover { opacity: 0.8; }
+        .banner h1 {
+            color: #fff;
+            font-family: 'Urbanist', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            line-height: 1.1;
+        }
+
+        /* Content */
+        .content {
+            max-width: 720px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Profile Card */
+        .profile-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .profile-header {
+            padding: 2rem 2rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .avatar-container {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid var(--border-color);
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .avatar-initials {
+            font-family: 'Urbanist', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--secondary-hex);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--secondary-hex);
+            border: 2px solid var(--card-bg);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s;
+        }
+        .avatar-upload-btn:hover { transform: scale(1.1); }
+
+        .profile-identity h2 {
+            font-family: 'Urbanist', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.15rem;
+        }
+        .profile-identity .email {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .profile-identity .roles {
+            margin-top: 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 99px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            font-family: 'Urbanist', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            background: rgba(7, 40, 235, 0.08);
+            color: var(--secondary-hex);
+        }
+
+        /* Form Grid */
+        .profile-form {
+            padding: 2rem;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        .form-group label {
+            font-family: 'Urbanist', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+        .form-group input {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--card-bg);
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--secondary-hex);
+        }
+        .form-group input[readonly] {
+            background: var(--bg-color);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        /* Buttons */
+        .form-actions {
+            margin-top: 1.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .btn-save {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 0.55rem 1.5rem;
+            height: 38px;
+            background: var(--secondary-hex);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: 'Urbanist', sans-serif;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-save:hover { opacity: 0.88; }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .save-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--positive-color);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .save-status.visible { opacity: 1; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .profile-header { flex-direction: column; text-align: center; padding: 1.5rem; }
+            .profile-identity .roles { justify-content: center; }
+            .form-grid { grid-template-columns: 1fr; }
+            .content { padding: 0 1rem; margin: 1rem auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Banner -->
+    <div class="banner" id="pageBanner">
+        <button class="banner-back" onclick="window.location.href='index.html'" title="Back to Dashboard">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <h1>My Account</h1>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <div class="profile-card">
+
+            <!-- Header: Avatar + Identity -->
+            <div class="profile-header">
+                <div class="avatar-container">
+                    <div class="avatar" id="avatarContainer">
+                        <div class="avatar-initials" id="avatarInitials">?</div>
+                    </div>
+                    <button class="avatar-upload-btn" onclick="document.getElementById('pictureInput').click()" title="Change picture">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </button>
+                    <input type="file" id="pictureInput" accept=".png,.jpg,.jpeg,.svg" style="display:none" onchange="uploadProfilePicture(event)">
+                </div>
+                <div class="profile-identity">
+                    <h2 id="profileFullName">Loading...</h2>
+                    <div class="email" id="profileEmail">—</div>
+                    <div class="roles" id="profileRoles"></div>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <div class="profile-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="firstName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="lastName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="emailAddress" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phoneNumber" placeholder="(555) 555-5555">
+                    </div>
+                    <div class="form-group">
+                        <label>Department / Site</label>
+                        <input type="text" id="department" placeholder="e.g. Accounting, Valley View Elementary">
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="titleField" placeholder="e.g. Accounts Payable Specialist">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-save" id="saveBtn" onclick="saveProfile()" disabled>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save Changes
+                    </button>
+                    <span class="save-status" id="saveStatus">✓ Saved</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let profileData = null;
+        let formDirty = false;
+
+        // Format phone as (XXX) XXX-XXXX
+        function formatPhone(value) {
+            const digits = value.replace(/\D/g, '').substring(0, 10);
+            if (digits.length === 0) return '';
+            if (digits.length <= 3) return `(${digits}`;
+            if (digits.length <= 6) return `(${digits.substring(0, 3)}) ${digits.substring(3)}`;
+            return `(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}`;
+        }
+
+        document.getElementById('phoneNumber').addEventListener('input', function (e) {
+            const pos = e.target.selectionStart;
+            const prev = e.target.value;
+            e.target.value = formatPhone(e.target.value);
+        });
+
+        // Track changes on editable fields
+        ['phoneNumber', 'department', 'titleField'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                formDirty = true;
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('saveStatus').classList.remove('visible');
+            });
+        });
+
+        async function loadProfile() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/profile`);
+                if (!resp.ok) throw new Error('Failed to load profile');
+                profileData = await resp.json();
+
+                // Identity
+                const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+                document.getElementById('profileFullName').textContent = fullName || 'Unknown User';
+                document.getElementById('profileEmail').textContent = profileData.email || '—';
+
+                // Initials
+                const initials = ((profileData.first_name || '')[0] || '') + ((profileData.last_name || '')[0] || '');
+                document.getElementById('avatarInitials').textContent = initials.toUpperCase() || '?';
+
+                // Profile picture
+                if (profileData.profile_picture_key) {
+                    loadProfilePicture(profileData.email);
+                }
+
+                // Roles
+                const rolesContainer = document.getElementById('profileRoles');
+                rolesContainer.innerHTML = '';
+                (profileData.roles || []).forEach(role => {
+                    const badge = document.createElement('span');
+                    badge.className = 'role-badge';
+                    badge.textContent = role.replace(/_/g, ' ');
+                    rolesContainer.appendChild(badge);
+                });
+
+                // Form fields
+                document.getElementById('firstName').value = profileData.first_name || '';
+                document.getElementById('lastName').value = profileData.last_name || '';
+                document.getElementById('emailAddress').value = profileData.email || '';
+                document.getElementById('phoneNumber').value = formatPhone(profileData.phone_number || '');
+                document.getElementById('department').value = profileData.department || '';
+                document.getElementById('titleField').value = profileData.title || '';
+
+            } catch (err) {
+                console.error('[ACCOUNT] Load failed:', err);
+                document.getElementById('profileFullName').textContent = 'Error loading profile';
+            }
+        }
+
+        function loadProfilePicture(email) {
+            const img = new Image();
+            img.onload = function () {
+                const container = document.getElementById('avatarContainer');
+                container.innerHTML = '';
+                const imgEl = document.createElement('img');
+                imgEl.src = img.src;
+                imgEl.alt = 'Profile';
+                container.appendChild(imgEl);
+            };
+            img.src = `${API_BASE}/api/profile/picture/${encodeURIComponent(email)}?t=${Date.now()}`;
+        }
+
+        async function uploadProfilePicture(event) {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (!file || !profileData?.email) return;
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['png', 'jpg', 'jpeg', 'svg'].includes(ext)) {
+                alert('Only .png, .jpg, .jpeg, .svg files allowed.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('email', profileData.email);
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/profile/picture`, {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!resp.ok) throw new Error('Upload failed');
+                loadProfilePicture(profileData.email);
+            } catch (err) {
+                console.error('[ACCOUNT] Picture upload failed:', err);
+                alert('Failed to upload picture. Please try again.');
+            }
+        }
+
+        async function saveProfile() {
+            if (!profileData?.email) return;
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const payload = {
+                email: profileData.email,
+                phone_number: document.getElementById('phoneNumber').value.replace(/\D/g, ''),
+                department: document.getElementById('department').value.trim(),
+                title: document.getElementById('titleField').value.trim(),
+            };
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/profile`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!resp.ok) throw new Error('Save failed');
+
+                formDirty = false;
+                const status = document.getElementById('saveStatus');
+                status.classList.add('visible');
+                setTimeout(() => status.classList.remove('visible'), 3000);
+            } catch (err) {
+                console.error('[ACCOUNT] Save failed:', err);
+                alert('Failed to save profile. Please try again.');
+                btn.disabled = false;
+            }
+
+            btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Changes`;
+        }
+
+        // Load brand colors from localStorage (match dashboard)
+        function loadBrandColors() {
+            try {
+                const saved = localStorage.getItem('bondwood_brand');
+                if (saved) {
+                    const brand = JSON.parse(saved);
+                    if (brand.primary_hex) {
+                        document.documentElement.style.setProperty('--primary-hex', brand.primary_hex);
+                        document.getElementById('pageBanner').style.background = brand.primary_hex;
+
+                        // Check luminance for banner text color
+                        const hex = brand.primary_hex.replace('#', '');
+                        const r = parseInt(hex.substr(0, 2), 16);
+                        const g = parseInt(hex.substr(2, 2), 16);
+                        const b = parseInt(hex.substr(4, 2), 16);
+                        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                        if (lum > 180) {
+                            document.querySelector('.banner h1').style.color = '#000';
+                            document.querySelector('.banner-back').style.color = '#000';
+                        }
+                    }
+                    if (brand.secondary_hex) {
+                        document.documentElement.style.setProperty('--secondary-hex', brand.secondary_hex);
+                    }
+                }
+            } catch (e) {}
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadBrandColors();
+            loadProfile();
+        });
+    </script>
+</body>
+</html>

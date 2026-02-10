@@ -200,6 +200,21 @@ export default {
         return handleDeleteUserRole(request, env);
       }
 
+      // ── Profile ──
+      if (path === '/api/profile' && method === 'GET') {
+        return handleGetProfile(request, env, url);
+      }
+      if (path === '/api/profile' && method === 'PUT') {
+        return handleUpdateProfile(request, env);
+      }
+      if (path === '/api/profile/picture' && method === 'POST') {
+        return handleUploadProfilePicture(request, env);
+      }
+      const profilePicMatch = path.match(/^\/api\/profile\/picture\/(.+)$/);
+      if (profilePicMatch && method === 'GET') {
+        return handleGetProfilePicture(decodeURIComponent(profilePicMatch[1]), env);
+      }
+
       // ── Debug schema ──
       if (path === '/api/debug/schema' && method === 'GET') {
         const { results } = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='table'").all();
@@ -242,7 +257,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -262,6 +277,7 @@ async function handleMe(request, env, url) {
     first_name: u.user_first_name,
     last_name: u.user_last_name,
     email: u.user_email,
+    profile_picture_key: u.profile_picture_key || null,
     roles: roles,
   });
 }
@@ -353,6 +369,164 @@ async function handleDeleteUserRole(request, env) {
   ).bind(user_email.toLowerCase().trim(), role.toLowerCase().trim()).run();
 
   return json({ message: 'Role deleted', user_email, role });
+}
+
+
+/* ========================================
+   PROFILE
+   ======================================== */
+async function handleGetProfile(request, env, url) {
+  let email = url.searchParams.get('email');
+
+  if (!email) {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/CF_Authorization=([^;]+)/);
+    if (match) {
+      try {
+        const payload = JSON.parse(atob(match[1].split('.')[1]));
+        email = payload.email;
+      } catch (e) {}
+    }
+  }
+
+  if (!email) {
+    return json({ error: 'No email provided' }, 400);
+  }
+
+  const { results } = await env.DB.prepare(
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+  ).bind(email.toLowerCase().trim()).all();
+
+  if (!results.length) {
+    return json({ error: 'User not found' }, 404);
+  }
+
+  const u = results[0];
+
+  // Fetch roles
+  const { results: roleResults } = await env.DB.prepare(
+    'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
+  ).bind(email.toLowerCase().trim()).all();
+
+  return json({
+    user_id: u.user_id,
+    first_name: u.user_first_name,
+    last_name: u.user_last_name,
+    email: u.user_email,
+    phone_number: u.phone_number || '',
+    department: u.department || '',
+    title: u.title || '',
+    profile_picture_key: u.profile_picture_key || null,
+    roles: roleResults.map(r => r.role),
+  });
+}
+
+async function handleUpdateProfile(request, env) {
+  const body = await request.json();
+  const { email } = body;
+
+  if (!email) {
+    return json({ error: 'email is required' }, 400);
+  }
+
+  const updatableFields = ['user_first_name', 'user_last_name', 'phone_number', 'department', 'title'];
+  const fieldMap = {
+    first_name: 'user_first_name',
+    last_name: 'user_last_name',
+    phone_number: 'phone_number',
+    department: 'department',
+    title: 'title',
+  };
+
+  const setClauses = [];
+  const setParams = [];
+
+  for (const [bodyKey, dbCol] of Object.entries(fieldMap)) {
+    if (body[bodyKey] !== undefined) {
+      setClauses.push(`${dbCol} = ?`);
+      setParams.push(body[bodyKey]);
+    }
+  }
+
+  if (setClauses.length === 0) {
+    return json({ error: 'No fields to update' }, 400);
+  }
+
+  await env.DB.prepare(
+    `UPDATE user_data SET ${setClauses.join(', ')} WHERE LOWER(user_email) = ?`
+  ).bind(...setParams, email.toLowerCase().trim()).run();
+
+  return json({ message: 'Profile updated' });
+}
+
+async function handleUploadProfilePicture(request, env) {
+  if (!env.BUCKET) {
+    return json({ error: 'R2 bucket not configured' }, 500);
+  }
+
+  const formData = await request.formData();
+  const file = formData.get('file');
+  const email = formData.get('email');
+
+  if (!file || !email) {
+    return json({ error: 'file and email are required' }, 400);
+  }
+
+  const ext = (file.name || '').split('.').pop().toLowerCase();
+  if (!['png', 'jpg', 'jpeg', 'svg'].includes(ext)) {
+    return json({ error: 'Only .png, .jpg, .jpeg, .svg allowed' }, 400);
+  }
+
+  const emailLower = email.toLowerCase().trim();
+  const key = `profiles/${emailLower.replace(/[^a-z0-9._@-]/g, '_')}.${ext}`;
+
+  // Delete old picture if exists
+  const { results } = await env.DB.prepare(
+    'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+  ).bind(emailLower).all();
+
+  if (results.length && results[0].profile_picture_key) {
+    try { await env.BUCKET.delete(results[0].profile_picture_key); } catch (e) {}
+  }
+
+  // Upload new picture
+  await env.BUCKET.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type || 'image/' + ext },
+  });
+
+  // Save key in user_data
+  await env.DB.prepare(
+    'UPDATE user_data SET profile_picture_key = ? WHERE LOWER(user_email) = ?'
+  ).bind(key, emailLower).run();
+
+  return json({ message: 'Profile picture uploaded', key }, 201);
+}
+
+async function handleGetProfilePicture(email, env) {
+  if (!env.BUCKET) {
+    return json({ error: 'R2 bucket not configured' }, 500);
+  }
+
+  const { results } = await env.DB.prepare(
+    'SELECT profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+  ).bind(email.toLowerCase().trim()).all();
+
+  if (!results.length || !results[0].profile_picture_key) {
+    return json({ error: 'No profile picture' }, 404);
+  }
+
+  const object = await env.BUCKET.get(results[0].profile_picture_key);
+  if (!object) {
+    return json({ error: 'Picture not found in storage' }, 404);
+  }
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': object.httpMetadata?.contentType || 'image/png',
+      'Cache-Control': 'public, max-age=3600',
+      ...CORS_HEADERS,
+    },
+  });
 }
 
 
