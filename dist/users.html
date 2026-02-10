@@ -581,33 +581,20 @@
 
         async function fetchCurrentUser() {
             try {
-                // Try Cloudflare Access proxy first, then API_BASE
                 let resp = await fetch('/api/me');
                 let ct = resp.headers.get('content-type') || '';
                 if (!resp.ok || !ct.includes('application/json')) {
-                    // Fallback to API_BASE
                     resp = await fetch(`${API_BASE}/api/me`);
                     ct = resp.headers.get('content-type') || '';
                 }
                 if (!resp.ok || !ct.includes('application/json')) return;
                 const user = await resp.json();
-                if (user.error) return; // No user found, allow access (fail open)
+                if (user.error) return;
                 currentUserEmail = user.email || '';
                 currentUserRoles = user.roles || [];
-                // Check if user has admin/owner role — only block if we got a valid user WITH roles that exclude admin/owner
-                if (currentUserRoles.length > 0 && !currentUserRoles.includes('admin') && !currentUserRoles.includes('owner')) {
-                    document.querySelector('.module-container').innerHTML = `
-                        <div style="padding:3rem;text-align:center;">
-                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:1rem;">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            </svg>
-                            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">Access Restricted</h3>
-                            <p style="font-size:0.85rem;color:var(--text-secondary);">User Management is only available to Admins.</p>
-                        </div>`;
-                }
+                console.log('[AUTH] User:', currentUserEmail, 'Roles:', currentUserRoles);
             } catch (e) {
                 console.warn('[AUTH] Could not verify user:', e);
-                // Fail open — allow access if auth check fails
             }
         }
 
