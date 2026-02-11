@@ -30,31 +30,21 @@
             --field-bg: #ffffff;
             --readonly-bg: #f0f2f5;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: 'Reddit Sans', sans-serif;
-            background: var(--bg-color);
-            color: var(--text-primary);
-            min-height: 100vh;
-            line-height: 1.5;
-            padding: 1rem;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            background: var(--bg-color); color: var(--text-primary);
+            min-height: 100vh; line-height: 1.5; padding: 1rem;
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
         }
 
         /* ============ DARK MODE ============ */
         body.dark-mode {
-            --bg-color: #121517;
-            --card-bg: #1a1a1a;
-            --border-color: #2c2c2c;
-            --text-primary: #e5e5e5;
-            --text-secondary: #a0a0a0;
-            --accent-color-light: rgba(255, 255, 255, 0.1);
-            --pale-accent: rgba(91, 122, 255, 0.12);
-            --field-bg: #222;
-            --readonly-bg: #1e1e1e;
+            --bg-color: #121517; --card-bg: #1a1a1a; --border-color: #2c2c2c;
+            --text-primary: #e5e5e5; --text-secondary: #a0a0a0;
+            --accent-color-light: rgba(255,255,255,0.1);
+            --pale-accent: rgba(91,122,255,0.12);
+            --field-bg: #222; --readonly-bg: #1e1e1e;
         }
         body.dark-mode th { background: var(--primary-hex); }
         body.dark-mode th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
@@ -67,8 +57,11 @@
         body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
         body.dark-mode .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
         body.dark-mode .btn-primary.danger:hover { opacity: 0.85; }
+        body.dark-mode .btn-primary.import-btn { background: #444; color: #ddd; border-color: #555; }
+        body.dark-mode .btn-primary.import-btn:hover { background: #555; }
         body.dark-mode input, body.dark-mode select { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
-        body.dark-mode .att-close-btn:hover { background: rgba(255,255,255,0.08); }
+        body.dark-mode input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); }
+        body.dark-mode .edit-modal-panel { background: var(--card-bg); border-color: var(--border-color); }
 
         /* ============ HAMBURGER MENU ============ */
         .hamburger-menu-item {
@@ -76,8 +69,7 @@
             width: 100%; padding: 0.7rem 0.85rem; border: none;
             background: transparent; color: rgba(255,255,255,0.85);
             font-size: 0.875rem; font-family: inherit; font-weight: 500;
-            border-radius: 8px; cursor: pointer; text-align: left;
-            transition: background 0.15s ease;
+            border-radius: 8px; cursor: pointer; text-align: left; transition: background 0.15s ease;
         }
         .hamburger-menu-item:hover { background: var(--menu-highlight-hover, rgba(255,255,255,0.12)); }
         .hamburger-menu-item.active { background: var(--menu-highlight-active, rgba(255,255,255,0.18)); color: #ffffff; font-weight: 600; }
@@ -93,42 +85,32 @@
         /* ============ LAYOUT ============ */
         .bondwood-logo { height: 64px; width: auto; object-fit: contain; max-width: 190px; }
         .main-content { padding: 0; }
-        .module-header {
-            display: flex; justify-content: space-between; align-items: flex-end;
-            margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
-        }
+        .module-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
         .module-title { font-size: 1.75rem; font-weight: 700; font-family: 'Reddit Sans', sans-serif; color: var(--text-primary); margin: 0; }
         .module-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.3rem; font-weight: 400; }
-        .header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 
         /* ============ TABS ============ */
-        .tab-bar {
-            display: flex; gap: 0;
-            margin-bottom: 1.25rem;
-        }
+        .tab-bar { display: flex; gap: 0; margin-bottom: 1.25rem; }
         .tab-btn {
             padding: 0.65rem 1.5rem; border: none; background: none;
             font-family: inherit; font-size: 0.85rem; font-weight: 600;
-            color: var(--text-secondary); cursor: pointer;
-            transition: color 0.15s;
+            color: var(--text-secondary); cursor: pointer; transition: color 0.15s;
         }
         .tab-btn:hover { color: var(--text-primary); }
         .tab-btn.active { color: var(--text-primary); font-weight: 700; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
-        /* ============ TABLE CARD ============ */
+        /* ============ TABLE ============ */
         .table-card {
             background: var(--card-bg); border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            overflow: hidden;
+            border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden;
         }
         .table-toolbar {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);
-            gap: 0.75rem; flex-wrap: wrap;
+            padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); gap: 0.75rem; flex-wrap: wrap;
         }
+        .toolbar-left { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
         .search-input {
             padding: 0.45rem 0.75rem 0.45rem 2rem;
             border: 1px solid var(--border-color); border-radius: 8px;
@@ -136,6 +118,15 @@
             background: var(--field-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 0.6rem center;
             color: var(--text-primary); min-width: 200px;
         }
+        .bulk-delete-btn {
+            display: none; align-items: center; gap: 0.35rem;
+            padding: 0.4rem 0.75rem; border: none; border-radius: 8px;
+            background: var(--negative-color); color: #fff;
+            font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+        }
+        .bulk-delete-btn:hover { opacity: 0.85; }
+        .bulk-delete-btn.visible { display: inline-flex; }
+        .bulk-delete-btn svg { width: 13px; height: 13px; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; }
         th {
             background: var(--primary-hex); color: var(--accent-text-color);
@@ -148,28 +139,35 @@
         th:first-child { border-radius: 8px 0 0 0; }
         th:last-child { border-radius: 0 8px 0 0; }
         th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #fff); }
+        th.no-sort { cursor: default; }
+        th.no-sort:hover { background: var(--primary-hex); }
         td {
             padding: 0.55rem 0.85rem; font-size: 0.8rem;
             border-bottom: 1px solid var(--border-color);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            max-width: 250px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;
         }
-        tbody tr { transition: background 0.1s; }
+        tbody tr { transition: background 0.1s; cursor: pointer; }
         tbody tr:hover { background: var(--row-hover-bg); }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .empty-state {
-            text-align: center; padding: 2.5rem 1rem;
-            color: var(--text-secondary); font-size: 0.85rem;
+        .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); font-size: 0.85rem; cursor: default; }
+        .cb-cell { width: 36px; text-align: center; }
+        .cb-cell input[type="checkbox"] { accent-color: var(--checkbox-color); cursor: pointer; width: 14px; height: 14px; }
+
+        /* ============ ROLE BADGES ============ */
+        .role-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+        .role-badge {
+            display: inline-block; padding: 1px 7px; border-radius: 10px;
+            font-size: 0.62rem; font-weight: 700; letter-spacing: 0.02em;
+            white-space: nowrap;
         }
 
         /* ============ BUTTONS ============ */
         .btn-primary {
             display: inline-flex; align-items: center; gap: 0.4rem;
-            padding: 0.45rem 0.85rem; border: 1px solid var(--border-color);
-            border-radius: 8px; font-family: inherit; font-size: 0.78rem;
-            font-weight: 600; cursor: pointer; background: var(--card-bg);
-            color: var(--text-primary); transition: all 0.15s;
+            padding: 0.45rem 0.85rem; border: 1px solid var(--border-color); border-radius: 8px;
+            font-family: inherit; font-size: 0.78rem; font-weight: 600;
+            cursor: pointer; background: var(--card-bg); color: var(--text-primary); transition: all 0.15s;
         }
         .btn-primary:hover { background: var(--bg-color); }
         .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); }
@@ -178,65 +176,50 @@
         .btn-primary.green:hover { opacity: 0.88; }
         .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
         .btn-primary.danger:hover { opacity: 0.88; }
-        .btn-primary svg { width: 14px; height: 14px; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary.import-btn { background: #d1d5db; color: #000; border-color: #d1d5db; }
         .btn-primary.import-btn:hover { background: #bfc4cb; }
+        .btn-primary svg { width: 14px; height: 14px; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* ============ ADD FORM ============ */
         .add-form-card {
             background: var(--card-bg); border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
             padding: 1.25rem; margin-bottom: 1.25rem;
         }
         .add-form-title {
             font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem;
             color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;
         }
-        .form-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 0.75rem; margin-bottom: 1rem;
-        }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
         .form-group label {
-            display: block; font-size: 0.7rem; font-weight: 600;
-            color: var(--text-secondary); margin-bottom: 0.25rem;
-            text-transform: uppercase; letter-spacing: 0.03em;
+            display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.03em;
         }
         .form-group input {
-            width: 100%; padding: 0.5rem 0.65rem;
-            border: 1px solid var(--border-color); border-radius: 8px;
-            font-family: inherit; font-size: 0.82rem;
-            background: var(--field-bg); color: var(--text-primary);
+            width: 100%; padding: 0.5rem 0.65rem; border: 1px solid var(--border-color); border-radius: 8px;
+            font-family: inherit; font-size: 0.82rem; background: var(--field-bg); color: var(--text-primary);
         }
-        .form-group input:focus {
-            outline: none; border-color: var(--secondary-hex);
-            box-shadow: 0 0 0 2px rgba(7, 40, 235, 0.12);
-        }
-        .form-actions { display: flex; gap: 0.5rem; align-items: center; }
-        .form-message {
-            font-size: 0.78rem; font-weight: 500; margin-left: 0.5rem;
-            opacity: 0; transition: opacity 0.3s;
-        }
+        .form-group input:focus { outline: none; border-color: var(--secondary-hex); box-shadow: 0 0 0 2px rgba(7,40,235,0.12); }
+        .form-group input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); cursor: default; }
+        .form-group input[readonly]:focus { border-color: var(--border-color); box-shadow: none; }
+        .form-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .form-message { font-size: 0.78rem; font-weight: 500; margin-left: 0.5rem; opacity: 0; transition: opacity 0.3s; }
         .form-message.visible { opacity: 1; }
         .form-message.success { color: var(--positive-color); }
         .form-message.error { color: var(--negative-color); }
 
         /* ============ PAGINATION ============ */
-        .pagination {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.6rem 1rem; font-size: 0.75rem; color: var(--text-secondary);
-        }
+        .pagination { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; font-size: 0.75rem; color: var(--text-secondary); }
         .pagination-btns { display: flex; gap: 0.35rem; }
         .pagination-btns button {
-            padding: 0.3rem 0.6rem; border: 1px solid var(--border-color);
-            border-radius: 6px; background: var(--card-bg); color: var(--text-primary);
-            font-family: inherit; font-size: 0.72rem; cursor: pointer;
+            padding: 0.3rem 0.6rem; border: 1px solid var(--border-color); border-radius: 6px;
+            background: var(--card-bg); color: var(--text-primary); font-family: inherit; font-size: 0.72rem; cursor: pointer;
         }
         .pagination-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
         .pagination-btns button.active { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); }
 
-        /* ============ DELETE CONFIRM ============ */
+        /* ============ MODALS ============ */
         .modal-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.5); z-index: 10000;
@@ -244,13 +227,53 @@
         }
         .modal-overlay.open { display: flex; }
         .modal-box {
-            background: var(--card-bg); border-radius: 14px;
-            padding: 1.5rem; max-width: 420px; width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            background: var(--card-bg); border-radius: 14px; padding: 1.5rem;
+            max-width: 520px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
         }
         .modal-box h3 { font-size: 1rem; margin-bottom: 0.75rem; }
         .modal-box p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+        /* Edit Modal */
+        .edit-modal-panel {
+            background: var(--card-bg); border-radius: 14px; padding: 1.5rem;
+            max-width: 580px; width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;
+        }
+        .edit-modal-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+        .edit-grid.full { grid-template-columns: 1fr; }
+        .edit-group label { display: block; font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .edit-group input {
+            width: 100%; padding: 0.5rem 0.65rem; border: 1px solid var(--border-color); border-radius: 8px;
+            font-family: inherit; font-size: 0.82rem; background: var(--field-bg); color: var(--text-primary);
+        }
+        .edit-group input:focus { outline: none; border-color: var(--secondary-hex); box-shadow: 0 0 0 2px rgba(7,40,235,0.12); }
+        .roles-section { margin-bottom: 1.25rem; }
+        .roles-section label { display: block; font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .role-checkboxes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .role-check-label {
+            display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem;
+            border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer;
+            font-size: 0.78rem; font-weight: 500; transition: all 0.15s; user-select: none;
+        }
+        .role-check-label:hover { background: var(--accent-color-light); }
+        .role-check-label input { accent-color: var(--checkbox-color); }
+        .role-check-label.checked { border-color: var(--secondary-hex); background: rgba(7,40,235,0.06); }
+
+        /* Warning modal */
+        .warning-icon {
+            width: 40px; height: 40px; border-radius: 50%; background: #fef3c7;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+        }
+        .warning-icon svg { width: 22px; height: 22px; stroke: #d97706; }
+        .new-component-list { margin: 0.5rem 0 1rem; padding: 0; list-style: none; }
+        .new-component-list li {
+            padding: 0.35rem 0.65rem; margin-bottom: 0.25rem; border-radius: 6px;
+            background: #fef3c7; color: #92400e; font-size: 0.78rem; font-weight: 600;
+            display: flex; align-items: center; gap: 0.35rem;
+        }
+        body.dark-mode .new-component-list li { background: #422006; color: #fde68a; }
+        body.dark-mode .warning-icon { background: #422006; }
 
         /* ============ TOAST ============ */
         .toast {
@@ -266,28 +289,19 @@
         /* ============ FOOTER ============ */
         .footer { padding: 1.5rem 0 0.5rem; }
         .ownership-text { display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-secondary); padding: 0.5rem; }
-        .theme-toggle {
-            width: 32px; height: 32px; border-radius: 50%;
-            border: 1px solid var(--border-color); background: var(--card-bg);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: box-shadow 0.15s;
-        }
+        .theme-toggle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-color); background: var(--card-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: box-shadow 0.15s; }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
 
-        /* ============ RESPONSIVE ============ */
         @media (max-width: 640px) {
-            .form-grid { grid-template-columns: 1fr; }
+            .form-grid, .edit-grid { grid-template-columns: 1fr; }
             .table-toolbar { flex-direction: column; align-items: stretch; }
             .search-input { min-width: unset; }
         }
     </style>
 </head>
 <body>
-    <!-- Hamburger Overlay -->
     <div id="hamburgerOverlay" onclick="closeHamburgerMenu()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
-
-    <!-- Hamburger Slide-out Menu -->
     <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
         <div style="padding:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
@@ -296,7 +310,6 @@
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
                 </button>
             </div>
-
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
@@ -310,7 +323,6 @@
                     </button>
                 </div>
             </div>
-
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
@@ -328,7 +340,6 @@
                     </button>
                 </div>
             </div>
-
             <div>
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Brand</div>
                 <select id="brandSelectorMenu" onchange="updateBrandColorsFromMenu()" style="width:100%;padding:0.5rem;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:0.85rem;background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;">
@@ -337,13 +348,8 @@
             </div>
         </div>
     </div>
+    <select id="brandSelector" onchange="updateBrandColors()" style="display:none;"><option value="">-- Default --</option></select>
 
-    <!-- Hidden Brand Selector -->
-    <select id="brandSelector" onchange="updateBrandColors()" style="display:none;">
-        <option value="">-- Default --</option>
-    </select>
-
-    <!-- ============ HEADER BANNER ============ -->
     <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
         <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
             <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
@@ -357,7 +363,6 @@
         <div id="bannerAccent" style="height:4px;background:#0728eb;margin:0 -2rem;"></div>
     </div>
 
-    <!-- ============ MAIN CONTENT ============ -->
     <main class="main-content">
         <header class="module-header">
             <div>
@@ -366,7 +371,6 @@
             </div>
         </header>
 
-        <!-- Tab Bar -->
         <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab('vendors')">Vendors</button>
             <button class="tab-btn" onclick="switchTab('budget-codes')">Budget Codes</button>
@@ -374,37 +378,18 @@
 
         <!-- ============ VENDORS TAB ============ -->
         <div class="tab-panel active" id="panel-vendors">
-            <!-- Add Vendor Form -->
             <div class="add-form-card">
                 <div class="add-form-title">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
                     Add Vendor
                 </div>
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label>Vendor Name</label>
-                        <input type="text" id="addVendorName" placeholder="e.g. BSN Sports, LLC">
-                    </div>
-                    <div class="form-group">
-                        <label>Vendor Number</label>
-                        <input type="text" id="addVendorNumber" placeholder="e.g. 12345">
-                    </div>
-                    <div class="form-group">
-                        <label>Address</label>
-                        <input type="text" id="addVendorAddress" placeholder="Street address">
-                    </div>
-                    <div class="form-group">
-                        <label>City</label>
-                        <input type="text" id="addVendorCity" placeholder="City">
-                    </div>
-                    <div class="form-group">
-                        <label>State</label>
-                        <input type="text" id="addVendorState" placeholder="MN" maxlength="2" style="text-transform:uppercase;">
-                    </div>
-                    <div class="form-group">
-                        <label>ZIP</label>
-                        <input type="text" id="addVendorZip" placeholder="55000" maxlength="10">
-                    </div>
+                    <div class="form-group"><label>Vendor Name</label><input type="text" id="addVendorName" placeholder="e.g. BSN Sports, LLC"></div>
+                    <div class="form-group"><label>Vendor Number</label><input type="text" id="addVendorNumber" placeholder="e.g. 12345"></div>
+                    <div class="form-group"><label>Address</label><input type="text" id="addVendorAddress" placeholder="Street address"></div>
+                    <div class="form-group"><label>City</label><input type="text" id="addVendorCity" placeholder="City"></div>
+                    <div class="form-group"><label>State</label><input type="text" id="addVendorState" placeholder="MN" maxlength="2" style="text-transform:uppercase;"></div>
+                    <div class="form-group"><label>ZIP</label><input type="text" id="addVendorZip" placeholder="55000" maxlength="10"></div>
                 </div>
                 <div class="form-actions">
                     <button class="btn-primary green" id="addVendorBtn" onclick="addVendor()">
@@ -418,29 +403,30 @@
                     <span class="form-message" id="vendorFormMsg"></span>
                 </div>
             </div>
-
-            <!-- Vendor Table -->
             <div class="table-card">
                 <div class="table-toolbar">
-                    <input type="text" class="search-input" id="vendorSearch" placeholder="Search vendors..." oninput="filterVendors()">
+                    <div class="toolbar-left">
+                        <input type="text" class="search-input" id="vendorSearch" placeholder="Search vendors..." oninput="filterVendors()">
+                        <button class="bulk-delete-btn" id="vendorDeleteBtn" onclick="promptBulkDelete('vendors')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Delete <span id="vendorDeleteCount"></span>
+                        </button>
+                    </div>
                     <span style="font-size:0.75rem;color:var(--text-secondary);" id="vendorCount"></span>
                 </div>
                 <div style="overflow-x:auto;overflow-y:auto;max-height:60vh;">
                     <table>
-                        <thead>
-                            <tr>
-                                <th onclick="sortVendors('vendor_number')">Vendor #</th>
-                                <th onclick="sortVendors('vendor_name')">Vendor Name</th>
-                                <th onclick="sortVendors('vendor_address')">Address</th>
-                                <th onclick="sortVendors('vendor_city')">City</th>
-                                <th>State</th>
-                                <th>ZIP</th>
-                                <th class="text-center" style="width:60px;">Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody id="vendorBody">
-                            <tr><td colspan="7" class="empty-state">Loading vendors...</td></tr>
-                        </tbody>
+                        <thead><tr>
+                            <th class="cb-cell no-sort" onclick="event.stopPropagation()"><input type="checkbox" id="vendorSelectAll" onchange="toggleAllVendors(this.checked)"></th>
+                            <th onclick="sortVendors('vendor_number')">Vendor #</th>
+                            <th onclick="sortVendors('vendor_name')">Vendor Name</th>
+                            <th onclick="sortVendors('vendor_address')">Address</th>
+                            <th onclick="sortVendors('vendor_city')">City</th>
+                            <th>State</th>
+                            <th>ZIP</th>
+                            <th class="no-sort">Roles</th>
+                        </tr></thead>
+                        <tbody id="vendorBody"><tr><td colspan="8" class="empty-state">Loading vendors...</td></tr></tbody>
                     </table>
                 </div>
                 <div class="pagination" id="vendorPagination"></div>
@@ -449,41 +435,19 @@
 
         <!-- ============ BUDGET CODES TAB ============ -->
         <div class="tab-panel" id="panel-budget-codes">
-            <!-- Add Budget Code Form -->
             <div class="add-form-card">
                 <div class="add-form-title">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
                     Add Budget Code
                 </div>
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label>Budget Code</label>
-                        <input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode()">
-                    </div>
-                    <div class="form-group">
-                        <label>Account Code</label>
-                        <input type="text" id="addAccountCode" placeholder="e.g. 401">
-                    </div>
-                    <div class="form-group">
-                        <label>Fund</label>
-                        <input type="text" id="addFund" placeholder="01" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Organization</label>
-                        <input type="text" id="addOrganization" placeholder="0052" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Program</label>
-                        <input type="text" id="addProgram" placeholder="03" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Finance</label>
-                        <input type="text" id="addFinance" placeholder="000" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Course</label>
-                        <input type="text" id="addCourse" placeholder="000" readonly>
-                    </div>
+                    <div class="form-group"><label>Budget Code</label><input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode()"></div>
+                    <div class="form-group"><label>Account Code</label><input type="text" id="addAccountCode" placeholder="e.g. 401"></div>
+                    <div class="form-group"><label>Fund</label><input type="text" id="addFund" placeholder="01" readonly></div>
+                    <div class="form-group"><label>Organization</label><input type="text" id="addOrganization" placeholder="0052" readonly></div>
+                    <div class="form-group"><label>Program</label><input type="text" id="addProgram" placeholder="03" readonly></div>
+                    <div class="form-group"><label>Finance</label><input type="text" id="addFinance" placeholder="000" readonly></div>
+                    <div class="form-group"><label>Course</label><input type="text" id="addCourse" placeholder="000" readonly></div>
                 </div>
                 <div class="form-actions">
                     <button class="btn-primary green" id="addBudgetBtn" onclick="addBudgetCode()">
@@ -497,30 +461,28 @@
                     <span class="form-message" id="budgetFormMsg"></span>
                 </div>
             </div>
-
-            <!-- Budget Code Table -->
             <div class="table-card">
                 <div class="table-toolbar">
-                    <input type="text" class="search-input" id="budgetSearch" placeholder="Search budget codes..." oninput="filterBudgetCodes()">
+                    <div class="toolbar-left">
+                        <input type="text" class="search-input" id="budgetSearch" placeholder="Search budget codes..." oninput="filterBudgetCodes()">
+                        <button class="bulk-delete-btn" id="budgetDeleteBtn" onclick="promptBulkDelete('budget-codes')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Delete <span id="budgetDeleteCount"></span>
+                        </button>
+                    </div>
                     <span style="font-size:0.75rem;color:var(--text-secondary);" id="budgetCount"></span>
                 </div>
                 <div style="overflow-x:auto;overflow-y:auto;max-height:60vh;">
                     <table>
-                        <thead>
-                            <tr>
-                                <th onclick="sortBudgetCodes('budget_code')">Budget Code</th>
-                                <th onclick="sortBudgetCodes('account_code')">Account</th>
-                                <th onclick="sortBudgetCodes('fund')">Fund</th>
-                                <th>Org</th>
-                                <th>Program</th>
-                                <th>Finance</th>
-                                <th>Course</th>
-                                <th class="text-center" style="width:60px;">Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody id="budgetBody">
-                            <tr><td colspan="8" class="empty-state">Loading budget codes...</td></tr>
-                        </tbody>
+                        <thead><tr>
+                            <th class="cb-cell no-sort" onclick="event.stopPropagation()"><input type="checkbox" id="budgetSelectAll" onchange="toggleAllBudgets(this.checked)"></th>
+                            <th onclick="sortBudgetCodes('budget_code')">Budget Code</th>
+                            <th onclick="sortBudgetCodes('account_code')">Account</th>
+                            <th onclick="sortBudgetCodes('fund')">Fund</th>
+                            <th>Org</th><th>Program</th><th>Finance</th><th>Course</th>
+                            <th class="no-sort">Roles</th>
+                        </tr></thead>
+                        <tbody id="budgetBody"><tr><td colspan="9" class="empty-state">Loading budget codes...</td></tr></tbody>
                     </table>
                 </div>
                 <div class="pagination" id="budgetPagination"></div>
@@ -537,7 +499,7 @@
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
             </div>
-            <div class="drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()" style="border:2px dashed var(--border-color);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:1rem;">
+            <div id="importDropZone" onclick="document.getElementById('importFileInput').click()" style="border:2px dashed var(--border-color);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;margin-bottom:1rem;">
                 <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;">Drop a <strong>.xlsx</strong> or <strong>.csv</strong> file here, or click to browse</p>
                 <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;" id="importFileName"></p>
@@ -546,10 +508,7 @@
             <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;font-size:0.75rem;"></div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeImportModal()">Cancel</button>
-                <button class="btn-primary green" id="importConfirmBtn" onclick="confirmImport()" disabled>
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Import
-                </button>
+                <button class="btn-primary green" id="importConfirmBtn" onclick="confirmImport()" disabled>Import</button>
             </div>
         </div>
     </div>
@@ -558,10 +517,10 @@
     <div class="modal-overlay" id="deleteModal" onclick="if(event.target===this)closeDeleteModal()">
         <div class="modal-box">
             <h3 id="deleteModalTitle">Confirm Delete</h3>
-            <p id="deleteModalMsg">Are you sure you want to delete this record?</p>
+            <p id="deleteModalMsg"></p>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-primary danger" id="deleteModalConfirm" onclick="confirmDelete()">
+                <button class="btn-primary danger" onclick="confirmDelete()">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     Delete
                 </button>
@@ -569,7 +528,85 @@
         </div>
     </div>
 
-    <!-- Footer -->
+    <!-- Edit Vendor Modal -->
+    <div class="modal-overlay" id="editVendorModal" onclick="if(event.target===this)closeEditVendor()">
+        <div class="edit-modal-panel">
+            <h3>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit Vendor
+            </h3>
+            <div class="edit-grid">
+                <div class="edit-group"><label>Vendor Number</label><input type="text" id="editVendorNumber" readonly style="background:var(--readonly-bg);cursor:default;"></div>
+                <div class="edit-group"><label>Vendor Name</label><input type="text" id="editVendorName"></div>
+                <div class="edit-group"><label>Address</label><input type="text" id="editVendorAddress"></div>
+                <div class="edit-group"><label>City</label><input type="text" id="editVendorCity"></div>
+                <div class="edit-group"><label>State</label><input type="text" id="editVendorState" maxlength="2" style="text-transform:uppercase;"></div>
+                <div class="edit-group"><label>ZIP</label><input type="text" id="editVendorZip" maxlength="10"></div>
+            </div>
+            <div class="roles-section">
+                <label>Assigned Roles</label>
+                <div class="role-checkboxes" id="editVendorRoles"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeEditVendor()">Cancel</button>
+                <button class="btn-primary green" id="saveVendorBtn" onclick="saveVendor()">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Budget Code Modal -->
+    <div class="modal-overlay" id="editBudgetModal" onclick="if(event.target===this)closeEditBudget()">
+        <div class="edit-modal-panel">
+            <h3>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit Budget Code
+            </h3>
+            <div class="edit-grid">
+                <div class="edit-group"><label>Budget Code</label><input type="text" id="editBudgetCode"></div>
+                <div class="edit-group"><label>Account Code</label><input type="text" id="editAccountCode"></div>
+                <div class="edit-group"><label>Fund</label><input type="text" id="editFund"></div>
+                <div class="edit-group"><label>Organization</label><input type="text" id="editOrganization"></div>
+                <div class="edit-group"><label>Program</label><input type="text" id="editProgram"></div>
+                <div class="edit-group"><label>Finance</label><input type="text" id="editFinance"></div>
+                <div class="edit-group"><label>Course</label><input type="text" id="editCourse"></div>
+            </div>
+            <div class="roles-section">
+                <label>Assigned Roles</label>
+                <div class="role-checkboxes" id="editBudgetRoles"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeEditBudget()">Cancel</button>
+                <button class="btn-primary green" id="saveBudgetBtn" onclick="saveBudgetCode()">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Review Warning Modal -->
+    <div class="modal-overlay" id="adminReviewModal" onclick="if(event.target===this)closeAdminReview()">
+        <div class="modal-box" style="max-width:460px;">
+            <div class="warning-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            </div>
+            <h3 style="margin-bottom:0.5rem;">Administrative Review Required</h3>
+            <p style="margin-bottom:0.5rem;">This budget code contains components that don't currently exist in the system, which may indicate it has not been set up in the ERP.</p>
+            <ul class="new-component-list" id="newComponentsList"></ul>
+            <p style="font-size:0.8rem;">Would you like to proceed and flag this code for review?</p>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeAdminReview()">Cancel</button>
+                <button class="btn-primary" style="background:var(--warning-color);color:#fff;border-color:var(--warning-color);" onclick="forceAddBudgetCode()">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    Proceed with Review
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="footer">
         <div class="ownership-text">
             <span>POWERED BY BONDWOOD</span>
@@ -578,28 +615,71 @@
             </button>
         </div>
     </div>
-
-    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
-        /* ========================================
-           CONFIGURATION & STATE
-           ======================================== */
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         const PAGE_SIZE = 50;
+        const AVAILABLE_ROLES = ['admin', 'owner', 'accountant', 'form_builder', 'form_viewer'];
+        const ROLE_LABELS = { admin: 'Admin', owner: 'Owner', accountant: 'Accountant', form_builder: 'Form Builder', form_viewer: 'Form Viewer' };
+        const ROLE_COLORS = { admin: '#00babc', owner: '#f57f2f', accountant: '#cb3694', form_builder: '#4e59a5', form_viewer: '#6b7280' };
 
-        let allVendors = [];
-        let filteredVendors = [];
+        let allVendors = [], filteredVendors = [];
         let vendorSort = { column: 'vendor_name', direction: 'asc' };
         let vendorPage = 1;
+        let selectedVendors = new Set();
 
-        let allBudgetCodes = [];
-        let filteredBudgetCodes = [];
+        let allBudgetCodes = [], filteredBudgetCodes = [];
         let budgetSort = { column: 'budget_code', direction: 'asc' };
         let budgetPage = 1;
+        let selectedBudgets = new Set();
 
-        let pendingDelete = null; // { type: 'vendor'|'budget', data: {} }
+        let pendingDeleteType = ''; // 'vendors' or 'budget-codes'
+        let editingVendor = null;
+        let editingBudget = null;
+
+        // Known ERP components (loaded from API)
+        let knownComponents = { funds: [], organizations: [], programs: [], finances: [], courses: [], accounts: [] };
+
+        // Pending budget code data for admin-review flow
+        let pendingBudgetAdd = null;
+
+        /* ========================================
+           DUMMY ROLE ASSIGNMENT
+           ======================================== */
+        function getDummyRoles(key) {
+            // Deterministic pseudo-random based on string hash
+            let hash = 0;
+            for (let i = 0; i < key.length; i++) hash = ((hash << 5) - hash + key.charCodeAt(i)) | 0;
+            const pool = ['admin', 'accountant', 'form_builder'];
+            const roles = [];
+            if (Math.abs(hash) % 3 === 0) roles.push('admin');
+            if (Math.abs(hash) % 2 === 0) roles.push('accountant');
+            if (Math.abs(hash) % 5 < 3) roles.push('form_builder');
+            return roles.length ? roles : ['form_builder'];
+        }
+
+        function renderRoleBadges(roles) {
+            return roles.map(r => {
+                const c = ROLE_COLORS[r] || '#999';
+                return `<span class="role-badge" style="background:${c}18;color:${c};border:1px solid ${c}40;">${ROLE_LABELS[r] || r}</span>`;
+            }).join('');
+        }
+
+        function renderRoleCheckboxes(containerId, selectedRoles) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = AVAILABLE_ROLES.map(r => {
+                const checked = selectedRoles.includes(r);
+                return `<label class="role-check-label${checked ? ' checked' : ''}">
+                    <input type="checkbox" value="${r}" ${checked ? 'checked' : ''} onchange="this.parentElement.classList.toggle('checked', this.checked)">
+                    ${ROLE_LABELS[r]}
+                </label>`;
+            }).join('');
+        }
+
+        function getCheckedRoles(containerId) {
+            return [...document.getElementById(containerId).querySelectorAll('input:checked')].map(cb => cb.value);
+        }
 
         /* ========================================
            INIT
@@ -607,8 +687,16 @@
         document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
+            loadBudgetComponents();
             await Promise.all([loadVendors(), loadBudgetCodes()]);
         });
+
+        async function loadBudgetComponents() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/budget-codes/components`);
+                if (resp.ok) knownComponents = await resp.json();
+            } catch (e) { console.warn('Failed to load budget components:', e); }
+        }
 
         /* ========================================
            TABS
@@ -622,28 +710,25 @@
         }
 
         /* ========================================
-           VENDORS – LOAD
+           VENDORS
            ======================================== */
         async function loadVendors() {
             try {
                 const resp = await fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`);
                 const data = await resp.json();
                 allVendors = data.vendors || data || [];
+                selectedVendors.clear();
                 filterVendors();
                 updateRecordCount();
             } catch (e) {
-                console.error('[DATA] Failed to load vendors:', e);
-                document.getElementById('vendorBody').innerHTML = '<tr><td colspan="7" class="empty-state">Failed to load vendors.</td></tr>';
+                document.getElementById('vendorBody').innerHTML = '<tr><td colspan="8" class="empty-state">Failed to load vendors.</td></tr>';
             }
         }
 
         function filterVendors() {
             const q = (document.getElementById('vendorSearch').value || '').toLowerCase();
             filteredVendors = q
-                ? allVendors.filter(v =>
-                    (v.vendor_name || '').toLowerCase().includes(q) ||
-                    (v.vendor_number || '').toLowerCase().includes(q) ||
-                    (v.vendor_city || '').toLowerCase().includes(q))
+                ? allVendors.filter(v => (v.vendor_name||'').toLowerCase().includes(q) || (v.vendor_number||'').toLowerCase().includes(q) || (v.vendor_city||'').toLowerCase().includes(q))
                 : [...allVendors];
             sortVendorData();
             vendorPage = 1;
@@ -651,22 +736,16 @@
         }
 
         function sortVendors(col) {
-            if (vendorSort.column === col) {
-                vendorSort.direction = vendorSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                vendorSort.column = col;
-                vendorSort.direction = 'asc';
-            }
-            sortVendorData();
-            renderVendors();
+            if (vendorSort.column === col) vendorSort.direction = vendorSort.direction === 'asc' ? 'desc' : 'asc';
+            else { vendorSort.column = col; vendorSort.direction = 'asc'; }
+            sortVendorData(); renderVendors();
         }
 
         function sortVendorData() {
             const { column, direction } = vendorSort;
             filteredVendors.sort((a, b) => {
-                const aVal = (a[column] || '').toString().toLowerCase();
-                const bVal = (b[column] || '').toString().toLowerCase();
-                return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                const av = (a[column]||'').toString().toLowerCase(), bv = (b[column]||'').toString().toLowerCase();
+                return direction === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
             });
         }
 
@@ -675,46 +754,68 @@
             const page = filteredVendors.slice(start, start + PAGE_SIZE);
             const body = document.getElementById('vendorBody');
 
-            if (page.length === 0) {
-                body.innerHTML = '<tr><td colspan="7" class="empty-state">No vendors found</td></tr>';
+            if (!page.length) {
+                body.innerHTML = '<tr><td colspan="8" class="empty-state">No vendors found</td></tr>';
             } else {
-                body.innerHTML = page.map(v => `<tr>
-                    <td style="font-weight:600;">${escHtml(v.vendor_number || '')}</td>
-                    <td>${escHtml(v.vendor_name || '')}</td>
-                    <td>${escHtml(v.vendor_address || '')}</td>
-                    <td>${escHtml(v.vendor_city || '')}</td>
-                    <td>${escHtml(v.vendor_state || '')}</td>
-                    <td>${escHtml(v.vendor_zip || '')}</td>
-                    <td class="text-center">
-                        <button onclick="promptDeleteVendor('${escHtml(v.vendor_number)}', '${escHtml(v.vendor_name)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;border-radius:4px;" title="Delete vendor">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        </button>
-                    </td>
-                </tr>`).join('');
+                body.innerHTML = page.map(v => {
+                    const key = v.vendor_number || '';
+                    const roles = getDummyRoles(key);
+                    const checked = selectedVendors.has(key);
+                    return `<tr onclick="openEditVendor('${escAttr(key)}')" ${checked ? 'style="background:rgba(250,5,15,0.06);"' : ''}>
+                        <td class="cb-cell" onclick="event.stopPropagation()">
+                            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleVendorSelect('${escAttr(key)}', this.checked)">
+                        </td>
+                        <td style="font-weight:600;">${esc(key)}</td>
+                        <td>${esc(v.vendor_name||'')}</td>
+                        <td>${esc(v.vendor_address||'')}</td>
+                        <td>${esc(v.vendor_city||'')}</td>
+                        <td>${esc(v.vendor_state||'')}</td>
+                        <td>${esc(v.vendor_zip||'')}</td>
+                        <td><div class="role-badges">${renderRoleBadges(roles)}</div></td>
+                    </tr>`;
+                }).join('');
             }
 
             document.getElementById('vendorCount').textContent = `${filteredVendors.length} vendor${filteredVendors.length !== 1 ? 's' : ''}`;
+            updateVendorDeleteBtn();
             renderPagination('vendorPagination', filteredVendors.length, vendorPage, p => { vendorPage = p; renderVendors(); });
         }
 
-        /* ========================================
-           VENDORS – ADD
-           ======================================== */
+        function toggleVendorSelect(num, checked) {
+            if (checked) selectedVendors.add(num); else selectedVendors.delete(num);
+            updateVendorDeleteBtn();
+            // Update row highlight
+            const row = document.querySelector(`input[onchange*="${CSS.escape(num)}"]`)?.closest('tr');
+            if (row) row.style.background = checked ? 'rgba(250,5,15,0.06)' : '';
+        }
+
+        function toggleAllVendors(checked) {
+            const start = (vendorPage - 1) * PAGE_SIZE;
+            filteredVendors.slice(start, start + PAGE_SIZE).forEach(v => {
+                if (checked) selectedVendors.add(v.vendor_number); else selectedVendors.delete(v.vendor_number);
+            });
+            renderVendors();
+            document.getElementById('vendorSelectAll').checked = checked;
+        }
+
+        function updateVendorDeleteBtn() {
+            const btn = document.getElementById('vendorDeleteBtn');
+            const n = selectedVendors.size;
+            btn.classList.toggle('visible', n > 0);
+            document.getElementById('vendorDeleteCount').textContent = n > 0 ? `(${n})` : '';
+        }
+
         async function addVendor() {
             const name = document.getElementById('addVendorName').value.trim();
             const number = document.getElementById('addVendorNumber').value.trim();
             if (!name || !number) { showFormMsg('vendorFormMsg', 'Name and number are required.', 'error'); return; }
-
             const btn = document.getElementById('addVendorBtn');
             btn.disabled = true;
-
             try {
                 const resp = await fetch(`${API_BASE}/api/vendors`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        vendor_name: name,
-                        vendor_number: number,
+                        vendor_name: name, vendor_number: number,
                         vendor_address: document.getElementById('addVendorAddress').value.trim(),
                         vendor_city: document.getElementById('addVendorCity').value.trim(),
                         vendor_state: document.getElementById('addVendorState').value.trim().toUpperCase(),
@@ -723,40 +824,76 @@
                 });
                 const data = await resp.json();
                 if (!resp.ok) throw new Error(data.error || 'Failed');
-
                 showFormMsg('vendorFormMsg', `Vendor ${number} added.`, 'success');
-                ['addVendorName','addVendorNumber','addVendorAddress','addVendorCity','addVendorState','addVendorZip']
-                    .forEach(id => document.getElementById(id).value = '');
+                ['addVendorName','addVendorNumber','addVendorAddress','addVendorCity','addVendorState','addVendorZip'].forEach(id => document.getElementById(id).value = '');
                 await loadVendors();
-            } catch (e) {
-                showFormMsg('vendorFormMsg', e.message, 'error');
-            }
+            } catch (e) { showFormMsg('vendorFormMsg', e.message, 'error'); }
             btn.disabled = false;
         }
 
         /* ========================================
-           BUDGET CODES – LOAD
+           VENDOR EDIT MODAL
+           ======================================== */
+        function openEditVendor(vendorNumber) {
+            const v = allVendors.find(x => x.vendor_number === vendorNumber);
+            if (!v) return;
+            editingVendor = v;
+            document.getElementById('editVendorNumber').value = v.vendor_number || '';
+            document.getElementById('editVendorName').value = v.vendor_name || '';
+            document.getElementById('editVendorAddress').value = v.vendor_address || '';
+            document.getElementById('editVendorCity').value = v.vendor_city || '';
+            document.getElementById('editVendorState').value = v.vendor_state || '';
+            document.getElementById('editVendorZip').value = v.vendor_zip || '';
+            renderRoleCheckboxes('editVendorRoles', getDummyRoles(v.vendor_number));
+            document.getElementById('editVendorModal').classList.add('open');
+        }
+
+        function closeEditVendor() { document.getElementById('editVendorModal').classList.remove('open'); editingVendor = null; }
+
+        async function saveVendor() {
+            if (!editingVendor) return;
+            const btn = document.getElementById('saveVendorBtn');
+            btn.disabled = true;
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vendor_number: editingVendor.vendor_number,
+                        vendor_name: document.getElementById('editVendorName').value.trim(),
+                        vendor_address: document.getElementById('editVendorAddress').value.trim(),
+                        vendor_city: document.getElementById('editVendorCity').value.trim(),
+                        vendor_state: document.getElementById('editVendorState').value.trim().toUpperCase(),
+                        vendor_zip: document.getElementById('editVendorZip').value.trim(),
+                    }),
+                });
+                if (!resp.ok) throw new Error('Save failed');
+                closeEditVendor();
+                showToast('Vendor updated.', 'success');
+                await loadVendors();
+            } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+            btn.disabled = false;
+        }
+
+        /* ========================================
+           BUDGET CODES
            ======================================== */
         async function loadBudgetCodes() {
             try {
                 const resp = await fetch(`${API_BASE}/api/budget-codes?limit=5000&_t=${Date.now()}`);
                 const data = await resp.json();
                 allBudgetCodes = data.budget_codes || data || [];
+                selectedBudgets.clear();
                 filterBudgetCodes();
                 updateRecordCount();
             } catch (e) {
-                console.error('[DATA] Failed to load budget codes:', e);
-                document.getElementById('budgetBody').innerHTML = '<tr><td colspan="8" class="empty-state">Failed to load budget codes.</td></tr>';
+                document.getElementById('budgetBody').innerHTML = '<tr><td colspan="9" class="empty-state">Failed to load budget codes.</td></tr>';
             }
         }
 
         function filterBudgetCodes() {
             const q = (document.getElementById('budgetSearch').value || '').toLowerCase();
             filteredBudgetCodes = q
-                ? allBudgetCodes.filter(b =>
-                    (b.budget_code || '').toLowerCase().includes(q) ||
-                    (b.account_code || '').toLowerCase().includes(q) ||
-                    (b.fund || '').toLowerCase().includes(q))
+                ? allBudgetCodes.filter(b => (b.budget_code||'').toLowerCase().includes(q) || (b.account_code||'').toLowerCase().includes(q) || (b.fund||'').toLowerCase().includes(q))
                 : [...allBudgetCodes];
             sortBudgetData();
             budgetPage = 1;
@@ -764,22 +901,16 @@
         }
 
         function sortBudgetCodes(col) {
-            if (budgetSort.column === col) {
-                budgetSort.direction = budgetSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                budgetSort.column = col;
-                budgetSort.direction = 'asc';
-            }
-            sortBudgetData();
-            renderBudgetCodes();
+            if (budgetSort.column === col) budgetSort.direction = budgetSort.direction === 'asc' ? 'desc' : 'asc';
+            else { budgetSort.column = col; budgetSort.direction = 'asc'; }
+            sortBudgetData(); renderBudgetCodes();
         }
 
         function sortBudgetData() {
             const { column, direction } = budgetSort;
             filteredBudgetCodes.sort((a, b) => {
-                const aVal = (a[column] || '').toString().toLowerCase();
-                const bVal = (b[column] || '').toString().toLowerCase();
-                return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                const av = (a[column]||'').toString().toLowerCase(), bv = (b[column]||'').toString().toLowerCase();
+                return direction === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
             });
         }
 
@@ -788,27 +919,56 @@
             const page = filteredBudgetCodes.slice(start, start + PAGE_SIZE);
             const body = document.getElementById('budgetBody');
 
-            if (page.length === 0) {
-                body.innerHTML = '<tr><td colspan="8" class="empty-state">No budget codes found</td></tr>';
+            if (!page.length) {
+                body.innerHTML = '<tr><td colspan="9" class="empty-state">No budget codes found</td></tr>';
             } else {
-                body.innerHTML = page.map(b => `<tr>
-                    <td style="font-weight:600;">${escHtml(b.budget_code || '')}</td>
-                    <td>${escHtml(b.account_code || '')}</td>
-                    <td>${escHtml(b.fund || '')}</td>
-                    <td>${escHtml(b.organization || '')}</td>
-                    <td>${escHtml(b.program || '')}</td>
-                    <td>${escHtml(b.finance || '')}</td>
-                    <td>${escHtml(b.course || '')}</td>
-                    <td class="text-center">
-                        <button onclick="promptDeleteBudget('${escHtml(b.budget_code)}', '${escHtml(b.account_code)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;border-radius:4px;" title="Delete budget code">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        </button>
-                    </td>
-                </tr>`).join('');
+                body.innerHTML = page.map(b => {
+                    const compositeKey = (b.budget_code||'') + '|' + (b.account_code||'');
+                    const roles = getDummyRoles(compositeKey);
+                    const checked = selectedBudgets.has(compositeKey);
+                    // Force fund to 2 chars max
+                    const fundDisplay = (b.fund || '').toString().trim().substring(0, 2);
+                    return `<tr onclick="openEditBudget('${escAttr(b.budget_code)}','${escAttr(b.account_code)}')" ${checked ? 'style="background:rgba(250,5,15,0.06);"' : ''}>
+                        <td class="cb-cell" onclick="event.stopPropagation()">
+                            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleBudgetSelect('${escAttr(compositeKey)}', this.checked)">
+                        </td>
+                        <td style="font-weight:600;">${esc(b.budget_code||'')}</td>
+                        <td>${esc(b.account_code||'')}</td>
+                        <td>${esc(fundDisplay)}</td>
+                        <td>${esc((b.organization||'').toString().trim())}</td>
+                        <td>${esc((b.program||'').toString().trim())}</td>
+                        <td>${esc((b.finance||'').toString().trim())}</td>
+                        <td>${esc((b.course||'').toString().trim())}</td>
+                        <td><div class="role-badges">${renderRoleBadges(roles)}</div></td>
+                    </tr>`;
+                }).join('');
             }
 
             document.getElementById('budgetCount').textContent = `${filteredBudgetCodes.length} budget code${filteredBudgetCodes.length !== 1 ? 's' : ''}`;
+            updateBudgetDeleteBtn();
             renderPagination('budgetPagination', filteredBudgetCodes.length, budgetPage, p => { budgetPage = p; renderBudgetCodes(); });
+        }
+
+        function toggleBudgetSelect(key, checked) {
+            if (checked) selectedBudgets.add(key); else selectedBudgets.delete(key);
+            updateBudgetDeleteBtn();
+        }
+
+        function toggleAllBudgets(checked) {
+            const start = (budgetPage - 1) * PAGE_SIZE;
+            filteredBudgetCodes.slice(start, start + PAGE_SIZE).forEach(b => {
+                const k = (b.budget_code||'') + '|' + (b.account_code||'');
+                if (checked) selectedBudgets.add(k); else selectedBudgets.delete(k);
+            });
+            renderBudgetCodes();
+            document.getElementById('budgetSelectAll').checked = checked;
+        }
+
+        function updateBudgetDeleteBtn() {
+            const btn = document.getElementById('budgetDeleteBtn');
+            const n = selectedBudgets.size;
+            btn.classList.toggle('visible', n > 0);
+            document.getElementById('budgetDeleteCount').textContent = n > 0 ? `(${n})` : '';
         }
 
         /* ========================================
@@ -816,7 +976,6 @@
            ======================================== */
         function autoParseBudgetCode() {
             const raw = document.getElementById('addBudgetCode').value.replace(/[^0-9]/g, '');
-            // 14-char format: FF OOOO PP FFF CCC
             document.getElementById('addFund').value = raw.substring(0, 2);
             document.getElementById('addOrganization').value = raw.substring(2, 6);
             document.getElementById('addProgram').value = raw.substring(6, 8);
@@ -825,95 +984,174 @@
         }
 
         /* ========================================
-           BUDGET CODES – ADD
+           BUDGET CODE – ADD (with ERP validation)
            ======================================== */
         async function addBudgetCode() {
             const code = document.getElementById('addBudgetCode').value.trim();
             const account = document.getElementById('addAccountCode').value.trim();
             if (!code || !account) { showFormMsg('budgetFormMsg', 'Budget code and account code are required.', 'error'); return; }
 
+            const clean = code.replace(/[^0-9]/g, '');
+            const fund = clean.substring(0, 2);
+            const org = clean.substring(2, 6);
+            const program = clean.substring(6, 8);
+            const finance = clean.substring(8, 11);
+            const course = clean.substring(11, 14);
+
+            // Check which components are new
+            const newItems = [];
+            if (fund && !knownComponents.funds.includes(fund)) newItems.push(`Fund: ${fund}`);
+            if (org && !knownComponents.organizations.includes(org)) newItems.push(`Organization: ${org}`);
+            if (program && !knownComponents.programs.includes(program)) newItems.push(`Program: ${program}`);
+            if (finance && !knownComponents.finances.includes(finance)) newItems.push(`Finance: ${finance}`);
+            if (course && !knownComponents.courses.includes(course)) newItems.push(`Course: ${course}`);
+            if (account && !knownComponents.accounts.includes(account)) newItems.push(`Account: ${account}`);
+
+            if (newItems.length > 0) {
+                // Store data for later and show warning
+                pendingBudgetAdd = { budget_code: code, account_code: account, fund, organization: org, program, finance, course };
+                const list = document.getElementById('newComponentsList');
+                list.innerHTML = newItems.map(item => `<li><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/></svg>${esc(item)}</li>`).join('');
+                document.getElementById('adminReviewModal').classList.add('open');
+                return;
+            }
+
+            await doAddBudgetCode({ budget_code: code, account_code: account, fund, organization: org, program, finance, course });
+        }
+
+        async function forceAddBudgetCode() {
+            document.getElementById('adminReviewModal').classList.remove('open');
+            if (!pendingBudgetAdd) return;
+            await doAddBudgetCode(pendingBudgetAdd);
+            pendingBudgetAdd = null;
+        }
+
+        function closeAdminReview() {
+            document.getElementById('adminReviewModal').classList.remove('open');
+            pendingBudgetAdd = null;
+        }
+
+        async function doAddBudgetCode(payload) {
             const btn = document.getElementById('addBudgetBtn');
             btn.disabled = true;
-
             try {
                 const resp = await fetch(`${API_BASE}/api/budget-codes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        budget_code: code,
-                        account_code: account,
-                        fund: document.getElementById('addFund').value.trim(),
-                        organization: document.getElementById('addOrganization').value.trim(),
-                        program: document.getElementById('addProgram').value.trim(),
-                        finance: document.getElementById('addFinance').value.trim(),
-                        course: document.getElementById('addCourse').value.trim(),
-                    }),
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
                 });
                 const data = await resp.json();
                 if (!resp.ok) throw new Error(data.error || 'Failed');
-
-                showFormMsg('budgetFormMsg', `Budget code ${code} added.`, 'success');
-                ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance','addCourse']
-                    .forEach(id => document.getElementById(id).value = '');
-                await loadBudgetCodes();
-            } catch (e) {
-                showFormMsg('budgetFormMsg', e.message, 'error');
-            }
+                showFormMsg('budgetFormMsg', `Budget code ${payload.budget_code} added.`, 'success');
+                ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance','addCourse'].forEach(id => document.getElementById(id).value = '');
+                await Promise.all([loadBudgetCodes(), loadBudgetComponents()]);
+            } catch (e) { showFormMsg('budgetFormMsg', e.message, 'error'); }
             btn.disabled = false;
         }
 
         /* ========================================
-           DELETE FLOW
+           BUDGET CODE EDIT MODAL
            ======================================== */
-        function promptDeleteVendor(vendorNumber, vendorName) {
-            pendingDelete = { type: 'vendor', data: { vendor_number: vendorNumber } };
-            document.getElementById('deleteModalTitle').textContent = 'Delete Vendor';
-            document.getElementById('deleteModalMsg').textContent = `Are you sure you want to delete vendor "${vendorName}" (${vendorNumber})? This cannot be undone.`;
+        function openEditBudget(budgetCode, accountCode) {
+            const b = allBudgetCodes.find(x => x.budget_code === budgetCode && x.account_code === accountCode);
+            if (!b) return;
+            editingBudget = b;
+            document.getElementById('editBudgetCode').value = b.budget_code || '';
+            document.getElementById('editAccountCode').value = b.account_code || '';
+            document.getElementById('editFund').value = (b.fund || '').toString().trim().substring(0, 2);
+            document.getElementById('editOrganization').value = (b.organization || '').toString().trim();
+            document.getElementById('editProgram').value = (b.program || '').toString().trim();
+            document.getElementById('editFinance').value = (b.finance || '').toString().trim();
+            document.getElementById('editCourse').value = (b.course || '').toString().trim();
+            const compositeKey = (b.budget_code||'') + '|' + (b.account_code||'');
+            renderRoleCheckboxes('editBudgetRoles', getDummyRoles(compositeKey));
+            document.getElementById('editBudgetModal').classList.add('open');
+        }
+
+        function closeEditBudget() { document.getElementById('editBudgetModal').classList.remove('open'); editingBudget = null; }
+
+        async function saveBudgetCode() {
+            if (!editingBudget) return;
+            const btn = document.getElementById('saveBudgetBtn');
+            btn.disabled = true;
+            try {
+                const resp = await fetch(`${API_BASE}/api/budget-codes`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        original_budget_code: editingBudget.budget_code,
+                        original_account_code: editingBudget.account_code,
+                        budget_code: document.getElementById('editBudgetCode').value.trim(),
+                        account_code: document.getElementById('editAccountCode').value.trim(),
+                        fund: document.getElementById('editFund').value.trim(),
+                        organization: document.getElementById('editOrganization').value.trim(),
+                        program: document.getElementById('editProgram').value.trim(),
+                        finance: document.getElementById('editFinance').value.trim(),
+                        course: document.getElementById('editCourse').value.trim(),
+                    }),
+                });
+                if (!resp.ok) throw new Error('Save failed');
+                closeEditBudget();
+                showToast('Budget code updated.', 'success');
+                await loadBudgetCodes();
+            } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+            btn.disabled = false;
+        }
+
+        /* ========================================
+           BULK DELETE
+           ======================================== */
+        function promptBulkDelete(type) {
+            pendingDeleteType = type;
+            const n = type === 'vendors' ? selectedVendors.size : selectedBudgets.size;
+            const label = type === 'vendors' ? 'vendor' : 'budget code';
+            document.getElementById('deleteModalTitle').textContent = `Delete ${n} ${label}${n !== 1 ? 's' : ''}`;
+
+            let items;
+            if (type === 'vendors') {
+                items = [...selectedVendors].map(num => {
+                    const v = allVendors.find(x => x.vendor_number === num);
+                    return v ? `${v.vendor_name} (${num})` : num;
+                });
+            } else {
+                items = [...selectedBudgets].map(key => {
+                    const [bc, ac] = key.split('|');
+                    return `${bc} / ${ac}`;
+                });
+            }
+
+            const preview = items.length <= 5 ? items.join(', ') : items.slice(0, 5).join(', ') + ` and ${items.length - 5} more`;
+            document.getElementById('deleteModalMsg').textContent = `Are you sure you want to delete ${preview}? This action cannot be undone.`;
             document.getElementById('deleteModal').classList.add('open');
         }
 
-        function promptDeleteBudget(budgetCode, accountCode) {
-            pendingDelete = { type: 'budget', data: { budget_code: budgetCode, account_code: accountCode } };
-            document.getElementById('deleteModalTitle').textContent = 'Delete Budget Code';
-            document.getElementById('deleteModalMsg').textContent = `Are you sure you want to delete budget code "${budgetCode}" (account: ${accountCode})? This cannot be undone.`;
-            document.getElementById('deleteModal').classList.add('open');
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').classList.remove('open');
-            pendingDelete = null;
-        }
+        function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
 
         async function confirmDelete() {
-            if (!pendingDelete) return;
-            const { type, data } = pendingDelete;
             closeDeleteModal();
-
-            try {
-                const endpoint = type === 'vendor' ? '/api/vendors' : '/api/budget-codes';
-                const resp = await fetch(`${API_BASE}${endpoint}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                });
-                if (!resp.ok) throw new Error('Delete failed');
-                showToast(`${type === 'vendor' ? 'Vendor' : 'Budget code'} deleted.`, 'success');
-                if (type === 'vendor') await loadVendors();
-                else await loadBudgetCodes();
-            } catch (e) {
-                showToast('Delete failed: ' + e.message, 'error');
+            if (pendingDeleteType === 'vendors') {
+                for (const num of selectedVendors) {
+                    await fetch(`${API_BASE}/api/vendors`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vendor_number: num }) });
+                }
+                showToast(`Deleted ${selectedVendors.size} vendor(s).`, 'success');
+                selectedVendors.clear();
+                await loadVendors();
+            } else {
+                for (const key of selectedBudgets) {
+                    const [bc, ac] = key.split('|');
+                    await fetch(`${API_BASE}/api/budget-codes`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ budget_code: bc, account_code: ac }) });
+                }
+                showToast(`Deleted ${selectedBudgets.size} budget code(s).`, 'success');
+                selectedBudgets.clear();
+                await loadBudgetCodes();
             }
         }
 
         /* ========================================
-           IMPORT MODAL
+           IMPORT
            ======================================== */
-        let importType = ''; // 'vendors' or 'budget-codes'
-        let importRows = [];
+        let importType = '', importRows = [];
 
         function openImportModal(type) {
-            importType = type;
-            importRows = [];
+            importType = type; importRows = [];
             document.getElementById('importModalTitle').textContent = type === 'vendors' ? 'Import Vendors' : 'Import Budget Codes';
             document.getElementById('importFileName').textContent = '';
             document.getElementById('importPreview').style.display = 'none';
@@ -923,122 +1161,73 @@
             document.getElementById('importModal').classList.add('open');
         }
 
-        function closeImportModal() {
-            document.getElementById('importModal').classList.remove('open');
-            importRows = [];
-        }
+        function closeImportModal() { document.getElementById('importModal').classList.remove('open'); importRows = []; }
 
         async function handleImportFile(input) {
             const file = input.files[0];
             if (!file) return;
             document.getElementById('importFileName').textContent = file.name;
-
             try {
                 let rows = [];
                 if (file.name.endsWith('.csv')) {
                     const text = await file.text();
-                    rows = parseCSV(text);
+                    const lines = text.trim().split('\n');
+                    if (lines.length < 2) return;
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                    rows = lines.slice(1).map(line => {
+                        const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                        const obj = {};
+                        headers.forEach((h, i) => obj[h] = vals[i] || '');
+                        return obj;
+                    });
                 } else {
-                    const ab = await file.arrayBuffer();
-                    const script = document.createElement('script');
                     if (!window.XLSX) {
-                        await new Promise((resolve, reject) => {
-                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-                            script.onload = resolve;
-                            script.onerror = reject;
-                            document.head.appendChild(script);
+                        await new Promise((res, rej) => {
+                            const s = document.createElement('script');
+                            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                            s.onload = res; s.onerror = rej; document.head.appendChild(s);
                         });
                     }
-                    const wb = XLSX.read(ab, { type: 'array' });
-                    const ws = wb.Sheets[wb.SheetNames[0]];
-                    rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+                    rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
                 }
-
-                if (!rows.length) { showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : 'budgetFormMsg', 'No data found in file.', 'error'); return; }
-
+                if (!rows.length) return;
                 importRows = rows;
-                renderImportPreview(rows);
+                const preview = document.getElementById('importPreview');
+                const cols = Object.keys(rows[0]);
+                const show = rows.slice(0, 10);
+                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+                if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
+                preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
-            } catch (e) {
-                showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : 'budgetFormMsg', 'Failed to parse file: ' + e.message, 'error');
-            }
-        }
-
-        function parseCSV(text) {
-            const lines = text.trim().split('\n');
-            if (lines.length < 2) return [];
-            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            return lines.slice(1).map(line => {
-                const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                const obj = {};
-                headers.forEach((h, i) => obj[h] = vals[i] || '');
-                return obj;
-            });
-        }
-
-        function renderImportPreview(rows) {
-            const preview = document.getElementById('importPreview');
-            const cols = Object.keys(rows[0]);
-            const showRows = rows.slice(0, 10);
-            preview.innerHTML = `<table style="width:100%;border-collapse:collapse;">
-                <thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${escHtml(c)}</th>`).join('')}</tr></thead>
-                <tbody>${showRows.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${escHtml(String(r[c] || ''))}</td>`).join('')}</tr>`).join('')}</tbody>
-            </table>`;
-            if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
-            preview.style.display = 'block';
+            } catch (e) { showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : 'budgetFormMsg', 'Parse error: ' + e.message, 'error'); }
         }
 
         async function confirmImport() {
             if (!importRows.length) return;
             document.getElementById('importConfirmBtn').disabled = true;
             let success = 0, failed = 0;
-
             for (const row of importRows) {
                 try {
                     if (importType === 'vendors') {
                         const name = row.vendor_name || row['Vendor Name'] || row.name || '';
                         const number = row.vendor_number || row['Vendor Number'] || row.number || '';
                         if (!name || !number) { failed++; continue; }
-                        const resp = await fetch(`${API_BASE}/api/vendors`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                vendor_name: name,
-                                vendor_number: String(number),
-                                vendor_address: row.vendor_address || row['Address'] || '',
-                                vendor_city: row.vendor_city || row['City'] || '',
-                                vendor_state: row.vendor_state || row['State'] || '',
-                                vendor_zip: row.vendor_zip || row['ZIP'] || row['Zip'] || '',
-                            }),
-                        });
-                        if (resp.ok) success++; else failed++;
+                        const r = await fetch(`${API_BASE}/api/vendors`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vendor_name: name, vendor_number: String(number), vendor_address: row.vendor_address || row['Address'] || '', vendor_city: row.vendor_city || row['City'] || '', vendor_state: row.vendor_state || row['State'] || '', vendor_zip: row.vendor_zip || row['ZIP'] || row['Zip'] || '' }) });
+                        if (r.ok) success++; else failed++;
                     } else {
                         const code = row.budget_code || row['Budget Code'] || '';
                         const acct = row.account_code || row['Account Code'] || row['Account'] || '';
                         if (!code || !acct) { failed++; continue; }
                         const clean = String(code).replace(/[^0-9]/g, '');
-                        const resp = await fetch(`${API_BASE}/api/budget-codes`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                budget_code: String(code),
-                                account_code: String(acct),
-                                fund: row.fund || row['Fund'] || clean.substring(0, 2),
-                                organization: row.organization || row['Organization'] || row['Org'] || clean.substring(2, 6),
-                                program: row.program || row['Program'] || clean.substring(6, 8),
-                                finance: row.finance || row['Finance'] || clean.substring(8, 11),
-                                course: row.course || row['Course'] || clean.substring(11, 14),
-                            }),
-                        });
-                        if (resp.ok) success++; else failed++;
+                        const r = await fetch(`${API_BASE}/api/budget-codes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ budget_code: String(code), account_code: String(acct), fund: row.fund || row['Fund'] || clean.substring(0, 2), organization: row.organization || row['Organization'] || row['Org'] || clean.substring(2, 6), program: row.program || row['Program'] || clean.substring(6, 8), finance: row.finance || row['Finance'] || clean.substring(8, 11), course: row.course || row['Course'] || clean.substring(11, 14) }) });
+                        if (r.ok) success++; else failed++;
                     }
                 } catch (e) { failed++; }
             }
-
             closeImportModal();
             showToast(`Imported ${success} record${success !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}.`, failed ? 'error' : 'success');
-            if (importType === 'vendors') await loadVendors();
-            else await loadBudgetCodes();
+            if (importType === 'vendors') await loadVendors(); else { await loadBudgetCodes(); await loadBudgetComponents(); }
         }
 
         /* ========================================
@@ -1048,52 +1237,33 @@
             const totalPages = Math.ceil(total / PAGE_SIZE);
             const container = document.getElementById(containerId);
             if (totalPages <= 1) { container.innerHTML = ''; return; }
-
             const start = (currentPage - 1) * PAGE_SIZE + 1;
             const end = Math.min(currentPage * PAGE_SIZE, total);
-
             let btns = '';
-            for (let i = 1; i <= totalPages && i <= 10; i++) {
-                btns += `<button class="${i === currentPage ? 'active' : ''}" onclick="this._cb(${i})">${i}</button>`;
-            }
-
-            container.innerHTML = `
-                <span>${start}–${end} of ${total}</span>
-                <div class="pagination-btns">
-                    <button ${currentPage <= 1 ? 'disabled' : ''} onclick="this._cb(${currentPage - 1})">‹</button>
-                    ${btns}
-                    <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="this._cb(${currentPage + 1})">›</button>
-                </div>
-            `;
-            container.querySelectorAll('button').forEach(btn => btn._cb = onPageChange);
+            for (let i = 1; i <= totalPages && i <= 10; i++) btns += `<button class="${i === currentPage ? 'active' : ''}" onclick="this._cb(${i})">${i}</button>`;
+            container.innerHTML = `<span>${start}\u2013${end} of ${total}</span><div class="pagination-btns"><button ${currentPage<=1?'disabled':''} onclick="this._cb(${currentPage-1})">\u2039</button>${btns}<button ${currentPage>=totalPages?'disabled':''} onclick="this._cb(${currentPage+1})">\u203A</button></div>`;
+            container.querySelectorAll('button').forEach(b => b._cb = onPageChange);
         }
 
         /* ========================================
            HELPERS
            ======================================== */
         function updateRecordCount() {
-            document.getElementById('recordCount').textContent =
-                `${allVendors.length} vendors · ${allBudgetCodes.length} budget codes`;
+            document.getElementById('recordCount').textContent = `${allVendors.length} vendors \u00B7 ${allBudgetCodes.length} budget codes`;
         }
 
         function showFormMsg(id, msg, type) {
             const el = document.getElementById(id);
-            el.textContent = msg;
-            el.className = 'form-message visible ' + type;
+            el.textContent = msg; el.className = 'form-message visible ' + type;
             setTimeout(() => el.classList.remove('visible'), 4000);
         }
 
-        function escHtml(str) {
-            const d = document.createElement('div');
-            d.textContent = str;
-            return d.innerHTML;
-        }
+        function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+        function escAttr(str) { return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
         function showToast(msg, type) {
             const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = 'toast ' + (type || 'success');
-            t.classList.add('show');
+            t.textContent = msg; t.className = 'toast ' + (type || 'success'); t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
@@ -1105,218 +1275,76 @@
         async function loadBrandData(retries = 2) {
             try {
                 let response = await fetch(`${API_BASE}/api/districts`);
-                if (!response.ok) {
-                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 3000); }
-                    return;
-                }
+                if (!response.ok) { if (retries > 0) setTimeout(() => loadBrandData(retries - 1), 3000); return; }
                 const raw = await response.json();
                 const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);
-                if (!data.length) {
-                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
-                    return;
-                }
+                if (!data.length) { if (retries > 0) setTimeout(() => loadBrandData(retries - 1), 2000); return; }
                 brandDistrictData = data.filter(d => d.District_Name && d.Primary_Hex);
-
                 const memberOrgDistricts = {};
-                data.forEach(item => {
-                    if (item.Member_Org) {
-                        if (!memberOrgDistricts[item.Member_Org]) memberOrgDistricts[item.Member_Org] = [];
-                        memberOrgDistricts[item.Member_Org].push(Number(item.District_Number));
-                    }
-                });
+                data.forEach(item => { if (item.Member_Org) { if (!memberOrgDistricts[item.Member_Org]) memberOrgDistricts[item.Member_Org] = []; memberOrgDistricts[item.Member_Org].push(Number(item.District_Number)); } });
                 const amsdNumbers = memberOrgDistricts['AMSD'] || [];
                 const amsdDistricts = brandDistrictData.filter(d => amsdNumbers.includes(Number(d.District_Number)));
                 const otherDistricts = brandDistrictData.filter(d => !amsdNumbers.includes(Number(d.District_Number)));
                 amsdDistricts.sort((a, b) => Number(a.District_Number) - Number(b.District_Number));
                 otherDistricts.sort((a, b) => (a.District_Name || '').localeCompare(b.District_Name || ''));
-
                 const menuSelect = document.getElementById('brandSelectorMenu');
                 const hiddenSelect = document.getElementById('brandSelector');
                 while (menuSelect.options.length > 1) menuSelect.remove(1);
                 while (hiddenSelect.options.length > 1) hiddenSelect.remove(1);
-
                 function addOption(d, select) {
                     const opt = new Option(`${d.District_Name} (${d.District_Number})`, d.District_Number);
                     let sec = d.Secondary_Hex || d.Primary_Hex;
                     if (sec.toLowerCase() === '#000000' || sec.toLowerCase() === '#ffffff') sec = d.Primary_Hex;
-                    opt.dataset.primaryHex = d.Primary_Hex;
-                    opt.dataset.secondaryHex = sec;
-                    select.appendChild(opt);
+                    opt.dataset.primaryHex = d.Primary_Hex; opt.dataset.secondaryHex = sec; select.appendChild(opt);
                 }
-
                 amsdDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
-                const sep1 = document.createElement('option'); sep1.disabled = true; sep1.textContent = '───────────────';
-                menuSelect.appendChild(sep1);
-                hiddenSelect.appendChild(sep1.cloneNode(true));
+                const sep1 = document.createElement('option'); sep1.disabled = true; sep1.textContent = '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500';
+                menuSelect.appendChild(sep1); hiddenSelect.appendChild(sep1.cloneNode(true));
                 otherDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
-
                 const brandParam = localStorage.getItem('bondwood-brand');
-                if (brandParam) {
-                    for (let i = 0; i < menuSelect.options.length; i++) {
-                        if (String(menuSelect.options[i].value) === String(brandParam)) {
-                            menuSelect.selectedIndex = i;
-                            hiddenSelect.value = brandParam;
-                            updateBrandColorsFromMenu();
-                            break;
-                        }
-                    }
-                }
-            } catch (e) {
-                if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
-            }
+                if (brandParam) { for (let i = 0; i < menuSelect.options.length; i++) { if (String(menuSelect.options[i].value) === String(brandParam)) { menuSelect.selectedIndex = i; hiddenSelect.value = brandParam; updateBrandColorsFromMenu(); break; } } }
+            } catch (e) { if (retries > 0) setTimeout(() => loadBrandData(retries - 1), 2000); }
         }
 
-        function updateBrandColorsFromMenu() {
-            const sel = document.getElementById('brandSelectorMenu');
-            const opt = sel.options[sel.selectedIndex];
-            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
-        }
-
-        function updateBrandColors() {
-            const sel = document.getElementById('brandSelector');
-            const opt = sel.options[sel.selectedIndex];
-            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
-        }
+        function updateBrandColorsFromMenu() { const s = document.getElementById('brandSelectorMenu'); const o = s.options[s.selectedIndex]; applyBrand(o.dataset.primaryHex, o.dataset.secondaryHex, o.value); }
+        function updateBrandColors() { const s = document.getElementById('brandSelector'); const o = s.options[s.selectedIndex]; applyBrand(o.dataset.primaryHex, o.dataset.secondaryHex, o.value); }
 
         function needsDarkText(hex) {
             if (!hex) return false;
-            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-            if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
-            return (r > 200 && g > 180 && b < 100) || (g > 200 && r > 150 && b < 100) || ((0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.85);
+            const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+            if (isNaN(r)||isNaN(g)||isNaN(b)) return false;
+            return (r>200&&g>180&&b<100)||(g>200&&r>150&&b<100)||((0.299*r+0.587*g+0.114*b)/255>0.85);
         }
 
-        function hexToRgba(hex, alpha) {
-            if (!hex || hex.length < 7) return `rgba(100,100,100,${alpha})`;
-            return `rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${alpha})`;
-        }
+        function hexToRgba(hex, a) { if (!hex||hex.length<7) return `rgba(100,100,100,${a})`; return `rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${a})`; }
 
         function applyBrand(primaryHex, secondaryHex, districtNumber) {
-            const banner = document.getElementById('headerBanner');
-            const accent = document.getElementById('bannerAccent');
-            const logo = document.getElementById('bannerLogo');
-            const title = document.getElementById('bannerTitle');
-            const hamburgerBtn = document.getElementById('hamburgerBtn');
-
-            if (!primaryHex) {
-                banner.style.background = '#000000';
-                accent.style.background = '#0728eb';
-                logo.src = 'bondwood-logo-modern-dark.png';
-                logo.style.display = 'block';
-                document.documentElement.style.setProperty('--primary-hex', '#000000');
-                document.documentElement.style.setProperty('--secondary-hex', '#0728eb');
-                document.documentElement.style.setProperty('--row-hover-bg', hexToRgba('#0728eb', 0.08));
-                if (title) title.style.color = '#fff';
-                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
-                updateHamburgerMenuColors('#000000', '#0728eb');
-                localStorage.removeItem('bondwood-brand');
-                return;
-            }
-
-            if (districtNumber === '6') primaryHex = '#121517';
-            if (districtNumber === '111') primaryHex = '#181e21';
-            if (districtNumber === '277') primaryHex = '#DA2B1F';
-
-            banner.style.background = primaryHex;
-            accent.style.background = secondaryHex || primaryHex;
-            document.documentElement.style.setProperty('--primary-hex', primaryHex);
-            document.documentElement.style.setProperty('--secondary-hex', secondaryHex || primaryHex);
-            const hoverColor = (secondaryHex && secondaryHex !== '#000000' && secondaryHex !== '#000') ? secondaryHex : primaryHex;
-            document.documentElement.style.setProperty('--row-hover-bg', hexToRgba(hoverColor, 0.08));
-
-            if (needsDarkText(primaryHex)) {
-                if (title) title.style.color = '#000000';
-                if (hamburgerBtn) hamburgerBtn.style.color = '#000000';
-            } else {
-                if (title) title.style.color = '#fff';
-                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
-            }
-
-            if (districtNumber) {
-                const logoPath = `district-logos/${districtNumber}.png`;
-                const preloadImg = new Image();
-                logo.dataset.pendingLogo = logoPath;
-                logo.style.display = 'none';
-                preloadImg.onload = function() {
-                    if (logo.dataset.pendingLogo === logoPath) { logo.src = logoPath; logo.style.display = 'block'; delete logo.dataset.pendingLogo; }
-                };
-                preloadImg.onerror = function() {
-                    if (logo.dataset.pendingLogo === logoPath) { logo.src = 'bondwood-logo-modern-dark.png'; logo.style.display = 'block'; delete logo.dataset.pendingLogo; }
-                };
-                preloadImg.src = logoPath;
-            }
-
-            updateHamburgerMenuColors(primaryHex, secondaryHex);
-            if (districtNumber) localStorage.setItem('bondwood-brand', districtNumber);
+            const banner=document.getElementById('headerBanner'),accent=document.getElementById('bannerAccent'),logo=document.getElementById('bannerLogo'),title=document.getElementById('bannerTitle'),hBtn=document.getElementById('hamburgerBtn');
+            if (!primaryHex) { banner.style.background='#000';accent.style.background='#0728eb';logo.src='bondwood-logo-modern-dark.png';logo.style.display='block';document.documentElement.style.setProperty('--primary-hex','#000');document.documentElement.style.setProperty('--secondary-hex','#0728eb');document.documentElement.style.setProperty('--row-hover-bg',hexToRgba('#0728eb',0.08));if(title)title.style.color='#fff';if(hBtn)hBtn.style.color='#fff';updateHamburgerMenuColors('#000','#0728eb');localStorage.removeItem('bondwood-brand');return; }
+            if(districtNumber==='6')primaryHex='#121517';if(districtNumber==='111')primaryHex='#181e21';if(districtNumber==='277')primaryHex='#DA2B1F';
+            banner.style.background=primaryHex;accent.style.background=secondaryHex||primaryHex;document.documentElement.style.setProperty('--primary-hex',primaryHex);document.documentElement.style.setProperty('--secondary-hex',secondaryHex||primaryHex);
+            const hc=(secondaryHex&&secondaryHex!=='#000000'&&secondaryHex!=='#000')?secondaryHex:primaryHex;document.documentElement.style.setProperty('--row-hover-bg',hexToRgba(hc,0.08));
+            if(needsDarkText(primaryHex)){if(title)title.style.color='#000';if(hBtn)hBtn.style.color='#000';}else{if(title)title.style.color='#fff';if(hBtn)hBtn.style.color='#fff';}
+            if(districtNumber){const lp=`district-logos/${districtNumber}.png`;const pi=new Image();logo.dataset.pendingLogo=lp;logo.style.display='none';pi.onload=function(){if(logo.dataset.pendingLogo===lp){logo.src=lp;logo.style.display='block';delete logo.dataset.pendingLogo;}};pi.onerror=function(){if(logo.dataset.pendingLogo===lp){logo.src='bondwood-logo-modern-dark.png';logo.style.display='block';delete logo.dataset.pendingLogo;}};pi.src=lp;}
+            updateHamburgerMenuColors(primaryHex,secondaryHex);if(districtNumber)localStorage.setItem('bondwood-brand',districtNumber);
         }
 
         function updateHamburgerMenuColors(primaryHex, secondaryHex) {
-            const menu = document.getElementById('hamburgerMenu');
-            if (!menu) return;
-            let menuColor = primaryHex || '#000000';
-            let highlightHover, highlightActive;
-            let r, g, b;
-            if (menuColor.startsWith('#') && menuColor.length >= 7) {
-                r = parseInt(menuColor.slice(1,3),16); g = parseInt(menuColor.slice(3,5),16); b = parseInt(menuColor.slice(5,7),16);
-            }
-            if (r !== undefined && !isNaN(r)) {
-                if (needsDarkText(menuColor)) menu.classList.add('dark-text');
-                else menu.classList.remove('dark-text');
-                if (secondaryHex && secondaryHex.startsWith('#') && secondaryHex.length >= 7) {
-                    const sr = parseInt(secondaryHex.slice(1,3),16), sg = parseInt(secondaryHex.slice(3,5),16), sb = parseInt(secondaryHex.slice(5,7),16);
-                    if (!isNaN(sr)) { highlightHover = `rgba(${sr},${sg},${sb},0.25)`; highlightActive = `rgba(${sr},${sg},${sb},0.40)`; }
-                }
-                if (!highlightHover) {
-                    const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
-                    highlightHover = lum > 0.5 ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.15)';
-                    highlightActive = lum > 0.5 ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.25)';
-                }
-            } else {
-                menu.classList.remove('dark-text');
-                highlightHover = 'rgba(255,255,255,0.15)';
-                highlightActive = 'rgba(255,255,255,0.25)';
-            }
-            menu.style.background = menuColor;
-            menu.style.setProperty('--menu-highlight-hover', highlightHover);
-            menu.style.setProperty('--menu-highlight-active', highlightActive);
+            const menu=document.getElementById('hamburgerMenu');if(!menu)return;let mc=primaryHex||'#000';let hh,ha;let r,g,b;
+            if(mc.startsWith('#')&&mc.length>=7){r=parseInt(mc.slice(1,3),16);g=parseInt(mc.slice(3,5),16);b=parseInt(mc.slice(5,7),16);}
+            if(r!==undefined&&!isNaN(r)){if(needsDarkText(mc))menu.classList.add('dark-text');else menu.classList.remove('dark-text');if(secondaryHex&&secondaryHex.startsWith('#')&&secondaryHex.length>=7){const sr=parseInt(secondaryHex.slice(1,3),16),sg=parseInt(secondaryHex.slice(3,5),16),sb=parseInt(secondaryHex.slice(5,7),16);if(!isNaN(sr)){hh=`rgba(${sr},${sg},${sb},0.25)`;ha=`rgba(${sr},${sg},${sb},0.40)`;}}if(!hh){const l=(0.299*r+0.587*g+0.114*b)/255;hh=l>0.5?'rgba(0,0,0,0.10)':'rgba(255,255,255,0.15)';ha=l>0.5?'rgba(0,0,0,0.18)':'rgba(255,255,255,0.25)';}}else{menu.classList.remove('dark-text');hh='rgba(255,255,255,0.15)';ha='rgba(255,255,255,0.25)';}
+            menu.style.background=mc;menu.style.setProperty('--menu-highlight-hover',hh);menu.style.setProperty('--menu-highlight-active',ha);
         }
 
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-        }
-
+        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); }
         function initTheme() {
-            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const savedTheme = localStorage.getItem('theme');
-            if (systemPrefersDark) document.body.classList.add('dark-mode');
-            if (savedTheme === 'dark' && !systemPrefersDark) document.body.classList.add('dark-mode');
-            else if (savedTheme === 'light' && systemPrefersDark) document.body.classList.remove('dark-mode');
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-                if (!localStorage.getItem('theme')) document.body.classList.toggle('dark-mode', e.matches);
-            });
+            const sp=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;const sv=localStorage.getItem('theme');
+            if(sp)document.body.classList.add('dark-mode');if(sv==='dark'&&!sp)document.body.classList.add('dark-mode');else if(sv==='light'&&sp)document.body.classList.remove('dark-mode');
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{if(!localStorage.getItem('theme'))document.body.classList.toggle('dark-mode',e.matches);});
         }
 
-        /* ========================================
-           HAMBURGER MENU
-           ======================================== */
-        function toggleHamburgerMenu() {
-            const menu = document.getElementById('hamburgerMenu');
-            if (menu.classList.contains('open')) { closeHamburgerMenu(); }
-            else {
-                menu.style.display = 'block';
-                document.getElementById('hamburgerOverlay').style.display = 'block';
-                menu.offsetHeight;
-                menu.classList.add('open');
-                menu.style.transform = 'translateX(0)';
-            }
-        }
-
-        function closeHamburgerMenu() {
-            const menu = document.getElementById('hamburgerMenu');
-            menu.style.transform = 'translateX(-100%)';
-            menu.classList.remove('open');
-            setTimeout(() => { menu.style.display = 'none'; document.getElementById('hamburgerOverlay').style.display = 'none'; }, 200);
-        }
+        function toggleHamburgerMenu() { const m=document.getElementById('hamburgerMenu');if(m.classList.contains('open'))closeHamburgerMenu();else{m.style.display='block';document.getElementById('hamburgerOverlay').style.display='block';m.offsetHeight;m.classList.add('open');m.style.transform='translateX(0)';} }
+        function closeHamburgerMenu() { const m=document.getElementById('hamburgerMenu');m.style.transform='translateX(-100%)';m.classList.remove('open');setTimeout(()=>{m.style.display='none';document.getElementById('hamburgerOverlay').style.display='none';},200); }
     </script>
 </body>
 </html>

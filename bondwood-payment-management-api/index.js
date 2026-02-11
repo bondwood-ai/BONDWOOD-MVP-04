@@ -115,6 +115,9 @@ export default {
       if (path === '/api/vendors' && method === 'POST') {
         return handleCreateVendor(request, env);
       }
+      if (path === '/api/vendors' && method === 'PUT') {
+        return handleUpdateVendor(request, env);
+      }
       if (path === '/api/vendors' && method === 'DELETE') {
         return handleDeleteVendor(request, env);
       }
@@ -123,8 +126,14 @@ export default {
       if (path === '/api/budget-codes' && method === 'GET') {
         return handleGetBudgetCodes(env, url);
       }
+      if (path === '/api/budget-codes/components' && method === 'GET') {
+        return handleGetBudgetComponents(env);
+      }
       if (path === '/api/budget-codes' && method === 'POST') {
         return handleCreateBudgetCode(request, env);
+      }
+      if (path === '/api/budget-codes' && method === 'PUT') {
+        return handleUpdateBudgetCode(request, env);
       }
       if (path === '/api/budget-codes' && method === 'DELETE') {
         return handleDeleteBudgetCode(request, env);
@@ -460,6 +469,83 @@ async function handleDeleteBudgetCode(request, env) {
   }
 
   return json({ message: 'Budget code deleted', budget_code });
+}
+
+
+/* ========================================
+   VENDORS – UPDATE
+   ======================================== */
+async function handleUpdateVendor(request, env) {
+  const body = await request.json();
+  const { vendor_number, vendor_name, vendor_address, vendor_city, vendor_state, vendor_zip } = body;
+
+  if (!vendor_number) return json({ error: 'vendor_number is required' }, 400);
+
+  await env.DB.prepare(
+    'UPDATE vendor_data SET vendor_name = ?, vendor_address = ?, vendor_city = ?, vendor_state = ?, vendor_zip = ? WHERE vendor_number = ?'
+  ).bind(
+    vendor_name?.trim() || '',
+    vendor_address?.trim() || null,
+    vendor_city?.trim() || null,
+    vendor_state?.trim() || null,
+    vendor_zip?.trim() || null,
+    vendor_number.trim(),
+  ).run();
+
+  return json({ message: 'Vendor updated', vendor_number });
+}
+
+
+/* ========================================
+   BUDGET CODES – UPDATE
+   ======================================== */
+async function handleUpdateBudgetCode(request, env) {
+  const body = await request.json();
+  const { original_budget_code, original_account_code, budget_code, account_code, fund, organization, program, finance, course } = body;
+
+  if (!original_budget_code || !original_account_code) {
+    return json({ error: 'original_budget_code and original_account_code are required' }, 400);
+  }
+
+  await env.DB.prepare(
+    'UPDATE budget_code SET budget_code = ?, account_code = ?, fund = ?, organization = ?, program = ?, finance = ?, course = ? WHERE budget_code = ? AND account_code = ?'
+  ).bind(
+    budget_code?.trim() || original_budget_code,
+    account_code?.trim() || original_account_code,
+    fund?.trim() || null,
+    organization?.trim() || null,
+    program?.trim() || null,
+    finance?.trim() || null,
+    course?.trim() || null,
+    original_budget_code.trim(),
+    original_account_code.trim(),
+  ).run();
+
+  return json({ message: 'Budget code updated' });
+}
+
+
+/* ========================================
+   BUDGET CODES – COMPONENTS (unique values)
+   ======================================== */
+async function handleGetBudgetComponents(env) {
+  const [funds, orgs, programs, finances, courses, accounts] = await Promise.all([
+    env.DB.prepare('SELECT DISTINCT fund FROM budget_code WHERE fund IS NOT NULL ORDER BY fund').all(),
+    env.DB.prepare('SELECT DISTINCT organization FROM budget_code WHERE organization IS NOT NULL ORDER BY organization').all(),
+    env.DB.prepare('SELECT DISTINCT program FROM budget_code WHERE program IS NOT NULL ORDER BY program').all(),
+    env.DB.prepare('SELECT DISTINCT finance FROM budget_code WHERE finance IS NOT NULL ORDER BY finance').all(),
+    env.DB.prepare('SELECT DISTINCT course FROM budget_code WHERE course IS NOT NULL ORDER BY course').all(),
+    env.DB.prepare('SELECT DISTINCT account_code FROM budget_code WHERE account_code IS NOT NULL ORDER BY account_code').all(),
+  ]);
+
+  return json({
+    funds: funds.results.map(r => r.fund),
+    organizations: orgs.results.map(r => r.organization),
+    programs: programs.results.map(r => r.program),
+    finances: finances.results.map(r => r.finance),
+    courses: courses.results.map(r => r.course),
+    accounts: accounts.results.map(r => r.account_code),
+  });
 }
 
 
