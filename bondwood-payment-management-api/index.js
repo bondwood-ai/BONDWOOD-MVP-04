@@ -841,6 +841,14 @@ async function handleDeleteRFP(rfpNumber, env) {
 async function handleSeedDummy(request, env) {
   const COUNT = 550;
 
+  // Clear existing data first
+  try {
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM form_data'),
+      env.DB.prepare('DELETE FROM dashboard_data'),
+    ]);
+  } catch (e) { /* tables might not exist yet */ }
+
   // ── Reference data pools ──
   const submitters = [
     { name: 'Sarah Johnson', id: 'sjohnson' },
@@ -933,26 +941,32 @@ async function handleSeedDummy(request, env) {
     'Software license annual', 'Assessment booklets', 'Cafeteria trays (50-pack)',
   ];
 
-  const statuses = ['draft', 'submitted', 'budget_approved', 'accounting_approved', 'rejected', 'completed', 'completed', 'completed', 'submitted', 'budget_approved'];
+  const statuses = ['draft', 'submitted', 'submitted', 'accounting-review', 'accounting-review', 'ap-review', 'approved', 'approved', 'approved', 'approved', 'rejected', 'archived'];
   const apBatches = [null, null, null, 'AP-2025-001', 'AP-2025-002', 'AP-2025-003', 'AP-2025-004', 'AP-2025-005', 'AP-2025-006', 'AP-2025-007'];
 
   // Helpers
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-  function randDate(startY, endY) {
-    const y = randInt(startY, endY);
-    const m = String(randInt(1, 12)).padStart(2, '0');
-    const d = String(randInt(1, 28)).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  function randRecentDate() {
+    // Generate dates from ~60 days ago to today so invoice ages are realistic
+    const now = Date.now();
+    const daysAgo = randInt(0, 60);
+    const d = new Date(now - daysAgo * 86400000);
+    return d.toISOString().split('T')[0];
+  }
+  function randInvoiceDate(submissionDate) {
+    // Invoice date is 0-15 days before submission date
+    const sub = new Date(submissionDate);
+    const daysBefore = randInt(0, 15);
+    const d = new Date(sub.getTime() - daysBefore * 86400000);
+    return d.toISOString().split('T')[0];
   }
   function randPrice(min, max) { return (Math.random() * (max - min) + min).toFixed(2); }
 
   try {
-    // Get current sequence value
-    const { results: seqRows } = await env.DB.prepare(
-      "SELECT value FROM sequences WHERE name = 'rfp_no'"
-    ).all();
-    let currentRfp = seqRows.length ? seqRows[0].value : 0;
+    // Get current sequence value and reset to 0 for clean numbering
+    await env.DB.prepare("UPDATE sequences SET value = 0 WHERE name = 'rfp_no'").run();
+    let currentRfp = 0;
 
     // Build all statements
     const allStmts = [];
@@ -966,7 +980,7 @@ async function handleSeedDummy(request, env) {
       const vendor = isVendor ? pick(vendors) : null;
       const emp = !isVendor ? pick(employees) : null;
       const status = pick(statuses);
-      const submissionDate = randDate(2024, 2025);
+      const submissionDate = randRecentDate();
       const mileageTotal = isMileage ? randInt(15, 280) : 0;
 
       allStmts.push(
@@ -993,10 +1007,10 @@ async function handleSeedDummy(request, env) {
           pick(descriptions),
           status,
           pick(approvers),
-          (status === 'completed' || status === 'accounting_approved') ? pick(apBatches) : null,
+          (status === 'approved' || status === 'ap-review' || status === 'archived') ? pick(apBatches) : null,
           mileageTotal,
           pick(['manual', 'manual', 'manual', 'import', 'capture']),
-          (status === 'completed' && Math.random() > 0.4) ? String(randInt(100000, 999999)) : null,
+          (status === 'approved' && Math.random() > 0.4) ? String(randInt(100000, 999999)) : null,
         )
       );
 
@@ -1034,7 +1048,7 @@ async function handleSeedDummy(request, env) {
             unitPrice,
             total,
             isVendor ? `INV-${randInt(10000, 99999)}` : null,
-            randDate(2024, 2025),
+            randInvoiceDate(submissionDate),
             bc,
             ac,
           )
