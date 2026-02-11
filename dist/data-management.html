@@ -35,7 +35,7 @@
         body {
             font-family: 'Satoshi', sans-serif;
             background: var(--bg-color); color: var(--text-primary);
-            min-height: 100vh; line-height: 1.5; padding: 1rem;
+            min-height: 100vh; line-height: 1.5; padding: 1rem; padding-bottom: 3rem;
             -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
         }
 
@@ -294,7 +294,7 @@
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         /* ============ FOOTER ============ */
-        .footer { padding: 1.5rem 0 0.5rem; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; border-top: 1px solid var(--border-color); }
         .ownership-text { display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-secondary); padding: 0.5rem; }
         .theme-toggle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-color); background: var(--card-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: box-shadow 0.15s; }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
@@ -505,6 +505,7 @@
                 <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;">Drop a <strong>.xlsx</strong> or <strong>.csv</strong> file here, or click to browse</p>
                 <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;" id="importFileName"></p>
             </div>
+            <div id="importColumnsGuide" style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.75rem;color:var(--text-secondary);"></div>
             <input type="file" id="importFileInput" accept=".xlsx,.csv" style="display:none;" onchange="handleImportFile(this)">
             <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;font-size:0.75rem;"></div>
             <div class="modal-footer">
@@ -1195,6 +1196,29 @@
             document.getElementById('importPreview').innerHTML = '';
             document.getElementById('importConfirmBtn').disabled = true;
             document.getElementById('importFileInput').value = '';
+
+            const guide = document.getElementById('importColumnsGuide');
+            if (type === 'vendors') {
+                guide.innerHTML = `<div style="font-weight:600;color:var(--text-primary);margin-bottom:0.4rem;font-size:0.78rem;">Required columns (in order):</div>
+                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;font-weight:600;">1. Vendor Number</span>
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;font-weight:600;">2. Vendor Name</span>
+                    </div>
+                    <div style="font-weight:600;color:var(--text-primary);margin-top:0.5rem;margin-bottom:0.4rem;font-size:0.78rem;">Optional columns:</div>
+                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;color:var(--text-secondary);">3. Address</span>
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;color:var(--text-secondary);">4. City</span>
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;color:var(--text-secondary);">5. State</span>
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;color:var(--text-secondary);">6. ZIP</span>
+                    </div>`;
+            } else {
+                guide.innerHTML = `<div style="font-weight:600;color:var(--text-primary);margin-bottom:0.4rem;font-size:0.78rem;">Required columns (in order):</div>
+                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;font-weight:600;">1. Budget Code</span>
+                        <span style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;font-weight:600;">2. Account Code</span>
+                    </div>`;
+            }
+
             document.getElementById('importModal').classList.add('open');
         }
 

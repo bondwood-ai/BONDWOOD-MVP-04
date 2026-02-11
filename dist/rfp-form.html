@@ -40,7 +40,7 @@
             color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.5;
-            padding: 1rem;
+            padding: 1rem; padding-bottom: 3rem;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -678,7 +678,7 @@
         .btn-primary-sm-alt svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ============ FOOTER ============ */
-        .footer { padding: 1rem 0 0.5rem; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; border-top: 1px solid var(--border-color); }
         .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Satoshi', sans-serif; }
         .theme-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
