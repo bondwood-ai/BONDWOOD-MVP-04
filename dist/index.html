@@ -281,7 +281,7 @@
         .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* ============ FOOTER ============ */
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; border-top: 1px solid var(--border-color); }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; }
         .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Satoshi', sans-serif; }
         .theme-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: all 0.3s ease; }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
@@ -668,8 +668,15 @@
                 <button class="btn-icon" onclick="closeImportModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
             </div>
             <div class="modal-body">
-                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to create multiple Requests for Payment. A separate draft will be created for each vendor. Headers are auto-detected; if absent, columns must be in this order:</p>
-                <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Satoshi',sans-serif;font-weight:600;letter-spacing:0.01em;">Vendor # &nbsp;·&nbsp; Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
+                <div style="background:color-mix(in srgb, var(--primary-hex) 8%, transparent);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;">
+                    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-hex)" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">
+                            Upload a spreadsheet to create multiple Requests for Payment. A separate draft will be created for each vendor. Headers are auto-detected; if absent, columns must be in this order:
+                            <div style="margin-top:0.4rem;font-weight:600;">Vendor # &nbsp;·&nbsp; Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()">
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                     <p>Drop your file here or <span class="browse-link">browse</span></p>
@@ -680,7 +687,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeImportModal()">Cancel</button>
-                <button class="btn-primary accent" id="importConfirmBtn" onclick="confirmImport()" disabled>Import</button>
+                <button class="btn-primary" id="importConfirmBtn" onclick="confirmImport()" disabled style="background:var(--primary-hex);color:#ffffff;border-color:var(--primary-hex);">Import</button>
             </div>
         </div>
     </div>
