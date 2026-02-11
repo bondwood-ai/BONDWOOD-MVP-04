@@ -534,22 +534,46 @@ async function handleUpdateBudgetCode(request, env) {
    BUDGET CODES – COMPONENTS (unique values)
    ======================================== */
 async function handleGetBudgetComponents(env) {
-  const [funds, orgs, programs, finances, courses, accounts] = await Promise.all([
-    env.DB.prepare('SELECT DISTINCT fund FROM budget_code WHERE fund IS NOT NULL ORDER BY fund').all(),
-    env.DB.prepare('SELECT DISTINCT organization FROM budget_code WHERE organization IS NOT NULL ORDER BY organization').all(),
-    env.DB.prepare('SELECT DISTINCT program FROM budget_code WHERE program IS NOT NULL ORDER BY program').all(),
-    env.DB.prepare('SELECT DISTINCT finance FROM budget_code WHERE finance IS NOT NULL ORDER BY finance').all(),
-    env.DB.prepare('SELECT DISTINCT course FROM budget_code WHERE course IS NOT NULL ORDER BY course').all(),
-    env.DB.prepare('SELECT DISTINCT account_code FROM budget_code WHERE account_code IS NOT NULL ORDER BY account_code').all(),
+  // Get both stored component columns AND parse from budget_code strings for maximum coverage
+  const [storedData, codeData] = await Promise.all([
+    Promise.all([
+      env.DB.prepare('SELECT DISTINCT fund FROM budget_code WHERE fund IS NOT NULL ORDER BY fund').all(),
+      env.DB.prepare('SELECT DISTINCT organization FROM budget_code WHERE organization IS NOT NULL ORDER BY organization').all(),
+      env.DB.prepare('SELECT DISTINCT program FROM budget_code WHERE program IS NOT NULL ORDER BY program').all(),
+      env.DB.prepare('SELECT DISTINCT finance FROM budget_code WHERE finance IS NOT NULL ORDER BY finance').all(),
+      env.DB.prepare('SELECT DISTINCT course FROM budget_code WHERE course IS NOT NULL ORDER BY course').all(),
+      env.DB.prepare('SELECT DISTINCT account_code FROM budget_code WHERE account_code IS NOT NULL ORDER BY account_code').all(),
+    ]),
+    env.DB.prepare('SELECT DISTINCT budget_code FROM budget_code WHERE budget_code IS NOT NULL').all(),
   ]);
 
+  const [funds, orgs, programs, finances, courses, accounts] = storedData;
+
+  // Parse budget_code strings to extract components (2+3+3+3+3 format)
+  const parsedFunds = new Set(), parsedOrgs = new Set(), parsedProgs = new Set(), parsedFins = new Set(), parsedCourses = new Set();
+  for (const row of (codeData.results || [])) {
+    const c = (row.budget_code || '').toString().replace(/[^0-9]/g, '');
+    if (c.length >= 2) parsedFunds.add(c.substring(0, 2));
+    if (c.length >= 5) parsedOrgs.add(c.substring(2, 5));
+    if (c.length >= 8) parsedProgs.add(c.substring(5, 8));
+    if (c.length >= 11) parsedFins.add(c.substring(8, 11));
+    if (c.length >= 14) parsedCourses.add(c.substring(11, 14));
+  }
+
+  // Union stored + parsed
+  const union = (dbRows, field, parsedSet) => {
+    const s = new Set([...parsedSet]);
+    for (const r of (dbRows.results || [])) { const v = (r[field] || '').toString().trim(); if (v) s.add(v); }
+    return [...s].sort();
+  };
+
   return json({
-    funds: funds.results.map(r => (r.fund || '').toString().trim()),
-    organizations: orgs.results.map(r => (r.organization || '').toString().trim()),
-    programs: programs.results.map(r => (r.program || '').toString().trim()),
-    finances: finances.results.map(r => (r.finance || '').toString().trim()),
-    courses: courses.results.map(r => (r.course || '').toString().trim()),
-    accounts: accounts.results.map(r => (r.account_code || '').toString().trim()),
+    funds: union(funds, 'fund', parsedFunds),
+    organizations: union(orgs, 'organization', parsedOrgs),
+    programs: union(programs, 'program', parsedProgs),
+    finances: union(finances, 'finance', parsedFins),
+    courses: union(courses, 'course', parsedCourses),
+    accounts: accounts.results.map(r => (r.account_code || '').toString().trim()).filter(Boolean),
   });
 }
 

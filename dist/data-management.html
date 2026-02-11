@@ -148,7 +148,7 @@
         .text-center { text-align: center; }
         .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); font-size: 0.85rem; cursor: default; }
         .cb-cell { width: 36px; text-align: center; }
-        .cb-cell input[type="checkbox"] { accent-color: var(--checkbox-color); cursor: pointer; width: 14px; height: 14px; }
+        .cb-cell input[type="checkbox"] { accent-color: var(--primary-hex); cursor: pointer; width: 14px; height: 14px; }
 
         /* ============ ROLE BADGES ============ */
         .role-badges { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -261,8 +261,8 @@
             font-size: 0.78rem; font-weight: 500; transition: all 0.15s; user-select: none;
         }
         .role-check-label:hover { background: var(--accent-color-light); }
-        .role-check-label input { accent-color: var(--checkbox-color); }
-        .role-check-label.checked { border-color: var(--secondary-hex); background: rgba(7,40,235,0.06); }
+        .role-check-label input { accent-color: var(--primary-hex); }
+        .role-check-label.checked { border-color: var(--primary-hex); background: rgba(7,40,235,0.06); }
 
         /* Warning modal */
         .warning-icon {
@@ -547,7 +547,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeEditVendor()">Cancel</button>
-                <button class="btn-primary green" id="saveVendorBtn" onclick="saveVendor()">
+                <button class="btn-primary accent" id="saveVendorBtn" onclick="saveVendor()">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
                     Save Changes
                 </button>
@@ -577,7 +577,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeEditBudget()">Cancel</button>
-                <button class="btn-primary green" id="saveBudgetBtn" onclick="saveBudgetCode()">
+                <button class="btn-primary accent" id="saveBudgetBtn" onclick="saveBudgetCode()">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
                     Save Changes
                 </button>
