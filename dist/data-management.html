@@ -264,12 +264,6 @@
         .role-check-label input { accent-color: var(--primary-hex); }
         .role-check-label.checked { border-color: var(--primary-hex); background: rgba(7,40,235,0.06); }
 
-        /* Warning modal */
-        .warning-icon {
-            width: 40px; height: 40px; border-radius: 50%; background: #fef3c7;
-            display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
-        }
-        .warning-icon svg { width: 22px; height: 22px; stroke: #d97706; }
         .new-component-list { margin: 0.5rem 0 1rem; padding: 0; list-style: none; }
         .new-component-list li {
             padding: 0.35rem 0.65rem; margin-bottom: 0.25rem; border-radius: 6px;
@@ -277,7 +271,6 @@
             display: flex; align-items: center; gap: 0.35rem;
         }
         body.dark-mode .new-component-list li { background: #422006; color: #fde68a; }
-        body.dark-mode .warning-icon { background: #422006; }
 
         /* ============ TOAST ============ */
         .toast {
@@ -582,19 +575,17 @@
     <!-- Admin Review Warning Modal -->
     <div class="modal-overlay" id="adminReviewModal" onclick="if(event.target===this)closeAdminReview()">
         <div class="modal-box" style="max-width:460px;">
-            <div class="warning-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-            </div>
-            <h3 style="margin-bottom:0.5rem;">Administrative Review Required</h3>
-            <p style="margin-bottom:0.5rem;">This budget code contains components that don't currently exist in the system, which may indicate it has not been set up in the ERP.</p>
-            <ul class="new-component-list" id="newComponentsList"></ul>
-            <p style="font-size:0.8rem;">Would you like to proceed and flag this code for review?</p>
-            <div class="modal-footer">
-                <button class="btn-primary" onclick="closeAdminReview()">Cancel</button>
-                <button class="btn-primary" style="background:var(--warning-color);color:#fff;border-color:var(--warning-color);" onclick="forceAddBudgetCode()">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                    Proceed with Review
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+                <h3 style="margin:0;">Budget Code Not Recognized</h3>
+                <button onclick="closeAdminReview()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
+            </div>
+            <p style="margin-bottom:0.75rem;">This budget code contains components that don't currently exist in the system, which may indicate it has not been set up in the ERP.</p>
+            <ul class="new-component-list" id="newComponentsList"></ul>
+            <p style="font-size:0.82rem;font-weight:600;margin-top:0.75rem;">Please contact an Administrator to have this budget code added to the system.</p>
+            <div class="modal-footer">
+                <button class="btn-primary accent" onclick="closeAdminReview()">Dismiss</button>
             </div>
         </div>
     </div>
@@ -632,9 +623,6 @@
 
         // Known ERP components (loaded from API)
         let knownComponents = { funds: [], organizations: [], programs: [], finances: [], courses: [], accounts: [] };
-
-        // Pending budget code data for admin-review flow
-        let pendingBudgetAdd = null;
 
         /* ========================================
            DUMMY ROLE ASSIGNMENT
@@ -679,22 +667,14 @@
         document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
-            await Promise.all([loadVendors(), loadBudgetCodes()]);
-            loadBudgetComponents();
+            await Promise.all([loadVendors(), loadBudgetCodes(), loadBudgetComponents()]);
         });
 
         async function loadBudgetComponents() {
-            // Derive known components from allBudgetCodes already in memory
-            knownComponents = { funds: new Set(), organizations: new Set(), programs: new Set(), finances: new Set(), courses: new Set(), accounts: new Set() };
-            for (const b of allBudgetCodes) {
-                const c = (b.budget_code || '').toString().replace(/[^0-9]/g, '');
-                if (c.length >= 2) knownComponents.funds.add(c.substring(0, 2));
-                if (c.length >= 5) knownComponents.organizations.add(c.substring(2, 5));
-                if (c.length >= 8) knownComponents.programs.add(c.substring(5, 8));
-                if (c.length >= 11) knownComponents.finances.add(c.substring(8, 11));
-                if (c.length >= 14) knownComponents.courses.add(c.substring(11, 14));
-                if (b.account_code) knownComponents.accounts.add(b.account_code.toString().trim());
-            }
+            try {
+                const resp = await fetch(`${API_BASE}/api/budget-codes/components`);
+                if (resp.ok) knownComponents = await resp.json();
+            } catch (e) { console.warn('Failed to load budget components:', e); }
         }
 
         /* ========================================
@@ -1017,18 +997,17 @@
             const finance = clean.substring(8, 11);
             const course = clean.substring(11, 14);
 
-            // Check which components are new (derived from loaded budget codes)
+            // Check which components are new
             const newItems = [];
-            if (fund && !knownComponents.funds.has(fund)) newItems.push(`Fund: ${fund}`);
-            if (org && !knownComponents.organizations.has(org)) newItems.push(`Organization: ${org}`);
-            if (program && !knownComponents.programs.has(program)) newItems.push(`Program: ${program}`);
-            if (finance && !knownComponents.finances.has(finance)) newItems.push(`Finance: ${finance}`);
-            if (course && !knownComponents.courses.has(course)) newItems.push(`Course: ${course}`);
-            if (account && !knownComponents.accounts.has(account)) newItems.push(`Account: ${account}`);
+            const has = (arr, val) => arr.some(v => v.trim() === val.trim());
+            if (fund && !has(knownComponents.funds, fund)) newItems.push(`Fund: ${fund}`);
+            if (org && !has(knownComponents.organizations, org)) newItems.push(`Organization: ${org}`);
+            if (program && !has(knownComponents.programs, program)) newItems.push(`Program: ${program}`);
+            if (finance && !has(knownComponents.finances, finance)) newItems.push(`Finance: ${finance}`);
+            if (course && !has(knownComponents.courses, course)) newItems.push(`Course: ${course}`);
+            if (account && !has(knownComponents.accounts, account)) newItems.push(`Account: ${account}`);
 
             if (newItems.length > 0) {
-                // Store data for later and show warning
-                pendingBudgetAdd = { budget_code: code, account_code: account, fund, organization: org, program, finance, course };
                 const list = document.getElementById('newComponentsList');
                 list.innerHTML = newItems.map(item => `<li><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/></svg>${esc(item)}</li>`).join('');
                 document.getElementById('adminReviewModal').classList.add('open');
@@ -1038,16 +1017,8 @@
             await doAddBudgetCode({ budget_code: code, account_code: account, fund, organization: org, program, finance, course });
         }
 
-        async function forceAddBudgetCode() {
-            document.getElementById('adminReviewModal').classList.remove('open');
-            if (!pendingBudgetAdd) return;
-            await doAddBudgetCode(pendingBudgetAdd);
-            pendingBudgetAdd = null;
-        }
-
         function closeAdminReview() {
             document.getElementById('adminReviewModal').classList.remove('open');
-            pendingBudgetAdd = null;
         }
 
         async function doAddBudgetCode(payload) {
@@ -1063,8 +1034,7 @@
                 showFormMsg('budgetFormMsg', `Budget code ${payload.budget_code} added.`, 'success');
                 ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance','addCourse'].forEach(id => document.getElementById(id).value = '');
                 document.getElementById('budgetFormGrid').classList.remove('form-valid');
-                await loadBudgetCodes();
-                loadBudgetComponents();
+                await Promise.all([loadBudgetCodes(), loadBudgetComponents()]);
             } catch (e) { showFormMsg('budgetFormMsg', e.message, 'error'); }
             btn.disabled = false;
         }
@@ -1248,7 +1218,7 @@
             }
             closeImportModal();
             showToast(`Imported ${success} record${success !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}.`, failed ? 'error' : 'success');
-            if (importType === 'vendors') await loadVendors(); else { await loadBudgetCodes(); loadBudgetComponents(); }
+            if (importType === 'vendors') await loadVendors(); else { await Promise.all([loadBudgetCodes(), loadBudgetComponents()]); }
         }
 
         /* ========================================
