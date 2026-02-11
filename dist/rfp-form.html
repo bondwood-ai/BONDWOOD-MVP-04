@@ -3248,7 +3248,7 @@
             const pngTypes = ['pdf', 'xlsx', 'xls', 'docx', 'doc', 'html'];
             if (pngTypes.includes(ext)) {
                 const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : ext;
-                return `<img src="dist/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
+                return `<img src="icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
             }
             // Fallback SVG for other types
             const colors = { png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1' };
