@@ -7,7 +7,8 @@
     <link rel="icon" type="image/png" href="bondwood-logo-modern-dark.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
     <style>
         :root {
             --accent-color: #000000;
@@ -30,7 +31,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Reddit Sans', sans-serif;
+            font-family: 'Satoshi', sans-serif;
             background: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
@@ -65,7 +66,7 @@
             width: 100%; padding: 0.65rem 0.75rem; border: none;
             background: none; color: rgba(255,255,255,0.85);
             cursor: pointer; border-radius: 6px;
-            font-family: 'Reddit Sans', sans-serif;
+            font-family: 'Satoshi', sans-serif;
             font-size: 0.9rem; font-weight: 500;
             transition: all 0.15s ease; text-align: left;
         }
@@ -86,7 +87,7 @@
         /* ============ MAIN CONTENT ============ */
         .main-content { padding: 0; }
         .account-content-wrapper { max-width: 1100px; margin: 0 auto; }
-        .page-title { font-family: 'Reddit Sans', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem 0; }
+        .page-title { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem 0; }
 
         /* ============ PROFILE CONTAINER ============ */
         .profile-container {
@@ -108,7 +109,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Reddit Sans', sans-serif;
+            font-family: 'Satoshi', sans-serif;
             border-radius: 12px 12px 0 0;
         }
 
@@ -130,7 +131,7 @@
         }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .avatar-initials {
-            font-family: 'Reddit Sans', sans-serif; font-size: 1.6rem; font-weight: 700;
+            font-family: 'Inter', sans-serif; font-size: 1.6rem; font-weight: 700;
             color: #fff; background: var(--secondary-hex);
             width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
@@ -146,7 +147,7 @@
         .avatar-upload-btn:hover { transform: scale(1.1); }
 
         .profile-identity h2 {
-            font-family: 'Reddit Sans', sans-serif; font-size: 1.15rem;
+            font-family: 'Inter', sans-serif; font-size: 1.15rem;
             font-weight: 700; color: var(--text-primary); margin-bottom: 0.1rem;
         }
         .profile-identity .email { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
@@ -154,7 +155,7 @@
         .profile-identity .roles { margin-top: 0.45rem; display: flex; flex-wrap: wrap; gap: 0.3rem; }
         .role-badge {
             display: inline-block; padding: 2px 9px; border-radius: 99px;
-            font-size: 0.62rem; font-weight: 700; font-family: 'Reddit Sans', sans-serif;
+            font-size: 0.62rem; font-weight: 700; font-family: 'Satoshi', sans-serif;
             text-transform: uppercase; letter-spacing: 0.03em;
             color: #ffffff;
         }
@@ -168,12 +169,12 @@
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label {
-            font-family: 'Reddit Sans', sans-serif; font-size: 0.72rem; font-weight: 600;
+            font-family: 'Satoshi', sans-serif; font-size: 0.72rem; font-weight: 600;
             color: var(--text-secondary); margin-bottom: 0.3rem;
         }
         .form-group input {
             padding: 0.45rem 0.6rem; border: 1px solid var(--border-color);
-            border-radius: 4px; font-size: 0.85rem; font-family: 'Reddit Sans', sans-serif;
+            border-radius: 4px; font-size: 0.85rem; font-family: 'Satoshi', sans-serif;
             font-weight: 500; color: var(--text-primary); background: var(--field-bg);
             transition: border-color 0.2s;
         }
@@ -187,7 +188,7 @@
             padding: 0.5rem 1.25rem; height: 36px;
             background: var(--primary-hex); color: var(--accent-text-color);
             border: none; border-radius: 6px;
-            font-size: 0.8rem; font-weight: 600; font-family: 'Reddit Sans', sans-serif;
+            font-size: 0.8rem; font-weight: 600; font-family: 'Satoshi', sans-serif;
             cursor: pointer; transition: opacity 0.2s;
         }
         .btn-save:hover { opacity: 0.85; }
@@ -248,7 +249,7 @@
         .toast-error {
             position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
             background: #991b1b; color: #fff; padding: 0.65rem 1.25rem; border-radius: 8px;
-            font-size: 0.82rem; font-weight: 600; font-family: 'Reddit Sans', sans-serif;
+            font-size: 0.82rem; font-weight: 600; font-family: 'Satoshi', sans-serif;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 10000;
             display: flex; align-items: center; gap: 0.5rem;
             opacity: 0; transition: opacity 0.3s; pointer-events: none;
@@ -267,7 +268,7 @@
 
         /* ============ FOOTER ============ */
         .footer { padding: 1rem 0 0.5rem; }
-        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Reddit Sans', sans-serif; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Satoshi', sans-serif; }
         .theme-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
@@ -289,7 +290,7 @@
     <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
         <div style="padding:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
-                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Reddit Sans',sans-serif;">Menu</h3>
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Inter',sans-serif;">Menu</h3>
                 <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
                 </button>
@@ -348,7 +349,7 @@
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
             <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
         </div>

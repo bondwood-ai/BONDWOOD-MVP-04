@@ -7,7 +7,8 @@
     <link rel="icon" type="image/png" href="bondwood-logo-modern-dark.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -33,7 +34,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Reddit Sans', sans-serif;
+            font-family: 'Satoshi', sans-serif;
             background: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
@@ -107,7 +108,7 @@
             gap: 0.75rem;
             width: 100%;
             text-align: left;
-            font-family: 'Reddit Sans', sans-serif;
+            font-family: 'Satoshi', sans-serif;
             transition: all 0.15s ease;
         }
         .hamburger-menu-item:hover { background: var(--menu-highlight-hover, rgba(255,255,255,0.12)); }
@@ -137,11 +138,11 @@
         .main-content { padding: 0; min-height: calc(100vh - 160px); }
         .module-container { max-width: 100%; margin: 0 auto; }
         .module-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
-        .module-title { font-family: 'Reddit Sans', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .module-title { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; }
         .module-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
         /* ============ BUTTONS ============ */
-        .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.5rem 1rem; height: 36px; background: #d1d5db; color: #000; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: 'Reddit Sans', sans-serif; box-sizing: border-box; }
+        .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.5rem 1rem; height: 36px; background: #d1d5db; color: #000; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: 'Satoshi', sans-serif; box-sizing: border-box; }
         .btn-primary:hover { background: #9ca3af; }
         .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
         .btn-primary.accent:hover { opacity: 0.85; }
@@ -149,7 +150,7 @@
         .btn-primary.green:hover { opacity: 0.85; }
         .btn-primary.danger { background: var(--negative-color); color: #fff; }
         .btn-primary.danger:hover { background: #FA050F; }
-        .btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1rem; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-family: 'Reddit Sans', sans-serif; }
+        .btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 1rem; background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-family: 'Satoshi', sans-serif; }
         .btn-secondary:hover { background: var(--bg-color); }
         .btn-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: transparent; border: none; border-radius: 6px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s ease; }
         .btn-icon:hover { background: var(--bg-color); color: var(--text-primary); }
@@ -170,17 +171,17 @@
         .stat-icon.red svg { stroke: var(--negative-color); }
         .stat-icon.amber { background: rgba(217, 119, 6, 0.1); }
         .stat-icon.amber svg { stroke: var(--warning-color); }
-        .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.03em; font-family: 'Reddit Sans', sans-serif; }
-        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); font-family: 'Reddit Sans', sans-serif; }
+        .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.03em; font-family: 'Satoshi', sans-serif; }
+        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); font-family: 'Inter', sans-serif; }
 
         /* ============ FILTER BAR ============ */
         .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; align-items: center; }
         .search-box { display: flex; align-items: center; gap: 8px; padding: 0.45rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; flex: 1; min-width: 200px; max-width: 360px; }
         .search-box svg { width: 16px; height: 16px; stroke: var(--text-secondary); stroke-width: 2; fill: none; flex-shrink: 0; }
         .search-box input { flex: 1; border: none; outline: none; font-size: 0.8rem; background: transparent; font-family: inherit; color: var(--text-primary); }
-        .filter-select { padding: 0.45rem 2rem 0.45rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; min-width: 130px; font-family: 'Reddit Sans', sans-serif; font-weight: 500; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; }
+        .filter-select { padding: 0.45rem 2rem 0.45rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; min-width: 130px; font-family: 'Satoshi', sans-serif; font-weight: 500; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; }
         .filter-select:focus { outline: none; border-color: var(--primary-hex); }
-        .filter-select option { font-family: 'Reddit Sans', sans-serif; padding: 0.35rem 0.5rem; }
+        .filter-select option { font-family: 'Satoshi', sans-serif; padding: 0.35rem 0.5rem; }
 
         /* ============ COLUMN SELECTOR ============ */
         .column-selector { position: relative; }
@@ -214,7 +215,7 @@
             width: 16px; height: 16px; cursor: pointer;
             accent-color: var(--primary-hex);
         }
-        .column-option label { cursor: pointer; flex: 1; color: var(--text-primary); font-weight: 500; font-family: 'Reddit Sans', sans-serif; }
+        .column-option label { cursor: pointer; flex: 1; color: var(--text-primary); font-weight: 500; font-family: 'Satoshi', sans-serif; }
 
         /* ============ TABLE ============ */
         .table-card { background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.06); overflow: hidden; }
@@ -237,7 +238,7 @@
             font-weight: 600; color: #ffffff; border-bottom: none;
             cursor: pointer; user-select: none; position: sticky; top: -1px; z-index: 2;
             white-space: nowrap; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em;
-            font-family: 'Reddit Sans', sans-serif;
+            font-family: 'Satoshi', sans-serif;
         }
         th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
         th .sort-arrow { display: inline-block; margin-left: 4px; font-size: 0.65rem; opacity: 0.6; }
@@ -255,7 +256,7 @@
         td .submitter-name { font-weight: 500; }
 
         /* Status badges */
-        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; font-family: 'Reddit Sans', sans-serif; }
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; font-family: 'Satoshi', sans-serif; }
         .status-badge.draft { background: rgba(107, 114, 128, 0.12); color: #4b5563; }
         .status-badge.submitted, .status-badge.pending { background: rgba(3, 70, 148, 0.12); color: #034694; }
         .status-badge.accounting-review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
@@ -281,7 +282,7 @@
 
         /* ============ FOOTER ============ */
         .footer { padding: 1.5rem 0 0.5rem; }
-        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Reddit Sans', sans-serif; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Satoshi', sans-serif; }
         .theme-toggle { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: all 0.3s ease; }
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
@@ -301,7 +302,7 @@
         .modal-body { padding: 1.25rem; }
         /* Loading indicator */
         .preview-loading { text-align: center; padding: 2.5rem 2rem; color: var(--text-secondary); }
-        .preview-loading-text { font-size: 0.85rem; font-weight: 500; font-family: 'Reddit Sans', sans-serif; margin-bottom: 1rem; }
+        .preview-loading-text { font-size: 0.85rem; font-weight: 500; font-family: 'Satoshi', sans-serif; margin-bottom: 1rem; }
         .preview-loading-spinner { width: 36px; height: 36px; margin: 0 auto; border: 3px solid var(--border-color); border-top-color: var(--primary-hex); border-radius: 50%; opacity: 0; transition: opacity 0.2s ease; animation: spinLoad 0.8s linear infinite; }
         .preview-loading-spinner.visible { opacity: 1; }
         @keyframes spinLoad { to { transform: rotate(360deg); } }
@@ -333,14 +334,14 @@
         .adv-search-modal { background: var(--card-bg); border-radius: 12px; width: 860px; max-width: 96vw; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
         .adv-search-modal .modal-body { overflow-y: auto; flex: 1; padding: 1rem 1.25rem; }
         .adv-search-section { margin-bottom: 0.75rem; }
-        .adv-search-section-title { font-family: 'Reddit Sans', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0.5rem; padding: 0 0.125rem; }
+        .adv-search-section-title { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0.5rem; padding: 0 0.125rem; }
         .adv-search-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.625rem; }
         .adv-search-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
         /* Checklist component */
         .adv-checklist { border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
-        .adv-checklist-header { background: var(--primary-hex); color: #fff; padding: 0.35rem 0.6rem; font-family: 'Reddit Sans', sans-serif; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
-        .adv-checklist-count { display: inline-block; background: rgba(255,255,255,0.25); color: #fff; font-size: 0.58rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 99px; margin-left: 0.3rem; font-family: 'Reddit Sans', sans-serif; }
-        .adv-checklist-filter { width: 100%; padding: 0.35rem 0.5rem; font-size: 0.75rem; border: none; border-bottom: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: 'Reddit Sans', sans-serif; outline: none; }
+        .adv-checklist-header { background: var(--primary-hex); color: #fff; padding: 0.35rem 0.6rem; font-family: 'Satoshi', sans-serif; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+        .adv-checklist-count { display: inline-block; background: rgba(255,255,255,0.25); color: #fff; font-size: 0.58rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 99px; margin-left: 0.3rem; font-family: 'Satoshi', sans-serif; }
+        .adv-checklist-filter { width: 100%; padding: 0.35rem 0.5rem; font-size: 0.75rem; border: none; border-bottom: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-family: 'Satoshi', sans-serif; outline: none; }
         .adv-checklist-filter::placeholder { color: var(--text-secondary); opacity: 0.5; }
         .adv-checklist-items { max-height: 130px; overflow-y: auto; padding: 0.25rem 0.125rem; }
         .adv-checklist-items label { display: flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.4rem; font-size: 0.72rem; color: var(--text-primary); cursor: pointer; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -348,23 +349,23 @@
         .adv-checklist-items input[type="checkbox"] { width: 13px; height: 13px; flex-shrink: 0; accent-color: var(--primary-hex); cursor: pointer; }
         .adv-checklist-items .adv-no-items { padding: 0.5rem; font-size: 0.7rem; color: var(--text-secondary); text-align: center; font-style: italic; }
         /* Range fields */
-        .adv-search-field label { display: block; font-family: 'Reddit Sans', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
+        .adv-search-field label { display: block; font-family: 'Satoshi', sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
         .adv-search-field input {
             width: 100%; padding: 0.4rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border-color);
             border-radius: 6px; background: var(--bg-color); color: var(--text-primary);
-            font-family: 'Reddit Sans', sans-serif;
+            font-family: 'Satoshi', sans-serif;
         }
         .adv-search-field input:focus { outline: none; border-color: var(--primary-hex); }
         .adv-search-range { display: flex; gap: 0.375rem; align-items: center; }
         .adv-search-range span { font-size: 0.7rem; color: var(--text-secondary); flex-shrink: 0; }
         .adv-search-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.875rem 1.25rem; }
-        .adv-search-footer .btn-clear { background: none; border: none; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.75rem; border-radius: 6px; font-family: 'Reddit Sans', sans-serif; font-weight: 500; }
+        .adv-search-footer .btn-clear { background: none; border: none; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; padding: 0.4rem 0.75rem; border-radius: 6px; font-family: 'Satoshi', sans-serif; font-weight: 500; }
         .adv-search-footer .btn-clear:hover { color: var(--text-primary); background: var(--bg-color); }
-        .adv-search-active-badge { display: none; background: var(--primary-hex); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 99px; margin-left: 0.35rem; vertical-align: middle; font-family: 'Reddit Sans', sans-serif; }
+        .adv-search-active-badge { display: none; background: var(--primary-hex); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 99px; margin-left: 0.35rem; vertical-align: middle; font-family: 'Satoshi', sans-serif; }
 
         .preview-modal { background: var(--card-bg); border-radius: 12px; width: 1050px; max-width: 96vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
         .preview-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: none; }
-        .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Reddit Sans', sans-serif; }
+        .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Inter', sans-serif; }
         .preview-grid {
             display: grid; grid-template-columns: 1fr 1fr 1fr;
             gap: 0; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
@@ -375,16 +376,16 @@
         .preview-grid .pg-cell:nth-last-child(-n+3) { border-bottom: none; }
         .preview-grid .pg-cell .pg-label {
             font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
-            color: var(--text-secondary); font-family: 'Reddit Sans', sans-serif; font-weight: 600; margin-bottom: 0.2rem;
+            color: var(--text-secondary); font-family: 'Satoshi', sans-serif; font-weight: 600; margin-bottom: 0.2rem;
         }
         .preview-grid .pg-cell .pg-value { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
         .preview-grid-2col { grid-template-columns: 1fr 1fr; }
         .preview-grid-2col .pg-cell:nth-last-child(-n+2) { border-bottom: none; }
         .preview-grid-2col .pg-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--border-color); }
         .preview-line-items { margin-top: 1rem; overflow-x: auto; }
-        .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Reddit Sans', sans-serif; }
+        .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; }
         .preview-line-items table { width: 100%; min-width: 750px; border-collapse: collapse; font-size: 0.8rem; }
-        .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); font-family: 'Reddit Sans', sans-serif; font-weight: 600; border-bottom: 1px solid var(--border-color); position: static; background: transparent; }
+        .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); font-family: 'Satoshi', sans-serif; font-weight: 600; border-bottom: 1px solid var(--border-color); position: static; background: transparent; }
         .preview-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
         .preview-line-items .text-right { text-align: right; }
         .preview-total-row { display: flex; justify-content: flex-end; gap: 1.5rem; padding: 0.6rem 0.6rem 0; font-size: 0.85rem; font-weight: 600; }
@@ -395,7 +396,7 @@
         .btn-reject {
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
             width: 140px; height: 36px; background: var(--negative-color); color: #fff;
-            border: none; border-radius: 6px; font-family: 'Reddit Sans', sans-serif;
+            border: none; border-radius: 6px; font-family: 'Satoshi', sans-serif;
             font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: opacity 0.15s;
             box-sizing: border-box;
         }
@@ -403,7 +404,7 @@
         .btn-approve {
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
             width: 140px; height: 36px; background: var(--positive-color); color: #fff;
-            border: none; border-radius: 6px; font-family: 'Reddit Sans', sans-serif;
+            border: none; border-radius: 6px; font-family: 'Satoshi', sans-serif;
             font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: opacity 0.15s;
             box-sizing: border-box;
         }
@@ -411,7 +412,7 @@
         .btn-open-form {
             display: inline-flex; align-items: center; gap: 0.5rem;
             padding: 0.6rem 1.25rem; background: var(--primary-hex); color: var(--accent-text-color);
-            border: none; border-radius: 6px; font-family: 'Reddit Sans', sans-serif;
+            border: none; border-radius: 6px; font-family: 'Satoshi', sans-serif;
             font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
         }
         .btn-open-form:hover { opacity: 0.85; }
@@ -448,7 +449,7 @@
     <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
         <div style="padding:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
-                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Reddit Sans',sans-serif;">Menu</h3>
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Inter',sans-serif;">Menu</h3>
                 <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
                 </button>
@@ -507,7 +508,7 @@
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
             <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
         </div>
@@ -608,7 +609,7 @@
             <div class="table-toolbar" id="tableToolbar">
                 <span class="selected-info" id="selectedInfo">0 selected</span>
                 <div class="bulk-actions" id="bulkActions">
-                    <button class="btn-primary" onclick="exportSelectedToXLSX()" style="font-family:'Reddit Sans',sans-serif;">
+                    <button class="btn-primary" onclick="exportSelectedToXLSX()" style="font-family:'Satoshi',sans-serif;">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                         Export XLSX
                     </button>
@@ -668,7 +669,7 @@
             </div>
             <div class="modal-body">
                 <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to create multiple Requests for Payment. A separate draft will be created for each vendor. Headers are auto-detected; if absent, columns must be in this order:</p>
-                <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Reddit Sans',sans-serif;font-weight:600;letter-spacing:0.01em;">Vendor # &nbsp;·&nbsp; Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
+                <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Satoshi',sans-serif;font-weight:600;letter-spacing:0.01em;">Vendor # &nbsp;·&nbsp; Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
                 <div class="drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()">
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
                     <p>Drop your file here or <span class="browse-link">browse</span></p>
@@ -696,14 +697,14 @@
                 <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;margin-bottom:0.5rem;transition:border-color 0.15s;">
                     <input type="radio" name="rejectType" value="previous" style="margin-top:2px;accent-color:var(--primary-hex);" checked>
                     <div>
-                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Reddit Sans',sans-serif;">Reject to Previous Step</div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Satoshi',sans-serif;">Reject to Previous Step</div>
                         <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;" id="rejectPrevLabel">Returns the request to the previous workflow step.</div>
                     </div>
                 </label>
                 <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:border-color 0.15s;">
                     <input type="radio" name="rejectType" value="permanent" style="margin-top:2px;accent-color:var(--negative-color);">
                     <div>
-                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Reddit Sans',sans-serif;">Reject Permanently</div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Satoshi',sans-serif;">Reject Permanently</div>
                         <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;">Permanently rejects the request. This cannot be undone.</div>
                     </div>
                 </label>
@@ -1977,7 +1978,7 @@
                 const notesId = 'notes_' + rfp.rfpNumber;
                 notesHtml = `
                 <div style="margin-top:1rem;">
-                    <button onclick="toggleAuditLog('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Reddit Sans',sans-serif;">
+                    <button onclick="toggleAuditLog('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Inter',sans-serif;">
                         <svg id="${notesId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
                         Notes
                     </button>
@@ -2005,12 +2006,12 @@
             let auditHtml = `
                 <div style="margin-top:1rem;">
                     <div style="display:flex;align-items:center;gap:0.4rem;">
-                        <button onclick="toggleAuditLog('${auditId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);text-align:left;font-family:'Reddit Sans',sans-serif;">
+                        <button onclick="toggleAuditLog('${auditId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);text-align:left;font-family:'Inter',sans-serif;">
                             <svg id="${auditId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
                             Audit Log
                             <span style="font-size:0.7rem;font-weight:500;color:var(--text-secondary);margin-left:0.25rem;">(${auditEntries.length})</span>
                         </button>
-                        ${auditEntries.length > 0 ? `<button id="${auditId}_print" onclick="printAuditLog(window._auditPrintRfp, window._auditPrintEntries)" style="display:none;margin-left:auto;align-items:center;gap:0.3rem;background:none;border:1px solid var(--border-color);border-radius:5px;padding:0.2rem 0.6rem;cursor:pointer;font-size:0.7rem;font-family:'Reddit Sans',sans-serif;font-weight:600;color:var(--text-secondary);">
+                        ${auditEntries.length > 0 ? `<button id="${auditId}_print" onclick="printAuditLog(window._auditPrintRfp, window._auditPrintEntries)" style="display:none;margin-left:auto;align-items:center;gap:0.3rem;background:none;border:1px solid var(--border-color);border-radius:5px;padding:0.2rem 0.6rem;cursor:pointer;font-size:0.7rem;font-family:'Satoshi',sans-serif;font-weight:600;color:var(--text-secondary);">
                             <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                             Print
                         </button>` : ''}
@@ -2074,7 +2075,7 @@
 
                 if (files.length === 0) { container.innerHTML = ''; return; }
 
-                var html = '<h4 style="font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;font-family:\'Reddit Sans\',sans-serif;">Attachments (' + files.length + ')</h4>';
+                var html = '<h4 style="font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;font-family:\'Inter\',sans-serif;">Attachments (' + files.length + ')</h4>';
                 for (var i = 0; i < files.length; i++) {
                     var f = files[i];
                     var ext = f.name.split('.').pop().toLowerCase();
@@ -2898,7 +2899,7 @@
                 document.getElementById('utilityModalTitle').textContent = title;
                 document.getElementById('utilityModalMessage').innerHTML = `
                     <span style="display:block;margin-bottom:0.75rem;">${message}</span>
-                    <input type="text" id="utilityPromptInput" placeholder="${placeholder}" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.9rem;font-family:'Reddit Sans',sans-serif;background:var(--bg-color);color:var(--text-primary);box-sizing:border-box;">
+                    <input type="text" id="utilityPromptInput" placeholder="${placeholder}" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.9rem;font-family:'Satoshi',sans-serif;background:var(--bg-color);color:var(--text-primary);box-sizing:border-box;">
                 `;
                 document.getElementById('utilityModalFooter').innerHTML = `
                     <button class="btn-secondary" onclick="closeUtilityModal(null)">Cancel</button>
@@ -2977,23 +2978,24 @@
 
             const w = window.open('', '_blank', 'width=900,height=700');
             w.document.write(`<!DOCTYPE html><html><head><title>RFP #${rfp.rfpNumber}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
-                body { font-family: 'Reddit Sans', sans-serif; padding: 40px; color: #222; font-size: 11px; }
+                body { font-family: 'Satoshi', sans-serif; padding: 40px; color: #222; font-size: 11px; }
                 h1 { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 2px; }
-                h2 { font-family: 'Reddit Sans', sans-serif; font-size: 13px; margin: 20px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                h2 { font-family: 'Inter', sans-serif; font-size: 13px; margin: 20px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
                 .subtitle { font-size: 10px; color: #666; margin-bottom: 16px; }
                 .header-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 20px; margin-bottom: 16px; }
-                .header-grid .label { font-family: 'Reddit Sans', sans-serif; font-size: 9px; text-transform: uppercase; color: #999; font-weight: 700; }
+                .header-grid .label { font-family: 'Satoshi', sans-serif; font-size: 9px; text-transform: uppercase; color: #999; font-weight: 700; }
                 .header-grid .value { font-size: 12px; font-weight: 600; }
                 table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
-                th { font-family: 'Reddit Sans', sans-serif; background: #f5f5f5; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ddd; font-weight: 700; font-size: 10px; }
+                th { font-family: 'Satoshi', sans-serif; background: #f5f5f5; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ddd; font-weight: 700; font-size: 10px; }
                 td { padding: 5px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
                 td.num { text-align: right; width: 30px; color: #999; }
                 td.amt { text-align: right; font-weight: 600; }
-                .total-row { font-family: 'Reddit Sans', sans-serif; text-align: right; font-size: 13px; font-weight: 700; padding: 8px 8px 0; border-top: 2px solid #333; }
-                .status-badge { font-family: 'Reddit Sans', sans-serif; display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #2B6D51; color: #fff; }
+                .total-row { font-family: 'Satoshi', sans-serif; text-align: right; font-size: 13px; font-weight: 700; padding: 8px 8px 0; border-top: 2px solid #333; }
+                .status-badge { font-family: 'Satoshi', sans-serif; display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #2B6D51; color: #fff; }
                 @media print { body { padding: 20px; } }
             </style></head><body>
             <h1>Request for Payment – #${rfp.rfpNumber}</h1>
@@ -3021,14 +3023,15 @@
         function printAuditLog(rfpNumber, entries) {
             const w = window.open('', '_blank', 'width=700,height=600');
             w.document.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
-                body { font-family: 'Reddit Sans', sans-serif; padding: 40px; color: #222; }
+                body { font-family: 'Satoshi', sans-serif; padding: 40px; color: #222; }
                 h1 { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 4px; }
                 .subtitle { font-size: 11px; color: #666; margin-bottom: 20px; }
                 table { width: 100%; border-collapse: collapse; font-size: 11px; }
-                th { font-family: 'Reddit Sans', sans-serif; background: #f5f5f5; text-align: left; padding: 6px 10px; border-bottom: 2px solid #ddd; font-weight: 700; }
+                th { font-family: 'Satoshi', sans-serif; background: #f5f5f5; text-align: left; padding: 6px 10px; border-bottom: 2px solid #ddd; font-weight: 700; }
                 td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
                 td.num { text-align: right; width: 30px; color: #999; font-weight: 600; }
                 td.ts { width: 150px; color: #666; font-size: 10px; }
@@ -3231,7 +3234,7 @@
                 overlay.innerHTML = `
                     <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                         <svg id="captureOverlayIcon" viewBox="0 0 24 24" width="36" height="36" stroke="var(--secondary-hex)" stroke-width="2" fill="none" style="animation:spin 1s linear infinite;margin-bottom:1rem;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        <div id="captureOverlayTitle" style="font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;"></div>
+                        <div id="captureOverlayTitle" style="font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;"></div>
                         <div id="captureOverlayMsg" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;"></div>
                         <div id="captureOverlayProgress" style="margin-top:1rem;background:var(--border-color);border-radius:4px;height:6px;overflow:hidden;">
                             <div id="captureOverlayBar" style="height:100%;background:var(--primary-hex);border-radius:4px;transition:width 0.3s;width:0%;"></div>
@@ -3428,7 +3431,7 @@
                 overlay.innerHTML = `
                     <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                         <svg id="captureOverlayIcon" viewBox="0 0 24 24" width="36" height="36" stroke="var(--secondary-hex)" stroke-width="2" fill="none" style="animation:spin 1s linear infinite;margin-bottom:1rem;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        <div id="captureOverlayTitle" style="font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Analyzing Invoice...</div>
+                        <div id="captureOverlayTitle" style="font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Analyzing Invoice...</div>
                         <div id="captureOverlayMsg" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">This may take a few seconds. Please wait.</div>
                     </div>
                 `;
