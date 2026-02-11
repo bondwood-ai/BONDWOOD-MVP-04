@@ -1165,12 +1165,14 @@
         /* ========================================
            DATA LOADING (from bondwood-api)
            ======================================== */
+        let allRFPsRaw = []; // raw API response for advanced search
         async function loadRFPData() {
             try {
                 const response = await fetch(`${API_BASE}/api/rfps?limit=5000`);
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const raw = await response.json();
                 const rfps = Array.isArray(raw) ? raw : (raw.rfps || raw.data || raw.results || []);
+                allRFPsRaw = rfps; // store raw for advanced search
 
                 return rfps.map(r => {
                     const submittedDays = r.days_since_submission ||
@@ -1304,7 +1306,7 @@
                             break;
                         case 'rfpNumber':
                             td.className = 'rfp-number';
-                            td.textContent = rfp.rfpNumber;
+                            td.textContent = formatRfpNumber(rfp.rfpNumber);
                             break;
                         case 'submitter':
                             td.innerHTML = `<span class="submitter-name">${rfp.submitter}</span>`;
@@ -1420,7 +1422,7 @@
                 if (statusFilter !== 'all' && rfp.status !== statusFilter) return false;
                 if (searchTerm) {
                     const searchable = [
-                        String(rfp.rfpNumber), rfp.submitter, rfp.vendor,
+                        String(rfp.rfpNumber), formatRfpNumber(rfp.rfpNumber), rfp.submitter, rfp.vendor,
                         rfp.assignedTo, rfp.apBatch
                     ].join(' ').toLowerCase();
                     if (!searchable.includes(searchTerm)) return false;
@@ -1543,7 +1545,7 @@
                 ['RFP No.', 'Submitter', 'Date', 'Request Type', 'Vendor', 'Amount', 'Status', 'A/P Batch', 'Assigned To']
             ];
             selected.forEach(r => {
-                summaryData.push([r.rfpNumber, r.submitter, r.submissionDate, r.type, r.vendor, r.amount, formatStatus(r.status), r.apBatch || '', r.assignedTo || '']);
+                summaryData.push([formatRfpNumber(r.rfpNumber), r.submitter, r.submissionDate, r.type, r.vendor, r.amount, formatStatus(r.status), r.apBatch || '', r.assignedTo || '']);
             });
 
             // Build Line Items sheet (includes mileage)
@@ -1805,6 +1807,24 @@
             return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
         }
 
+        function buildSearchOptionsFromLocal() {
+            // Build search options from already-loaded raw RFP data
+            const opts = {};
+            const uniqueVals = {};
+            const fields = ['status', 'request_type', 'submitter_name', 'assigned_to', 'vendor_name', 'vendor_number', 'ap_batch', 'description'];
+            fields.forEach(f => uniqueVals[f] = new Set());
+            allRFPsRaw.forEach(r => {
+                fields.forEach(f => {
+                    const v = r[f];
+                    if (v && v !== '—') uniqueVals[f].add(v);
+                });
+            });
+            fields.forEach(f => {
+                opts[f] = Array.from(uniqueVals[f]).sort();
+            });
+            return opts;
+        }
+
         async function openAdvancedSearch() {
             document.getElementById('advSearchModal').classList.add('open');
 
@@ -1814,7 +1834,14 @@
                 try {
                     const resp = await fetch(`${API_BASE}/api/rfps/search-options`);
                     if (resp.ok) advSearchOptionsCache = await resp.json();
-                } catch (e) { console.error('Failed to load search options', e); }
+                } catch (e) { console.error('Failed to load search options from API', e); }
+
+                // Fallback: build options from local data
+                if (!advSearchOptionsCache || Object.keys(advSearchOptionsCache).length === 0) {
+                    console.log('[ADV SEARCH] Using client-side options fallback');
+                    advSearchOptionsCache = buildSearchOptionsFromLocal();
+                }
+
                 document.getElementById('advSearchLoading').style.display = 'none';
                 document.getElementById('advSearchContent').style.display = '';
             }
@@ -1852,6 +1879,30 @@
             filterTable();
         }
 
+        function clientSideAdvancedFilter(criteria) {
+            // Filter allRFPsRaw using criteria, return matching rfp_numbers
+            return allRFPsRaw.filter(r => {
+                // Checklist fields: each must match ANY of the selected values
+                for (const [field, vals] of Object.entries(criteria)) {
+                    if (Array.isArray(vals)) {
+                        const rfpVal = r[field] || '';
+                        if (!vals.includes(rfpVal)) return false;
+                    }
+                }
+                // Date range: submission_date
+                if (criteria.date_from && r.submission_date < criteria.date_from) return false;
+                if (criteria.date_to && r.submission_date > criteria.date_to) return false;
+                // Invoice date range
+                if (criteria.inv_date_from && (!r.latest_invoice_date || r.latest_invoice_date < criteria.inv_date_from)) return false;
+                if (criteria.inv_date_to && (!r.latest_invoice_date || r.latest_invoice_date > criteria.inv_date_to)) return false;
+                // Amount range
+                const amt = r.total_amount || r.amount || r.mileage_total || 0;
+                if (criteria.amount_min !== undefined && amt < criteria.amount_min) return false;
+                if (criteria.amount_max !== undefined && amt > criteria.amount_max) return false;
+                return true;
+            }).map(r => r.rfp_number);
+        }
+
         async function executeAdvancedSearch() {
             const criteria = {};
             let filterCount = 0;
@@ -1876,6 +1927,7 @@
                 return;
             }
 
+            let matchingNumbers;
             try {
                 console.log('[ADV SEARCH] Criteria:', JSON.stringify(criteria));
                 const resp = await fetch(`${API_BASE}/api/rfps/search`, {
@@ -1883,31 +1935,30 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(criteria)
                 });
-                console.log('[ADV SEARCH] Response status:', resp.status);
-                if (!resp.ok) {
-                    const errText = await resp.text();
-                    console.error('[ADV SEARCH] Error body:', errText);
-                    throw new Error(`Search failed (${resp.status}): ${errText}`);
-                }
+                if (!resp.ok) throw new Error(`Search API returned ${resp.status}`);
                 const data = await resp.json();
-                console.log('[ADV SEARCH] Results:', data);
-                const matchingNumbers = new Set((data.rfp_numbers || []).map(Number));
-
-                advancedSearchActive = true;
-                advancedSearchRfpNumbers = matchingNumbers;
-
-                const badge = document.getElementById('advSearchBadge');
-                badge.textContent = filterCount;
-                badge.style.display = 'inline';
-
-                document.getElementById('searchInput').value = '';
-                document.getElementById('statusFilter').value = 'all';
-
-                closeAdvancedSearch();
-                filterTable();
+                matchingNumbers = new Set((data.rfp_numbers || []).map(Number));
+                console.log('[ADV SEARCH] API results:', matchingNumbers.size);
             } catch (err) {
-                showAlert('Search error: ' + err.message, 'Advanced Search');
+                // Fallback: client-side filtering
+                console.log('[ADV SEARCH] API failed, using client-side filter:', err.message);
+                const nums = clientSideAdvancedFilter(criteria);
+                matchingNumbers = new Set(nums.map(Number));
+                console.log('[ADV SEARCH] Client-side results:', matchingNumbers.size);
             }
+
+            advancedSearchActive = true;
+            advancedSearchRfpNumbers = matchingNumbers;
+
+            const badge = document.getElementById('advSearchBadge');
+            badge.textContent = filterCount;
+            badge.style.display = 'inline';
+
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = 'all';
+
+            closeAdvancedSearch();
+            filterTable();
         }
 
         /* ========================================
@@ -2157,7 +2208,7 @@
 
             body.innerHTML = `
                 <div class="preview-grid">
-                    <div class="pg-cell"><div class="pg-label">RFP No.</div><div class="pg-value" style="font-weight:700;">${rfp.rfpNumber}</div></div>
+                    <div class="pg-cell"><div class="pg-label">RFP No.</div><div class="pg-value" style="font-weight:700;">${formatRfpNumber(rfp.rfpNumber)}</div></div>
                     <div class="pg-cell"><div class="pg-label">Submitted</div><div class="pg-value">${formatDate(rfp.submissionDate)}</div></div>
                     <div class="pg-cell"><div class="pg-label">Days Open</div><div class="pg-value">${rfp.daysSinceSubmission}d</div></div>
                     <div class="pg-cell"><div class="pg-label">Submitter</div><div class="pg-value">${rfp.submitter}</div></div>
@@ -2306,7 +2357,7 @@
                 closePreviewModal();
                 allRFPs = await loadRFPData();
                 filterTable();
-                showAlert(`Request #${previewRfp.rfpNumber} has been ${rejectType === 'permanent' ? 'permanently rejected' : 'sent back to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, 'Request Rejected');
+                showAlert(`Request #${formatRfpNumber(previewRfp.rfpNumber)} has been ${rejectType === 'permanent' ? 'permanently rejected' : 'sent back to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, 'Request Rejected');
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Reject Failed');
             }
@@ -2354,7 +2405,7 @@
                 closePreviewModal();
                 allRFPs = await loadRFPData();
                 filterTable();
-                showAlert(`Request #${previewRfp.rfpNumber} has been ${isFullApproval ? 'approved' : 'advanced to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, isFullApproval ? 'Approved' : 'Advanced');
+                showAlert(`Request #${formatRfpNumber(previewRfp.rfpNumber)} has been ${isFullApproval ? 'approved' : 'advanced to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, isFullApproval ? 'Approved' : 'Advanced');
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Approve Failed');
             }
@@ -3105,7 +3156,7 @@
             }
 
             const w = window.open('', '_blank', 'width=900,height=700');
-            w.document.write(`<!DOCTYPE html><html><head><title>RFP #${rfp.rfpNumber}</title>
+            w.document.write(`<!DOCTYPE html><html><head><title>RFP #${formatRfpNumber(rfp.rfpNumber)}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
             <style>
@@ -3126,7 +3177,7 @@
                 .status-badge { font-family: 'Satoshi', sans-serif; display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #2B6D51; color: #fff; }
                 @media print { body { padding: 20px; } }
             </style></head><body>
-            <h1>Request for Payment – #${rfp.rfpNumber}</h1>
+            <h1>Request for Payment – #${formatRfpNumber(rfp.rfpNumber)}</h1>
             <div class="subtitle">Printed ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} &nbsp;|&nbsp; <span class="status-badge">${formatStatus(rfp.status)}</span>${data.ap_batch ? ' &nbsp;|&nbsp; A/P Batch: <strong>' + data.ap_batch + '</strong>' : ''}</div>
             <div class="header-grid">
                 <div><div class="label">Submitter</div><div class="value">${rfp.submitter}</div></div>
@@ -3150,7 +3201,7 @@
 
         function printAuditLog(rfpNumber, entries) {
             const w = window.open('', '_blank', 'width=700,height=600');
-            w.document.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
+            w.document.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${formatRfpNumber(rfpNumber)}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
             <style>
@@ -3176,6 +3227,12 @@
             </body></html>`);
             w.document.close();
             w.onload = () => { w.document.fonts.ready.then(() => w.print()); };
+        }
+
+        function formatRfpNumber(num) {
+            const n = parseInt(num, 10);
+            if (isNaN(n)) return num;
+            return '26' + String(n).padStart(6, '0');
         }
 
         function formatCurrency(num) {
