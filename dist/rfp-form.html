@@ -3237,10 +3237,16 @@
             return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
         }
 
-        /* Realistic file-type SVG icons */
+        /* Realistic file-type icons */
         function getFileTypeIconSVG(ext) {
             // Use PNG images for types that have them
-            const colors = { pdf: '#FA050F', docx: '#2563EB', doc: '#2563EB', xlsx: '#2B6D51', png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1', html: '#C05621' };
+            const pngTypes = ['pdf', 'xlsx', 'xls', 'docx', 'doc', 'html'];
+            if (pngTypes.includes(ext)) {
+                const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : ext;
+                return `<img src="${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
+            }
+            // Fallback SVG for other types
+            const colors = { png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1' };
             const bg = colors[ext] || '#718096';
             const label = ext.toUpperCase().substring(0, 4);
             return `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
