@@ -1407,20 +1407,19 @@
         let formSubmitting = false;
         let historyGuardActive = false;
 
-        // Native beforeunload only for tab close / reload (browser forces its own UI for these)
+        // Native beforeunload for tab close / reload (browser forces its own UI)
         window.addEventListener('beforeunload', function(e) {
             if (formDirty && !formSubmitting) {
                 e.preventDefault();
-                e.returnValue = '';
-                return '';
+                e.returnValue = 'You have unsaved changes.';
+                return 'You have unsaved changes.';
             }
         });
 
         // History API guard: intercept browser back/forward with custom modal
         window.addEventListener('popstate', function(e) {
             if (formDirty && !formSubmitting) {
-                // Re-push guard state so we stay on the page
-                history.pushState({ formGuard: true }, '');
+                // Don't re-push yet — let the modal decide
                 showUnsavedWarningModal('__history_back__');
             }
         });
@@ -1460,12 +1459,19 @@
                 </div>
             `;
             document.body.appendChild(modal);
-            document.getElementById('unsavedStayBtn').onclick = function() { modal.remove(); };
+            document.getElementById('unsavedStayBtn').onclick = function() {
+                modal.remove();
+                // Re-push guard state if this was a back-button interception
+                if (destinationUrl === '__history_back__') {
+                    history.pushState({ formGuard: true }, '');
+                }
+            };
             document.getElementById('unsavedLeaveBtn').onclick = function() {
                 formDirty = false;
                 formSubmitting = true;
                 modal.remove();
                 if (destinationUrl === '__history_back__') {
+                    // Guard state already popped by the back press; one more back to leave the page
                     history.back();
                 } else {
                     window.location.href = destinationUrl;
@@ -2103,6 +2109,7 @@
             tr.querySelector('.line-invoice-date').addEventListener('click', function(e) {
                 openBwDatepicker(this, e);
             });
+            wireDatepickerKeyboard(tr.querySelector('.line-invoice-date'));
 
             // Auto-grow: when all fields in the last row are filled, add a new row
             const checkAutoGrow = () => {
@@ -2537,6 +2544,7 @@
             tr.querySelector('.trip-date').addEventListener('click', function(e) {
                 openBwDatepicker(this, e);
             });
+            wireDatepickerKeyboard(tr.querySelector('.trip-date'));
             var tripDateInput = tr.querySelector('.trip-date');
             tripDateInput.addEventListener('change', function() {
                 var d = this.value.trim();
@@ -4961,6 +4969,18 @@
         let bwDpYear = 2026;
         let bwDpMonth = 1;           // 0-indexed
         const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        // Keyboard accessibility: open datepicker on Enter, Space, or Arrow keys
+        function wireDatepickerKeyboard(inputEl) {
+            inputEl.setAttribute('role', 'button');
+            inputEl.setAttribute('tabindex', '0');
+            inputEl.addEventListener('keydown', function(e) {
+                if (['Enter', ' ', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    e.preventDefault();
+                    openBwDatepicker(this, e);
+                }
+            });
+        }
 
         function openBwDatepicker(inputEl, evt) {
             const dp = document.getElementById('bwDatepicker');
