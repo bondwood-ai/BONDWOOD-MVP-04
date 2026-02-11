@@ -993,28 +993,35 @@
             budgetInput.classList.remove('input-valid', 'input-invalid');
             accountInput.classList.remove('input-valid', 'input-invalid');
 
+            // Normalize comparison: trim whitespace, compare as strings, also compare numeric values
+            const match = (arr, val) => arr.some(v => {
+                const a = String(v).trim();
+                const b = String(val).trim();
+                return a === b || Number(a) === Number(b);
+            });
+
             if (code) {
                 const clean = code.replace(/[^0-9]/g, '');
-                const has = (arr, val) => arr.some(v => v.trim() === val.trim());
                 const fund = clean.substring(0, 2);
                 const org = clean.substring(2, 5);
                 const program = clean.substring(5, 8);
                 const finance = clean.substring(8, 11);
                 const course = clean.substring(11, 14);
+                console.log('[BudgetValidation] clean:', clean, '| fund:', fund, '| org:', org, '| program:', program, '| finance:', finance, '| course:', course);
+                console.log('[BudgetValidation] knownComponents.funds sample:', knownComponents.funds.slice(0, 5));
                 // Only validate components that have their full expected length
                 let anyInvalid = false;
                 let anyChecked = false;
-                if (fund.length === 2)    { anyChecked = true; if (!has(knownComponents.funds, fund)) anyInvalid = true; }
-                if (org.length === 3)     { anyChecked = true; if (!has(knownComponents.organizations, org)) anyInvalid = true; }
-                if (program.length === 3) { anyChecked = true; if (!has(knownComponents.programs, program)) anyInvalid = true; }
-                if (finance.length === 3) { anyChecked = true; if (!has(knownComponents.finances, finance)) anyInvalid = true; }
-                if (course.length === 3)  { anyChecked = true; if (!has(knownComponents.courses, course)) anyInvalid = true; }
+                if (fund.length === 2)    { anyChecked = true; if (!match(knownComponents.funds, fund)) { anyInvalid = true; console.log('[BudgetValidation] Fund NOT found:', fund); } }
+                if (org.length === 3)     { anyChecked = true; if (!match(knownComponents.organizations, org)) { anyInvalid = true; console.log('[BudgetValidation] Org NOT found:', org); } }
+                if (program.length === 3) { anyChecked = true; if (!match(knownComponents.programs, program)) { anyInvalid = true; console.log('[BudgetValidation] Program NOT found:', program); } }
+                if (finance.length === 3) { anyChecked = true; if (!match(knownComponents.finances, finance)) { anyInvalid = true; console.log('[BudgetValidation] Finance NOT found:', finance); } }
+                if (course.length === 3)  { anyChecked = true; if (!match(knownComponents.courses, course)) { anyInvalid = true; console.log('[BudgetValidation] Course NOT found:', course); } }
                 if (anyChecked) budgetInput.classList.add(anyInvalid ? 'input-invalid' : 'input-valid');
             }
 
             if (account) {
-                const has = (arr, val) => arr.some(v => v.trim() === val.trim());
-                const accountInvalid = !has(knownComponents.accounts, account);
+                const accountInvalid = !match(knownComponents.accounts, account);
                 accountInput.classList.add(accountInvalid ? 'input-invalid' : 'input-valid');
             }
         }
