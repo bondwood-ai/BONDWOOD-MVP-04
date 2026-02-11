@@ -103,18 +103,17 @@
 
         /* ============ TABS ============ */
         .tab-bar {
-            display: flex; gap: 0; border-bottom: 2px solid var(--border-color);
+            display: flex; gap: 0;
             margin-bottom: 1.25rem;
         }
         .tab-btn {
             padding: 0.65rem 1.5rem; border: none; background: none;
             font-family: inherit; font-size: 0.85rem; font-weight: 600;
             color: var(--text-secondary); cursor: pointer;
-            border-bottom: 2px solid transparent; margin-bottom: -2px;
-            transition: color 0.15s, border-color 0.15s;
+            transition: color 0.15s;
         }
         .tab-btn:hover { color: var(--text-primary); }
-        .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--secondary-hex); }
+        .tab-btn.active { color: var(--text-primary); font-weight: 700; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
@@ -137,16 +136,17 @@
             background: var(--field-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 0.6rem center;
             color: var(--text-primary); min-width: 200px;
         }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
         th {
             background: var(--primary-hex); color: var(--accent-text-color);
             padding: 0.6rem 0.85rem; font-size: 0.7rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 0.04em;
             text-align: left; white-space: nowrap; cursor: pointer;
             user-select: none; transition: background 0.15s;
+            position: sticky; top: 0; z-index: 2;
         }
-        th:first-child { border-radius: 0; }
-        th:last-child { border-radius: 0; }
+        th:first-child { border-radius: 8px 0 0 0; }
+        th:last-child { border-radius: 0 8px 0 0; }
         th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #fff); }
         td {
             padding: 0.55rem 0.85rem; font-size: 0.8rem;
@@ -180,6 +180,8 @@
         .btn-primary.danger:hover { opacity: 0.88; }
         .btn-primary svg { width: 14px; height: 14px; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary.import-btn { background: #d1d5db; color: #000; border-color: #d1d5db; }
+        .btn-primary.import-btn:hover { background: #bfc4cb; }
 
         /* ============ ADD FORM ============ */
         .add-form-card {
@@ -380,11 +382,11 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Vendor Name *</label>
+                        <label>Vendor Name</label>
                         <input type="text" id="addVendorName" placeholder="e.g. BSN Sports, LLC">
                     </div>
                     <div class="form-group">
-                        <label>Vendor Number *</label>
+                        <label>Vendor Number</label>
                         <input type="text" id="addVendorNumber" placeholder="e.g. 12345">
                     </div>
                     <div class="form-group">
@@ -409,6 +411,10 @@
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                         Add Vendor
                     </button>
+                    <button class="btn-primary import-btn" onclick="openImportModal('vendors')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import Vendors
+                    </button>
                     <span class="form-message" id="vendorFormMsg"></span>
                 </div>
             </div>
@@ -419,7 +425,7 @@
                     <input type="text" class="search-input" id="vendorSearch" placeholder="Search vendors..." oninput="filterVendors()">
                     <span style="font-size:0.75rem;color:var(--text-secondary);" id="vendorCount"></span>
                 </div>
-                <div style="overflow-x:auto;">
+                <div style="overflow-x:auto;overflow-y:auto;max-height:60vh;">
                     <table>
                         <thead>
                             <tr>
@@ -451,34 +457,42 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Budget Code *</label>
-                        <input type="text" id="addBudgetCode" placeholder="e.g. 01-510-000-000">
+                        <label>Budget Code</label>
+                        <input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode()">
                     </div>
                     <div class="form-group">
-                        <label>Account Code *</label>
-                        <input type="text" id="addAccountCode" placeholder="e.g. 366">
+                        <label>Account Code</label>
+                        <input type="text" id="addAccountCode" placeholder="e.g. 401">
                     </div>
                     <div class="form-group">
                         <label>Fund</label>
-                        <input type="text" id="addFund" placeholder="01">
+                        <input type="text" id="addFund" placeholder="01" readonly>
                     </div>
                     <div class="form-group">
                         <label>Organization</label>
-                        <input type="text" id="addOrganization" placeholder="510">
+                        <input type="text" id="addOrganization" placeholder="0052" readonly>
                     </div>
                     <div class="form-group">
                         <label>Program</label>
-                        <input type="text" id="addProgram" placeholder="000">
+                        <input type="text" id="addProgram" placeholder="03" readonly>
                     </div>
                     <div class="form-group">
                         <label>Finance</label>
-                        <input type="text" id="addFinance" placeholder="000">
+                        <input type="text" id="addFinance" placeholder="000" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Course</label>
+                        <input type="text" id="addCourse" placeholder="000" readonly>
                     </div>
                 </div>
                 <div class="form-actions">
                     <button class="btn-primary green" id="addBudgetBtn" onclick="addBudgetCode()">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                         Add Budget Code
+                    </button>
+                    <button class="btn-primary import-btn" onclick="openImportModal('budget-codes')">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import Budget Codes
                     </button>
                     <span class="form-message" id="budgetFormMsg"></span>
                 </div>
@@ -490,7 +504,7 @@
                     <input type="text" class="search-input" id="budgetSearch" placeholder="Search budget codes..." oninput="filterBudgetCodes()">
                     <span style="font-size:0.75rem;color:var(--text-secondary);" id="budgetCount"></span>
                 </div>
-                <div style="overflow-x:auto;">
+                <div style="overflow-x:auto;overflow-y:auto;max-height:60vh;">
                     <table>
                         <thead>
                             <tr>
@@ -513,6 +527,32 @@
             </div>
         </div>
     </main>
+
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="importModal" onclick="if(event.target===this)closeImportModal()">
+        <div class="modal-box" style="max-width:520px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                <h3 id="importModalTitle">Import</h3>
+                <button onclick="closeImportModal()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()" style="border:2px dashed var(--border-color);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:1rem;">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0;">Drop a <strong>.xlsx</strong> or <strong>.csv</strong> file here, or click to browse</p>
+                <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;" id="importFileName"></p>
+            </div>
+            <input type="file" id="importFileInput" accept=".xlsx,.csv" style="display:none;" onchange="handleImportFile(this)">
+            <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;font-size:0.75rem;"></div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeImportModal()">Cancel</button>
+                <button class="btn-primary green" id="importConfirmBtn" onclick="confirmImport()" disabled>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Delete Confirm Modal -->
     <div class="modal-overlay" id="deleteModal" onclick="if(event.target===this)closeDeleteModal()">
@@ -772,6 +812,19 @@
         }
 
         /* ========================================
+           BUDGET CODE – AUTO-PARSE
+           ======================================== */
+        function autoParseBudgetCode() {
+            const raw = document.getElementById('addBudgetCode').value.replace(/[^0-9]/g, '');
+            // 14-char format: FF OOOO PP FFF CCC
+            document.getElementById('addFund').value = raw.substring(0, 2);
+            document.getElementById('addOrganization').value = raw.substring(2, 6);
+            document.getElementById('addProgram').value = raw.substring(6, 8);
+            document.getElementById('addFinance').value = raw.substring(8, 11);
+            document.getElementById('addCourse').value = raw.substring(11, 14);
+        }
+
+        /* ========================================
            BUDGET CODES – ADD
            ======================================== */
         async function addBudgetCode() {
@@ -793,13 +846,14 @@
                         organization: document.getElementById('addOrganization').value.trim(),
                         program: document.getElementById('addProgram').value.trim(),
                         finance: document.getElementById('addFinance').value.trim(),
+                        course: document.getElementById('addCourse').value.trim(),
                     }),
                 });
                 const data = await resp.json();
                 if (!resp.ok) throw new Error(data.error || 'Failed');
 
                 showFormMsg('budgetFormMsg', `Budget code ${code} added.`, 'success');
-                ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance']
+                ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance','addCourse']
                     .forEach(id => document.getElementById(id).value = '');
                 await loadBudgetCodes();
             } catch (e) {
@@ -849,6 +903,142 @@
             } catch (e) {
                 showToast('Delete failed: ' + e.message, 'error');
             }
+        }
+
+        /* ========================================
+           IMPORT MODAL
+           ======================================== */
+        let importType = ''; // 'vendors' or 'budget-codes'
+        let importRows = [];
+
+        function openImportModal(type) {
+            importType = type;
+            importRows = [];
+            document.getElementById('importModalTitle').textContent = type === 'vendors' ? 'Import Vendors' : 'Import Budget Codes';
+            document.getElementById('importFileName').textContent = '';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importPreview').innerHTML = '';
+            document.getElementById('importConfirmBtn').disabled = true;
+            document.getElementById('importFileInput').value = '';
+            document.getElementById('importModal').classList.add('open');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('open');
+            importRows = [];
+        }
+
+        async function handleImportFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            document.getElementById('importFileName').textContent = file.name;
+
+            try {
+                let rows = [];
+                if (file.name.endsWith('.csv')) {
+                    const text = await file.text();
+                    rows = parseCSV(text);
+                } else {
+                    const ab = await file.arrayBuffer();
+                    const script = document.createElement('script');
+                    if (!window.XLSX) {
+                        await new Promise((resolve, reject) => {
+                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                            script.onload = resolve;
+                            script.onerror = reject;
+                            document.head.appendChild(script);
+                        });
+                    }
+                    const wb = XLSX.read(ab, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                }
+
+                if (!rows.length) { showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : 'budgetFormMsg', 'No data found in file.', 'error'); return; }
+
+                importRows = rows;
+                renderImportPreview(rows);
+                document.getElementById('importConfirmBtn').disabled = false;
+            } catch (e) {
+                showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : 'budgetFormMsg', 'Failed to parse file: ' + e.message, 'error');
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) return [];
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            return lines.slice(1).map(line => {
+                const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                const obj = {};
+                headers.forEach((h, i) => obj[h] = vals[i] || '');
+                return obj;
+            });
+        }
+
+        function renderImportPreview(rows) {
+            const preview = document.getElementById('importPreview');
+            const cols = Object.keys(rows[0]);
+            const showRows = rows.slice(0, 10);
+            preview.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+                <thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${escHtml(c)}</th>`).join('')}</tr></thead>
+                <tbody>${showRows.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${escHtml(String(r[c] || ''))}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>`;
+            if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
+            preview.style.display = 'block';
+        }
+
+        async function confirmImport() {
+            if (!importRows.length) return;
+            document.getElementById('importConfirmBtn').disabled = true;
+            let success = 0, failed = 0;
+
+            for (const row of importRows) {
+                try {
+                    if (importType === 'vendors') {
+                        const name = row.vendor_name || row['Vendor Name'] || row.name || '';
+                        const number = row.vendor_number || row['Vendor Number'] || row.number || '';
+                        if (!name || !number) { failed++; continue; }
+                        const resp = await fetch(`${API_BASE}/api/vendors`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                vendor_name: name,
+                                vendor_number: String(number),
+                                vendor_address: row.vendor_address || row['Address'] || '',
+                                vendor_city: row.vendor_city || row['City'] || '',
+                                vendor_state: row.vendor_state || row['State'] || '',
+                                vendor_zip: row.vendor_zip || row['ZIP'] || row['Zip'] || '',
+                            }),
+                        });
+                        if (resp.ok) success++; else failed++;
+                    } else {
+                        const code = row.budget_code || row['Budget Code'] || '';
+                        const acct = row.account_code || row['Account Code'] || row['Account'] || '';
+                        if (!code || !acct) { failed++; continue; }
+                        const clean = String(code).replace(/[^0-9]/g, '');
+                        const resp = await fetch(`${API_BASE}/api/budget-codes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                budget_code: String(code),
+                                account_code: String(acct),
+                                fund: row.fund || row['Fund'] || clean.substring(0, 2),
+                                organization: row.organization || row['Organization'] || row['Org'] || clean.substring(2, 6),
+                                program: row.program || row['Program'] || clean.substring(6, 8),
+                                finance: row.finance || row['Finance'] || clean.substring(8, 11),
+                                course: row.course || row['Course'] || clean.substring(11, 14),
+                            }),
+                        });
+                        if (resp.ok) success++; else failed++;
+                    }
+                } catch (e) { failed++; }
+            }
+
+            closeImportModal();
+            showToast(`Imported ${success} record${success !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}.`, failed ? 'error' : 'success');
+            if (importType === 'vendors') await loadVendors();
+            else await loadBudgetCodes();
         }
 
         /* ========================================
