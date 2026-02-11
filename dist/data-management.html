@@ -205,6 +205,8 @@
         .form-group input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); cursor: default; }
         .form-group input[readonly]:focus { border-color: var(--border-color); box-shadow: none; }
         .form-valid input:not([readonly]) { border-color: var(--positive-color); box-shadow: 0 0 0 2px rgba(43,109,81,0.15); }
+        input.input-valid { border-color: var(--positive-color) !important; box-shadow: 0 0 0 2px rgba(43,109,81,0.15) !important; }
+        input.input-invalid { border-color: var(--negative-color) !important; box-shadow: 0 0 0 2px rgba(250,5,15,0.15) !important; }
         .form-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .form-message { font-size: 0.78rem; font-weight: 500; margin-left: 0.5rem; opacity: 0; transition: opacity 0.3s; }
         .form-message.visible { opacity: 1; }
@@ -984,9 +986,34 @@
         function checkBudgetFormValid() {
             const code = document.getElementById('addBudgetCode').value.trim();
             const account = document.getElementById('addAccountCode').value.trim();
-            const grid = document.getElementById('budgetFormGrid');
-            if (code && account) grid.classList.add('form-valid');
-            else grid.classList.remove('form-valid');
+            const budgetInput = document.getElementById('addBudgetCode');
+            const accountInput = document.getElementById('addAccountCode');
+
+            // Clear previous states
+            budgetInput.classList.remove('input-valid', 'input-invalid');
+            accountInput.classList.remove('input-valid', 'input-invalid');
+
+            if (code) {
+                const clean = code.replace(/[^0-9]/g, '');
+                const has = (arr, val) => arr.some(v => v.trim() === val.trim());
+                const fund = clean.substring(0, 2);
+                const org = clean.substring(2, 5);
+                const program = clean.substring(5, 8);
+                const finance = clean.substring(8, 11);
+                const course = clean.substring(11, 14);
+                const budgetInvalid = (fund && !has(knownComponents.funds, fund)) ||
+                    (org && !has(knownComponents.organizations, org)) ||
+                    (program && !has(knownComponents.programs, program)) ||
+                    (finance && !has(knownComponents.finances, finance)) ||
+                    (course && !has(knownComponents.courses, course));
+                budgetInput.classList.add(budgetInvalid ? 'input-invalid' : 'input-valid');
+            }
+
+            if (account) {
+                const has = (arr, val) => arr.some(v => v.trim() === val.trim());
+                const accountInvalid = !has(knownComponents.accounts, account);
+                accountInput.classList.add(accountInvalid ? 'input-invalid' : 'input-valid');
+            }
         }
 
         /* ========================================
@@ -1040,7 +1067,8 @@
                 if (!resp.ok) throw new Error(data.error || 'Failed');
                 showFormMsg('budgetFormMsg', `Budget code ${payload.budget_code} added.`, 'success');
                 ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance','addCourse'].forEach(id => document.getElementById(id).value = '');
-                document.getElementById('budgetFormGrid').classList.remove('form-valid');
+                document.getElementById('addBudgetCode').classList.remove('input-valid', 'input-invalid');
+                document.getElementById('addAccountCode').classList.remove('input-valid', 'input-invalid');
                 await Promise.all([loadBudgetCodes(), loadBudgetComponents()]);
             } catch (e) { showFormMsg('budgetFormMsg', e.message, 'error'); }
             btn.disabled = false;
