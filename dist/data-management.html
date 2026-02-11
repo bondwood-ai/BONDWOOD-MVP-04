@@ -106,10 +106,6 @@
             background: var(--card-bg); border-radius: 12px;
             border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden;
         }
-        .table-toolbar {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); gap: 0.75rem; flex-wrap: wrap;
-        }
         .toolbar-left { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
         .search-input {
             padding: 0.45rem 0.75rem 0.45rem 2rem;
@@ -187,22 +183,21 @@
             border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
             padding: 1.25rem; margin-bottom: 1.25rem;
         }
-        .add-form-title {
-            font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem;
-            color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;
-        }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+        .form-grid-budget { display: grid; grid-template-columns: 2fr 1.2fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr; gap: 0.5rem; margin-bottom: 1rem; }
         .form-group label {
             display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
             margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.03em;
         }
         .form-group input {
-            width: 100%; padding: 0.5rem 0.65rem; border: 1px solid var(--border-color); border-radius: 8px;
+            width: 100%; padding: 0.4rem 0.55rem; border: 1.5px solid var(--border-color); border-radius: 8px;
             font-family: inherit; font-size: 0.82rem; background: var(--field-bg); color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         .form-group input:focus { outline: none; border-color: var(--secondary-hex); box-shadow: 0 0 0 2px rgba(7,40,235,0.12); }
         .form-group input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); cursor: default; }
         .form-group input[readonly]:focus { border-color: var(--border-color); box-shadow: none; }
+        .form-valid input:not([readonly]) { border-color: var(--positive-color); box-shadow: 0 0 0 2px rgba(43,109,81,0.15); }
         .form-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .form-message { font-size: 0.78rem; font-weight: 500; margin-left: 0.5rem; opacity: 0; transition: opacity 0.3s; }
         .form-message.visible { opacity: 1; }
@@ -293,9 +288,11 @@
         .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
 
+        @media (max-width: 900px) {
+            .form-grid-budget { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+        }
         @media (max-width: 640px) {
-            .form-grid, .edit-grid { grid-template-columns: 1fr; }
-            .table-toolbar { flex-direction: column; align-items: stretch; }
+            .form-grid, .edit-grid, .form-grid-budget { grid-template-columns: 1fr; }
             .search-input { min-width: unset; }
         }
     </style>
@@ -379,20 +376,16 @@
         <!-- ============ VENDORS TAB ============ -->
         <div class="tab-panel active" id="panel-vendors">
             <div class="add-form-card">
-                <div class="add-form-title">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                    Add Vendor
-                </div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Vendor Name</label><input type="text" id="addVendorName" placeholder="e.g. BSN Sports, LLC"></div>
-                    <div class="form-group"><label>Vendor Number</label><input type="text" id="addVendorNumber" placeholder="e.g. 12345"></div>
+                <div class="form-grid" id="vendorFormGrid">
+                    <div class="form-group"><label>Vendor Name</label><input type="text" id="addVendorName" placeholder="e.g. BSN Sports, LLC" oninput="checkVendorFormValid()"></div>
+                    <div class="form-group"><label>Vendor Number</label><input type="text" id="addVendorNumber" placeholder="e.g. 12345" oninput="checkVendorFormValid()"></div>
                     <div class="form-group"><label>Address</label><input type="text" id="addVendorAddress" placeholder="Street address"></div>
                     <div class="form-group"><label>City</label><input type="text" id="addVendorCity" placeholder="City"></div>
                     <div class="form-group"><label>State</label><input type="text" id="addVendorState" placeholder="MN" maxlength="2" style="text-transform:uppercase;"></div>
                     <div class="form-group"><label>ZIP</label><input type="text" id="addVendorZip" placeholder="55000" maxlength="10"></div>
                 </div>
                 <div class="form-actions">
-                    <button class="btn-primary green" id="addVendorBtn" onclick="addVendor()">
+                    <button class="btn-primary accent" id="addVendorBtn" onclick="addVendor()">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                         Add Vendor
                     </button>
@@ -403,17 +396,17 @@
                     <span class="form-message" id="vendorFormMsg"></span>
                 </div>
             </div>
-            <div class="table-card">
-                <div class="table-toolbar">
-                    <div class="toolbar-left">
-                        <input type="text" class="search-input" id="vendorSearch" placeholder="Search vendors..." oninput="filterVendors()">
-                        <button class="bulk-delete-btn" id="vendorDeleteBtn" onclick="promptBulkDelete('vendors')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                            Delete <span id="vendorDeleteCount"></span>
-                        </button>
-                    </div>
-                    <span style="font-size:0.75rem;color:var(--text-secondary);" id="vendorCount"></span>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.25rem;">
+                <div class="toolbar-left">
+                    <input type="text" class="search-input" id="vendorSearch" placeholder="Search vendors..." oninput="filterVendors()">
+                    <button class="bulk-delete-btn" id="vendorDeleteBtn" onclick="promptBulkDelete('vendors')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        Delete <span id="vendorDeleteCount"></span>
+                    </button>
                 </div>
+                <span style="font-size:0.75rem;color:var(--text-secondary);" id="vendorCount"></span>
+            </div>
+            <div class="table-card" style="border-top:none;">
                 <div style="overflow-x:auto;overflow-y:auto;max-height:60vh;">
                     <table>
                         <thead><tr>
@@ -436,21 +429,17 @@
         <!-- ============ BUDGET CODES TAB ============ -->
         <div class="tab-panel" id="panel-budget-codes">
             <div class="add-form-card">
-                <div class="add-form-title">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                    Add Budget Code
-                </div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Budget Code</label><input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode()"></div>
-                    <div class="form-group"><label>Account Code</label><input type="text" id="addAccountCode" placeholder="e.g. 401"></div>
+                <div class="form-grid-budget" id="budgetFormGrid">
+                    <div class="form-group"><label>Budget Code</label><input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode(); checkBudgetFormValid()"></div>
+                    <div class="form-group"><label>Account Code</label><input type="text" id="addAccountCode" placeholder="e.g. 401" oninput="checkBudgetFormValid()"></div>
                     <div class="form-group"><label>Fund</label><input type="text" id="addFund" placeholder="01" readonly></div>
-                    <div class="form-group"><label>Organization</label><input type="text" id="addOrganization" placeholder="0052" readonly></div>
-                    <div class="form-group"><label>Program</label><input type="text" id="addProgram" placeholder="03" readonly></div>
+                    <div class="form-group"><label>Org</label><input type="text" id="addOrganization" placeholder="005" readonly></div>
+                    <div class="form-group"><label>Program</label><input type="text" id="addProgram" placeholder="203" readonly></div>
                     <div class="form-group"><label>Finance</label><input type="text" id="addFinance" placeholder="000" readonly></div>
                     <div class="form-group"><label>Course</label><input type="text" id="addCourse" placeholder="000" readonly></div>
                 </div>
                 <div class="form-actions">
-                    <button class="btn-primary green" id="addBudgetBtn" onclick="addBudgetCode()">
+                    <button class="btn-primary accent" id="addBudgetBtn" onclick="addBudgetCode()">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                         Add Budget Code
                     </button>
@@ -461,17 +450,17 @@
                     <span class="form-message" id="budgetFormMsg"></span>
                 </div>
             </div>
-            <div class="table-card">
-                <div class="table-toolbar">
-                    <div class="toolbar-left">
-                        <input type="text" class="search-input" id="budgetSearch" placeholder="Search budget codes..." oninput="filterBudgetCodes()">
-                        <button class="bulk-delete-btn" id="budgetDeleteBtn" onclick="promptBulkDelete('budget-codes')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                            Delete <span id="budgetDeleteCount"></span>
-                        </button>
-                    </div>
-                    <span style="font-size:0.75rem;color:var(--text-secondary);" id="budgetCount"></span>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.25rem;">
+                <div class="toolbar-left">
+                    <input type="text" class="search-input" id="budgetSearch" placeholder="Search budget codes..." oninput="filterBudgetCodes()">
+                    <button class="bulk-delete-btn" id="budgetDeleteBtn" onclick="promptBulkDelete('budget-codes')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        Delete <span id="budgetDeleteCount"></span>
+                    </button>
                 </div>
+                <span style="font-size:0.75rem;color:var(--text-secondary);" id="budgetCount"></span>
+            </div>
+            <div class="table-card" style="border-top:none;">
                 <div style="overflow-x:auto;overflow-y:auto;max-height:60vh;">
                     <table>
                         <thead><tr>
@@ -826,6 +815,7 @@
                 if (!resp.ok) throw new Error(data.error || 'Failed');
                 showFormMsg('vendorFormMsg', `Vendor ${number} added.`, 'success');
                 ['addVendorName','addVendorNumber','addVendorAddress','addVendorCity','addVendorState','addVendorZip'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('vendorFormGrid').classList.remove('form-valid');
                 await loadVendors();
             } catch (e) { showFormMsg('vendorFormMsg', e.message, 'error'); }
             btn.disabled = false;
@@ -977,10 +967,29 @@
         function autoParseBudgetCode() {
             const raw = document.getElementById('addBudgetCode').value.replace(/[^0-9]/g, '');
             document.getElementById('addFund').value = raw.substring(0, 2);
-            document.getElementById('addOrganization').value = raw.substring(2, 6);
-            document.getElementById('addProgram').value = raw.substring(6, 8);
+            document.getElementById('addOrganization').value = raw.substring(2, 5);
+            document.getElementById('addProgram').value = raw.substring(5, 8);
             document.getElementById('addFinance').value = raw.substring(8, 11);
             document.getElementById('addCourse').value = raw.substring(11, 14);
+        }
+
+        /* ========================================
+           FORM VALIDATION – GREEN OUTLINE
+           ======================================== */
+        function checkVendorFormValid() {
+            const name = document.getElementById('addVendorName').value.trim();
+            const number = document.getElementById('addVendorNumber').value.trim();
+            const grid = document.getElementById('vendorFormGrid');
+            if (name && number) grid.classList.add('form-valid');
+            else grid.classList.remove('form-valid');
+        }
+
+        function checkBudgetFormValid() {
+            const code = document.getElementById('addBudgetCode').value.trim();
+            const account = document.getElementById('addAccountCode').value.trim();
+            const grid = document.getElementById('budgetFormGrid');
+            if (code && account) grid.classList.add('form-valid');
+            else grid.classList.remove('form-valid');
         }
 
         /* ========================================
@@ -993,8 +1002,8 @@
 
             const clean = code.replace(/[^0-9]/g, '');
             const fund = clean.substring(0, 2);
-            const org = clean.substring(2, 6);
-            const program = clean.substring(6, 8);
+            const org = clean.substring(2, 5);
+            const program = clean.substring(5, 8);
             const finance = clean.substring(8, 11);
             const course = clean.substring(11, 14);
 
@@ -1043,6 +1052,7 @@
                 if (!resp.ok) throw new Error(data.error || 'Failed');
                 showFormMsg('budgetFormMsg', `Budget code ${payload.budget_code} added.`, 'success');
                 ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance','addCourse'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('budgetFormGrid').classList.remove('form-valid');
                 await Promise.all([loadBudgetCodes(), loadBudgetComponents()]);
             } catch (e) { showFormMsg('budgetFormMsg', e.message, 'error'); }
             btn.disabled = false;
@@ -1220,7 +1230,7 @@
                         const acct = row.account_code || row['Account Code'] || row['Account'] || '';
                         if (!code || !acct) { failed++; continue; }
                         const clean = String(code).replace(/[^0-9]/g, '');
-                        const r = await fetch(`${API_BASE}/api/budget-codes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ budget_code: String(code), account_code: String(acct), fund: row.fund || row['Fund'] || clean.substring(0, 2), organization: row.organization || row['Organization'] || row['Org'] || clean.substring(2, 6), program: row.program || row['Program'] || clean.substring(6, 8), finance: row.finance || row['Finance'] || clean.substring(8, 11), course: row.course || row['Course'] || clean.substring(11, 14) }) });
+                        const r = await fetch(`${API_BASE}/api/budget-codes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ budget_code: String(code), account_code: String(acct), fund: row.fund || row['Fund'] || clean.substring(0, 2), organization: row.organization || row['Organization'] || row['Org'] || clean.substring(2, 5), program: row.program || row['Program'] || clean.substring(5, 8), finance: row.finance || row['Finance'] || clean.substring(8, 11), course: row.course || row['Course'] || clean.substring(11, 14) }) });
                         if (r.ok) success++; else failed++;
                     }
                 } catch (e) { failed++; }

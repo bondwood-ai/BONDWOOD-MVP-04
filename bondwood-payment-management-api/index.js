@@ -1019,8 +1019,8 @@ async function handleSeedDummy(request, env) {
       const bc = pick(budgetCodes);
       const ac = pick(accountCodes);
       const fund = bc.substring(0, 2);
-      const org = bc.substring(2, 6);
-      const prog = bc.substring(6, 8);
+      const org = bc.substring(2, 5);
+      const prog = bc.substring(5, 8);
       const fin = bc.substring(8, 11);
 
       for (let ln = 1; ln <= lineCount; ln++) {
