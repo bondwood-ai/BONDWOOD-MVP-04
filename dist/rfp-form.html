@@ -1405,14 +1405,32 @@
            ======================================== */
         let formDirty = false;
         let formSubmitting = false;
+        let historyGuardActive = false;
 
+        // Native beforeunload only for tab close / reload (browser forces its own UI for these)
         window.addEventListener('beforeunload', function(e) {
             if (formDirty && !formSubmitting) {
                 e.preventDefault();
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-                return e.returnValue;
+                e.returnValue = '';
+                return '';
             }
         });
+
+        // History API guard: intercept browser back/forward with custom modal
+        window.addEventListener('popstate', function(e) {
+            if (formDirty && !formSubmitting) {
+                // Re-push guard state so we stay on the page
+                history.pushState({ formGuard: true }, '');
+                showUnsavedWarningModal('__history_back__');
+            }
+        });
+
+        function activateHistoryGuard() {
+            if (!historyGuardActive) {
+                historyGuardActive = true;
+                history.pushState({ formGuard: true }, '');
+            }
+        }
 
         function navigateAway(url) {
             if (formDirty && !formSubmitting) {
@@ -1447,7 +1465,11 @@
                 formDirty = false;
                 formSubmitting = true;
                 modal.remove();
-                window.location.href = destinationUrl;
+                if (destinationUrl === '__history_back__') {
+                    history.back();
+                } else {
+                    window.location.href = destinationUrl;
+                }
             };
         }
 
@@ -1455,6 +1477,7 @@
             if (!formDirty) {
                 formDirty = true;
                 document.title = '• ' + document.title;
+                activateHistoryGuard();
             }
         }
 
