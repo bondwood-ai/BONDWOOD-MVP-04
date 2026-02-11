@@ -60,9 +60,6 @@
         body.dark-mode .vendor-dropdown { box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3); }
         body.dark-mode .section-header { background: var(--primary-hex); }
         body.dark-mode input, body.dark-mode select, body.dark-mode textarea { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
-        body.dark-mode .btn-primary-sm-alt { background: #d1d5db !important; color: #000 !important; border-color: #d1d5db !important; }
-        body.dark-mode .btn-primary-sm-alt:hover { background: #bfc4cb !important; }
-        body.dark-mode .btn-primary-sm-alt svg { stroke: #000 !important; }
         body.dark-mode input[readonly], body.dark-mode .readonly-field { background: var(--readonly-bg); }
         body.dark-mode select option { background: var(--card-bg); }
         body.dark-mode .items-table th { background: var(--primary-hex); }
@@ -674,6 +671,7 @@
             color: #000; border: 1px solid #d1d5db;
             border-radius: 5px; font-size: 0.75rem; font-weight: 600;
             cursor: pointer; font-family: 'Satoshi', sans-serif; transition: all 0.15s;
+            -webkit-appearance: none; appearance: none; color-scheme: light;
         }
         .btn-primary-sm-alt:hover { background: #9ca3af; }
         .btn-primary-sm-alt svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
@@ -801,6 +799,20 @@
         .type-selector .cs-wrap { flex-shrink: 0; }
 
     </style>
+
+    <script>
+        // Instant brand restore to prevent flash of default colors
+        (function() {
+            var p = localStorage.getItem('bondwood-brand-primary');
+            var s = localStorage.getItem('bondwood-brand-secondary');
+            if (p) {
+                document.documentElement.style.setProperty('--primary-hex', p);
+                document.documentElement.style.setProperty('--secondary-hex', s || p);
+                var dn = localStorage.getItem('bondwood-brand');
+                if (dn) { var link = document.createElement('link'); link.rel = 'preload'; link.as = 'image'; link.href = 'district-logos/' + dn + '.png'; document.head.appendChild(link); }
+            }
+        })();
+    </script>
 </head>
 <body>
     <!-- Hamburger Overlay -->
@@ -863,7 +875,7 @@
     </select>
 
     <!-- ============ HEADER BANNER ============ -->
-    <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
+    <div id="headerBanner" style="background:var(--primary-hex, #000);margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
         <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
             <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
@@ -873,7 +885,7 @@
             </div>
             <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
         </div>
-        <div id="bannerAccent" style="height:4px;background:#0728eb;margin:0 -2rem;"></div>
+        <div id="bannerAccent" style="height:4px;background:var(--secondary-hex, #0728eb);margin:0 -2rem;"></div>
     </div>
 
     <!-- ============ MAIN CONTENT ============ -->
@@ -4381,6 +4393,8 @@
                 if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
                 updateHamburgerMenuColors('#000000', '#0728eb');
                 localStorage.removeItem('bondwood-brand');
+                localStorage.removeItem('bondwood-brand-primary');
+                localStorage.removeItem('bondwood-brand-secondary');
                 return;
             }
 
@@ -4417,6 +4431,8 @@
 
             updateHamburgerMenuColors(primaryHex, secondaryHex);
             if (districtNumber) localStorage.setItem('bondwood-brand', districtNumber);
+                localStorage.setItem('bondwood-brand-primary', primaryHex);
+                localStorage.setItem('bondwood-brand-secondary', secondaryHex || primaryHex);
         }
 
         function updateHamburgerMenuColors(primaryHex, secondaryHex) {
