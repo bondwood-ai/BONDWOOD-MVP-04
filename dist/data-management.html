@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Management</title>
+    <link rel="icon" type="image/png" href="bondwood-logo-modern-dark.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-color: #000000;
+            --accent-color-hover: #333333;
+            --accent-color-light: rgba(0, 0, 0, 0.08);
+            --accent-text-color: #ffffff;
+            --primary-hex: #000000;
+            --secondary-hex: #0728eb;
+            --checkbox-color: #034694;
+            --positive-color: #2B6D51;
+            --negative-color: #FA050F;
+            --warning-color: #d97706;
+            --border-color: #e0e0e0;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #555555;
+            --pale-accent: rgba(7, 40, 235, 0.06);
+            --row-hover-bg: rgba(7, 40, 235, 0.08);
+            --field-bg: #ffffff;
+            --readonly-bg: #f0f2f5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Reddit Sans', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            padding: 1rem;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ============ DARK MODE ============ */
+        body.dark-mode {
+            --bg-color: #121517;
+            --card-bg: #1a1a1a;
+            --border-color: #2c2c2c;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a0a0a0;
+            --accent-color-light: rgba(255, 255, 255, 0.1);
+            --pale-accent: rgba(91, 122, 255, 0.12);
+            --field-bg: #222;
+            --readonly-bg: #1e1e1e;
+        }
+        body.dark-mode th { background: var(--primary-hex); }
+        body.dark-mode th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
+        body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
+        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
+        body.dark-mode .theme-toggle svg { fill: #5b7aff; }
+        body.dark-mode .btn-primary { background: #333; color: #fff; }
+        body.dark-mode .btn-primary:hover { background: #444; }
+        body.dark-mode .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
+        body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
+        body.dark-mode .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
+        body.dark-mode .btn-primary.danger:hover { opacity: 0.85; }
+        body.dark-mode input, body.dark-mode select { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .att-close-btn:hover { background: rgba(255,255,255,0.08); }
+
+        /* ============ HAMBURGER MENU ============ */
+        .hamburger-menu-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            width: 100%; padding: 0.7rem 0.85rem; border: none;
+            background: transparent; color: rgba(255,255,255,0.85);
+            font-size: 0.875rem; font-family: inherit; font-weight: 500;
+            border-radius: 8px; cursor: pointer; text-align: left;
+            transition: background 0.15s ease;
+        }
+        .hamburger-menu-item:hover { background: var(--menu-highlight-hover, rgba(255,255,255,0.12)); }
+        .hamburger-menu-item.active { background: var(--menu-highlight-active, rgba(255,255,255,0.18)); color: #ffffff; font-weight: 600; }
+        .hamburger-menu-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+        #hamburgerMenu.dark-text .hamburger-menu-item,
+        #hamburgerMenu.dark-text .hamburger-menu-title,
+        #hamburgerMenu.dark-text button[onclick*="closeHamburger"] { color: #000000 !important; }
+        #hamburgerMenu.dark-text .hamburger-menu-item.active { color: #000000 !important; }
+        #hamburgerMenu.dark-text div[style*="uppercase"] { color: rgba(0,0,0,0.5) !important; }
+        #hamburgerMenu.dark-text #brandSelectorMenu { color: #000 !important; border-color: rgba(0,0,0,0.3) !important; background: rgba(0,0,0,0.08) !important; }
+        #hamburgerMenu.dark-text #brandSelectorMenu option { color: #000; background: #fff; }
+
+        /* ============ LAYOUT ============ */
+        .bondwood-logo { height: 64px; width: auto; object-fit: contain; max-width: 190px; }
+        .main-content { padding: 0; }
+        .module-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
+        }
+        .module-title { font-size: 1.75rem; font-weight: 700; font-family: 'Reddit Sans', sans-serif; color: var(--text-primary); margin: 0; }
+        .module-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.3rem; font-weight: 400; }
+        .header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+        /* ============ TABS ============ */
+        .tab-bar {
+            display: flex; gap: 0; border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1.25rem;
+        }
+        .tab-btn {
+            padding: 0.65rem 1.5rem; border: none; background: none;
+            font-family: inherit; font-size: 0.85rem; font-weight: 600;
+            color: var(--text-secondary); cursor: pointer;
+            border-bottom: 2px solid transparent; margin-bottom: -2px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--secondary-hex); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ============ TABLE CARD ============ */
+        .table-card {
+            background: var(--card-bg); border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            overflow: hidden;
+        }
+        .table-toolbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);
+            gap: 0.75rem; flex-wrap: wrap;
+        }
+        .search-input {
+            padding: 0.45rem 0.75rem 0.45rem 2rem;
+            border: 1px solid var(--border-color); border-radius: 8px;
+            font-family: inherit; font-size: 0.8rem;
+            background: var(--field-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 0.6rem center;
+            color: var(--text-primary); min-width: 200px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: var(--primary-hex); color: var(--accent-text-color);
+            padding: 0.6rem 0.85rem; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            text-align: left; white-space: nowrap; cursor: pointer;
+            user-select: none; transition: background 0.15s;
+        }
+        th:first-child { border-radius: 0; }
+        th:last-child { border-radius: 0; }
+        th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #fff); }
+        td {
+            padding: 0.55rem 0.85rem; font-size: 0.8rem;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 250px;
+        }
+        tbody tr { transition: background 0.1s; }
+        tbody tr:hover { background: var(--row-hover-bg); }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .empty-state {
+            text-align: center; padding: 2.5rem 1rem;
+            color: var(--text-secondary); font-size: 0.85rem;
+        }
+
+        /* ============ BUTTONS ============ */
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.45rem 0.85rem; border: 1px solid var(--border-color);
+            border-radius: 8px; font-family: inherit; font-size: 0.78rem;
+            font-weight: 600; cursor: pointer; background: var(--card-bg);
+            color: var(--text-primary); transition: all 0.15s;
+        }
+        .btn-primary:hover { background: var(--bg-color); }
+        .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); }
+        .btn-primary.accent:hover { opacity: 0.88; }
+        .btn-primary.green { background: var(--positive-color); color: #fff; border-color: var(--positive-color); }
+        .btn-primary.green:hover { opacity: 0.88; }
+        .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
+        .btn-primary.danger:hover { opacity: 0.88; }
+        .btn-primary svg { width: 14px; height: 14px; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ============ ADD FORM ============ */
+        .add-form-card {
+            background: var(--card-bg); border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            padding: 1.25rem; margin-bottom: 1.25rem;
+        }
+        .add-form-title {
+            font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem;
+            color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;
+        }
+        .form-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem; margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block; font-size: 0.7rem; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 0.25rem;
+            text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .form-group input {
+            width: 100%; padding: 0.5rem 0.65rem;
+            border: 1px solid var(--border-color); border-radius: 8px;
+            font-family: inherit; font-size: 0.82rem;
+            background: var(--field-bg); color: var(--text-primary);
+        }
+        .form-group input:focus {
+            outline: none; border-color: var(--secondary-hex);
+            box-shadow: 0 0 0 2px rgba(7, 40, 235, 0.12);
+        }
+        .form-actions { display: flex; gap: 0.5rem; align-items: center; }
+        .form-message {
+            font-size: 0.78rem; font-weight: 500; margin-left: 0.5rem;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .form-message.visible { opacity: 1; }
+        .form-message.success { color: var(--positive-color); }
+        .form-message.error { color: var(--negative-color); }
+
+        /* ============ PAGINATION ============ */
+        .pagination {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.6rem 1rem; font-size: 0.75rem; color: var(--text-secondary);
+        }
+        .pagination-btns { display: flex; gap: 0.35rem; }
+        .pagination-btns button {
+            padding: 0.3rem 0.6rem; border: 1px solid var(--border-color);
+            border-radius: 6px; background: var(--card-bg); color: var(--text-primary);
+            font-family: inherit; font-size: 0.72rem; cursor: pointer;
+        }
+        .pagination-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination-btns button.active { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); }
+
+        /* ============ DELETE CONFIRM ============ */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 10000;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--card-bg); border-radius: 14px;
+            padding: 1.5rem; max-width: 420px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 { font-size: 1rem; margin-bottom: 0.75rem; }
+        .modal-box p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+        /* ============ TOAST ============ */
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+            padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+            font-family: 'Reddit Sans', sans-serif; z-index: 99999;
+            opacity: 0; transition: all 0.3s ease; pointer-events: none;
+        }
+        .toast.success { background: var(--positive-color); color: #fff; }
+        .toast.error { background: var(--negative-color); color: #fff; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ============ FOOTER ============ */
+        .footer { padding: 1.5rem 0 0.5rem; }
+        .ownership-text { display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-secondary); padding: 0.5rem; }
+        .theme-toggle {
+            width: 32px; height: 32px; border-radius: 50%;
+            border: 1px solid var(--border-color); background: var(--card-bg);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: box-shadow 0.15s;
+        }
+        .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .table-toolbar { flex-direction: column; align-items: stretch; }
+            .search-input { min-width: unset; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hamburger Overlay -->
+    <div id="hamburgerOverlay" onclick="closeHamburgerMenu()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
+
+    <!-- Hamburger Slide-out Menu -->
+    <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
+        <div style="padding:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Reddit Sans',sans-serif;">Menu</h3>
+                <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+                </button>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item" onclick="window.location.href='index.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                        Dashboard
+                    </button>
+                    <button class="hamburger-menu-item" onclick="window.location.href='rfp-form.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                        New Request
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-bottom:2rem;">
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
+                <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                    <button class="hamburger-menu-item" onclick="window.location.href='account.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        My Account
+                    </button>
+                    <button class="hamburger-menu-item" onclick="window.location.href='users.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        User Management
+                    </button>
+                    <button class="hamburger-menu-item active" onclick="window.location.href='data-management.html'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+                        Data Management
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Brand</div>
+                <select id="brandSelectorMenu" onchange="updateBrandColorsFromMenu()" style="width:100%;padding:0.5rem;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:0.85rem;background:rgba(255,255,255,0.1);color:#fff;font-family:inherit;">
+                    <option value="">-- Bondwood Default --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Brand Selector -->
+    <select id="brandSelector" onchange="updateBrandColors()" style="display:none;">
+        <option value="">-- Default --</option>
+    </select>
+
+    <!-- ============ HEADER BANNER ============ -->
+    <div id="headerBanner" style="background:#000;margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
+        <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
+            <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
+                <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Reddit Sans',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+            </div>
+            <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
+        </div>
+        <div id="bannerAccent" style="height:4px;background:#0728eb;margin:0 -2rem;"></div>
+    </div>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="main-content">
+        <header class="module-header">
+            <div>
+                <h2 class="module-title">Data Management</h2>
+                <p class="module-subtitle" id="recordCount">Loading...</p>
+            </div>
+        </header>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('vendors')">Vendors</button>
+            <button class="tab-btn" onclick="switchTab('budget-codes')">Budget Codes</button>
+        </div>
+
+        <!-- ============ VENDORS TAB ============ -->
+        <div class="tab-panel active" id="panel-vendors">
+            <!-- Add Vendor Form -->
+            <div class="add-form-card">
+                <div class="add-form-title">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                    Add Vendor
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Vendor Name *</label>
+                        <input type="text" id="addVendorName" placeholder="e.g. BSN Sports, LLC">
+                    </div>
+                    <div class="form-group">
+                        <label>Vendor Number *</label>
+                        <input type="text" id="addVendorNumber" placeholder="e.g. 12345">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input type="text" id="addVendorAddress" placeholder="Street address">
+                    </div>
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="addVendorCity" placeholder="City">
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" id="addVendorState" placeholder="MN" maxlength="2" style="text-transform:uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label>ZIP</label>
+                        <input type="text" id="addVendorZip" placeholder="55000" maxlength="10">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn-primary green" id="addVendorBtn" onclick="addVendor()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                        Add Vendor
+                    </button>
+                    <span class="form-message" id="vendorFormMsg"></span>
+                </div>
+            </div>
+
+            <!-- Vendor Table -->
+            <div class="table-card">
+                <div class="table-toolbar">
+                    <input type="text" class="search-input" id="vendorSearch" placeholder="Search vendors..." oninput="filterVendors()">
+                    <span style="font-size:0.75rem;color:var(--text-secondary);" id="vendorCount"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th onclick="sortVendors('vendor_number')">Vendor #</th>
+                                <th onclick="sortVendors('vendor_name')">Vendor Name</th>
+                                <th onclick="sortVendors('vendor_address')">Address</th>
+                                <th onclick="sortVendors('vendor_city')">City</th>
+                                <th>State</th>
+                                <th>ZIP</th>
+                                <th class="text-center" style="width:60px;">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendorBody">
+                            <tr><td colspan="7" class="empty-state">Loading vendors...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="vendorPagination"></div>
+            </div>
+        </div>
+
+        <!-- ============ BUDGET CODES TAB ============ -->
+        <div class="tab-panel" id="panel-budget-codes">
+            <!-- Add Budget Code Form -->
+            <div class="add-form-card">
+                <div class="add-form-title">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                    Add Budget Code
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Budget Code *</label>
+                        <input type="text" id="addBudgetCode" placeholder="e.g. 01-510-000-000">
+                    </div>
+                    <div class="form-group">
+                        <label>Account Code *</label>
+                        <input type="text" id="addAccountCode" placeholder="e.g. 366">
+                    </div>
+                    <div class="form-group">
+                        <label>Fund</label>
+                        <input type="text" id="addFund" placeholder="01">
+                    </div>
+                    <div class="form-group">
+                        <label>Organization</label>
+                        <input type="text" id="addOrganization" placeholder="510">
+                    </div>
+                    <div class="form-group">
+                        <label>Program</label>
+                        <input type="text" id="addProgram" placeholder="000">
+                    </div>
+                    <div class="form-group">
+                        <label>Finance</label>
+                        <input type="text" id="addFinance" placeholder="000">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn-primary green" id="addBudgetBtn" onclick="addBudgetCode()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                        Add Budget Code
+                    </button>
+                    <span class="form-message" id="budgetFormMsg"></span>
+                </div>
+            </div>
+
+            <!-- Budget Code Table -->
+            <div class="table-card">
+                <div class="table-toolbar">
+                    <input type="text" class="search-input" id="budgetSearch" placeholder="Search budget codes..." oninput="filterBudgetCodes()">
+                    <span style="font-size:0.75rem;color:var(--text-secondary);" id="budgetCount"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th onclick="sortBudgetCodes('budget_code')">Budget Code</th>
+                                <th onclick="sortBudgetCodes('account_code')">Account</th>
+                                <th onclick="sortBudgetCodes('fund')">Fund</th>
+                                <th>Org</th>
+                                <th>Program</th>
+                                <th>Finance</th>
+                                <th>Course</th>
+                                <th class="text-center" style="width:60px;">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="budgetBody">
+                            <tr><td colspan="8" class="empty-state">Loading budget codes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="budgetPagination"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay" id="deleteModal" onclick="if(event.target===this)closeDeleteModal()">
+        <div class="modal-box">
+            <h3 id="deleteModalTitle">Confirm Delete</h3>
+            <p id="deleteModalMsg">Are you sure you want to delete this record?</p>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-primary danger" id="deleteModalConfirm" onclick="confirmDelete()">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="ownership-text">
+            <span>POWERED BY BONDWOOD</span>
+            <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">
+                <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* ========================================
+           CONFIGURATION & STATE
+           ======================================== */
+        const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
+        const PAGE_SIZE = 50;
+
+        let allVendors = [];
+        let filteredVendors = [];
+        let vendorSort = { column: 'vendor_name', direction: 'asc' };
+        let vendorPage = 1;
+
+        let allBudgetCodes = [];
+        let filteredBudgetCodes = [];
+        let budgetSort = { column: 'budget_code', direction: 'asc' };
+        let budgetPage = 1;
+
+        let pendingDelete = null; // { type: 'vendor'|'budget', data: {} }
+
+        /* ========================================
+           INIT
+           ======================================== */
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            loadBrandData();
+            await Promise.all([loadVendors(), loadBudgetCodes()]);
+        });
+
+        /* ========================================
+           TABS
+           ======================================== */
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            const idx = tab === 'vendors' ? 0 : 1;
+            document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+            document.getElementById(`panel-${tab}`).classList.add('active');
+        }
+
+        /* ========================================
+           VENDORS – LOAD
+           ======================================== */
+        async function loadVendors() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`);
+                const data = await resp.json();
+                allVendors = data.vendors || data || [];
+                filterVendors();
+                updateRecordCount();
+            } catch (e) {
+                console.error('[DATA] Failed to load vendors:', e);
+                document.getElementById('vendorBody').innerHTML = '<tr><td colspan="7" class="empty-state">Failed to load vendors.</td></tr>';
+            }
+        }
+
+        function filterVendors() {
+            const q = (document.getElementById('vendorSearch').value || '').toLowerCase();
+            filteredVendors = q
+                ? allVendors.filter(v =>
+                    (v.vendor_name || '').toLowerCase().includes(q) ||
+                    (v.vendor_number || '').toLowerCase().includes(q) ||
+                    (v.vendor_city || '').toLowerCase().includes(q))
+                : [...allVendors];
+            sortVendorData();
+            vendorPage = 1;
+            renderVendors();
+        }
+
+        function sortVendors(col) {
+            if (vendorSort.column === col) {
+                vendorSort.direction = vendorSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                vendorSort.column = col;
+                vendorSort.direction = 'asc';
+            }
+            sortVendorData();
+            renderVendors();
+        }
+
+        function sortVendorData() {
+            const { column, direction } = vendorSort;
+            filteredVendors.sort((a, b) => {
+                const aVal = (a[column] || '').toString().toLowerCase();
+                const bVal = (b[column] || '').toString().toLowerCase();
+                return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+        }
+
+        function renderVendors() {
+            const start = (vendorPage - 1) * PAGE_SIZE;
+            const page = filteredVendors.slice(start, start + PAGE_SIZE);
+            const body = document.getElementById('vendorBody');
+
+            if (page.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" class="empty-state">No vendors found</td></tr>';
+            } else {
+                body.innerHTML = page.map(v => `<tr>
+                    <td style="font-weight:600;">${escHtml(v.vendor_number || '')}</td>
+                    <td>${escHtml(v.vendor_name || '')}</td>
+                    <td>${escHtml(v.vendor_address || '')}</td>
+                    <td>${escHtml(v.vendor_city || '')}</td>
+                    <td>${escHtml(v.vendor_state || '')}</td>
+                    <td>${escHtml(v.vendor_zip || '')}</td>
+                    <td class="text-center">
+                        <button onclick="promptDeleteVendor('${escHtml(v.vendor_number)}', '${escHtml(v.vendor_name)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;border-radius:4px;" title="Delete vendor">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </td>
+                </tr>`).join('');
+            }
+
+            document.getElementById('vendorCount').textContent = `${filteredVendors.length} vendor${filteredVendors.length !== 1 ? 's' : ''}`;
+            renderPagination('vendorPagination', filteredVendors.length, vendorPage, p => { vendorPage = p; renderVendors(); });
+        }
+
+        /* ========================================
+           VENDORS – ADD
+           ======================================== */
+        async function addVendor() {
+            const name = document.getElementById('addVendorName').value.trim();
+            const number = document.getElementById('addVendorNumber').value.trim();
+            if (!name || !number) { showFormMsg('vendorFormMsg', 'Name and number are required.', 'error'); return; }
+
+            const btn = document.getElementById('addVendorBtn');
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vendor_name: name,
+                        vendor_number: number,
+                        vendor_address: document.getElementById('addVendorAddress').value.trim(),
+                        vendor_city: document.getElementById('addVendorCity').value.trim(),
+                        vendor_state: document.getElementById('addVendorState').value.trim().toUpperCase(),
+                        vendor_zip: document.getElementById('addVendorZip').value.trim(),
+                    }),
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Failed');
+
+                showFormMsg('vendorFormMsg', `Vendor ${number} added.`, 'success');
+                ['addVendorName','addVendorNumber','addVendorAddress','addVendorCity','addVendorState','addVendorZip']
+                    .forEach(id => document.getElementById(id).value = '');
+                await loadVendors();
+            } catch (e) {
+                showFormMsg('vendorFormMsg', e.message, 'error');
+            }
+            btn.disabled = false;
+        }
+
+        /* ========================================
+           BUDGET CODES – LOAD
+           ======================================== */
+        async function loadBudgetCodes() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/budget-codes?limit=5000&_t=${Date.now()}`);
+                const data = await resp.json();
+                allBudgetCodes = data.budget_codes || data || [];
+                filterBudgetCodes();
+                updateRecordCount();
+            } catch (e) {
+                console.error('[DATA] Failed to load budget codes:', e);
+                document.getElementById('budgetBody').innerHTML = '<tr><td colspan="8" class="empty-state">Failed to load budget codes.</td></tr>';
+            }
+        }
+
+        function filterBudgetCodes() {
+            const q = (document.getElementById('budgetSearch').value || '').toLowerCase();
+            filteredBudgetCodes = q
+                ? allBudgetCodes.filter(b =>
+                    (b.budget_code || '').toLowerCase().includes(q) ||
+                    (b.account_code || '').toLowerCase().includes(q) ||
+                    (b.fund || '').toLowerCase().includes(q))
+                : [...allBudgetCodes];
+            sortBudgetData();
+            budgetPage = 1;
+            renderBudgetCodes();
+        }
+
+        function sortBudgetCodes(col) {
+            if (budgetSort.column === col) {
+                budgetSort.direction = budgetSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                budgetSort.column = col;
+                budgetSort.direction = 'asc';
+            }
+            sortBudgetData();
+            renderBudgetCodes();
+        }
+
+        function sortBudgetData() {
+            const { column, direction } = budgetSort;
+            filteredBudgetCodes.sort((a, b) => {
+                const aVal = (a[column] || '').toString().toLowerCase();
+                const bVal = (b[column] || '').toString().toLowerCase();
+                return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+        }
+
+        function renderBudgetCodes() {
+            const start = (budgetPage - 1) * PAGE_SIZE;
+            const page = filteredBudgetCodes.slice(start, start + PAGE_SIZE);
+            const body = document.getElementById('budgetBody');
+
+            if (page.length === 0) {
+                body.innerHTML = '<tr><td colspan="8" class="empty-state">No budget codes found</td></tr>';
+            } else {
+                body.innerHTML = page.map(b => `<tr>
+                    <td style="font-weight:600;">${escHtml(b.budget_code || '')}</td>
+                    <td>${escHtml(b.account_code || '')}</td>
+                    <td>${escHtml(b.fund || '')}</td>
+                    <td>${escHtml(b.organization || '')}</td>
+                    <td>${escHtml(b.program || '')}</td>
+                    <td>${escHtml(b.finance || '')}</td>
+                    <td>${escHtml(b.course || '')}</td>
+                    <td class="text-center">
+                        <button onclick="promptDeleteBudget('${escHtml(b.budget_code)}', '${escHtml(b.account_code)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;border-radius:4px;" title="Delete budget code">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </td>
+                </tr>`).join('');
+            }
+
+            document.getElementById('budgetCount').textContent = `${filteredBudgetCodes.length} budget code${filteredBudgetCodes.length !== 1 ? 's' : ''}`;
+            renderPagination('budgetPagination', filteredBudgetCodes.length, budgetPage, p => { budgetPage = p; renderBudgetCodes(); });
+        }
+
+        /* ========================================
+           BUDGET CODES – ADD
+           ======================================== */
+        async function addBudgetCode() {
+            const code = document.getElementById('addBudgetCode').value.trim();
+            const account = document.getElementById('addAccountCode').value.trim();
+            if (!code || !account) { showFormMsg('budgetFormMsg', 'Budget code and account code are required.', 'error'); return; }
+
+            const btn = document.getElementById('addBudgetBtn');
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/budget-codes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        budget_code: code,
+                        account_code: account,
+                        fund: document.getElementById('addFund').value.trim(),
+                        organization: document.getElementById('addOrganization').value.trim(),
+                        program: document.getElementById('addProgram').value.trim(),
+                        finance: document.getElementById('addFinance').value.trim(),
+                    }),
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Failed');
+
+                showFormMsg('budgetFormMsg', `Budget code ${code} added.`, 'success');
+                ['addBudgetCode','addAccountCode','addFund','addOrganization','addProgram','addFinance']
+                    .forEach(id => document.getElementById(id).value = '');
+                await loadBudgetCodes();
+            } catch (e) {
+                showFormMsg('budgetFormMsg', e.message, 'error');
+            }
+            btn.disabled = false;
+        }
+
+        /* ========================================
+           DELETE FLOW
+           ======================================== */
+        function promptDeleteVendor(vendorNumber, vendorName) {
+            pendingDelete = { type: 'vendor', data: { vendor_number: vendorNumber } };
+            document.getElementById('deleteModalTitle').textContent = 'Delete Vendor';
+            document.getElementById('deleteModalMsg').textContent = `Are you sure you want to delete vendor "${vendorName}" (${vendorNumber})? This cannot be undone.`;
+            document.getElementById('deleteModal').classList.add('open');
+        }
+
+        function promptDeleteBudget(budgetCode, accountCode) {
+            pendingDelete = { type: 'budget', data: { budget_code: budgetCode, account_code: accountCode } };
+            document.getElementById('deleteModalTitle').textContent = 'Delete Budget Code';
+            document.getElementById('deleteModalMsg').textContent = `Are you sure you want to delete budget code "${budgetCode}" (account: ${accountCode})? This cannot be undone.`;
+            document.getElementById('deleteModal').classList.add('open');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('open');
+            pendingDelete = null;
+        }
+
+        async function confirmDelete() {
+            if (!pendingDelete) return;
+            const { type, data } = pendingDelete;
+            closeDeleteModal();
+
+            try {
+                const endpoint = type === 'vendor' ? '/api/vendors' : '/api/budget-codes';
+                const resp = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                if (!resp.ok) throw new Error('Delete failed');
+                showToast(`${type === 'vendor' ? 'Vendor' : 'Budget code'} deleted.`, 'success');
+                if (type === 'vendor') await loadVendors();
+                else await loadBudgetCodes();
+            } catch (e) {
+                showToast('Delete failed: ' + e.message, 'error');
+            }
+        }
+
+        /* ========================================
+           PAGINATION
+           ======================================== */
+        function renderPagination(containerId, total, currentPage, onPageChange) {
+            const totalPages = Math.ceil(total / PAGE_SIZE);
+            const container = document.getElementById(containerId);
+            if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+            const start = (currentPage - 1) * PAGE_SIZE + 1;
+            const end = Math.min(currentPage * PAGE_SIZE, total);
+
+            let btns = '';
+            for (let i = 1; i <= totalPages && i <= 10; i++) {
+                btns += `<button class="${i === currentPage ? 'active' : ''}" onclick="this._cb(${i})">${i}</button>`;
+            }
+
+            container.innerHTML = `
+                <span>${start}–${end} of ${total}</span>
+                <div class="pagination-btns">
+                    <button ${currentPage <= 1 ? 'disabled' : ''} onclick="this._cb(${currentPage - 1})">‹</button>
+                    ${btns}
+                    <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="this._cb(${currentPage + 1})">›</button>
+                </div>
+            `;
+            container.querySelectorAll('button').forEach(btn => btn._cb = onPageChange);
+        }
+
+        /* ========================================
+           HELPERS
+           ======================================== */
+        function updateRecordCount() {
+            document.getElementById('recordCount').textContent =
+                `${allVendors.length} vendors · ${allBudgetCodes.length} budget codes`;
+        }
+
+        function showFormMsg(id, msg, type) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = 'form-message visible ' + type;
+            setTimeout(() => el.classList.remove('visible'), 4000);
+        }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + (type || 'success');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        /* ========================================
+           BRAND / DARK MODE
+           ======================================== */
+        let brandDistrictData = [];
+
+        async function loadBrandData(retries = 2) {
+            try {
+                let response = await fetch(`${API_BASE}/api/districts`);
+                if (!response.ok) {
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 3000); }
+                    return;
+                }
+                const raw = await response.json();
+                const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);
+                if (!data.length) {
+                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+                    return;
+                }
+                brandDistrictData = data.filter(d => d.District_Name && d.Primary_Hex);
+
+                const memberOrgDistricts = {};
+                data.forEach(item => {
+                    if (item.Member_Org) {
+                        if (!memberOrgDistricts[item.Member_Org]) memberOrgDistricts[item.Member_Org] = [];
+                        memberOrgDistricts[item.Member_Org].push(Number(item.District_Number));
+                    }
+                });
+                const amsdNumbers = memberOrgDistricts['AMSD'] || [];
+                const amsdDistricts = brandDistrictData.filter(d => amsdNumbers.includes(Number(d.District_Number)));
+                const otherDistricts = brandDistrictData.filter(d => !amsdNumbers.includes(Number(d.District_Number)));
+                amsdDistricts.sort((a, b) => Number(a.District_Number) - Number(b.District_Number));
+                otherDistricts.sort((a, b) => (a.District_Name || '').localeCompare(b.District_Name || ''));
+
+                const menuSelect = document.getElementById('brandSelectorMenu');
+                const hiddenSelect = document.getElementById('brandSelector');
+                while (menuSelect.options.length > 1) menuSelect.remove(1);
+                while (hiddenSelect.options.length > 1) hiddenSelect.remove(1);
+
+                function addOption(d, select) {
+                    const opt = new Option(`${d.District_Name} (${d.District_Number})`, d.District_Number);
+                    let sec = d.Secondary_Hex || d.Primary_Hex;
+                    if (sec.toLowerCase() === '#000000' || sec.toLowerCase() === '#ffffff') sec = d.Primary_Hex;
+                    opt.dataset.primaryHex = d.Primary_Hex;
+                    opt.dataset.secondaryHex = sec;
+                    select.appendChild(opt);
+                }
+
+                amsdDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
+                const sep1 = document.createElement('option'); sep1.disabled = true; sep1.textContent = '───────────────';
+                menuSelect.appendChild(sep1);
+                hiddenSelect.appendChild(sep1.cloneNode(true));
+                otherDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
+
+                const brandParam = localStorage.getItem('bondwood-brand');
+                if (brandParam) {
+                    for (let i = 0; i < menuSelect.options.length; i++) {
+                        if (String(menuSelect.options[i].value) === String(brandParam)) {
+                            menuSelect.selectedIndex = i;
+                            hiddenSelect.value = brandParam;
+                            updateBrandColorsFromMenu();
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+            }
+        }
+
+        function updateBrandColorsFromMenu() {
+            const sel = document.getElementById('brandSelectorMenu');
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
+        }
+
+        function updateBrandColors() {
+            const sel = document.getElementById('brandSelector');
+            const opt = sel.options[sel.selectedIndex];
+            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
+        }
+
+        function needsDarkText(hex) {
+            if (!hex) return false;
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
+            return (r > 200 && g > 180 && b < 100) || (g > 200 && r > 150 && b < 100) || ((0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.85);
+        }
+
+        function hexToRgba(hex, alpha) {
+            if (!hex || hex.length < 7) return `rgba(100,100,100,${alpha})`;
+            return `rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${alpha})`;
+        }
+
+        function applyBrand(primaryHex, secondaryHex, districtNumber) {
+            const banner = document.getElementById('headerBanner');
+            const accent = document.getElementById('bannerAccent');
+            const logo = document.getElementById('bannerLogo');
+            const title = document.getElementById('bannerTitle');
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+            if (!primaryHex) {
+                banner.style.background = '#000000';
+                accent.style.background = '#0728eb';
+                logo.src = 'bondwood-logo-modern-dark.png';
+                logo.style.display = 'block';
+                document.documentElement.style.setProperty('--primary-hex', '#000000');
+                document.documentElement.style.setProperty('--secondary-hex', '#0728eb');
+                document.documentElement.style.setProperty('--row-hover-bg', hexToRgba('#0728eb', 0.08));
+                if (title) title.style.color = '#fff';
+                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
+                updateHamburgerMenuColors('#000000', '#0728eb');
+                localStorage.removeItem('bondwood-brand');
+                return;
+            }
+
+            if (districtNumber === '6') primaryHex = '#121517';
+            if (districtNumber === '111') primaryHex = '#181e21';
+            if (districtNumber === '277') primaryHex = '#DA2B1F';
+
+            banner.style.background = primaryHex;
+            accent.style.background = secondaryHex || primaryHex;
+            document.documentElement.style.setProperty('--primary-hex', primaryHex);
+            document.documentElement.style.setProperty('--secondary-hex', secondaryHex || primaryHex);
+            const hoverColor = (secondaryHex && secondaryHex !== '#000000' && secondaryHex !== '#000') ? secondaryHex : primaryHex;
+            document.documentElement.style.setProperty('--row-hover-bg', hexToRgba(hoverColor, 0.08));
+
+            if (needsDarkText(primaryHex)) {
+                if (title) title.style.color = '#000000';
+                if (hamburgerBtn) hamburgerBtn.style.color = '#000000';
+            } else {
+                if (title) title.style.color = '#fff';
+                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
+            }
+
+            if (districtNumber) {
+                const logoPath = `district-logos/${districtNumber}.png`;
+                const preloadImg = new Image();
+                logo.dataset.pendingLogo = logoPath;
+                logo.style.display = 'none';
+                preloadImg.onload = function() {
+                    if (logo.dataset.pendingLogo === logoPath) { logo.src = logoPath; logo.style.display = 'block'; delete logo.dataset.pendingLogo; }
+                };
+                preloadImg.onerror = function() {
+                    if (logo.dataset.pendingLogo === logoPath) { logo.src = 'bondwood-logo-modern-dark.png'; logo.style.display = 'block'; delete logo.dataset.pendingLogo; }
+                };
+                preloadImg.src = logoPath;
+            }
+
+            updateHamburgerMenuColors(primaryHex, secondaryHex);
+            if (districtNumber) localStorage.setItem('bondwood-brand', districtNumber);
+        }
+
+        function updateHamburgerMenuColors(primaryHex, secondaryHex) {
+            const menu = document.getElementById('hamburgerMenu');
+            if (!menu) return;
+            let menuColor = primaryHex || '#000000';
+            let highlightHover, highlightActive;
+            let r, g, b;
+            if (menuColor.startsWith('#') && menuColor.length >= 7) {
+                r = parseInt(menuColor.slice(1,3),16); g = parseInt(menuColor.slice(3,5),16); b = parseInt(menuColor.slice(5,7),16);
+            }
+            if (r !== undefined && !isNaN(r)) {
+                if (needsDarkText(menuColor)) menu.classList.add('dark-text');
+                else menu.classList.remove('dark-text');
+                if (secondaryHex && secondaryHex.startsWith('#') && secondaryHex.length >= 7) {
+                    const sr = parseInt(secondaryHex.slice(1,3),16), sg = parseInt(secondaryHex.slice(3,5),16), sb = parseInt(secondaryHex.slice(5,7),16);
+                    if (!isNaN(sr)) { highlightHover = `rgba(${sr},${sg},${sb},0.25)`; highlightActive = `rgba(${sr},${sg},${sb},0.40)`; }
+                }
+                if (!highlightHover) {
+                    const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+                    highlightHover = lum > 0.5 ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.15)';
+                    highlightActive = lum > 0.5 ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.25)';
+                }
+            } else {
+                menu.classList.remove('dark-text');
+                highlightHover = 'rgba(255,255,255,0.15)';
+                highlightActive = 'rgba(255,255,255,0.25)';
+            }
+            menu.style.background = menuColor;
+            menu.style.setProperty('--menu-highlight-hover', highlightHover);
+            menu.style.setProperty('--menu-highlight-active', highlightActive);
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+
+        function initTheme() {
+            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const savedTheme = localStorage.getItem('theme');
+            if (systemPrefersDark) document.body.classList.add('dark-mode');
+            if (savedTheme === 'dark' && !systemPrefersDark) document.body.classList.add('dark-mode');
+            else if (savedTheme === 'light' && systemPrefersDark) document.body.classList.remove('dark-mode');
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('theme')) document.body.classList.toggle('dark-mode', e.matches);
+            });
+        }
+
+        /* ========================================
+           HAMBURGER MENU
+           ======================================== */
+        function toggleHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            if (menu.classList.contains('open')) { closeHamburgerMenu(); }
+            else {
+                menu.style.display = 'block';
+                document.getElementById('hamburgerOverlay').style.display = 'block';
+                menu.offsetHeight;
+                menu.classList.add('open');
+                menu.style.transform = 'translateX(0)';
+            }
+        }
+
+        function closeHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            menu.style.transform = 'translateX(-100%)';
+            menu.classList.remove('open');
+            setTimeout(() => { menu.style.display = 'none'; document.getElementById('hamburgerOverlay').style.display = 'none'; }, 200);
+        }
+    </script>
+</body>
+</html>

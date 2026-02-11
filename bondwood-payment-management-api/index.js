@@ -112,10 +112,22 @@ export default {
       if (path === '/api/vendors' && method === 'GET') {
         return handleGetVendors(env, url);
       }
+      if (path === '/api/vendors' && method === 'POST') {
+        return handleCreateVendor(request, env);
+      }
+      if (path === '/api/vendors' && method === 'DELETE') {
+        return handleDeleteVendor(request, env);
+      }
 
       // ── Budget Codes ──
       if (path === '/api/budget-codes' && method === 'GET') {
         return handleGetBudgetCodes(env, url);
+      }
+      if (path === '/api/budget-codes' && method === 'POST') {
+        return handleCreateBudgetCode(request, env);
+      }
+      if (path === '/api/budget-codes' && method === 'DELETE') {
+        return handleDeleteBudgetCode(request, env);
       }
 
       // ── Districts ──
@@ -342,6 +354,112 @@ async function handleGetBudgetCodes(env, url) {
   const total = countResult[0]?.total || 0;
 
   return json({ budget_codes: results, total, page, limit });
+}
+
+
+/* ========================================
+   VENDORS – CREATE
+   ======================================== */
+async function handleCreateVendor(request, env) {
+  const body = await request.json();
+  const { vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip } = body;
+
+  if (!vendor_name || !vendor_number) {
+    return json({ error: 'vendor_name and vendor_number are required' }, 400);
+  }
+
+  // Check for duplicate vendor_number
+  const { results: existing } = await env.DB.prepare(
+    'SELECT vendor_number FROM vendor_data WHERE vendor_number = ?'
+  ).bind(vendor_number.trim()).all();
+
+  if (existing.length) {
+    return json({ error: `Vendor number ${vendor_number} already exists` }, 409);
+  }
+
+  await env.DB.prepare(
+    'INSERT INTO vendor_data (vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(
+    vendor_name.trim(),
+    vendor_number.trim(),
+    vendor_address?.trim() || null,
+    vendor_city?.trim() || null,
+    vendor_state?.trim() || null,
+    vendor_zip?.trim() || null,
+  ).run();
+
+  return json({ message: 'Vendor created', vendor_number: vendor_number.trim() }, 201);
+}
+
+
+/* ========================================
+   VENDORS – DELETE
+   ======================================== */
+async function handleDeleteVendor(request, env) {
+  const body = await request.json();
+  const { vendor_number } = body;
+
+  if (!vendor_number) return json({ error: 'vendor_number is required' }, 400);
+
+  await env.DB.prepare('DELETE FROM vendor_data WHERE vendor_number = ?').bind(vendor_number.trim()).run();
+  return json({ message: 'Vendor deleted', vendor_number });
+}
+
+
+/* ========================================
+   BUDGET CODES – CREATE
+   ======================================== */
+async function handleCreateBudgetCode(request, env) {
+  const body = await request.json();
+  const { budget_code, account_code, fund, organization, program, finance, course } = body;
+
+  if (!budget_code || !account_code) {
+    return json({ error: 'budget_code and account_code are required' }, 400);
+  }
+
+  // Check for duplicate
+  const { results: existing } = await env.DB.prepare(
+    'SELECT budget_code FROM budget_code WHERE budget_code = ? AND account_code = ?'
+  ).bind(budget_code.trim(), account_code.trim()).all();
+
+  if (existing.length) {
+    return json({ error: `Budget code ${budget_code} with account ${account_code} already exists` }, 409);
+  }
+
+  await env.DB.prepare(
+    'INSERT INTO budget_code (budget_code, account_code, fund, organization, program, finance, course) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).bind(
+    budget_code.trim(),
+    account_code.trim(),
+    fund?.trim() || null,
+    organization?.trim() || null,
+    program?.trim() || null,
+    finance?.trim() || null,
+    course?.trim() || null,
+  ).run();
+
+  return json({ message: 'Budget code created', budget_code: budget_code.trim(), account_code: account_code.trim() }, 201);
+}
+
+
+/* ========================================
+   BUDGET CODES – DELETE
+   ======================================== */
+async function handleDeleteBudgetCode(request, env) {
+  const body = await request.json();
+  const { budget_code, account_code } = body;
+
+  if (!budget_code) return json({ error: 'budget_code is required' }, 400);
+
+  if (account_code) {
+    await env.DB.prepare('DELETE FROM budget_code WHERE budget_code = ? AND account_code = ?')
+      .bind(budget_code.trim(), account_code.trim()).run();
+  } else {
+    await env.DB.prepare('DELETE FROM budget_code WHERE budget_code = ?')
+      .bind(budget_code.trim()).run();
+  }
+
+  return json({ message: 'Budget code deleted', budget_code });
 }
 
 
