@@ -363,6 +363,25 @@
         .toast.show { opacity: 1; }
         .toast.success { background: var(--positive-color); color: #fff; }
         .toast.error { background: var(--negative-color); color: #fff; }
+        /* ============ CUSTOM SELECT ============ */
+        .cs-wrap { position: relative; display: inline-block; }
+        .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #ffffff; color: #000000; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-family: 'Satoshi', sans-serif; white-space: nowrap; user-select: none; }
+        .cs-display:hover { border-color: var(--text-secondary); }
+        .cs-text { overflow: hidden; text-overflow: ellipsis; }
+        .cs-arrow { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
+        .cs-wrap.open .cs-arrow { transform: rotate(180deg); }
+        .cs-options { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; display: none; overflow-y: auto; max-height: 260px; padding: 4px 0; }
+        .cs-wrap.open .cs-options { display: block; }
+        .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Satoshi', sans-serif; color: #000000; white-space: nowrap; border-radius: 4px; margin: 0 4px; }
+        .cs-option:hover { background: color-mix(in srgb, var(--primary-hex) 10%, transparent); }
+        .cs-option.selected { font-weight: 600; background: color-mix(in srgb, var(--primary-hex) 14%, transparent); }
+        body.dark-mode .cs-display { background: #1a1a1a; color: #ffffff; border-color: var(--border-color); }
+        body.dark-mode .cs-options { background: #1a1a1a; border-color: #333; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+        body.dark-mode .cs-option { color: #ffffff; }
+        body.dark-mode .cs-option:hover { background: rgba(255,255,255,0.08); }
+        body.dark-mode .cs-option.selected { background: rgba(255,255,255,0.12); }
+        .header-actions .cs-display { padding: 0.45rem 0.75rem; font-size: 0.78rem; font-weight: 600; border-radius: 8px; }
+
     </style>
 </head>
 <body>
@@ -560,6 +579,91 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        /* ============ CUSTOM SELECT COMPONENT ============ */
+        function initCustomSelect(sel) {
+            if (!sel || sel.dataset.csInit) return;
+            sel.dataset.csInit = '1';
+            sel.style.display = 'none';
+
+            const wrap = document.createElement('div');
+            wrap.className = 'cs-wrap';
+
+            const display = document.createElement('div');
+            display.className = 'cs-display';
+            // Copy sizing from original select
+            const cs = getComputedStyle(sel);
+            display.style.padding = "0.45rem 0.75rem";
+            display.style.fontSize = cs.fontSize || "0.85rem";
+            display.style.fontWeight = cs.fontWeight || "500";
+            display.style.borderRadius = cs.borderRadius || "6px";
+            
+            display.innerHTML = '<span class="cs-text"></span><svg class="cs-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'cs-options';
+            optionsDiv.style.fontSize = cs.fontSize || '0.85rem';
+
+            function buildOptions() {
+                optionsDiv.innerHTML = '';
+                Array.from(sel.options).forEach(function(opt) {
+                    const div = document.createElement('div');
+                    div.className = 'cs-option' + (opt.value === sel.value ? ' selected' : '');
+                    div.textContent = opt.text;
+                    div.dataset.value = opt.value;
+                    div.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        sel.value = opt.value;
+                        sel.dispatchEvent(new Event('change'));
+                        syncDisplay();
+                        wrap.classList.remove('open');
+                    });
+                    optionsDiv.appendChild(div);
+                });
+            }
+
+            function syncDisplay() {
+                var selOpt = sel.options[sel.selectedIndex];
+                display.querySelector('.cs-text').textContent = selOpt ? selOpt.text : '';
+                optionsDiv.querySelectorAll('.cs-option').forEach(function(o) {
+                    o.classList.toggle('selected', o.dataset.value === sel.value);
+                });
+            }
+
+            buildOptions();
+            syncDisplay();
+
+            wrap.appendChild(display);
+            wrap.appendChild(optionsDiv);
+            sel.parentNode.insertBefore(wrap, sel);
+            wrap.appendChild(sel); // keep select inside wrapper for DOM traversal
+
+            display.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.querySelectorAll('.cs-wrap.open').forEach(function(w) { if (w !== wrap) w.classList.remove('open'); });
+                wrap.classList.toggle('open');
+            });
+
+            // Patch value setter to auto-sync display
+            var desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+            Object.defineProperty(sel, 'value', {
+                set: function(v) { desc.set.call(this, v); syncDisplay(); },
+                get: function() { return desc.get.call(this); }
+            });
+
+            // Observe option changes (for dynamic selects)
+            new MutationObserver(function() { buildOptions(); syncDisplay(); }).observe(sel, { childList: true });
+
+            // Expose sync for external use
+            sel._csSyncDisplay = syncDisplay;
+            sel._csBuildOptions = function() { buildOptions(); syncDisplay(); };
+        }
+
+        // Global close handler
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.cs-wrap.open').forEach(function(w) { w.classList.remove('open'); });
+        });
+
+
         /* ========================================
            CONFIGURATION & STATE
            ======================================== */
@@ -585,6 +689,8 @@
             loadBrandData();
             await fetchCurrentUser();
             await loadUsers();
+            initCustomSelect(document.getElementById("statusFilter"));
+            initCustomSelect(document.getElementById("roleFilter"));
         });
 
         async function fetchCurrentUser() {
