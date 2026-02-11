@@ -52,15 +52,10 @@
         body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
         body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
         body.dark-mode .theme-toggle svg { fill: #5b7aff; }
-        body.dark-mode .btn-primary { background: #333; color: #fff; }
-        body.dark-mode .btn-primary:hover { background: #444; }
         body.dark-mode .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
         body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
         body.dark-mode .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
         body.dark-mode .btn-primary.danger:hover { opacity: 0.85; }
-        body.dark-mode .btn-primary.import-btn { background: #d1d5db !important; color: #000 !important; border-color: #d1d5db !important; }
-        body.dark-mode .btn-primary.import-btn:hover { background: #bfc4cb !important; }
-        body.dark-mode .btn-primary.import-btn svg { stroke: #000 !important; }
         body.dark-mode input, body.dark-mode select { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
         body.dark-mode input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); }
         body.dark-mode .edit-modal-panel { background: var(--card-bg); border-color: var(--border-color); }
@@ -181,7 +176,7 @@
         .btn-primary.green:hover { opacity: 0.88; }
         .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
         .btn-primary.danger:hover { opacity: 0.88; }
-        .btn-primary.import-btn { background: #d1d5db; color: #000; border-color: #d1d5db; }
+        .btn-primary.import-btn { background: #d1d5db; color: #000; border-color: #d1d5db; -webkit-appearance: none; appearance: none; color-scheme: light; }
         .btn-primary.import-btn:hover { background: #bfc4cb; }
         .btn-primary svg { width: 14px; height: 14px; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -615,7 +610,7 @@
 
     <script>
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
-        const PAGE_SIZE = 50;
+        const PAGE_SIZE = 250;
         const AVAILABLE_ROLES = ['admin', 'owner', 'accountant', 'form_builder', 'form_viewer'];
         const ROLE_LABELS = { admin: 'Admin', owner: 'Owner', accountant: 'Accountant', form_builder: 'Form Builder', form_viewer: 'Form Viewer' };
         const ROLE_COLORS = { admin: '#00babc', owner: '#f57f2f', accountant: '#cb3694', form_builder: '#4e59a5', form_viewer: '#6b7280' };
@@ -677,10 +672,72 @@
         /* ========================================
            INIT
            ======================================== */
+        /* ========================================
+           LOADING MODAL
+           ======================================== */
+        let _loadingTimer = null;
+        let _loadingModal = null;
+
+        function showLoadingModal(message) {
+            message = message || 'Loading data…';
+            if (_loadingModal) return; // already showing
+            _loadingModal = document.createElement('div');
+            _loadingModal.id = 'loadingModal';
+            _loadingModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+            _loadingModal.innerHTML = `
+                <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;min-width:320px;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--primary-hex)" stroke-width="2" stroke-linecap="round" style="margin-bottom:1rem;animation:spin 1s linear infinite;">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    </svg>
+                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.75rem;">${message}</div>
+                    <div style="width:100%;height:6px;background:var(--border-color);border-radius:3px;overflow:hidden;">
+                        <div id="loadingProgressBar" style="width:0%;height:100%;background:var(--primary-hex);border-radius:3px;transition:width 0.3s ease;"></div>
+                    </div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.5rem;" id="loadingProgressLabel">Preparing…</div>
+                </div>
+            `;
+            document.body.appendChild(_loadingModal);
+            // Animate progress bar
+            requestAnimationFrame(() => {
+                const bar = document.getElementById('loadingProgressBar');
+                if (bar) { bar.style.width = '60%'; }
+            });
+        }
+
+        function hideLoadingModal() {
+            if (_loadingTimer) { clearTimeout(_loadingTimer); _loadingTimer = null; }
+            if (_loadingModal) {
+                const bar = document.getElementById('loadingProgressBar');
+                if (bar) bar.style.width = '100%';
+                setTimeout(() => { if (_loadingModal) { _loadingModal.remove(); _loadingModal = null; } }, 250);
+            }
+        }
+
+        // Wraps an async operation — shows loading modal only if it takes > 800ms
+        async function withLoadingModal(asyncFn, message) {
+            _loadingTimer = setTimeout(() => showLoadingModal(message), 800);
+            try {
+                await asyncFn();
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // Add spin keyframe
+        if (!document.getElementById('loadingSpinStyle')) {
+            const s = document.createElement('style');
+            s.id = 'loadingSpinStyle';
+            s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+            document.head.appendChild(s);
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
-            await Promise.all([loadVendors(), loadBudgetCodes(), loadBudgetComponents()]);
+            await withLoadingModal(
+                () => Promise.all([loadVendors(), loadBudgetCodes(), loadBudgetComponents()]),
+                'Loading data…'
+            );
         });
 
         async function loadBudgetComponents() {
@@ -1291,7 +1348,7 @@
             }
             closeImportModal();
             showToast(`Imported ${success} record${success !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}.`, failed ? 'error' : 'success');
-            if (importType === 'vendors') await loadVendors(); else { await Promise.all([loadBudgetCodes(), loadBudgetComponents()]); }
+            if (importType === 'vendors') await withLoadingModal(() => loadVendors(), 'Refreshing vendors…'); else { await withLoadingModal(() => Promise.all([loadBudgetCodes(), loadBudgetComponents()]), 'Refreshing budget codes…'); }
         }
 
         /* ========================================
