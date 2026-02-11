@@ -2600,7 +2600,8 @@
            ======================================== */
         function toggleUserRole() {
             currentUserRole = currentUserRole === 'admin' ? 'user' : 'admin';
-            document.getElementById('roleToggleLabel')?.textContent = currentUserRole === 'admin' ? 'Switch to User' : 'Switch to Admin';
+            const rtl = document.getElementById('roleToggleLabel');
+            if (rtl) rtl.textContent = currentUserRole === 'admin' ? 'Switch to User' : 'Switch to Admin';
             document.getElementById('dashboardSubtitle').textContent = currentUserRole === 'admin' ? 'Viewing all submissions' : 'Viewing your submissions';
             buildColumnSelector();
             filterTable();
