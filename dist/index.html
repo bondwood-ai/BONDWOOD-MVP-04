@@ -450,11 +450,11 @@
         .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Satoshi', sans-serif; color: #000000; white-space: nowrap; border-radius: 4px; margin: 0 4px; }
         .cs-option:hover { background: color-mix(in srgb, var(--primary-hex) 10%, transparent); }
         .cs-option.selected { font-weight: 600; background: color-mix(in srgb, var(--primary-hex) 14%, transparent); }
-        body.dark-mode .cs-display { background: #1a1a1a; color: #ffffff; border-color: var(--border-color); }
-        body.dark-mode .cs-options { background: #1a1a1a; border-color: #333; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
-        body.dark-mode .cs-option { color: #ffffff; }
-        body.dark-mode .cs-option:hover { background: rgba(255,255,255,0.08); }
-        body.dark-mode .cs-option.selected { background: rgba(255,255,255,0.12); }
+        body.dark-mode .cs-display { background: #1a1a1a !important; color: #ffffff !important; border-color: var(--border-color); }
+        body.dark-mode .cs-options { background: #1a1a1a !important; border-color: #333 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4); opacity: 1; }
+        body.dark-mode .cs-option { color: #ffffff !important; }
+        body.dark-mode .cs-option:hover { background: rgba(255,255,255,0.08) !important; }
+        body.dark-mode .cs-option.selected { background: rgba(255,255,255,0.12) !important; }
         .search-row .cs-wrap { display: inline-block; }
         .search-row .cs-display { padding: 0.45rem 0.75rem; font-size: 0.8rem; font-weight: 500; border-radius: 8px; min-width: 130px; }
 
@@ -1045,7 +1045,8 @@
                     div.addEventListener('click', function(e) {
                         e.stopPropagation();
                         sel.value = opt.value;
-                        sel.dispatchEvent(new Event('change'));
+                        sel.dispatchEvent(new Event("change", {bubbles:true}));
+                        if (sel.onchange) sel.onchange();
                         syncDisplay();
                         wrap.classList.remove('open');
                     });

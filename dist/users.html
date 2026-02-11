@@ -613,7 +613,8 @@
                     div.addEventListener('click', function(e) {
                         e.stopPropagation();
                         sel.value = opt.value;
-                        sel.dispatchEvent(new Event('change'));
+                        sel.dispatchEvent(new Event("change", {bubbles:true}));
+                        if (sel.onchange) sel.onchange();
                         syncDisplay();
                         wrap.classList.remove('open');
                     });
