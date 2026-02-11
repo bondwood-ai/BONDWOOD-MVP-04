@@ -544,12 +544,12 @@ async function handleGetBudgetComponents(env) {
   ]);
 
   return json({
-    funds: funds.results.map(r => r.fund),
-    organizations: orgs.results.map(r => r.organization),
-    programs: programs.results.map(r => r.program),
-    finances: finances.results.map(r => r.finance),
-    courses: courses.results.map(r => r.course),
-    accounts: accounts.results.map(r => r.account_code),
+    funds: funds.results.map(r => (r.fund || '').toString().trim()),
+    organizations: orgs.results.map(r => (r.organization || '').toString().trim()),
+    programs: programs.results.map(r => (r.program || '').toString().trim()),
+    finances: finances.results.map(r => (r.finance || '').toString().trim()),
+    courses: courses.results.map(r => (r.course || '').toString().trim()),
+    accounts: accounts.results.map(r => (r.account_code || '').toString().trim()),
   });
 }
 

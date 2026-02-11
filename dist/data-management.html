@@ -1016,14 +1016,15 @@
             const finance = clean.substring(8, 11);
             const course = clean.substring(11, 14);
 
-            // Check which components are new
+            // Check which components are new (trim both sides for safe comparison)
             const newItems = [];
-            if (fund && !knownComponents.funds.includes(fund)) newItems.push(`Fund: ${fund}`);
-            if (org && !knownComponents.organizations.includes(org)) newItems.push(`Organization: ${org}`);
-            if (program && !knownComponents.programs.includes(program)) newItems.push(`Program: ${program}`);
-            if (finance && !knownComponents.finances.includes(finance)) newItems.push(`Finance: ${finance}`);
-            if (course && !knownComponents.courses.includes(course)) newItems.push(`Course: ${course}`);
-            if (account && !knownComponents.accounts.includes(account)) newItems.push(`Account: ${account}`);
+            const has = (arr, val) => arr.some(v => v.trim() === val.trim());
+            if (fund && !has(knownComponents.funds, fund)) newItems.push(`Fund: ${fund}`);
+            if (org && !has(knownComponents.organizations, org)) newItems.push(`Organization: ${org}`);
+            if (program && !has(knownComponents.programs, program)) newItems.push(`Program: ${program}`);
+            if (finance && !has(knownComponents.finances, finance)) newItems.push(`Finance: ${finance}`);
+            if (course && !has(knownComponents.courses, course)) newItems.push(`Course: ${course}`);
+            if (account && !has(knownComponents.accounts, account)) newItems.push(`Account: ${account}`);
 
             if (newItems.length > 0) {
                 // Store data for later and show warning
