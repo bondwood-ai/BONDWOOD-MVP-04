@@ -1713,7 +1713,6 @@
             selectedRFPIds.clear();
             allRFPs = await loadRFPData();
             filterTable();
-            initCustomSelect(document.getElementById("statusFilter"));
             showAlert(`${selected.length} request(s) have been advanced.`, 'Bulk Approval Complete');
         }
 
@@ -3638,6 +3637,7 @@
             // Load real data from bondwood-api
             allRFPs = await loadRFPData();
             filterTable();
+            initCustomSelect(document.getElementById("statusFilter"));
 
             // Preload vendor data in background for Capture Invoice
             fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`)
