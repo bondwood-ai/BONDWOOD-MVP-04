@@ -1421,15 +1421,6 @@
         let formSubmitting = false;
         let historyGuardActive = false;
 
-        // Native beforeunload for tab close / reload (browser forces its own UI)
-        window.addEventListener('beforeunload', function(e) {
-            if (formDirty && !formSubmitting) {
-                e.preventDefault();
-                e.returnValue = 'You have unsaved changes.';
-                return 'You have unsaved changes.';
-            }
-        });
-
         // History API guard: intercept browser back/forward with custom modal
         window.addEventListener('popstate', function(e) {
             if (formDirty && !formSubmitting) {
