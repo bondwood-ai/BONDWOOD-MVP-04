@@ -1001,12 +1001,15 @@
                 const program = clean.substring(5, 8);
                 const finance = clean.substring(8, 11);
                 const course = clean.substring(11, 14);
-                const budgetInvalid = (fund && !has(knownComponents.funds, fund)) ||
-                    (org && !has(knownComponents.organizations, org)) ||
-                    (program && !has(knownComponents.programs, program)) ||
-                    (finance && !has(knownComponents.finances, finance)) ||
-                    (course && !has(knownComponents.courses, course));
-                budgetInput.classList.add(budgetInvalid ? 'input-invalid' : 'input-valid');
+                // Only validate components that have their full expected length
+                let anyInvalid = false;
+                let anyChecked = false;
+                if (fund.length === 2)    { anyChecked = true; if (!has(knownComponents.funds, fund)) anyInvalid = true; }
+                if (org.length === 3)     { anyChecked = true; if (!has(knownComponents.organizations, org)) anyInvalid = true; }
+                if (program.length === 3) { anyChecked = true; if (!has(knownComponents.programs, program)) anyInvalid = true; }
+                if (finance.length === 3) { anyChecked = true; if (!has(knownComponents.finances, finance)) anyInvalid = true; }
+                if (course.length === 3)  { anyChecked = true; if (!has(knownComponents.courses, course)) anyInvalid = true; }
+                if (anyChecked) budgetInput.classList.add(anyInvalid ? 'input-invalid' : 'input-valid');
             }
 
             if (account) {
