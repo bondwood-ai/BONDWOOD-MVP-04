@@ -205,14 +205,23 @@
         .form-message.error { color: var(--negative-color); }
 
         /* ============ PAGINATION ============ */
-        .pagination { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; font-size: 0.75rem; color: var(--text-secondary); }
-        .pagination-btns { display: flex; gap: 0.35rem; }
+        .pagination { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; font-size: 0.75rem; color: var(--text-secondary); flex-wrap: wrap; gap: 0.5rem; }
+        .pagination-btns { display: flex; gap: 0.25rem; align-items: center; }
         .pagination-btns button {
             padding: 0.3rem 0.6rem; border: 1px solid var(--border-color); border-radius: 6px;
             background: var(--card-bg); color: var(--text-primary); font-family: inherit; font-size: 0.72rem; cursor: pointer;
+            min-width: 28px; text-align: center; display: inline-flex; align-items: center; justify-content: center;
         }
         .pagination-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
         .pagination-btns button.active { background: var(--primary-hex); color: var(--accent-text-color); border-color: var(--primary-hex); }
+        .pagination-btns .pg-ellipsis { padding: 0.3rem 0.2rem; font-size: 0.72rem; color: var(--text-secondary); user-select: none; }
+        .pagination-btns button svg { width: 12px; height: 12px; }
+        .jump-to-page { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: var(--text-secondary); }
+        .jump-to-page input {
+            width: 42px; padding: 0.25rem 0.35rem; border: 1px solid var(--border-color); border-radius: 6px;
+            font-family: inherit; font-size: 0.72rem; text-align: center; background: var(--field-bg); color: var(--text-primary);
+        }
+        .jump-to-page input:focus { outline: none; border-color: var(--secondary-hex); }
 
         /* ============ MODALS ============ */
         .modal-overlay {
@@ -1249,10 +1258,27 @@
             if (totalPages <= 1) { container.innerHTML = ''; return; }
             const start = (currentPage - 1) * PAGE_SIZE + 1;
             const end = Math.min(currentPage * PAGE_SIZE, total);
-            let btns = '';
-            for (let i = 1; i <= totalPages && i <= 10; i++) btns += `<button class="${i === currentPage ? 'active' : ''}" onclick="this._cb(${i})">${i}</button>`;
-            container.innerHTML = `<span>${start}\u2013${end} of ${total}</span><div class="pagination-btns"><button ${currentPage<=1?'disabled':''} onclick="this._cb(${currentPage-1})">\u2039</button>${btns}<button ${currentPage>=totalPages?'disabled':''} onclick="this._cb(${currentPage+1})">\u203A</button></div>`;
-            container.querySelectorAll('button').forEach(b => b._cb = onPageChange);
+
+            // Build page number window: always show first, last, and a window around current
+            const pages = [];
+            const WINDOW = 2;
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - WINDOW && i <= currentPage + WINDOW)) {
+                    pages.push(i);
+                } else if (pages[pages.length - 1] !== '...') {
+                    pages.push('...');
+                }
+            }
+
+            let btns = pages.map(p => {
+                if (p === '...') return '<span class="pg-ellipsis">\u2026</span>';
+                return `<button class="${p === currentPage ? 'active' : ''}" onclick="this._cb(${p})">${p}</button>`;
+            }).join('');
+
+            const arrowSvg = (flip) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"${flip ? ' style="transform:rotate(180deg)"' : ''}><polyline points="15 18 9 12 15 6"/></svg>`;
+
+            container.innerHTML = `<span>${start}\u2013${end} of ${total}</span><div style="display:flex;align-items:center;gap:0.75rem;"><div class="pagination-btns"><button ${currentPage<=1?'disabled':''} onclick="this._cb(${currentPage-1})">${arrowSvg(false)}</button>${btns}<button ${currentPage>=totalPages?'disabled':''} onclick="this._cb(${currentPage+1})">${arrowSvg(true)}</button></div><div class="jump-to-page"><span>Go to</span><input type="text" placeholder="${totalPages}" onkeydown="if(event.key==='Enter'){const v=parseInt(this.value);if(v>=1&&v<=${totalPages})this._cb(v);this.value='';}" ></div></div>`;
+            container.querySelectorAll('button, .jump-to-page input').forEach(el => el._cb = onPageChange);
         }
 
         /* ========================================
