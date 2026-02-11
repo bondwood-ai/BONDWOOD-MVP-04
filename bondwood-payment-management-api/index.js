@@ -195,6 +195,11 @@ export default {
         return handleGetProfilePicture(decodeURIComponent(picMatch[1]), env);
       }
 
+      // ── Seed Dummy Data ──
+      if (path === '/api/seed-dummy' && method === 'POST') {
+        return handleSeedDummy(request, env);
+      }
+
       // ── Migrate ──
       if (path === '/api/migrate' && method === 'POST') {
         return handleMigrate(env);
@@ -830,6 +835,230 @@ async function handleDeleteRFP(rfpNumber, env) {
 /* ========================================
    MIGRATE
    ======================================== */
+/* ========================================
+   SEED DUMMY DATA
+   ======================================== */
+async function handleSeedDummy(request, env) {
+  const COUNT = 550;
+
+  // ── Reference data pools ──
+  const submitters = [
+    { name: 'Sarah Johnson', id: 'sjohnson' },
+    { name: 'Michael Chen', id: 'mchen' },
+    { name: 'Emily Rodriguez', id: 'erodriguez' },
+    { name: 'David Kim', id: 'dkim' },
+    { name: 'Jessica Martinez', id: 'jmartinez' },
+    { name: 'Robert Anderson', id: 'randerson' },
+    { name: 'Amanda Thompson', id: 'athompson' },
+    { name: 'James Wilson', id: 'jwilson' },
+    { name: 'Lisa Park', id: 'lpark' },
+    { name: 'Thomas Brown', id: 'tbrown' },
+    { name: 'Rachel Green', id: 'rgreen' },
+    { name: 'Kevin Nguyen', id: 'knguyen' },
+    { name: 'Maria Garcia', id: 'mgarcia' },
+    { name: 'Daniel Lee', id: 'dlee' },
+    { name: 'Stephanie White', id: 'swhite' },
+  ];
+
+  const approvers = [
+    'Dr. Patricia Edwards', 'Mark Sullivan', 'Natalie Foster', 'Principal Jeff Howard',
+    'Karen Mitchell', 'Director Amy Lin', 'Brian Cooper', 'Superintendent Davis',
+  ];
+
+  const vendors = [
+    { name: 'BSN Sports, LLC', number: '10245', address: '1901 Diplomat Dr, Dallas, TX 75234' },
+    { name: 'School Specialty', number: '10312', address: '625 Mount Auburn St, Greenville, WI 54942' },
+    { name: 'Lakeshore Learning', number: '10187', address: '2695 E Dominguez St, Carson, CA 90895' },
+    { name: 'Staples Business', number: '10401', address: '500 Staples Dr, Framingham, MA 01702' },
+    { name: 'Scholastic Inc.', number: '10098', address: '557 Broadway, New York, NY 10012' },
+    { name: 'Amazon Business', number: '10550', address: 'PO Box 81226, Seattle, WA 98108' },
+    { name: 'Nasco Education', number: '10623', address: '901 Janesville Ave, Fort Atkinson, WI 53538' },
+    { name: 'Pearson Education', number: '10074', address: '221 River St, Hoboken, NJ 07030' },
+    { name: 'Carolina Biological', number: '10789', address: '2700 York Rd, Burlington, NC 27215' },
+    { name: 'Flinn Scientific', number: '10834', address: '770 N Raddant Rd, Batavia, IL 60510' },
+    { name: 'Gopher Sport', number: '10290', address: '220 24th Ave NW, Owatonna, MN 55060' },
+    { name: 'CDW Government', number: '10456', address: '200 N Milwaukee Ave, Vernon Hills, IL 60061' },
+    { name: 'Houghton Mifflin', number: '10112', address: '125 High St, Boston, MA 02110' },
+    { name: 'Edmentum Inc.', number: '10667', address: '5600 W 83rd St, Bloomington, MN 55437' },
+    { name: 'Grainger Inc.', number: '10901', address: '100 Grainger Pkwy, Lake Forest, IL 60045' },
+    { name: 'Home Depot Pro', number: '10955', address: '3097 Satellite Blvd, Duluth, GA 30096' },
+    { name: 'Menards Inc.', number: '11002', address: '5101 Menard Dr, Eau Claire, WI 54703' },
+    { name: 'TIES Education', number: '11089', address: '1667 Snelling Ave N, St. Paul, MN 55108' },
+    { name: 'Apple Inc.', number: '11150', address: 'One Apple Park Way, Cupertino, CA 95014' },
+    { name: 'Dell Technologies', number: '11203', address: '1 Dell Way, Round Rock, TX 78682' },
+  ];
+
+  const employees = [
+    { name: 'Sarah Johnson', id: 'EMP001' }, { name: 'Michael Chen', id: 'EMP002' },
+    { name: 'Emily Rodriguez', id: 'EMP003' }, { name: 'David Kim', id: 'EMP004' },
+    { name: 'Jessica Martinez', id: 'EMP005' }, { name: 'Robert Anderson', id: 'EMP006' },
+    { name: 'Amanda Thompson', id: 'EMP007' }, { name: 'James Wilson', id: 'EMP008' },
+  ];
+
+  const budgetCodes = [
+    '01005203000000', '01024610000000', '01010305000000', '01050201000000',
+    '01031502000000', '01042001000000', '01060103000000', '01015404000000',
+    '01070802000000', '01025301000000', '01033605000000', '01041204000000',
+  ];
+  const accountCodes = ['401', '366', '368', '430', '460', '350', '510', '433', '461', '320'];
+
+  const descriptions = [
+    'Classroom supplies for Q3', 'Science lab equipment', 'Athletic uniforms - Fall season',
+    'Textbook order - AP courses', 'Technology refresh - Chromebooks', 'Art supplies replenishment',
+    'Custodial cleaning supplies', 'Office paper and toner', 'Library book acquisition',
+    'Music department instruments', 'Playground equipment repair', 'HVAC filter replacement',
+    'Professional development materials', 'Student assessment software', 'Cafeteria kitchen supplies',
+    'Security camera maintenance', 'Furniture replacement - Room 204', 'Graphic calculators - Math dept',
+    'Welding shop consumables', 'Nurse office medical supplies', 'Printing and copying services',
+    'Field trip transportation', 'Guest speaker honorarium', 'Staff recognition event supplies',
+    'Graduation ceremony materials', 'Early childhood manipulatives', 'Reading intervention materials',
+    'ESL program resources', 'Adaptive PE equipment', 'Robotics club components',
+    'Drama production costumes', 'Band instrument repair', 'Swimming pool chemicals',
+    'Landscaping materials', 'Parking lot maintenance', 'Emergency preparedness kits',
+    'Mileage reimbursement - November', 'Mileage reimbursement - December',
+    'Conference travel reimbursement', 'Workshop registration fees',
+  ];
+
+  const lineDescriptions = [
+    'Copy paper - 8.5x11 case', 'Dry erase markers (12-pack)', 'Printer toner HP 26A',
+    'Student workbooks', 'Chromebook chargers', 'Glue sticks bulk', 'Scissors classroom set',
+    'Beakers 250ml (set of 6)', 'Microscope slides', 'Dissection kit', 'Safety goggles',
+    'Basketball - official size', 'Volleyball net', 'Track hurdles', 'Football helmets',
+    'Acrylic paint set', 'Canvas 16x20 (10-pack)', 'Sketch pads', 'Watercolor palette',
+    'Floor cleaner concentrate', 'Trash bags 55gal', 'Paper towels bulk', 'Hand sanitizer',
+    'File folders letter size', 'Binder clips assorted', 'Sticky notes 3x3', 'Laminating pouches',
+    'Picture books grade K-2', 'Chapter books grade 3-5', 'Reference encyclopedia set',
+    'Trumpet student model', 'Clarinet reeds (box 25)', 'Sheet music - concert band',
+    'Swing set chains', 'Sandbox cover', 'HVAC filter 20x25x1', 'Light bulbs LED T8',
+    'Software license annual', 'Assessment booklets', 'Cafeteria trays (50-pack)',
+  ];
+
+  const statuses = ['draft', 'submitted', 'budget_approved', 'accounting_approved', 'rejected', 'completed', 'completed', 'completed', 'submitted', 'budget_approved'];
+  const apBatches = [null, null, null, 'AP-2025-001', 'AP-2025-002', 'AP-2025-003', 'AP-2025-004', 'AP-2025-005', 'AP-2025-006', 'AP-2025-007'];
+
+  // Helpers
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function randDate(startY, endY) {
+    const y = randInt(startY, endY);
+    const m = String(randInt(1, 12)).padStart(2, '0');
+    const d = String(randInt(1, 28)).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  function randPrice(min, max) { return (Math.random() * (max - min) + min).toFixed(2); }
+
+  try {
+    // Get current sequence value
+    const { results: seqRows } = await env.DB.prepare(
+      "SELECT value FROM sequences WHERE name = 'rfp_no'"
+    ).all();
+    let currentRfp = seqRows.length ? seqRows[0].value : 0;
+
+    // Build all statements
+    const allStmts = [];
+
+    for (let i = 0; i < COUNT; i++) {
+      currentRfp++;
+      const isVendor = Math.random() > 0.2;
+      const isMileage = !isVendor && Math.random() > 0.5;
+      const reqType = isMileage ? 'mileage' : (isVendor ? 'vendor' : 'reimbursement');
+      const sub = pick(submitters);
+      const vendor = isVendor ? pick(vendors) : null;
+      const emp = !isVendor ? pick(employees) : null;
+      const status = pick(statuses);
+      const submissionDate = randDate(2024, 2025);
+      const mileageTotal = isMileage ? randInt(15, 280) : 0;
+
+      allStmts.push(
+        env.DB.prepare(`
+          INSERT INTO dashboard_data (
+            rfp_number, submitter_name, submitter_id, budget_approver,
+            submission_date, request_type, vendor_name, vendor_number,
+            vendor_address, invoice_number, employee_name, employee_id,
+            description, status, assigned_to, ap_batch, mileage_total, creation_source, check_number
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          currentRfp,
+          sub.name,
+          sub.id,
+          pick(approvers),
+          submissionDate,
+          reqType,
+          vendor ? vendor.name : null,
+          vendor ? vendor.number : null,
+          vendor ? vendor.address : null,
+          isVendor ? `INV-${randInt(10000, 99999)}` : null,
+          emp ? emp.name : null,
+          emp ? emp.id : null,
+          pick(descriptions),
+          status,
+          pick(approvers),
+          (status === 'completed' || status === 'accounting_approved') ? pick(apBatches) : null,
+          mileageTotal,
+          pick(['manual', 'manual', 'manual', 'import', 'capture']),
+          (status === 'completed' && Math.random() > 0.4) ? String(randInt(100000, 999999)) : null,
+        )
+      );
+
+      // Add 1-4 line items per RFP
+      const lineCount = isMileage ? randInt(2, 6) : randInt(1, 4);
+      const bc = pick(budgetCodes);
+      const ac = pick(accountCodes);
+      const fund = bc.substring(0, 2);
+      const org = bc.substring(2, 6);
+      const prog = bc.substring(6, 8);
+      const fin = bc.substring(8, 11);
+
+      for (let ln = 1; ln <= lineCount; ln++) {
+        const qty = randInt(1, 25);
+        const unitPrice = parseFloat(randPrice(5, 450));
+        const total = parseFloat((qty * unitPrice).toFixed(2));
+
+        allStmts.push(
+          env.DB.prepare(`
+            INSERT INTO form_data (
+              rfp_number, line_number, description, fund, organization,
+              program, finance, object, quantity, unit_price, total,
+              invoice_number, invoice_date, budget_code, account_code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            currentRfp,
+            ln,
+            pick(lineDescriptions),
+            fund,
+            org,
+            prog,
+            fin,
+            ac,
+            qty,
+            unitPrice,
+            total,
+            isVendor ? `INV-${randInt(10000, 99999)}` : null,
+            randDate(2024, 2025),
+            bc,
+            ac,
+          )
+        );
+      }
+    }
+
+    // D1 batch limit is ~500, so chunk
+    const BATCH_SIZE = 400;
+    for (let i = 0; i < allStmts.length; i += BATCH_SIZE) {
+      await env.DB.batch(allStmts.slice(i, i + BATCH_SIZE));
+    }
+
+    // Update sequence
+    await env.DB.prepare("UPDATE sequences SET value = ? WHERE name = 'rfp_no'")
+      .bind(currentRfp).run();
+
+    return json({ message: `Seeded ${COUNT} RFPs (rfp_number ${currentRfp - COUNT + 1} to ${currentRfp}), ~${allStmts.length} total rows.` });
+  } catch (e) {
+    return json({ error: e.message, stack: e.stack }, 500);
+  }
+}
+
+
 async function handleMigrate(env) {
   const migrations = [
     'ALTER TABLE form_data ADD COLUMN invoice_number TEXT',
@@ -838,6 +1067,7 @@ async function handleMigrate(env) {
     'ALTER TABLE form_data ADD COLUMN account_code TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN creation_source TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
+    'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
     `CREATE TABLE IF NOT EXISTS sequences (
       name TEXT PRIMARY KEY,
       value INTEGER NOT NULL DEFAULT 0
