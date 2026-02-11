@@ -232,6 +232,7 @@
         .bw-dp-day:hover { background: var(--bg-color); }
         .bw-dp-day.today { font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--primary-hex); }
         .bw-dp-day.selected { background: var(--primary-hex); color: #fff; font-weight: 700; }
+        .bw-dp-day.focused { outline: 2px solid var(--primary-hex); outline-offset: -2px; border-radius: 6px; }
         .bw-dp-day.other-month { color: var(--text-secondary); opacity: 0.4; }
         .bw-dp-footer {
             display: flex; justify-content: space-between; align-items: center;
@@ -3256,7 +3257,7 @@
             const pngTypes = ['pdf', 'xlsx', 'xls', 'docx', 'doc', 'html'];
             if (pngTypes.includes(ext)) {
                 const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : ext;
-                return `<img src="${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
+                return `<img src="dist/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
             }
             // Fallback SVG for other types
             const colors = { png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1' };
@@ -4991,6 +4992,7 @@
         let bwDpTarget = null;       // the text input to write back to
         let bwDpYear = 2026;
         let bwDpMonth = 1;           // 0-indexed
+        let bwDpFocusedDate = null;  // Date object for keyboard focus
         const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
         // Keyboard accessibility: open datepicker on Enter, Space, or Arrow keys
@@ -4998,6 +5000,8 @@
             inputEl.setAttribute('role', 'button');
             inputEl.setAttribute('tabindex', '0');
             inputEl.addEventListener('keydown', function(e) {
+                // If picker is already open for THIS input, let the picker handler deal with it
+                if (document.getElementById('bwDatepicker').classList.contains('open') && bwDpTarget === this) return;
                 if (['Enter', ' ', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                     e.preventDefault();
                     openBwDatepicker(this, e);
@@ -5012,15 +5016,19 @@
             // Parse existing value
             const val = inputEl.value.trim();
             const now = new Date();
+            let initDate;
             if (val && val.length === 10 && val.includes('/')) {
                 const p = val.split('/');
                 bwDpMonth = parseInt(p[0], 10) - 1;
                 bwDpYear = parseInt(p[2], 10);
+                initDate = new Date(bwDpYear, bwDpMonth, parseInt(p[1], 10));
             } else {
                 bwDpMonth = now.getMonth();
                 bwDpYear = now.getFullYear();
+                initDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             }
 
+            bwDpFocusedDate = initDate;
             renderBwDp();
 
             // Position near the input
@@ -5041,6 +5049,7 @@
             // Close on outside click (deferred so this click doesn't close it)
             setTimeout(() => {
                 document.addEventListener('click', bwDpOutsideClick);
+                document.addEventListener('keydown', bwDpKeyHandler);
             }, 10);
         }
 
@@ -5051,16 +5060,117 @@
             }
         }
 
-        function closeBwDatepicker() {
+        function closeBwDatepicker(advanceDirection) {
             document.getElementById('bwDatepicker').classList.remove('open');
             document.removeEventListener('click', bwDpOutsideClick);
+            document.removeEventListener('keydown', bwDpKeyHandler);
+            const target = bwDpTarget;
             bwDpTarget = null;
+            bwDpFocusedDate = null;
+
+            if (target && advanceDirection === 'next') {
+                // Advance to next tabbable field after the date input
+                bwDpAdvanceFocus(target, false);
+            } else if (target && advanceDirection === 'prev') {
+                bwDpAdvanceFocus(target, true);
+            } else if (target) {
+                target.focus();
+            }
+        }
+
+        function bwDpAdvanceFocus(fromEl, reverse) {
+            // Find the next/prev focusable element in the row
+            const row = fromEl.closest('tr');
+            if (!row) { fromEl.focus(); return; }
+            const focusable = Array.from(row.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]), select, textarea, button, [tabindex="0"]'))
+                .filter(el => !el.disabled && el.offsetParent !== null);
+            const idx = focusable.indexOf(fromEl);
+            const nextIdx = reverse ? idx - 1 : idx + 1;
+            if (nextIdx >= 0 && nextIdx < focusable.length) {
+                focusable[nextIdx].focus();
+            } else {
+                fromEl.focus();
+            }
+        }
+
+        function bwDpKeyHandler(e) {
+            const dp = document.getElementById('bwDatepicker');
+            if (!dp.classList.contains('open')) return;
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    bwDpMoveFocus(-1);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    bwDpMoveFocus(1);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    bwDpMoveFocus(-7);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    bwDpMoveFocus(7);
+                    break;
+                case 'Enter':
+                case ' ':
+                    e.preventDefault();
+                    if (bwDpFocusedDate && bwDpTarget) {
+                        bwDpSelectDate(bwDpFocusedDate, 'next');
+                    }
+                    break;
+                case 'Tab':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        closeBwDatepicker('prev');
+                    } else {
+                        closeBwDatepicker('next');
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    closeBwDatepicker();
+                    break;
+            }
+        }
+
+        function bwDpMoveFocus(delta) {
+            if (!bwDpFocusedDate) return;
+            const d = new Date(bwDpFocusedDate);
+            d.setDate(d.getDate() + delta);
+            bwDpFocusedDate = d;
+
+            // If moved to different month, navigate
+            if (d.getMonth() !== bwDpMonth || d.getFullYear() !== bwDpYear) {
+                bwDpMonth = d.getMonth();
+                bwDpYear = d.getFullYear();
+                renderBwDp();
+            } else {
+                bwDpHighlightFocused();
+            }
+        }
+
+        function bwDpHighlightFocused() {
+            if (!bwDpFocusedDate) return;
+            const fmtStr = String(bwDpFocusedDate.getMonth() + 1).padStart(2, '0') + '/' +
+                           String(bwDpFocusedDate.getDate()).padStart(2, '0') + '/' +
+                           bwDpFocusedDate.getFullYear();
+            document.querySelectorAll('#bwDpDays .bw-dp-day').forEach(el => {
+                el.classList.toggle('focused', el.dataset.date === fmtStr);
+            });
         }
 
         function bwDpNav(delta) {
             bwDpMonth += delta;
             if (bwDpMonth > 11) { bwDpMonth = 0; bwDpYear++; }
             if (bwDpMonth < 0) { bwDpMonth = 11; bwDpYear--; }
+            // Keep focused date in sync with new month
+            if (bwDpFocusedDate) {
+                const day = Math.min(bwDpFocusedDate.getDate(), new Date(bwDpYear, bwDpMonth + 1, 0).getDate());
+                bwDpFocusedDate = new Date(bwDpYear, bwDpMonth, day);
+            }
             renderBwDp();
         }
 
@@ -5075,13 +5185,20 @@
             const daysInPrev = new Date(bwDpYear, bwDpMonth, 0).getDate();
 
             const today = new Date();
-            const todayStr = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
 
             // Selected value
             let selectedStr = '';
             if (bwDpTarget) {
                 const v = bwDpTarget.value.trim();
                 if (v.length === 10) selectedStr = v;
+            }
+
+            // Focused value
+            let focusedStr = '';
+            if (bwDpFocusedDate) {
+                focusedStr = String(bwDpFocusedDate.getMonth() + 1).padStart(2, '0') + '/' +
+                             String(bwDpFocusedDate.getDate()).padStart(2, '0') + '/' +
+                             bwDpFocusedDate.getFullYear();
             }
 
             // Previous month padding
@@ -5092,7 +5209,8 @@
                 el.textContent = d;
                 const pm = bwDpMonth === 0 ? 11 : bwDpMonth - 1;
                 const py = bwDpMonth === 0 ? bwDpYear - 1 : bwDpYear;
-                el.dataset.date = (pm + 1) + '/' + d + '/' + py;
+                el.dataset.date = String(pm + 1).padStart(2, '0') + '/' + String(d).padStart(2, '0') + '/' + py;
+                if (el.dataset.date === focusedStr) el.classList.add('focused');
                 el.addEventListener('click', bwDpSelect);
                 container.appendChild(el);
             }
@@ -5102,10 +5220,10 @@
                 const el = document.createElement('div');
                 el.className = 'bw-dp-day';
                 el.textContent = d;
-                const dateStr = (bwDpMonth + 1) + '/' + d + '/' + bwDpYear;
                 const fmtStr = String(bwDpMonth + 1).padStart(2, '0') + '/' + String(d).padStart(2, '0') + '/' + bwDpYear;
                 el.dataset.date = fmtStr;
                 if (fmtStr === selectedStr) el.classList.add('selected');
+                if (fmtStr === focusedStr) el.classList.add('focused');
                 if ((bwDpMonth + 1) === (today.getMonth() + 1) && d === today.getDate() && bwDpYear === today.getFullYear()) {
                     el.classList.add('today');
                 }
@@ -5122,22 +5240,30 @@
                 el.textContent = d;
                 const nm = bwDpMonth === 11 ? 0 : bwDpMonth + 1;
                 const ny = bwDpMonth === 11 ? bwDpYear + 1 : bwDpYear;
-                el.dataset.date = (nm + 1) + '/' + d + '/' + ny;
+                el.dataset.date = String(nm + 1).padStart(2, '0') + '/' + String(d).padStart(2, '0') + '/' + ny;
+                if (el.dataset.date === focusedStr) el.classList.add('focused');
                 el.addEventListener('click', bwDpSelect);
                 container.appendChild(el);
             }
         }
 
-        function bwDpSelect(e) {
-            const raw = e.target.dataset.date;
-            if (!raw || !bwDpTarget) return;
-            // Ensure MM/DD/YYYY with zero padding
-            const p = raw.split('/');
-            const formatted = p[0].padStart(2, '0') + '/' + p[1].padStart(2, '0') + '/' + p[2];
+        function bwDpSelectDate(date, advanceDirection) {
+            if (!bwDpTarget) return;
+            const formatted = String(date.getMonth() + 1).padStart(2, '0') + '/' +
+                              String(date.getDate()).padStart(2, '0') + '/' +
+                              date.getFullYear();
             bwDpTarget.value = formatted;
             bwDpTarget.dispatchEvent(new Event('input'));
             bwDpTarget.dispatchEvent(new Event('change'));
-            closeBwDatepicker();
+            closeBwDatepicker(advanceDirection);
+        }
+
+        function bwDpSelect(e) {
+            const raw = e.target.dataset.date;
+            if (!raw || !bwDpTarget) return;
+            const p = raw.split('/');
+            const date = new Date(parseInt(p[2]), parseInt(p[0]) - 1, parseInt(p[1]));
+            bwDpSelectDate(date);
         }
 
         function bwDpClear() {
@@ -5151,16 +5277,10 @@
 
         function bwDpToday() {
             const now = new Date();
-            const formatted = String(now.getMonth() + 1).padStart(2, '0') + '/' + String(now.getDate()).padStart(2, '0') + '/' + now.getFullYear();
-            if (bwDpTarget) {
-                bwDpTarget.value = formatted;
-                bwDpTarget.dispatchEvent(new Event('input'));
-                bwDpTarget.dispatchEvent(new Event('change'));
-            }
-            closeBwDatepicker();
+            bwDpSelectDate(now);
         }
 
-        // Close datepicker on Escape
+        // Close datepicker on Escape (fallback — main handler is bwDpKeyHandler)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && document.getElementById('bwDatepicker').classList.contains('open')) {
                 closeBwDatepicker();
