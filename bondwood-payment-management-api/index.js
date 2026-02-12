@@ -278,6 +278,7 @@ export default {
 
       // Hard delete DB rows
       await env.DB.batch([
+        env.DB.prepare('DELETE FROM mileage_trips WHERE rfp_number = ?').bind(rfpNumber),
         env.DB.prepare('DELETE FROM form_data WHERE rfp_number = ?').bind(rfpNumber),
         env.DB.prepare('DELETE FROM dashboard_data WHERE rfp_number = ?').bind(rfpNumber),
       ]);
@@ -650,7 +651,15 @@ async function handleGetRFP(rfpNumber, env) {
     'SELECT * FROM form_data WHERE rfp_number = ? ORDER BY line_number'
   ).bind(rfpNumber).all();
 
-  return json({ ...header[0], lineItems });
+  let mileageTrips = [];
+  try {
+    const { results: trips } = await env.DB.prepare(
+      'SELECT * FROM mileage_trips WHERE rfp_number = ? ORDER BY trip_number'
+    ).bind(rfpNumber).all();
+    mileageTrips = trips;
+  } catch (e) { /* table may not exist yet */ }
+
+  return json({ ...header[0], lineItems, mileageTrips });
 }
 
 
@@ -736,6 +745,31 @@ async function handleCreateRFP(request, env) {
     }
   }
 
+  // Insert mileage trips
+  if (body.mileageTrips && body.mileageTrips.length) {
+    for (const trip of body.mileageTrips) {
+      statements.push(
+        env.DB.prepare(`
+          INSERT INTO mileage_trips (
+            rfp_number, trip_number, trip_date, from_location, to_location,
+            miles, rate, amount, budget_code, account_code
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          nextRfp,
+          trip.trip_number || 0,
+          trip.trip_date || null,
+          trip.from_location || null,
+          trip.to_location || null,
+          trip.miles || 0,
+          trip.rate || 0,
+          trip.amount || 0,
+          trip.budget_code || null,
+          trip.account_code || null,
+        )
+      );
+    }
+  }
+
   await env.DB.batch(statements);
 
   return json({ rfp_number: nextRfp, status, message: 'RFP created' }, 201);
@@ -813,6 +847,35 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           item.invoice_date || null,
           item.budget_code || null,
           item.account_code || null,
+        )
+      );
+    }
+  }
+
+  // Replace mileage trips if provided
+  if (body.mileageTrips) {
+    statements.push(
+      env.DB.prepare('DELETE FROM mileage_trips WHERE rfp_number = ?').bind(rfpNumber)
+    );
+
+    for (const trip of body.mileageTrips) {
+      statements.push(
+        env.DB.prepare(`
+          INSERT INTO mileage_trips (
+            rfp_number, trip_number, trip_date, from_location, to_location,
+            miles, rate, amount, budget_code, account_code
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          rfpNumber,
+          trip.trip_number || 0,
+          trip.trip_date || null,
+          trip.from_location || null,
+          trip.to_location || null,
+          trip.miles || 0,
+          trip.rate || 0,
+          trip.amount || 0,
+          trip.budget_code || null,
+          trip.account_code || null,
         )
       );
     }
@@ -1097,6 +1160,20 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN creation_source TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
+    `CREATE TABLE IF NOT EXISTS mileage_trips (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rfp_number INTEGER NOT NULL,
+      trip_number INTEGER NOT NULL,
+      trip_date TEXT,
+      from_location TEXT,
+      to_location TEXT,
+      miles REAL DEFAULT 0,
+      rate REAL DEFAULT 0,
+      amount REAL DEFAULT 0,
+      budget_code TEXT,
+      account_code TEXT,
+      FOREIGN KEY (rfp_number) REFERENCES dashboard_data(rfp_number)
+    )`,
     `CREATE TABLE IF NOT EXISTS sequences (
       name TEXT PRIMARY KEY,
       value INTEGER NOT NULL DEFAULT 0
