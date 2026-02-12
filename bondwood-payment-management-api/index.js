@@ -728,7 +728,7 @@ async function handleGetRFP(rfpNumber, env) {
   let auditLogs = [];
   try {
     const { results: logs } = await env.DB.prepare(
-      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY created_at ASC, id ASC'
+      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC'
     ).bind(rfpNumber).all();
     auditLogs = logs;
   } catch (e) { /* table may not exist yet */ }
@@ -869,7 +869,7 @@ async function handleCreateRFP(request, env) {
 
     const now = new Date().toISOString();
     await env.DB.prepare(
-      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
     ).bind(nextRfp, status === 'submitted' ? 'submitted' : 'draft-created', auditDesc, performer, now).run();
   } catch (auditErr) {
     console.error('[AUDIT] Failed to write audit log for create:', auditErr.message);
@@ -1011,19 +1011,37 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   }
 
   // Audit log - separate from data batch so it can't break the save
+  let auditDebug = {};
   try {
+    console.log('[AUDIT] oldItems count:', oldItems.length, 'oldTrips count:', oldTrips.length);
+    console.log('[AUDIT] newItems:', newItems !== null ? newItems.length : 'null', 'newTrips:', newTrips !== null ? newTrips.length : 'null');
+    console.log('[AUDIT] body.status:', body.status, 'oldHeader.status:', oldHeader.status);
+
     const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
+    console.log('[AUDIT] Generated entries:', auditEntries.length, JSON.stringify(auditEntries.map(e => e.action)));
+
+    auditDebug = {
+      oldItemCount: oldItems.length,
+      oldTripCount: oldTrips.length,
+      newItemCount: newItems !== null ? newItems.length : 'null',
+      newTripCount: newTrips !== null ? newTrips.length : 'null',
+      entriesGenerated: auditEntries.length,
+      entryActions: auditEntries.map(e => e.action),
+    };
+
     const now = new Date().toISOString();
     for (const entry of auditEntries) {
       await env.DB.prepare(
-        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
       ).bind(rfpNumber, entry.action, entry.description, performer, now).run();
     }
+    auditDebug.written = true;
   } catch (auditErr) {
-    console.error('[AUDIT] Failed to write audit log for update:', auditErr.message);
+    console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
+    auditDebug.error = auditErr.message;
   }
 
-  return json({ rfp_number: rfpNumber, message: 'RFP updated' });
+  return json({ rfp_number: rfpNumber, message: 'RFP updated', _auditDebug: auditDebug });
 }
 
 
@@ -1553,7 +1571,7 @@ async function handleMigrateBudgetComponents(env) {
 async function handleGetAuditLogs(rfpNumber, env) {
   try {
     const { results } = await env.DB.prepare(
-      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY created_at ASC, id ASC'
+      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY performed_at ASC, id ASC'
     ).bind(rfpNumber).all();
     return json({ auditLogs: results });
   } catch (e) {
@@ -1565,7 +1583,7 @@ async function handleCreateAuditLog(rfpNumber, request, env) {
   const body = await request.json();
   try {
     await env.DB.prepare(
-      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
     ).bind(
       rfpNumber,
       body.action || 'update',
