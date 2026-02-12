@@ -1421,6 +1421,15 @@
         let formSubmitting = false;
         let historyGuardActive = false;
 
+        // Native beforeunload for refresh / tab close (browser forces its own UI — no custom modal possible)
+        window.addEventListener('beforeunload', function(e) {
+            if (formDirty && !formSubmitting) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes.';
+                return 'You have unsaved changes.';
+            }
+        });
+
         // History API guard: intercept browser back/forward with custom modal
         window.addEventListener('popstate', function(e) {
             if (formDirty && !formSubmitting) {
@@ -2286,7 +2295,7 @@
             preview.innerHTML = `
                 <div class="attachment-item">
                     <div class="attachment-icon">
-                        <img src="xlsx.png" alt="XLSX" style="width:36px;height:36px;object-fit:contain;">
+                        <img src="icons/xlsx.png" alt="XLSX" style="width:36px;height:36px;object-fit:contain;">
                     </div>
                     <div class="attachment-info">
                         <div class="attachment-name" style="cursor:default;">${file.name}</div>
