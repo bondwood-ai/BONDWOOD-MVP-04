@@ -329,6 +329,9 @@
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
                 </button>
             </div>
+            <div style="text-align:center;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.15);margin-bottom:0.5rem;">
+                <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" style="max-height:80px;max-width:100%;width:auto;object-fit:contain;">
+            </div>
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
@@ -369,15 +372,14 @@
     </div>
     <select id="brandSelector" onchange="updateBrandColors()" style="display:none;"><option value="">-- Default --</option></select>
 
-    <div id="headerBanner" style="background:var(--primary-hex, #000);margin:-1rem -1rem 1rem -1rem;padding:2.25rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
-        <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:2.25rem;min-height:4rem;">
-            <div style="display:flex;align-items:flex-start;gap:0.75rem;padding-top:0.75rem;">
+    <div id="headerBanner" style="background:var(--primary-hex, #000);margin:-1rem -1rem 1rem -1rem;padding:0.75rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
+        <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
                 <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
-            <img id="bannerLogo" src="bondwood-logo-modern-dark.png" alt="Logo" class="bondwood-logo" style="display:block;">
         </div>
         <div id="bannerAccent" style="height:4px;background:var(--secondary-hex, #0728eb);margin:0 -2rem;"></div>
     </div>
