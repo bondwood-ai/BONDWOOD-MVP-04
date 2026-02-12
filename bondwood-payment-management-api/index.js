@@ -756,6 +756,7 @@ async function handleCreateRFP(request, env) {
 
   const status = body.status || 'draft';
   const submissionDate = body.submission_date || new Date().toISOString().split('T')[0];
+  const performer = body.submitter_name || 'Unknown';
 
   const headerStmt = env.DB.prepare(`
     INSERT INTO dashboard_data (
@@ -789,8 +790,11 @@ async function handleCreateRFP(request, env) {
 
   const statements = [headerStmt.bind(...headerParams)];
 
-  if (body.lineItems && body.lineItems.length) {
-    for (const item of body.lineItems) {
+  const newItems = (body.lineItems || []).filter(i => i.description);
+  const newTrips = body.mileageTrips || [];
+
+  if (newItems.length) {
+    for (const item of newItems) {
       statements.push(
         env.DB.prepare(`
           INSERT INTO form_data (
@@ -819,9 +823,8 @@ async function handleCreateRFP(request, env) {
     }
   }
 
-  // Insert mileage trips
-  if (body.mileageTrips && body.mileageTrips.length) {
-    for (const trip of body.mileageTrips) {
+  if (newTrips.length) {
+    for (const trip of newTrips) {
       statements.push(
         env.DB.prepare(`
           INSERT INTO mileage_trips (
@@ -844,6 +847,30 @@ async function handleCreateRFP(request, env) {
     }
   }
 
+  // Build audit description
+  const typeLabel = (body.request_type === 'reimbursement') ? 'Employee Reimbursement' : (body.vendor_name || 'Vendor Payment');
+  const itemTotal = newItems.reduce((s, i) => s + (i.total || 0), 0);
+  const mileageTotal = body.mileage_total || 0;
+  const grandTotal = itemTotal + mileageTotal;
+  const statusVerb = status === 'submitted' ? 'submitted' : 'created a draft';
+
+  let auditDesc = `<strong>${performer}</strong> ${statusVerb} request for payment with <strong>${typeLabel}</strong> for <strong>$${grandTotal.toFixed(2)}</strong>`;
+  const detailParts = [];
+  if (newItems.length) detailParts.push(`${newItems.length} line item${newItems.length > 1 ? 's' : ''} ($${itemTotal.toFixed(2)})`);
+  if (newTrips.length) detailParts.push(`${newTrips.length} mileage trip${newTrips.length > 1 ? 's' : ''} ($${mileageTotal.toFixed(2)})`);
+  if (detailParts.length) auditDesc += ` — ${detailParts.join(', ')}`;
+
+  const sourceLabel = body.creation_source === 'import' ? ' using the <strong>Import</strong> function'
+      : body.creation_source === 'capture' ? ' using the <strong>Capture Invoice</strong> function' : '';
+  auditDesc += sourceLabel;
+
+  const now = new Date().toISOString();
+  statements.push(
+    env.DB.prepare(
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(nextRfp, status === 'submitted' ? 'submitted' : 'draft-created', auditDesc, performer, now)
+  );
+
   await env.DB.batch(statements);
 
   return json({ rfp_number: nextRfp, status, message: 'RFP created' }, 201);
@@ -855,15 +882,36 @@ async function handleCreateRFP(request, env) {
    ======================================== */
 async function handleUpdateRFP(rfpNumber, request, env) {
   const body = await request.json();
+  const performer = body.submitter_name || 'Unknown';
+  const now = new Date().toISOString();
 
-  const { results: existing } = await env.DB.prepare(
-    'SELECT id FROM dashboard_data WHERE rfp_number = ?'
+  // ── Read existing state BEFORE making changes ──
+  const { results: existingHeader } = await env.DB.prepare(
+    'SELECT * FROM dashboard_data WHERE rfp_number = ?'
   ).bind(rfpNumber).all();
 
-  if (!existing.length) {
+  if (!existingHeader.length) {
     return json({ error: 'RFP not found' }, 404);
   }
+  const oldHeader = existingHeader[0];
 
+  let oldItems = [];
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM form_data WHERE rfp_number = ? ORDER BY line_number'
+    ).bind(rfpNumber).all();
+    oldItems = results.filter(i => i.description);
+  } catch (e) {}
+
+  let oldTrips = [];
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM mileage_trips WHERE rfp_number = ? ORDER BY trip_number'
+    ).bind(rfpNumber).all();
+    oldTrips = results;
+  } catch (e) {}
+
+  // ── Build update statements ──
   const updatableFields = [
     'submitter_name', 'submitter_id', 'budget_approver', 'submission_date',
     'request_type', 'vendor_name', 'vendor_number', 'vendor_address',
@@ -892,12 +940,13 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   }
 
   // Replace line items if provided
+  const newItems = body.lineItems ? body.lineItems.filter(i => i.description) : null;
   if (body.lineItems) {
     statements.push(
       env.DB.prepare('DELETE FROM form_data WHERE rfp_number = ?').bind(rfpNumber)
     );
 
-    for (const item of body.lineItems) {
+    for (const item of (body.lineItems || [])) {
       statements.push(
         env.DB.prepare(`
           INSERT INTO form_data (
@@ -927,6 +976,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   }
 
   // Replace mileage trips if provided
+  const newTrips = body.mileageTrips || null;
   if (body.mileageTrips) {
     statements.push(
       env.DB.prepare('DELETE FROM mileage_trips WHERE rfp_number = ?').bind(rfpNumber)
@@ -955,11 +1005,164 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     }
   }
 
+  // ── Detect changes and build audit entries ──
+  const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
+
+  for (const entry of auditEntries) {
+    statements.push(
+      env.DB.prepare(
+        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind(rfpNumber, entry.action, entry.description, performer, now)
+    );
+  }
+
   if (statements.length) {
     await env.DB.batch(statements);
   }
 
   return json({ rfp_number: rfpNumber, message: 'RFP updated' });
+}
+
+
+/* ========================================
+   AUDIT – SERVER-SIDE CHANGE DETECTION
+   ======================================== */
+function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer) {
+  const entries = [];
+  const p = `<strong>${performer}</strong>`;
+  const fmt = (n) => '$' + (n || 0).toFixed(2);
+
+  // ── Status change ──
+  if (body.status && body.status !== oldHeader.status) {
+    if (body.status === 'submitted' && oldHeader.status === 'draft') {
+      const typeLabel = (body.request_type || oldHeader.request_type) === 'reimbursement'
+        ? 'Employee Reimbursement' : (body.vendor_name || oldHeader.vendor_name || 'Vendor Payment');
+      const itemTotal = newItems ? newItems.reduce((s, i) => s + (i.total || 0), 0) : oldItems.reduce((s, i) => s + (i.total || 0), 0);
+      const mTotal = body.mileage_total !== undefined ? body.mileage_total : (oldHeader.mileage_total || 0);
+      entries.push({
+        action: 'submitted',
+        description: `${p} submitted request for payment with <strong>${typeLabel}</strong> for <strong>${fmt(itemTotal + mTotal)}</strong>`
+      });
+      return entries; // Status change to submitted is the primary event
+    }
+  }
+
+  // ── Line item changes ──
+  if (newItems !== null) {
+    const oldDescs = new Map();
+    oldItems.forEach(i => oldDescs.set(i.description, i));
+
+    const newDescs = new Map();
+    newItems.forEach(i => newDescs.set(i.description, i));
+
+    // Added items
+    const added = newItems.filter(i => !oldDescs.has(i.description));
+    for (const item of added) {
+      entries.push({
+        action: 'item-added',
+        description: `${p} added line item: <strong>${item.description}</strong> — ${fmt(item.total)}${item.budget_code ? ' (Budget: ' + item.budget_code + ')' : ''}`
+      });
+    }
+
+    // Removed items
+    const removed = oldItems.filter(i => !newDescs.has(i.description));
+    for (const item of removed) {
+      entries.push({
+        action: 'item-removed',
+        description: `${p} removed line item: <strong>${item.description}</strong> — ${fmt(item.total)}`
+      });
+    }
+
+    // Modified items (same description, different amount/budget)
+    for (const [desc, newItem] of newDescs) {
+      const oldItem = oldDescs.get(desc);
+      if (!oldItem) continue; // already handled as "added"
+      const changes = [];
+      if (Math.abs((oldItem.total || 0) - (newItem.total || 0)) > 0.005) {
+        changes.push(`amount ${fmt(oldItem.total)} → ${fmt(newItem.total)}`);
+      }
+      if ((oldItem.budget_code || '') !== (newItem.budget_code || '') && newItem.budget_code) {
+        changes.push(`budget code → ${newItem.budget_code}`);
+      }
+      if ((oldItem.account_code || '') !== (newItem.account_code || '') && newItem.account_code) {
+        changes.push(`account → ${newItem.account_code}`);
+      }
+      if (changes.length) {
+        entries.push({
+          action: 'item-modified',
+          description: `${p} modified line item <strong>${desc}</strong>: ${changes.join(', ')}`
+        });
+      }
+    }
+  }
+
+  // ── Mileage trip changes ──
+  if (newTrips !== null) {
+    const tripKey = (t) => `${t.from_location || ''}→${t.to_location || ''}`;
+
+    const oldTripMap = new Map();
+    oldTrips.forEach(t => oldTripMap.set(tripKey(t), t));
+
+    const newTripMap = new Map();
+    newTrips.forEach(t => newTripMap.set(tripKey(t), t));
+
+    // Added trips
+    for (const trip of newTrips) {
+      if (!oldTripMap.has(tripKey(trip))) {
+        entries.push({
+          action: 'trip-added',
+          description: `${p} added mileage trip: <strong>${trip.from_location || '?'}</strong> → <strong>${trip.to_location || '?'}</strong> (${trip.miles || 0} mi, ${fmt(trip.amount)})`
+        });
+      }
+    }
+
+    // Removed trips
+    for (const trip of oldTrips) {
+      if (!newTripMap.has(tripKey(trip))) {
+        entries.push({
+          action: 'trip-removed',
+          description: `${p} removed mileage trip: <strong>${trip.from_location || '?'}</strong> → <strong>${trip.to_location || '?'}</strong> (${trip.miles || 0} mi, ${fmt(trip.amount)})`
+        });
+      }
+    }
+
+    // Modified trips (same route, different miles/amount)
+    for (const [key, newTrip] of newTripMap) {
+      const oldTrip = oldTripMap.get(key);
+      if (!oldTrip) continue;
+      const changes = [];
+      if (Math.abs((oldTrip.miles || 0) - (newTrip.miles || 0)) > 0.05) {
+        changes.push(`miles ${oldTrip.miles} → ${newTrip.miles}`);
+      }
+      if (Math.abs((oldTrip.amount || 0) - (newTrip.amount || 0)) > 0.005) {
+        changes.push(`amount ${fmt(oldTrip.amount)} → ${fmt(newTrip.amount)}`);
+      }
+      if (changes.length) {
+        entries.push({
+          action: 'trip-modified',
+          description: `${p} modified mileage trip <strong>${newTrip.from_location}</strong> → <strong>${newTrip.to_location}</strong>: ${changes.join(', ')}`
+        });
+      }
+    }
+  }
+
+  // ── Header field changes ──
+  if (body.vendor_name && body.vendor_name !== (oldHeader.vendor_name || '')) {
+    entries.push({ action: 'field-changed', description: `${p} changed vendor to <strong>${body.vendor_name}</strong>` });
+  }
+  if (body.description !== undefined && body.description !== (oldHeader.description || '')) {
+    entries.push({ action: 'field-changed', description: `${p} updated the description` });
+  }
+  if (body.assigned_to && body.assigned_to !== (oldHeader.assigned_to || '')) {
+    entries.push({ action: 'field-changed', description: `${p} assigned to <strong>${body.assigned_to}</strong>` });
+  }
+
+  // ── Fallback if nothing specific detected ──
+  if (entries.length === 0) {
+    entries.push({ action: 'draft-updated', description: `${p} saved the draft` });
+  }
+
+  return entries;
 }
 
 

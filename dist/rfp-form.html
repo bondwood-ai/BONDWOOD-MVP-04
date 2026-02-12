@@ -3575,24 +3575,14 @@
                 const result = await resp.json();
                 if (resp.ok) {
                     const rfpNum = result.rfp_number || currentRfpNumber;
-                    const isNew = !currentRfpNumber || (method === 'POST');
                     currentRfpNumber = rfpNum;
                     // Upload any pending attachments
                     await uploadPendingAttachments(rfpNum);
-                    // Post audit log entries with specific changes
-                    if (isNew) {
-                        const details = buildDraftCreatedDescription(payload);
-                        await postAuditLog(rfpNum, 'draft-created', details);
-                    } else {
-                        const changes = detectChanges(_loadedRfpData, payload);
-                        for (const change of changes) {
-                            await postAuditLog(rfpNum, 'draft-updated', change);
-                        }
-                    }
+                    // Audit logging handled server-side in handleCreateRFP / handleUpdateRFP
                     // Update URL so subsequent saves are PUTs
                     window.history.replaceState(null, '', 'rfp-form.html?id=' + rfpNum);
                     formDirty = false;
-                    _loadedRfpData = { ...payload, rfp_number: rfpNum, status: 'draft', lineItems: payload.lineItems || [], mileageTrips: payload.mileageTrips || [] };
+                    _loadedRfpData = { ...payload, rfp_number: rfpNum, status: 'draft' };
                     showDraftSavedModal(rfpNum);
                 } else {
                     showAlert('Save failed: ' + (result.error || JSON.stringify(result)), 'Error');
@@ -3600,120 +3590,6 @@
             } catch (e) {
                 showAlert('Save error: ' + e.message, 'Error');
             }
-        }
-
-        async function postAuditLog(rfpNum, action, description) {
-            const submitterName = _cachedEmployee
-                ? `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim()
-                : 'Unknown';
-            try {
-                await fetch(`${API_BASE}/api/rfps/${rfpNum}/audit-log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: action,
-                        description: `<strong>${submitterName}</strong> ${description}`,
-                        performed_by: submitterName,
-                    }),
-                });
-            } catch (e) {
-                console.warn('[AUDIT] Failed to post audit log:', e);
-            }
-        }
-
-        function buildDraftCreatedDescription(payload) {
-            const parts = ['created a draft request for payment'];
-            const itemCount = (payload.lineItems || []).filter(i => i.description).length;
-            const tripCount = (payload.mileageTrips || []).length;
-            if (itemCount > 0) {
-                const itemTotal = (payload.lineItems || []).reduce((s, i) => s + (i.total || 0), 0);
-                parts.push(`with ${itemCount} line item${itemCount > 1 ? 's' : ''} totaling <strong>${formatCurrency(itemTotal)}</strong>`);
-            }
-            if (tripCount > 0) {
-                const mileageTotal = payload.mileage_total || 0;
-                parts.push(`${itemCount > 0 ? 'and ' : 'with '}${tripCount} mileage trip${tripCount > 1 ? 's' : ''} totaling <strong>${formatCurrency(mileageTotal)}</strong>`);
-            }
-            return parts.join(' ');
-        }
-
-        function detectChanges(oldData, newPayload) {
-            const changes = [];
-            if (!oldData) {
-                changes.push('updated the draft');
-                return changes;
-            }
-
-            const oldItems = (oldData.lineItems || []).filter(i => i.description);
-            const newItems = (newPayload.lineItems || []).filter(i => i.description);
-            const oldTrips = oldData.mileageTrips || [];
-            const newTrips = newPayload.mileageTrips || [];
-
-            // Line item changes
-            const addedItems = newItems.length - oldItems.length;
-            if (addedItems > 0) {
-                const addedDescs = newItems.slice(oldItems.length).map(i => i.description).filter(Boolean);
-                if (addedDescs.length > 0) {
-                    changes.push(`added ${addedDescs.length} line item${addedDescs.length > 1 ? 's' : ''}: ${addedDescs.map(d => '<strong>' + d + '</strong>').join(', ')}`);
-                }
-            } else if (addedItems < 0) {
-                const removed = Math.abs(addedItems);
-                changes.push(`removed ${removed} line item${removed > 1 ? 's' : ''}`);
-            }
-
-            // Check for modified existing line items
-            const minLen = Math.min(oldItems.length, newItems.length);
-            const modifiedItems = [];
-            for (let i = 0; i < minLen; i++) {
-                const o = oldItems[i];
-                const n = newItems[i];
-                if (o.description !== n.description || (o.total || 0) !== (n.total || 0) || (o.budget_code || '') !== (n.budget_code || '')) {
-                    modifiedItems.push(n.description || o.description);
-                }
-            }
-            if (modifiedItems.length > 0) {
-                changes.push(`modified line item${modifiedItems.length > 1 ? 's' : ''}: ${modifiedItems.map(d => '<strong>' + d + '</strong>').join(', ')}`);
-            }
-
-            // Mileage changes
-            const addedTrips = newTrips.length - oldTrips.length;
-            if (addedTrips > 0) {
-                for (let i = oldTrips.length; i < newTrips.length; i++) {
-                    const t = newTrips[i];
-                    const from = t.from_location || 'Unknown';
-                    const to = t.to_location || 'Unknown';
-                    changes.push(`added mileage trip: <strong>${from}</strong> → <strong>${to}</strong> (${t.miles || 0} mi, ${formatCurrency(t.amount || 0)})`);
-                }
-            } else if (addedTrips < 0) {
-                const removed = Math.abs(addedTrips);
-                changes.push(`removed ${removed} mileage trip${removed > 1 ? 's' : ''}`);
-            }
-
-            // Check for modified existing trips
-            const minTrips = Math.min(oldTrips.length, newTrips.length);
-            for (let i = 0; i < minTrips; i++) {
-                const o = oldTrips[i];
-                const n = newTrips[i];
-                if ((o.from_location || '') !== (n.from_location || '') || (o.to_location || '') !== (n.to_location || '') || (o.miles || 0) !== (n.miles || 0)) {
-                    changes.push(`modified mileage trip ${i + 1}: <strong>${n.from_location || 'Unknown'}</strong> → <strong>${n.to_location || 'Unknown'}</strong> (${n.miles || 0} mi)`);
-                }
-            }
-
-            // Vendor/employee changes
-            if ((oldData.vendor_name || '') !== (newPayload.vendor_name || '') && newPayload.vendor_name) {
-                changes.push(`changed vendor to <strong>${newPayload.vendor_name}</strong>`);
-            }
-
-            // Description changes
-            if ((oldData.description || '') !== (newPayload.description || '') && newPayload.description) {
-                changes.push(`updated the description`);
-            }
-
-            // Fallback if no specific changes detected
-            if (changes.length === 0) {
-                changes.push('saved the draft');
-            }
-
-            return changes;
         }
 
         function showDraftSavedModal(rfpNum) {
@@ -4052,12 +3928,7 @@
                     };
                     // Upload any pending attachments to R2
                     await uploadPendingAttachments(rfpNum);
-                    // Post audit log
-                    const itemTotal = (payload.lineItems || []).reduce((s, i) => s + (i.total || 0), 0);
-                    const mTotal = payload.mileage_total || 0;
-                    const grandTotal = itemTotal + mTotal;
-                    const typeLabel = payload.request_type === 'reimbursement' ? 'Employee Reimbursement' : (payload.vendor_name || 'Vendor Payment');
-                    await postAuditLog(rfpNum, 'submitted', `submitted the request for payment with <strong>${typeLabel}</strong> for <strong>${formatCurrency(grandTotal)}</strong>`);
+                    // Audit logging handled server-side in handleUpdateRFP (detects draft→submitted)
                     showSuccessModal(rfpNum);
                 } else {
                     formSubmitting = false;
