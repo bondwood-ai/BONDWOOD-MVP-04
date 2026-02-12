@@ -701,7 +701,7 @@
             <div class="modal-body">
                 <div style="background:color-mix(in srgb, var(--primary-hex) 8%, transparent);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;">
                     <div style="display:flex;align-items:flex-start;gap:0.6rem;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-hex)" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-hex)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="1.5" fill="var(--primary-hex)" stroke="none"/></svg>
                         <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">
                             Upload a spreadsheet to create multiple Requests for Payment. A separate draft will be created for each vendor. Headers are auto-detected; if absent, columns must be in this order:
                             <div style="margin-top:0.4rem;font-weight:600;">Vendor # &nbsp;·&nbsp; Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</div>
@@ -3578,7 +3578,7 @@
                 overlayTitle.textContent = `${created} Draft${created !== 1 ? 's' : ''} Created`;
                 overlayMsg.textContent = 'All invoices processed successfully.';
             } else if (created > 0 && failed > 0) {
-                overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+                overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4" stroke-linecap="round"/><circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none"/>';
                 overlayIcon.setAttribute('stroke', 'var(--warning-color, #d97706)');
                 overlayTitle.textContent = `${created} Created, ${failed} Failed`;
                 overlayMsg.textContent = 'Some invoices could not be processed.';
@@ -3650,7 +3650,7 @@
 
                 if (!data.success || !data.lineItems || data.lineItems.length === 0) {
                     overlayIcon.style.animation = 'none';
-                    overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+                    overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4" stroke-linecap="round"/><circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none"/>';
                     overlayIcon.setAttribute('stroke', 'var(--warning-color, #d97706)');
                     overlayTitle.textContent = 'No Data Extracted';
                     overlayMsg.textContent = 'Could not extract invoice data. Opening blank form instead.';
