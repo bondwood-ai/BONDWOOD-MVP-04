@@ -1572,7 +1572,17 @@
             document.getElementById('statInProgress').textContent = data.filter(r => ['submitted', 'accounting-review', 'ap-review'].includes(r.status)).length;
             document.getElementById('statApproved').textContent = data.filter(r => r.status === 'approved').length;
             document.getElementById('statOverdue').textContent = data.filter(r => r.invoiceAge > 35 && r.status !== 'approved').length;
-            const totalAmt = data.reduce((sum, r) => sum + r.amount, 0);
+
+            // Total Amount: if user is filtering/searching, sum the filtered set;
+            // otherwise sum only active pipeline statuses
+            const isFiltering = (document.getElementById('searchInput').value.trim() !== '')
+                || (document.getElementById('statusFilter').value !== 'all')
+                || advancedSearchActive;
+            const activeStatuses = ['submitted', 'accounting-review', 'ap-review', 'approved'];
+            const amountSet = isFiltering
+                ? data
+                : data.filter(r => activeStatuses.includes(r.status));
+            const totalAmt = amountSet.reduce((sum, r) => sum + r.amount, 0);
             document.getElementById('statAmount').textContent = formatCurrency(totalAmt);
         }
 
