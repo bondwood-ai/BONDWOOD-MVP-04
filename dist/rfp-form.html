@@ -3575,9 +3575,16 @@
                 const result = await resp.json();
                 if (resp.ok) {
                     const rfpNum = result.rfp_number || currentRfpNumber;
+                    const isNew = !currentRfpNumber || (method === 'POST');
                     currentRfpNumber = rfpNum;
                     // Upload any pending attachments
                     await uploadPendingAttachments(rfpNum);
+                    // Post audit log entry
+                    await postAuditLog(rfpNum, isNew ? 'draft-created' : 'draft-updated',
+                        isNew
+                            ? `created a draft request for payment`
+                            : `updated the draft`
+                    );
                     // Update URL so subsequent saves are PUTs
                     window.history.replaceState(null, '', 'rfp-form.html?id=' + rfpNum);
                     formDirty = false;
@@ -3588,6 +3595,25 @@
                 }
             } catch (e) {
                 showAlert('Save error: ' + e.message, 'Error');
+            }
+        }
+
+        async function postAuditLog(rfpNum, action, description) {
+            const submitterName = _cachedEmployee
+                ? `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim()
+                : 'Unknown';
+            try {
+                await fetch(`${API_BASE}/api/rfps/${rfpNum}/audit-log`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: action,
+                        description: `<strong>${submitterName}</strong> ${description}`,
+                        performed_by: submitterName,
+                    }),
+                });
+            } catch (e) {
+                console.warn('[AUDIT] Failed to post audit log:', e);
             }
         }
 
@@ -3927,6 +3953,8 @@
                     };
                     // Upload any pending attachments to R2
                     await uploadPendingAttachments(rfpNum);
+                    // Post audit log
+                    await postAuditLog(rfpNum, 'submitted', `submitted the request for approval`);
                     showSuccessModal(rfpNum);
                 } else {
                     formSubmitting = false;

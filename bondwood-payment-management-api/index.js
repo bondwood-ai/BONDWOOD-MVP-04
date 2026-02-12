@@ -181,6 +181,14 @@ export default {
         if (method === 'DELETE') return handleDeleteAttachment(key, env);
       }
 
+      // ── Audit Logs ──
+      const auditMatch = path.match(/^\/api\/rfps\/(\d+)\/audit-log$/);
+      if (auditMatch) {
+        const rfpNumber = parseInt(auditMatch[1]);
+        if (method === 'GET') return handleGetAuditLogs(rfpNumber, env);
+        if (method === 'POST') return handleCreateAuditLog(rfpNumber, request, env);
+      }
+
       // ── Users ──
       if (path === '/api/users' && method === 'GET') {
         return handleGetUsers(env);
@@ -284,6 +292,7 @@ export default {
 
       // Hard delete DB rows
       await env.DB.batch([
+        env.DB.prepare('DELETE FROM audit_logs WHERE rfp_number = ?').bind(rfpNumber),
         env.DB.prepare('DELETE FROM mileage_trips WHERE rfp_number = ?').bind(rfpNumber),
         env.DB.prepare('DELETE FROM form_data WHERE rfp_number = ?').bind(rfpNumber),
         env.DB.prepare('DELETE FROM dashboard_data WHERE rfp_number = ?').bind(rfpNumber),
@@ -677,9 +686,9 @@ async function handleListRFPs(env, url) {
   ).bind(...params).all();
   const total = countRows[0]?.total || 0;
 
-  // Get RFPs with line item totals
+  // Get RFPs with line item totals + mileage
   const { results } = await env.DB.prepare(`
-    SELECT d.*, COALESCE(SUM(f.total), 0) as total_amount,
+    SELECT d.*, COALESCE(SUM(f.total), 0) + COALESCE(d.mileage_total, 0) as total_amount,
            MAX(f.invoice_date) as latest_invoice_date
     FROM dashboard_data d
     LEFT JOIN form_data f ON d.rfp_number = f.rfp_number
@@ -716,7 +725,15 @@ async function handleGetRFP(rfpNumber, env) {
     mileageTrips = trips;
   } catch (e) { /* table may not exist yet */ }
 
-  return json({ ...header[0], lineItems, mileageTrips });
+  let auditLogs = [];
+  try {
+    const { results: logs } = await env.DB.prepare(
+      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY created_at ASC, id ASC'
+    ).bind(rfpNumber).all();
+    auditLogs = logs;
+  } catch (e) { /* table may not exist yet */ }
+
+  return json({ ...header[0], lineItems, mileageTrips, auditLogs });
 }
 
 
@@ -1218,6 +1235,15 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
     'ALTER TABLE user_data ADD COLUMN dashboard_prefs TEXT',
+    `CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rfp_number INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      description TEXT,
+      performed_by TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (rfp_number) REFERENCES dashboard_data(rfp_number)
+    )`,
     `CREATE TABLE IF NOT EXISTS mileage_trips (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
@@ -1312,6 +1338,39 @@ async function handleMigrateBudgetComponents(env) {
   }
 
   return json({ message: `Re-parsed budget code components (2+3+3+3+3 format)`, updated, skipped, total: rows.length });
+}
+
+
+/* ========================================
+   AUDIT LOGS
+   ======================================== */
+async function handleGetAuditLogs(rfpNumber, env) {
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM audit_logs WHERE rfp_number = ? ORDER BY created_at ASC, id ASC'
+    ).bind(rfpNumber).all();
+    return json({ auditLogs: results });
+  } catch (e) {
+    return json({ auditLogs: [] });
+  }
+}
+
+async function handleCreateAuditLog(rfpNumber, request, env) {
+  const body = await request.json();
+  try {
+    await env.DB.prepare(
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(
+      rfpNumber,
+      body.action || 'update',
+      body.description || '',
+      body.performed_by || 'Unknown',
+      new Date().toISOString(),
+    ).run();
+    return json({ message: 'Audit log created' }, 201);
+  } catch (e) {
+    return json({ error: 'Failed to create audit log', detail: e.message }, 500);
+  }
 }
 
 

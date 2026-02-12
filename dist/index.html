@@ -1202,7 +1202,7 @@
                         vendor: (r.request_type === 'reimbursement')
                             ? `${r.employee_id || 'EXXXXX'} EMPLOYEE REIMBURSEMENT`
                             : (r.vendor_name || r.vendor_number || '—'),
-                        amount: (r.total_amount || 0) + (r.mileage_total || 0) || r.amount || 0,
+                        amount: r.total_amount || r.amount || 0,
                         type: r.request_type || r.type || 'vendor',
                         formType: r.request_type === 'reimbursement' ? 'Employee Reimbursement' : 'Vendor Payment',
                         creationSource: r.creation_source || null,
@@ -2223,7 +2223,7 @@
             if (apiAuditLogs.length > 0) {
                 auditEntries = apiAuditLogs.map(log => ({
                     text: log.description,
-                    timestamp: log.performed_at ? formatAuditTimestamp(log.performed_at) : '—',
+                    timestamp: log.created_at ? formatAuditTimestamp(log.created_at) : (log.performed_at ? formatAuditTimestamp(log.performed_at) : '—'),
                 }));
             } else {
                 auditEntries = buildAuditLog(rfp, displayTotal);
