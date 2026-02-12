@@ -847,31 +847,33 @@ async function handleCreateRFP(request, env) {
     }
   }
 
-  // Build audit description
-  const typeLabel = (body.request_type === 'reimbursement') ? 'Employee Reimbursement' : (body.vendor_name || 'Vendor Payment');
-  const itemTotal = newItems.reduce((s, i) => s + (i.total || 0), 0);
-  const mileageTotal = body.mileage_total || 0;
-  const grandTotal = itemTotal + mileageTotal;
-  const statusVerb = status === 'submitted' ? 'submitted' : 'created a draft';
-
-  let auditDesc = `<strong>${performer}</strong> ${statusVerb} request for payment with <strong>${typeLabel}</strong> for <strong>$${grandTotal.toFixed(2)}</strong>`;
-  const detailParts = [];
-  if (newItems.length) detailParts.push(`${newItems.length} line item${newItems.length > 1 ? 's' : ''} ($${itemTotal.toFixed(2)})`);
-  if (newTrips.length) detailParts.push(`${newTrips.length} mileage trip${newTrips.length > 1 ? 's' : ''} ($${mileageTotal.toFixed(2)})`);
-  if (detailParts.length) auditDesc += ` — ${detailParts.join(', ')}`;
-
-  const sourceLabel = body.creation_source === 'import' ? ' using the <strong>Import</strong> function'
-      : body.creation_source === 'capture' ? ' using the <strong>Capture Invoice</strong> function' : '';
-  auditDesc += sourceLabel;
-
-  const now = new Date().toISOString();
-  statements.push(
-    env.DB.prepare(
-      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
-    ).bind(nextRfp, status === 'submitted' ? 'submitted' : 'draft-created', auditDesc, performer, now)
-  );
-
   await env.DB.batch(statements);
+
+  // Audit log - separate from data batch so it can't break the save
+  try {
+    const typeLabel = (body.request_type === 'reimbursement') ? 'Employee Reimbursement' : (body.vendor_name || 'Vendor Payment');
+    const itemTotal = newItems.reduce((s, i) => s + (i.total || 0), 0);
+    const mileageTotal = body.mileage_total || 0;
+    const grandTotal = itemTotal + mileageTotal;
+    const statusVerb = status === 'submitted' ? 'submitted' : 'created a draft';
+
+    let auditDesc = `<strong>${performer}</strong> ${statusVerb} request for payment with <strong>${typeLabel}</strong> for <strong>$${grandTotal.toFixed(2)}</strong>`;
+    const detailParts = [];
+    if (newItems.length) detailParts.push(`${newItems.length} line item${newItems.length > 1 ? 's' : ''} ($${itemTotal.toFixed(2)})`);
+    if (newTrips.length) detailParts.push(`${newTrips.length} mileage trip${newTrips.length > 1 ? 's' : ''} ($${mileageTotal.toFixed(2)})`);
+    if (detailParts.length) auditDesc += ' - ' + detailParts.join(', ');
+
+    const sourceLabel = body.creation_source === 'import' ? ' using the <strong>Import</strong> function'
+        : body.creation_source === 'capture' ? ' using the <strong>Capture Invoice</strong> function' : '';
+    auditDesc += sourceLabel;
+
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(nextRfp, status === 'submitted' ? 'submitted' : 'draft-created', auditDesc, performer, now).run();
+  } catch (auditErr) {
+    console.error('[AUDIT] Failed to write audit log for create:', auditErr.message);
+  }
 
   return json({ rfp_number: nextRfp, status, message: 'RFP created' }, 201);
 }
@@ -883,7 +885,6 @@ async function handleCreateRFP(request, env) {
 async function handleUpdateRFP(rfpNumber, request, env) {
   const body = await request.json();
   const performer = body.submitter_name || 'Unknown';
-  const now = new Date().toISOString();
 
   // ── Read existing state BEFORE making changes ──
   const { results: existingHeader } = await env.DB.prepare(
@@ -1005,19 +1006,21 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     }
   }
 
-  // ── Detect changes and build audit entries ──
-  const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
-
-  for (const entry of auditEntries) {
-    statements.push(
-      env.DB.prepare(
-        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
-      ).bind(rfpNumber, entry.action, entry.description, performer, now)
-    );
-  }
-
   if (statements.length) {
     await env.DB.batch(statements);
+  }
+
+  // Audit log - separate from data batch so it can't break the save
+  try {
+    const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
+    const now = new Date().toISOString();
+    for (const entry of auditEntries) {
+      await env.DB.prepare(
+        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind(rfpNumber, entry.action, entry.description, performer, now).run();
+    }
+  } catch (auditErr) {
+    console.error('[AUDIT] Failed to write audit log for update:', auditErr.message);
   }
 
   return json({ rfp_number: rfpNumber, message: 'RFP updated' });
@@ -1060,7 +1063,7 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
     for (const item of added) {
       entries.push({
         action: 'item-added',
-        description: `${p} added line item: <strong>${item.description}</strong> — ${fmt(item.total)}${item.budget_code ? ' (Budget: ' + item.budget_code + ')' : ''}`
+        description: `${p} added line item: <strong>${item.description}</strong> - ${fmt(item.total)}${item.budget_code ? ' (Budget: ' + item.budget_code + ')' : ''}`
       });
     }
 
@@ -1069,7 +1072,7 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
     for (const item of removed) {
       entries.push({
         action: 'item-removed',
-        description: `${p} removed line item: <strong>${item.description}</strong> — ${fmt(item.total)}`
+        description: `${p} removed line item: <strong>${item.description}</strong> - ${fmt(item.total)}`
       });
     }
 
