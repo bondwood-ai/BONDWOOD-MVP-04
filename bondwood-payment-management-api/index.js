@@ -107,6 +107,12 @@ export default {
       if (path === '/api/me' && method === 'GET') {
         return handleMe(request, env, url);
       }
+      if (path === '/api/me/prefs' && method === 'GET') {
+        return handleGetPrefs(request, env);
+      }
+      if (path === '/api/me/prefs' && method === 'PUT') {
+        return handleSavePrefs(request, env);
+      }
 
       // ── Vendors ──
       if (path === '/api/vendors' && method === 'GET') {
@@ -346,6 +352,57 @@ async function handleMe(request, env, url) {
     profile_picture_key: u.profile_picture_key || null,
     roles,
   });
+}
+
+
+/* ========================================
+   USER PREFERENCES
+   ======================================== */
+function getEmailFromRequest(request) {
+  let email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  if (!email) {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/CF_Authorization=([^;]+)/);
+    if (match) {
+      try {
+        const payload = JSON.parse(atob(match[1].split('.')[1]));
+        email = payload.email;
+      } catch (e) {}
+    }
+  }
+  return email ? email.toLowerCase().trim() : null;
+}
+
+async function handleGetPrefs(request, env) {
+  const email = getEmailFromRequest(request);
+  if (!email) return json({ error: 'No email' }, 400);
+
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT dashboard_prefs FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(email).all();
+
+    if (!results.length) return json({ prefs: null });
+
+    const raw = results[0].dashboard_prefs;
+    return json({ prefs: raw ? JSON.parse(raw) : null });
+  } catch (e) {
+    return json({ prefs: null });
+  }
+}
+
+async function handleSavePrefs(request, env) {
+  const email = getEmailFromRequest(request);
+  if (!email) return json({ error: 'No email' }, 400);
+
+  const body = await request.json();
+  const prefsJson = JSON.stringify(body.prefs || {});
+
+  await env.DB.prepare(
+    'UPDATE user_data SET dashboard_prefs = ? WHERE LOWER(user_email) = ?'
+  ).bind(prefsJson, email).run();
+
+  return json({ message: 'Preferences saved' });
 }
 
 
@@ -1160,6 +1217,7 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN creation_source TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
+    'ALTER TABLE user_data ADD COLUMN dashboard_prefs TEXT',
     `CREATE TABLE IF NOT EXISTS mileage_trips (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,

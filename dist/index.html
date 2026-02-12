@@ -86,6 +86,8 @@
         body.dark-mode .status-badge.approved { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
         body.dark-mode .status-badge.rejected { background: rgba(248, 113, 113, 0.2); color: #f87171; }
         body.dark-mode .status-badge.archived { background: rgba(255,255,255,0.1); color: #a0a0a0; }
+        body.dark-mode .form-type-badge.type-vendor { background: rgba(91, 122, 255, 0.2); color: #93b4ff; }
+        body.dark-mode .form-type-badge.type-reimbursement { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
         body.dark-mode .invoice-age.overdue { color: #f87171; }
         body.dark-mode .invoice-age.warning { color: #fbbf24; }
         body.dark-mode .column-selector-dropdown { background: var(--card-bg); border-color: var(--border-color); }
@@ -262,6 +264,11 @@
         .status-badge.approved { background: rgba(22, 163, 74, 0.12); color: #15803d; }
         .status-badge.rejected { background: rgba(250, 5, 15, 0.12); color: #FA050F; }
         .status-badge.archived { background: rgba(0,0,0,0.06); color: #6b7280; }
+
+        /* Form type badges */
+        .form-type-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.68rem; font-weight: 600; white-space: nowrap; font-family: 'Satoshi', sans-serif; }
+        .form-type-badge.type-vendor { background: rgba(3, 70, 148, 0.1); color: #034694; }
+        .form-type-badge.type-reimbursement { background: rgba(124, 58, 237, 0.1); color: #6d28d9; }
 
         /* Invoice age coloring */
         .invoice-age { font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -1151,6 +1158,7 @@
         const COLUMNS = [
             { key: 'checkbox', label: '', width: '40px', alwaysVisible: true, noSort: true },
             { key: 'rfpNumber', label: 'RFP No.', width: '80px', visible: true },
+            { key: 'formType', label: 'Form Type', width: '130px', visible: true },
             { key: 'submitter', label: 'Submitter', width: '130px', visible: true, adminOnly: true },
             { key: 'submissionDate', label: 'Submitted', width: '95px', visible: true },
             { key: 'daysSinceSubmission', label: 'Days Open', width: '80px', visible: true },
@@ -1191,9 +1199,12 @@
                         assignedTo: r.assigned_to || '—',
                         apBatch: r.ap_batch || '',
                         status: r.status || 'draft',
-                        vendor: (r.request_type === 'reimbursement' && r.employee_id) ? r.employee_id : (r.vendor_name || r.vendor_number || '—'),
-                        amount: r.total_amount || r.amount || r.mileage_total || 0,
+                        vendor: (r.request_type === 'reimbursement')
+                            ? `${r.employee_id || 'EXXXXX'} EMPLOYEE REIMBURSEMENT`
+                            : (r.vendor_name || r.vendor_number || '—'),
+                        amount: (r.total_amount || 0) + (r.mileage_total || 0) || r.amount || 0,
                         type: r.request_type || r.type || 'vendor',
+                        formType: r.request_type === 'reimbursement' ? 'Employee Reimbursement' : 'Vendor Payment',
                         creationSource: r.creation_source || null,
                     };
                 });
@@ -1235,6 +1246,44 @@
             if (col) {
                 col.visible = visible;
                 renderTable();
+                saveColumnPrefs();
+            }
+        }
+
+        function getColumnPrefsPayload() {
+            const visibleKeys = COLUMNS
+                .filter(c => !c.alwaysVisible && c.visible)
+                .map(c => c.key);
+            return { columns: visibleKeys };
+        }
+
+        async function saveColumnPrefs() {
+            try {
+                await fetch(`${API_BASE}/api/me/prefs`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prefs: getColumnPrefsPayload() }),
+                });
+            } catch (e) {
+                console.warn('[PREFS] Failed to save:', e);
+            }
+        }
+
+        async function loadColumnPrefs() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/me/prefs`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (data.prefs && data.prefs.columns) {
+                    const savedCols = data.prefs.columns;
+                    COLUMNS.forEach(col => {
+                        if (col.alwaysVisible) return;
+                        col.visible = savedCols.includes(col.key);
+                    });
+                    console.log('[PREFS] Applied saved column prefs:', savedCols);
+                }
+            } catch (e) {
+                console.warn('[PREFS] Failed to load:', e);
             }
         }
 
@@ -1307,6 +1356,11 @@
                         case 'rfpNumber':
                             td.className = 'rfp-number';
                             td.textContent = rfp.rfpNumber;
+                            break;
+                        case 'formType':
+                            const typeLabel = rfp.formType || 'Vendor Payment';
+                            const typeClass = rfp.type === 'reimbursement' ? 'type-reimbursement' : 'type-vendor';
+                            td.innerHTML = `<span class="form-type-badge ${typeClass}">${typeLabel}</span>`;
                             break;
                         case 'submitter':
                             td.innerHTML = `<span class="submitter-name">${rfp.submitter}</span>`;
@@ -3700,6 +3754,10 @@
 
             // Fetch logged-in user identity from SSO
             await fetchDashboardUser();
+
+            // Load saved column preferences
+            await loadColumnPrefs();
+            buildColumnSelector(); // rebuild checkboxes with saved prefs
 
             // Load real data from bondwood-api
             allRFPs = await loadRFPData();
