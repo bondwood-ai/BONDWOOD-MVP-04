@@ -195,6 +195,17 @@ export default {
         return handleGetProfilePicture(decodeURIComponent(picMatch[1]), env);
       }
 
+      // ── Mileage ──
+      if (path === '/api/mileage/sites' && method === 'GET') {
+        return handleMileageSites(env);
+      }
+      if (path === '/api/mileage/distance' && method === 'GET') {
+        return handleMileageDistance(env, url);
+      }
+      if (path === '/api/mileage/calculate' && method === 'POST') {
+        return handleMileageCalculate(request, env);
+      }
+
       // ── Seed Dummy Data ──
       if (path === '/api/seed-dummy' && method === 'POST') {
         return handleSeedDummy(request, env);
@@ -1439,6 +1450,101 @@ async function handleUploadProfilePicture(request, env) {
   ).bind(key, email.toLowerCase().trim()).run();
 
   return json({ message: 'Profile picture uploaded', key });
+}
+
+
+/* ========================================
+   MILEAGE – SITES LIST
+   ======================================== */
+async function handleMileageSites(env) {
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT DISTINCT from_site AS site FROM mileage_table UNION SELECT DISTINCT to_site AS site FROM mileage_table ORDER BY site'
+    ).all();
+    return json({ sites: results.map(r => r.site) });
+  } catch (e) {
+    return json({ error: 'Failed to load sites', detail: e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   MILEAGE – DISTRICT DISTANCE LOOKUP
+   ======================================== */
+async function handleMileageDistance(env, url) {
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+
+  if (!from || !to) return json({ error: 'Missing from/to params' }, 400);
+
+  const { results } = await env.DB.prepare(
+    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
+  ).bind(from, to).all();
+
+  if (results.length > 0) {
+    return json({ from, to, distance: results[0].distance, source: 'district' });
+  }
+
+  // Try reverse
+  const { results: rev } = await env.DB.prepare(
+    'SELECT distance FROM mileage_table WHERE from_site = ? AND to_site = ?'
+  ).bind(to, from).all();
+
+  if (rev.length > 0) {
+    return json({ from, to, distance: rev[0].distance, source: 'district' });
+  }
+
+  return json({ error: 'Route not found', from, to }, 404);
+}
+
+
+/* ========================================
+   MILEAGE – GOOGLE MAPS CALCULATE
+   ======================================== */
+async function handleMileageCalculate(request, env) {
+  const body = await request.json();
+  const fromAddr = body.from;
+  const toAddr = body.to;
+
+  if (!fromAddr || !toAddr) {
+    return json({ error: 'Missing from/to addresses' }, 400);
+  }
+
+  const apiKey = env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return json({ error: 'Google Maps API key not configured' }, 500);
+  }
+
+  try {
+    const dmUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(fromAddr)}&destinations=${encodeURIComponent(toAddr)}&units=imperial&key=${apiKey}`;
+
+    const resp = await fetch(dmUrl);
+    const data = await resp.json();
+
+    if (data.status !== 'OK') {
+      return json({ error: 'Google API error', detail: data.status, errorMessage: data.error_message || null }, 502);
+    }
+
+    const element = data.rows?.[0]?.elements?.[0];
+    if (!element || element.status !== 'OK') {
+      return json({ error: 'No route found', detail: element?.status || 'unknown' }, 404);
+    }
+
+    // distance.value is in meters, convert to miles
+    const meters = element.distance.value;
+    const miles = meters / 1609.344;
+
+    return json({
+      from: fromAddr,
+      to: toAddr,
+      distance: Math.round(miles * 10) / 10,
+      distanceText: element.distance.text,
+      durationText: element.duration.text,
+      source: 'google',
+    });
+  } catch (e) {
+    return json({ error: 'Failed to calculate distance', detail: e.message }, 500);
+  }
 }
 
 
