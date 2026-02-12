@@ -287,8 +287,8 @@
             box-shadow: 0 0 0 2px rgba(250, 5, 15, 0.15) !important;
         }
         .bc-valid {
-            border-color: #2B6D51 !important;
-            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12) !important;
+            border-color: var(--border-color) !important;
+            box-shadow: none !important;
         }
         .bc-error-tooltip {
             position: absolute; bottom: calc(100% + 4px); left: 0; right: 0;
@@ -307,7 +307,7 @@
         }
         body.dark-mode .bc-dropdown-item .bc-match { color: var(--primary-hex); }
         body.dark-mode .bc-error { border-color: #f87171 !important; box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15) !important; }
-        body.dark-mode .bc-valid { border-color: #4ade80 !important; box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.12) !important; }
+        body.dark-mode .bc-valid { border-color: var(--border-color) !important; box-shadow: none !important; }
         body.dark-mode .bc-error-tooltip { background: #f87171; color: #000; }
         body.dark-mode .bc-error-tooltip::after { border-top-color: #f87171; }
         body.dark-mode #mileageErrorBanner { background: rgba(248, 113, 113, 0.1); border-color: #f87171; color: #f87171; }
@@ -2685,14 +2685,17 @@
                 var data = await resp.json();
                 if (data.distance !== undefined) {
                     var rate = getMileageRate(row.querySelector('.trip-date').value);
+                    milesInput.readOnly = false;
                     milesInput.value = data.distance.toFixed(1);
                     row.querySelector('.trip-amount').value = formatCurrency(data.distance * rate);
                 } else {
+                    milesInput.readOnly = false;
                     milesInput.value = '';
                     row.querySelector('.trip-amount').value = '';
                 }
             } catch (e) {
                 console.error('[MILEAGE] Google calc failed:', e);
+                milesInput.readOnly = false;
                 milesInput.value = '';
             }
             recalcMileageTotals();
@@ -3478,9 +3481,130 @@
         /* ========================================
            FORM ACTIONS
            ======================================== */
-        function saveDraft() {
-            formDirty = false;
-            showAlert('Draft saved.', 'Saved');
+        async function saveDraft() {
+            // Collect form data (same structure as performSubmission)
+            const requestType = currentRequestType;
+            const lineItems = [];
+            document.querySelectorAll('#lineItemsBody tr').forEach((row, idx) => {
+                const desc = row.querySelector('.line-desc').value.trim();
+                if (!desc) return;
+                lineItems.push({
+                    line_number: idx + 1,
+                    description: desc,
+                    invoice_number: row.querySelector('.line-invoice').value.trim(),
+                    invoice_date: formatDateForStorage(row.querySelector('.line-invoice-date').value) || null,
+                    budget_code: row.querySelector('.line-budget-code').value.trim(),
+                    account_code: row.querySelector('.line-account').value.trim(),
+                    total: parseFormattedNumber(row.querySelector('.line-amount').value),
+                });
+            });
+
+            const submitterName = _cachedEmployee
+                ? `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim()
+                : 'Unknown';
+            const submitterId = _cachedEmployee && _cachedEmployee.user_id
+                ? `E${_cachedEmployee.user_id}` : '';
+
+            const payload = {
+                request_type: requestType,
+                submitter_name: submitterName,
+                submitter_id: submitterId,
+                submission_date: new Date().toISOString().split('T')[0],
+                status: 'draft',
+                description: document.getElementById('description').value.trim() || null,
+                lineItems: lineItems,
+                creation_source: window._creationSource || null,
+            };
+
+            if (requestType === 'vendor') {
+                payload.vendor_name = (document.getElementById('vendorName').value || '').trim();
+                payload.vendor_number = (document.getElementById('vendorNumber').value || '').trim();
+                payload.vendor_address = (document.getElementById('vendorAddress').value || '').trim();
+            } else {
+                payload.employee_name = (document.getElementById('employeeName').value || '').trim();
+                payload.employee_id = (document.getElementById('employeeId').value || '').trim();
+            }
+
+            // Collect mileage trips
+            if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
+                var mileageTrips = [];
+                var mileageTotal = 0;
+                document.querySelectorAll('#mileageBody tr').forEach(function(row, idx) {
+                    var miles = parseFloat(row.querySelector('.trip-miles').value) || 0;
+                    if (miles <= 0) return;
+                    var fromSel = row.querySelector('.trip-from').value;
+                    var toSel = row.querySelector('.trip-to').value;
+                    var fromAddr = row.querySelector('.trip-from-addr') ? row.querySelector('.trip-from-addr').value.trim() : '';
+                    var toAddr = row.querySelector('.trip-to-addr') ? row.querySelector('.trip-to-addr').value.trim() : '';
+                    var tripDate = row.querySelector('.trip-date').value.trim();
+                    var rate = getMileageRate(tripDate);
+                    var amount = parseFormattedNumber(row.querySelector('.trip-amount').value);
+                    mileageTrips.push({
+                        trip_number: idx + 1,
+                        trip_date: formatDateForStorage(tripDate) || null,
+                        from_location: fromSel === '__other__' ? fromAddr : fromSel,
+                        to_location: toSel === '__other__' ? toAddr : toSel,
+                        miles: miles,
+                        rate: rate,
+                        amount: amount,
+                        budget_code: row.querySelector('.trip-budget-code') ? row.querySelector('.trip-budget-code').value.trim() : '',
+                        account_code: row.querySelector('.trip-account') ? row.querySelector('.trip-account').value.trim() : '',
+                    });
+                    mileageTotal += amount;
+                });
+                if (mileageTrips.length > 0) {
+                    payload.mileageTrips = mileageTrips;
+                    payload.mileage_total = mileageTotal;
+                }
+            }
+
+            try {
+                let url, method;
+                if (currentRfpNumber) {
+                    url = `${API_BASE}/api/rfps/${currentRfpNumber}`;
+                    method = 'PUT';
+                } else {
+                    url = `${API_BASE}/api/rfps`;
+                    method = 'POST';
+                }
+                const resp = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const result = await resp.json();
+                if (resp.ok) {
+                    const rfpNum = result.rfp_number || currentRfpNumber;
+                    currentRfpNumber = rfpNum;
+                    // Upload any pending attachments
+                    await uploadPendingAttachments(rfpNum);
+                    // Update URL so subsequent saves are PUTs
+                    window.history.replaceState(null, '', 'rfp-form.html?id=' + rfpNum);
+                    formDirty = false;
+                    _loadedRfpData = { ...payload, rfp_number: rfpNum, status: 'draft' };
+                    showDraftSavedModal(rfpNum);
+                } else {
+                    showAlert('Save failed: ' + (result.error || JSON.stringify(result)), 'Error');
+                }
+            } catch (e) {
+                showAlert('Save error: ' + e.message, 'Error');
+            }
+        }
+
+        function showDraftSavedModal(rfpNum) {
+            _utilityModalResolve = null;
+            document.getElementById('utilityModalTitle').textContent = 'Draft Saved';
+            document.getElementById('utilityModalMessage').innerHTML = `
+                <div style="text-align:center;padding:0.75rem 0;">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--primary-hex)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:0.75rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <div style="font-size:0.95rem;font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">RFP #${rfpNum}</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);">Your draft has been saved successfully.</div>
+                </div>
+            `;
+            document.getElementById('utilityModalFooter').innerHTML = `
+                <button onclick="closeUtilityModal(true)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);min-width:80px;">OK</button>
+            `;
+            document.getElementById('utility-modal').style.display = 'flex';
         }
 
         function showAuditLog() {
