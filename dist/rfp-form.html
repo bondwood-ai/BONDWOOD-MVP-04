@@ -3608,8 +3608,21 @@
             document.getElementById('utility-modal').style.display = 'flex';
         }
 
-        function showAuditLog() {
-            // Build audit entries from current form state
+        async function showAuditLog() {
+            // Always fetch fresh audit logs from API
+            if (currentRfpNumber) {
+                try {
+                    const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}/audit-log`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        _loadedAuditLogs = data.auditLogs || [];
+                    }
+                } catch (e) {
+                    console.warn('[AUDIT] Failed to fetch audit logs:', e);
+                }
+            }
+
+            // Build audit entries
             const entries = buildFormAuditLog();
 
             // Set fixed modal dimensions with scrollable content
@@ -3674,7 +3687,7 @@
             if (_loadedAuditLogs.length > 0) {
                 return _loadedAuditLogs.map(log => ({
                     text: log.description,
-                    timestamp: formatAuditTimestamp(log.performed_at),
+                    timestamp: formatAuditTimestamp(log.created_at || log.performed_at),
                 }));
             }
 
