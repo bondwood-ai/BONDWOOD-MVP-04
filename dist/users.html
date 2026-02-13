@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
     <style>
         :root {
             --accent-color: #000000;
@@ -35,7 +34,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Satoshi', sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
@@ -80,7 +79,7 @@
             width: 100%; padding: 0.7rem 0.85rem; border: none;
             background: transparent; color: rgba(255,255,255,0.85);
             cursor: pointer; border-radius: 8px;
-            font-family: 'Satoshi', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 0.88rem; font-weight: 500;
             transition: background 0.15s ease, color 0.15s ease; text-align: left;
         }
@@ -115,7 +114,7 @@
             display: inline-flex; align-items: center; gap: 0.4rem;
             padding: 0.45rem 1rem; border-radius: 8px; border: 1px solid var(--border-color);
             background: var(--card-bg); color: var(--text-primary); cursor: pointer;
-            font-family: 'Satoshi', sans-serif; font-size: 0.78rem; font-weight: 600;
+            font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 600;
             transition: all 0.12s ease; white-space: nowrap;
         }
         .btn-primary:hover { background: var(--bg-color); }
@@ -190,7 +189,7 @@
         /* ============ ROLE BADGES ============ */
         .role-badge {
             display: inline-block; padding: 2px 9px; border-radius: 99px;
-            font-size: 0.62rem; font-weight: 700; font-family: 'Satoshi', sans-serif;
+            font-size: 0.62rem; font-weight: 700; font-family: 'Inter', sans-serif;
             text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff;
         }
         .role-badge-0 { background: #00babc; }
@@ -204,7 +203,7 @@
             background: var(--primary-hex); color: var(--accent-text-color);
             padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem;
             display: flex; justify-content: space-between; align-items: center;
-            font-family: 'Satoshi', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         /* ============ USER DETAIL PANEL (Slide-out) ============ */
@@ -335,7 +334,7 @@
 
         /* ============ FOOTER ============ */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; }
-        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Satoshi', sans-serif; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Inter', sans-serif; }
         .theme-toggle {
             background: var(--card-bg); border: 1px solid var(--border-color);
             border-radius: 50%; width: 32px; height: 32px;
@@ -357,7 +356,7 @@
         .toast {
             position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
             padding: 0.65rem 1.25rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
-            font-family: 'Satoshi', sans-serif; z-index: 9999;
+            font-family: 'Inter', sans-serif; z-index: 9999;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s;
         }
         .toast.show { opacity: 1; }
@@ -365,14 +364,14 @@
         .toast.error { background: var(--negative-color); color: #fff; }
         /* ============ CUSTOM SELECT ============ */
         .cs-wrap { position: relative; display: inline-block; }
-        .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #ffffff; color: #000000; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-family: 'Satoshi', sans-serif; white-space: nowrap; user-select: none; }
+        .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #ffffff; color: #000000; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; user-select: none; }
         .cs-display:hover { border-color: var(--text-secondary); }
         .cs-text { overflow: hidden; text-overflow: ellipsis; }
         .cs-arrow { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
         .cs-wrap.open .cs-arrow { transform: rotate(180deg); }
         .cs-options { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; display: none; overflow-y: auto; max-height: 260px; padding: 4px 0; }
         .cs-wrap.open .cs-options { display: block; }
-        .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Satoshi', sans-serif; color: #000000; white-space: nowrap; border-radius: 4px; margin: 0 4px; }
+        .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Inter', sans-serif; color: #000000; white-space: nowrap; border-radius: 4px; margin: 0 4px; }
         .cs-option:hover { background: color-mix(in srgb, var(--primary-hex) 10%, transparent); }
         .cs-option.selected { font-weight: 600; background: color-mix(in srgb, var(--primary-hex) 14%, transparent); }
         body.dark-mode .cs-display { background: #1a1a1a; color: #ffffff; border-color: var(--border-color); }
