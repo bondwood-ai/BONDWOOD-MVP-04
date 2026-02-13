@@ -150,8 +150,8 @@
         .header-action-btn { min-width: 150px; justify-content: center; height: 36px; box-sizing: border-box; }
 
         /* ============ STATS GRID (Ruled Columns) ============ */
-        .stats-grid { display: flex; border-top: 2.5px solid var(--primary-hex, #000); border-bottom: 1px solid var(--border-color); background: var(--card-bg); margin-bottom: 1.25rem; border-radius: 10px; overflow: hidden; }
-        .stat-card { flex: 1; padding: 0.875rem 1.15rem; border-left: 1px solid var(--border-color); }
+        .stats-grid { display: flex; border-top: 4px solid var(--primary-hex, #000); border-bottom: 1px solid var(--border-color); background: var(--card-bg); margin-bottom: 1.25rem; border-radius: 10px; overflow: hidden; }
+        .stat-card { flex: 1; padding: 0.875rem 1.15rem; border-left: 1px solid var(--border-color); min-width: 0; }
         .stat-card:first-child { border-left: none; }
         .stat-label { font-size: 0.675rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; font-family: 'Satoshi', sans-serif; }
         .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); font-family: 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
@@ -412,19 +412,15 @@
 
         /* ============ RESPONSIVE ============ */
         @media (max-width: 1200px) {
-            .stats-grid { flex-wrap: wrap; }
-            .stat-card { flex: 1 1 30%; min-width: 0; }
+            .stat-card { padding: 0.75rem 0.875rem; }
+            .stat-value { font-size: 1.15rem; }
         }
         @media (max-width: 768px) {
-            .stats-grid { flex-wrap: wrap; }
-            .stat-card { flex: 1 1 45%; }
+            .stats-grid { flex-direction: column; }
+            .stat-card { border-left: none; border-bottom: 1px solid var(--border-color); }
+            .stat-card:last-child { border-bottom: none; }
             .module-header { flex-direction: column; }
             .header-actions { width: 100%; }
-        }
-        @media (max-width: 480px) {
-            .stats-grid { flex-direction: column; }
-            .stat-card { border-left: none; border-top: 1px solid var(--border-color); }
-            .stat-card:first-child { border-top: none; }
         }
 
         /* ============ CUSTOM CHECKBOX ============ */
