@@ -54,16 +54,7 @@
             --accent-color-light: rgba(255, 255, 255, 0.1);
             --pale-accent: rgba(91, 122, 255, 0.12);
         }
-        body.dark-mode .stat-icon { background: rgba(255, 255, 255, 0.1); }
-        body.dark-mode .stat-icon svg { stroke: #e5e5e5; }
-        body.dark-mode .stat-icon.blue { background: rgba(91, 122, 255, 0.2); }
-        body.dark-mode .stat-icon.blue svg { stroke: #5b7aff; }
-        body.dark-mode .stat-icon.green { background: rgba(74, 222, 128, 0.2); }
-        body.dark-mode .stat-icon.green svg { stroke: #4ade80; }
-        body.dark-mode .stat-icon.red { background: rgba(248, 113, 113, 0.2); }
-        body.dark-mode .stat-icon.red svg { stroke: #f87171; }
-        body.dark-mode .stat-icon.amber { background: rgba(251, 191, 36, 0.2); }
-        body.dark-mode .stat-icon.amber svg { stroke: #fbbf24; }
+        body.dark-mode .stat-card.overdue .stat-value { color: #f87171; }
         body.dark-mode .positive { color: #4ade80; }
         body.dark-mode .negative { color: #f87171; }
         body.dark-mode th { background: var(--primary-hex); }
@@ -158,21 +149,14 @@
         .header-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .header-action-btn { min-width: 150px; justify-content: center; height: 36px; box-sizing: border-box; }
 
-        /* ============ STATS GRID ============ */
-        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
-        .stat-card { background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.06); padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.875rem; }
-        .stat-icon { width: 40px; height: 40px; border-radius: 8px; background: var(--accent-color-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .stat-icon svg { width: 20px; height: 20px; stroke: var(--accent-color); stroke-width: 2; fill: none; }
-        .stat-icon.blue { background: rgba(3, 70, 148, 0.1); }
-        .stat-icon.blue svg { stroke: var(--checkbox-color); }
-        .stat-icon.green { background: rgba(22, 163, 74, 0.1); }
-        .stat-icon.green svg { stroke: var(--positive-color); }
-        .stat-icon.red { background: rgba(250, 5, 15, 0.1); }
-        .stat-icon.red svg { stroke: var(--negative-color); }
-        .stat-icon.amber { background: rgba(217, 119, 6, 0.1); }
-        .stat-icon.amber svg { stroke: var(--warning-color); }
-        .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.03em; font-family: 'Satoshi', sans-serif; }
-        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); font-family: 'Inter', sans-serif; }
+        /* ============ STATS GRID (Ruled Columns) ============ */
+        .stats-grid { display: flex; border-top: 2.5px solid var(--primary-hex, #000); border-bottom: 1px solid var(--border-color); background: var(--card-bg); margin-bottom: 1.25rem; }
+        .stat-card { flex: 1; padding: 0.875rem 1.15rem; border-left: 1px solid var(--border-color); }
+        .stat-card:first-child { border-left: none; }
+        .stat-label { font-size: 0.675rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; font-family: 'Satoshi', sans-serif; }
+        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); font-family: 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+        .stat-card.overdue .stat-value { color: var(--negative-color); }
+        .stat-overdue-badge { font-size: 0.6rem; font-weight: 600; color: var(--negative-color); margin-left: 0.35rem; font-family: 'Satoshi', sans-serif; vertical-align: middle; letter-spacing: 0.03em; }
 
         /* ============ FILTER BAR ============ */
         .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; align-items: center; }
@@ -428,15 +412,19 @@
 
         /* ============ RESPONSIVE ============ */
         @media (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .stats-grid { flex-wrap: wrap; }
+            .stat-card { flex: 1 1 30%; min-width: 0; }
         }
         @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-grid { flex-wrap: wrap; }
+            .stat-card { flex: 1 1 45%; }
             .module-header { flex-direction: column; }
             .header-actions { width: 100%; }
         }
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr; }
+            .stats-grid { flex-direction: column; }
+            .stat-card { border-left: none; border-top: 1px solid var(--border-color); }
+            .stat-card:first-child { border-top: none; }
         }
 
         /* ============ CUSTOM CHECKBOX ============ */
@@ -584,34 +572,24 @@
             <!-- Stats Tiles -->
             <div class="stats-grid" id="statsGrid">
                 <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
-                    </div>
-                    <div><div class="stat-label">Total RFPs</div><div class="stat-value" id="statTotal">0</div></div>
+                    <div class="stat-label">Total RFPs</div>
+                    <div class="stat-value" id="statTotal">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon amber">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    </div>
-                    <div><div class="stat-label">In Progress</div><div class="stat-value" id="statInProgress">0</div></div>
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-value" id="statInProgress">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon green">
-                        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
-                    </div>
-                    <div><div class="stat-label">Approved</div><div class="stat-value" id="statApproved">0</div></div>
+                    <div class="stat-label">Approved</div>
+                    <div class="stat-value" id="statApproved">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon red">
-                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    </div>
-                    <div><div class="stat-label">Overdue (>35 days)</div><div class="stat-value" id="statOverdue">0</div></div>
+                    <div class="stat-label">Overdue (&gt;35 days)</div>
+                    <div class="stat-value" id="statOverdue">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">
-                        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </div>
-                    <div><div class="stat-label">Total Amount</div><div class="stat-value" id="statAmount">$0</div></div>
+                    <div class="stat-label">Total Amount</div>
+                    <div class="stat-value" id="statAmount">$0</div>
                 </div>
             </div>
 
@@ -1575,6 +1553,9 @@
             document.getElementById('statInProgress').textContent = data.filter(r => ['submitted', 'accounting-review', 'ap-review'].includes(r.status)).length;
             document.getElementById('statApproved').textContent = data.filter(r => r.status === 'approved').length;
             document.getElementById('statOverdue').textContent = data.filter(r => r.invoiceAge > 35 && r.status !== 'approved').length;
+            // Toggle overdue styling based on count
+            const overdueCount = data.filter(r => r.invoiceAge > 35 && r.status !== 'approved').length;
+            document.getElementById('statOverdue').closest('.stat-card').classList.toggle('overdue', overdueCount > 0);
 
             // Total Amount: if user is filtering/searching, sum the filtered set;
             // otherwise sum only active pipeline statuses
