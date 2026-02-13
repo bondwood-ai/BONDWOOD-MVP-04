@@ -180,6 +180,25 @@
         .form-group input:focus { outline: none; border-color: var(--secondary-hex); }
         .form-group input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); cursor: not-allowed; }
 
+        /* ============ CUSTOM SELECT ============ */
+        .cs-wrap { position: relative; display: inline-block; width: 100%; }
+        .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: var(--field-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; user-select: none; padding: 0.45rem 0.6rem; font-size: 0.85rem; font-weight: 500; transition: border-color 0.2s; }
+        .cs-display:hover { border-color: var(--text-secondary); }
+        .cs-text { overflow: hidden; text-overflow: ellipsis; }
+        .cs-arrow { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
+        .cs-wrap.open .cs-arrow { transform: rotate(180deg); }
+        .cs-options { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; display: none; overflow-y: auto; max-height: 260px; padding: 4px 0; }
+        .cs-wrap.open .cs-options { display: block; }
+        .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text-primary); white-space: nowrap; border-radius: 4px; margin: 0 4px; display: flex; align-items: center; gap: 0.5rem; }
+        .cs-option:hover { background: color-mix(in srgb, var(--primary-hex) 10%, transparent); }
+        .cs-option.selected { font-weight: 600; background: color-mix(in srgb, var(--primary-hex) 14%, transparent); }
+        .cs-option .cs-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+        body.dark-mode .cs-display { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .cs-options { background: var(--card-bg); border-color: #333; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+        body.dark-mode .cs-option { color: var(--text-primary); }
+        body.dark-mode .cs-option:hover { background: rgba(255,255,255,0.08); }
+        body.dark-mode .cs-option.selected { background: rgba(255,255,255,0.12); }
+
         /* ============ BUTTONS ============ */
         .form-actions { margin-top: 1.25rem; display: flex; align-items: center; gap: 0.75rem; }
         .btn-save {
@@ -427,6 +446,14 @@
                         <label>Title</label>
                         <input type="text" id="titleField" placeholder="e.g. Accounts Payable Specialist">
                     </div>
+                    <div class="form-group">
+                        <label>Appearance</label>
+                        <select id="themeSelect" style="display:none;">
+                            <option value="system">System (match device)</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -516,22 +543,162 @@
         }
 
         /* ========================================
-           THEME
+           THEME / PREFERENCES
            ======================================== */
+        let currentUserEmail = '';
+
+        function applyTheme(pref) {
+            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (pref === 'dark') document.body.classList.add('dark-mode');
+            else if (pref === 'light') document.body.classList.remove('dark-mode');
+            else document.body.classList.toggle('dark-mode', sys); // system
+        }
+
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
-            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            const newTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            // Sync the select
+            const sel = document.getElementById('themeSelect');
+            if (sel) { sel.value = newTheme; if (sel._csSyncDisplay) sel._csSyncDisplay(); }
+            saveThemePref(newTheme);
         }
+
         function initTheme() {
-            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            // Quick apply from localStorage for instant render (no flash)
             const saved = localStorage.getItem('theme');
-            if (sys) document.body.classList.add('dark-mode');
-            if (saved === 'dark' && !sys) document.body.classList.add('dark-mode');
-            else if (saved === 'light' && sys) document.body.classList.remove('dark-mode');
+            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark') document.body.classList.add('dark-mode');
+            else if (saved === 'light') document.body.classList.remove('dark-mode');
+            else if (sys) document.body.classList.add('dark-mode');
+
+            // Listen for OS changes when in system mode
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                if (!localStorage.getItem('theme')) document.body.classList.toggle('dark-mode', e.matches);
+                const pref = localStorage.getItem('theme');
+                if (!pref || pref === 'system') document.body.classList.toggle('dark-mode', e.matches);
             });
         }
+
+        async function loadThemePref() {
+            if (!currentUserEmail) return;
+            try {
+                const resp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (data.prefs && data.prefs.theme) {
+                    const pref = data.prefs.theme;
+                    localStorage.setItem('theme', pref);
+                    applyTheme(pref);
+                    const sel = document.getElementById('themeSelect');
+                    if (sel) { sel.value = pref; if (sel._csSyncDisplay) sel._csSyncDisplay(); }
+                }
+            } catch (e) { console.warn('[PREFS] Failed to load theme:', e); }
+        }
+
+        async function saveThemePref(theme) {
+            if (!currentUserEmail) return;
+            try {
+                // Load existing prefs, merge theme in
+                let existingPrefs = {};
+                try {
+                    const resp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.prefs) existingPrefs = data.prefs;
+                    }
+                } catch (e) {}
+
+                existingPrefs.theme = theme;
+                await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prefs: existingPrefs }),
+                });
+            } catch (e) { console.warn('[PREFS] Failed to save theme:', e); }
+        }
+
+        /* ========================================
+           CUSTOM SELECT
+           ======================================== */
+        function initCustomSelect(sel) {
+            if (!sel || sel.dataset.csInit) return;
+            sel.dataset.csInit = '1';
+            sel.style.display = 'none';
+
+            const wrap = document.createElement('div');
+            wrap.className = 'cs-wrap';
+
+            const display = document.createElement('div');
+            display.className = 'cs-display';
+            display.innerHTML = '<span class="cs-text"></span><svg class="cs-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'cs-options';
+
+            // Icons for theme options
+            const icons = {
+                light: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+                dark: '<svg class="cs-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>',
+                system: '<svg class="cs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" rx="2" width="20" height="14"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+            };
+
+            function buildOptions() {
+                optionsDiv.innerHTML = '';
+                Array.from(sel.options).forEach(function(opt) {
+                    const div = document.createElement('div');
+                    div.className = 'cs-option' + (opt.value === sel.value ? ' selected' : '');
+                    div.innerHTML = (icons[opt.value] || '') + '<span>' + opt.text + '</span>';
+                    div.dataset.value = opt.value;
+                    div.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        sel.value = opt.value;
+                        sel.dispatchEvent(new Event('change', { bubbles: true }));
+                        syncDisplay();
+                        wrap.classList.remove('open');
+                    });
+                    optionsDiv.appendChild(div);
+                });
+            }
+
+            function syncDisplay() {
+                var selOpt = sel.options[sel.selectedIndex];
+                const val = selOpt ? selOpt.value : '';
+                display.querySelector('.cs-text').innerHTML = (icons[val] || '') + '<span>' + (selOpt ? selOpt.text : '') + '</span>';
+                display.querySelector('.cs-text').style.display = 'flex';
+                display.querySelector('.cs-text').style.alignItems = 'center';
+                display.querySelector('.cs-text').style.gap = '0.5rem';
+                optionsDiv.querySelectorAll('.cs-option').forEach(function(o) {
+                    o.classList.toggle('selected', o.dataset.value === sel.value);
+                });
+            }
+
+            buildOptions();
+            syncDisplay();
+
+            wrap.appendChild(display);
+            wrap.appendChild(optionsDiv);
+            sel.parentNode.insertBefore(wrap, sel);
+            wrap.appendChild(sel);
+
+            display.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.querySelectorAll('.cs-wrap.open').forEach(function(w) { if (w !== wrap) w.classList.remove('open'); });
+                wrap.classList.toggle('open');
+            });
+
+            var desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+            Object.defineProperty(sel, 'value', {
+                set: function(v) { desc.set.call(this, v); syncDisplay(); },
+                get: function() { return desc.get.call(this); }
+            });
+
+            new MutationObserver(function() { buildOptions(); syncDisplay(); }).observe(sel, { childList: true });
+            sel._csSyncDisplay = syncDisplay;
+        }
+
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.cs-wrap.open').forEach(function(w) { w.classList.remove('open'); });
+        });
 
         /* ========================================
            BRAND (full version matching dashboard)
@@ -769,6 +936,16 @@
         });
 
         /* ========================================
+           THEME SELECT HANDLER
+           ======================================== */
+        document.getElementById('themeSelect').addEventListener('change', function() {
+            const pref = this.value;
+            localStorage.setItem('theme', pref);
+            applyTheme(pref);
+            saveThemePref(pref);
+        });
+
+        /* ========================================
            DIRTY TRACKING
            ======================================== */
         ['phoneNumber', 'department', 'titleField'].forEach(id => {
@@ -838,6 +1015,9 @@
                 document.getElementById('phoneNumber').value = formatPhone(profileData.phone_number || '');
                 document.getElementById('department').value = profileData.department || '';
                 document.getElementById('titleField').value = profileData.title || '';
+
+                // Store email for prefs
+                currentUserEmail = (profileData.email || '').toLowerCase().trim();
 
             } catch (err) {
                 console.error('[ACCOUNT] Load failed:', err);
@@ -1015,10 +1195,22 @@
         /* ========================================
            INIT
            ======================================== */
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
-            loadProfile();
+
+            // Set initial select value from localStorage before custom select init
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) document.getElementById('themeSelect').value = savedTheme;
+
+            // Initialize custom select
+            initCustomSelect(document.getElementById('themeSelect'));
+
+            // Load profile (sets currentUserEmail)
+            await loadProfile();
+
+            // Load theme pref from D1 (overrides localStorage if different)
+            await loadThemePref();
         });
     </script>
 </body>
