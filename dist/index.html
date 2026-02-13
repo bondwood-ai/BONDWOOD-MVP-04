@@ -293,6 +293,8 @@
         .preview-loading-text { font-size: 0.85rem; font-weight: 500; font-family: 'Inter', sans-serif; margin-bottom: 1rem; }
         .preview-loading-spinner { width: 36px; height: 36px; margin: 0 auto; border: 3px solid var(--border-color); border-top-color: var(--primary-hex); border-radius: 50%; opacity: 0; transition: opacity 0.2s ease; animation: spinLoad 0.8s linear infinite; }
         .preview-loading-spinner.visible { opacity: 1; }
+        .att-row { transition: background 0.15s ease; }
+        .att-row:hover { background: var(--row-hover-bg, rgba(0,0,0,0.06)) !important; }
         @keyframes spinLoad { to { transform: rotate(360deg); } }
         @keyframes spin { to { transform: rotate(360deg); } }
         .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem 1.25rem; }

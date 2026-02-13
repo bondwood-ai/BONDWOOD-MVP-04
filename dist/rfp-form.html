@@ -616,8 +616,8 @@
         /* File List */
         .att-file-list { max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
         .attachment-item { display: flex; align-items: center; gap: 0.875rem; padding: 0.7rem 0.875rem; border: 1px solid var(--border-color); border-radius: 0.625rem; transition: background 0.15s; }
-        .attachment-item:hover { background: #fafafa; }
-        body.dark-mode .attachment-item:hover { background: rgba(255,255,255,0.04); }
+        .attachment-item:hover { background: var(--row-hover-bg, rgba(0,0,0,0.06)); }
+        body.dark-mode .attachment-item:hover { background: var(--row-hover-bg, rgba(255,255,255,0.04)); }
         body.dark-mode .attachment-item { background: var(--readonly-bg); border-color: var(--border-color); }
         .attachment-icon { width: 48px; height: 48px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: #f3f4f6; }
         body.dark-mode .attachment-icon { background: rgba(255,255,255,0.08); }
