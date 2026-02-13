@@ -204,6 +204,7 @@
         .form-valid input:not([readonly]) { border-color: var(--positive-color); box-shadow: 0 0 0 2px rgba(43,109,81,0.15); }
         input.input-valid { border-color: var(--positive-color) !important; box-shadow: 0 0 0 2px rgba(43,109,81,0.15) !important; }
         input.input-invalid { border-color: var(--negative-color) !important; box-shadow: 0 0 0 2px rgba(250,5,15,0.15) !important; }
+        input.input-warning { border-color: var(--warning-color) !important; box-shadow: 0 0 0 2px rgba(217,119,6,0.15) !important; }
         .form-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .form-message { font-size: 0.78rem; font-weight: 500; margin-left: 0.5rem; opacity: 0; transition: opacity 0.3s; }
         .form-message.visible { opacity: 1; }
@@ -403,10 +404,10 @@
                 <div class="form-grid" id="vendorFormGrid">
                     <div class="form-group"><label>Vendor Name</label><input type="text" id="addVendorName" placeholder="e.g. BSN SPORTS, LLC" oninput="checkVendorFormValid()" onblur="this.value=this.value.toUpperCase()"></div>
                     <div class="form-group"><label>Vendor Number</label><input type="text" id="addVendorNumber" placeholder="e.g. 12345" oninput="checkVendorFormValid()"></div>
-                    <div class="form-group"><label>Address</label><input type="text" id="addVendorAddress" placeholder="Street address"></div>
-                    <div class="form-group"><label>City</label><input type="text" id="addVendorCity" placeholder="City"></div>
-                    <div class="form-group"><label>State</label><input type="text" id="addVendorState" placeholder="MN" maxlength="2" style="text-transform:uppercase;"></div>
-                    <div class="form-group"><label>ZIP</label><input type="text" id="addVendorZip" placeholder="55000" maxlength="10"></div>
+                    <div class="form-group"><label>Address</label><input type="text" id="addVendorAddress" placeholder="Street address" oninput="checkVendorFormValid()"></div>
+                    <div class="form-group"><label>City</label><input type="text" id="addVendorCity" placeholder="City" oninput="checkVendorFormValid()"></div>
+                    <div class="form-group"><label>State</label><input type="text" id="addVendorState" placeholder="MN" maxlength="2" style="text-transform:uppercase;" oninput="checkVendorFormValid()"></div>
+                    <div class="form-group"><label>ZIP</label><input type="text" id="addVendorZip" placeholder="55000" maxlength="10" oninput="checkVendorFormValid()"></div>
                 </div>
                 <div class="form-actions">
                     <button class="btn-primary accent" id="addVendorBtn" onclick="addVendor()">
@@ -874,6 +875,7 @@
             const name = document.getElementById('addVendorName').value.trim();
             const number = document.getElementById('addVendorNumber').value.trim();
             if (!name || !number) { showFormMsg('vendorFormMsg', 'Name and number are required.', 'error'); return; }
+            if (allVendors.some(v => (v.vendor_number || '').trim() === number)) { showFormMsg('vendorFormMsg', 'Vendor number already exists.', 'error'); return; }
             const btn = document.getElementById('addVendorBtn');
             btn.disabled = true;
             try {
@@ -890,7 +892,7 @@
                 const data = await resp.json();
                 if (!resp.ok) throw new Error(data.error || 'Failed');
                 showFormMsg('vendorFormMsg', `Vendor ${number} added.`, 'success');
-                ['addVendorName','addVendorNumber','addVendorAddress','addVendorCity','addVendorState','addVendorZip'].forEach(id => document.getElementById(id).value = '');
+                ['addVendorName','addVendorNumber','addVendorAddress','addVendorCity','addVendorState','addVendorZip'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('input-invalid', 'input-warning'); });
                 document.getElementById('vendorFormGrid').classList.remove('form-valid');
                 await loadVendors();
             } catch (e) { showFormMsg('vendorFormMsg', e.message, 'error'); }
@@ -1053,11 +1055,56 @@
            FORM VALIDATION – GREEN OUTLINE
            ======================================== */
         function checkVendorFormValid() {
-            const name = document.getElementById('addVendorName').value.trim();
-            const number = document.getElementById('addVendorNumber').value.trim();
+            const nameEl = document.getElementById('addVendorName');
+            const numberEl = document.getElementById('addVendorNumber');
+            const addrEl = document.getElementById('addVendorAddress');
+            const cityEl = document.getElementById('addVendorCity');
+            const stateEl = document.getElementById('addVendorState');
+            const zipEl = document.getElementById('addVendorZip');
             const grid = document.getElementById('vendorFormGrid');
+            const btn = document.getElementById('addVendorBtn');
+
+            const name = nameEl.value.trim().toUpperCase();
+            const number = numberEl.value.trim();
+            const addr = addrEl.value.trim().toUpperCase();
+            const city = cityEl.value.trim().toUpperCase();
+            const state = stateEl.value.trim().toUpperCase();
+            const zip = zipEl.value.trim();
+
+            // Clear all validation states
+            [nameEl, numberEl, addrEl, cityEl, stateEl, zipEl].forEach(el => {
+                el.classList.remove('input-invalid', 'input-warning');
+            });
+
+            // Form valid if name + number filled
             if (name && number) grid.classList.add('form-valid');
             else grid.classList.remove('form-valid');
+
+            // Check vendor number duplicate (red — hard stop)
+            let numberDuplicate = false;
+            if (number) {
+                numberDuplicate = allVendors.some(v => (v.vendor_number || '').trim() === number);
+                if (numberDuplicate) {
+                    numberEl.classList.add('input-invalid');
+                    btn.disabled = true;
+                    showFormMsg('vendorFormMsg', 'Vendor number already exists.', 'error');
+                    return;
+                }
+            }
+            btn.disabled = false;
+            // Clear any previous error message from number check
+            const msgEl = document.getElementById('vendorFormMsg');
+            if (msgEl.textContent === 'Vendor number already exists.') msgEl.textContent = '';
+
+            // Check other fields for matches (yellow — warning only)
+            if (name) {
+                if (allVendors.some(v => (v.vendor_name || '').trim().toUpperCase() === name))
+                    nameEl.classList.add('input-warning');
+            }
+            if (addr) {
+                if (allVendors.some(v => (v.vendor_address || '').trim().toUpperCase() === addr))
+                    addrEl.classList.add('input-warning');
+            }
         }
 
         function checkBudgetFormValid() {
