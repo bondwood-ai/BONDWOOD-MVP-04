@@ -388,12 +388,12 @@ async function handleGetPrefs(request, env) {
 
   try {
     const { results } = await env.DB.prepare(
-      'SELECT dashboard_prefs FROM user_data WHERE LOWER(user_email) = ?'
+      'SELECT preferences FROM user_data WHERE LOWER(user_email) = ?'
     ).bind(email).all();
 
     if (!results.length) return json({ prefs: null });
 
-    const raw = results[0].dashboard_prefs;
+    const raw = results[0].preferences;
     return json({ prefs: raw ? JSON.parse(raw) : null });
   } catch (e) {
     return json({ prefs: null });
@@ -408,7 +408,7 @@ async function handleSavePrefs(request, env) {
   const prefsJson = JSON.stringify(body.prefs || {});
 
   await env.DB.prepare(
-    'UPDATE user_data SET dashboard_prefs = ? WHERE LOWER(user_email) = ?'
+    'UPDATE user_data SET preferences = ? WHERE LOWER(user_email) = ?'
   ).bind(prefsJson, email).run();
 
   return json({ message: 'Preferences saved' });
@@ -1458,7 +1458,7 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN creation_source TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
-    'ALTER TABLE user_data ADD COLUMN dashboard_prefs TEXT',
+    'ALTER TABLE user_data ADD COLUMN preferences TEXT',
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
