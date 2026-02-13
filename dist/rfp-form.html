@@ -1150,7 +1150,7 @@
                 </div>
                 <div class="capture-modal-body">
                     <div class="capture-notice">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.75" fill="var(--primary-hex)" stroke="none"/></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
                         <div>
                             <p><strong>PDF files only.</strong> The invoice must be a <strong>digital PDF</strong> — not a scanned or photographed copy. Text extraction requires selectable text to read invoice data accurately.</p>
                         </div>
@@ -2930,7 +2930,7 @@
                 if (!data.success || !data.lineItems || data.lineItems.length === 0) {
                     banner.style.background = 'var(--warning-color)';
                     banner.innerHTML = `
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
                         No invoice data could be extracted from ${file.name}
                     `;
                     setTimeout(() => { banner.style.transform = 'translateY(-100%)'; }, 3000);
