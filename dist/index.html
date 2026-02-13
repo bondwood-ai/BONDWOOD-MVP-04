@@ -1097,6 +1097,7 @@
         let currentUserRole = 'admin'; // 'user' or 'admin'
         let currentUserId = '';
         let currentUserName = '';
+        let currentUserEmail = '';
         let currentUserRoles = [];
         let vendorListCache = null;
         let _dashboardEmployee = null;
@@ -1112,6 +1113,7 @@
                     _dashboardEmployee = user;
                     currentUserName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
                     currentUserId = user.user_id ? `E${user.user_id}` : '';
+                    currentUserEmail = (user.email || '').toLowerCase().trim();
                     currentUserRoles = user.roles || [];
                     console.log('[SSO] Logged in as:', currentUserName, currentUserId, 'Roles:', currentUserRoles);
                 }
@@ -1231,8 +1233,9 @@
         }
 
         async function saveColumnPrefs() {
+            if (!currentUserEmail) return;
             try {
-                await fetch(`${API_BASE}/api/me/prefs`, {
+                await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prefs: getColumnPrefsPayload() }),
@@ -1243,8 +1246,9 @@
         }
 
         async function loadColumnPrefs() {
+            if (!currentUserEmail) return;
             try {
-                const resp = await fetch(`${API_BASE}/api/me/prefs`);
+                const resp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`);
                 if (!resp.ok) return;
                 const data = await resp.json();
                 if (data.prefs && data.prefs.columns) {

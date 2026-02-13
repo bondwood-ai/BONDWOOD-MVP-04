@@ -368,7 +368,9 @@ async function handleMe(request, env, url) {
    USER PREFERENCES
    ======================================== */
 function getEmailFromRequest(request) {
-  let email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  const url = new URL(request.url);
+  let email = url.searchParams.get('email');
+  if (!email) email = request.headers.get('Cf-Access-Authenticated-User-Email');
   if (!email) {
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/CF_Authorization=([^;]+)/);
