@@ -544,6 +544,20 @@
         </div>
     </div>
 
+    <!-- Duplicate Vendor Warning Modal -->
+    <div class="modal-overlay" id="duplicateVendorModal" onclick="if(event.target===this)closeDuplicateVendorModal()">
+        <div class="modal-box" style="max-width:440px;">
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--negative-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <h3 style="margin:0;font-size:1rem;">Cannot Add Vendor</h3>
+            </div>
+            <p id="duplicateVendorMsg" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;margin-bottom:0.25rem;"></p>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeDuplicateVendorModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Vendor Modal -->
     <div class="modal-overlay" id="editVendorModal" onclick="if(event.target===this)closeEditVendor()">
         <div class="edit-modal-panel">
@@ -875,7 +889,12 @@
             const name = document.getElementById('addVendorName').value.trim();
             const number = document.getElementById('addVendorNumber').value.trim();
             if (!name || !number) { showFormMsg('vendorFormMsg', 'Name and number are required.', 'error'); return; }
-            if (allVendors.some(v => (v.vendor_number || '').trim() === number)) { showFormMsg('vendorFormMsg', 'Vendor number already exists.', 'error'); return; }
+            const existingVendor = allVendors.find(v => (v.vendor_number || '').trim() === number);
+            if (existingVendor) {
+                document.getElementById('duplicateVendorMsg').textContent = `Vendor number "${number}" is already assigned to "${existingVendor.vendor_name || 'Unknown'}". Please use a different vendor number.`;
+                document.getElementById('duplicateVendorModal').classList.add('open');
+                return;
+            }
             const btn = document.getElementById('addVendorBtn');
             btn.disabled = true;
             try {
@@ -1284,6 +1303,7 @@
         }
 
         function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
+        function closeDuplicateVendorModal() { document.getElementById('duplicateVendorModal').classList.remove('open'); }
 
         async function confirmDelete() {
             closeDeleteModal();
