@@ -152,7 +152,7 @@ export default {
 
       // ── RFPs ──
       if (path === '/api/rfps' && method === 'GET') {
-        return handleListRFPs(env, url);
+        return handleListRFPs(env, url, request);
       }
       if (path === '/api/rfps' && method === 'POST') {
         return handleCreateRFP(request, env);
@@ -738,7 +738,7 @@ async function handleGetDistricts(env, url) {
 /* ========================================
    RFPs – LIST
    ======================================== */
-async function handleListRFPs(env, url) {
+async function handleListRFPs(env, url, request) {
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '250'), 1000);
   const offset = (page - 1) * limit;
@@ -752,6 +752,26 @@ async function handleListRFPs(env, url) {
 
   let where = ['d.deleted_at IS NULL'];
   let params = [];
+
+  // Role-based filtering: if user can only view own, restrict to their submissions
+  const email = getEmailFromRequest(request);
+  if (email) {
+    const { results: userData } = await env.DB.prepare(
+      'SELECT user_roles FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(email).all();
+
+    if (userData.length) {
+      let roles = [];
+      try { roles = JSON.parse(userData[0].user_roles || '["user"]'); } catch (e) { roles = ['user']; }
+      const permissions = await resolvePermissions(roles, env);
+
+      // If user can only view own (no broader view permissions), filter by their email
+      if (permissions.can_view_own && !permissions.can_approve && !permissions.can_view_history && !permissions.can_manage_users) {
+        where.push('LOWER(d.submitter_email) = ?');
+        params.push(email);
+      }
+    }
+  }
 
   if (status && status !== 'all') {
     where.push('d.status = ?');
@@ -846,17 +866,18 @@ async function handleCreateRFP(request, env) {
 
   const headerStmt = env.DB.prepare(`
     INSERT INTO dashboard_data (
-      rfp_number, submitter_name, submitter_id, budget_approver,
+      rfp_number, submitter_name, submitter_id, submitter_email, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
       description, status, assigned_to, ap_batch, mileage_total, creation_source
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
     nextRfp,
     body.submitter_name || '',
     body.submitter_id || '',
+    body.submitter_email || '',
     body.budget_approver || null,
     submissionDate,
     body.request_type || 'vendor',
@@ -1000,7 +1021,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
 
   // ── Build update statements ──
   const updatableFields = [
-    'submitter_name', 'submitter_id', 'budget_approver', 'submission_date',
+    'submitter_name', 'submitter_id', 'submitter_email', 'budget_approver', 'submission_date',
     'request_type', 'vendor_name', 'vendor_number', 'vendor_address',
     'invoice_number', 'employee_name', 'employee_id', 'description',
     'status', 'assigned_to', 'ap_batch', 'mileage_total',
@@ -1313,21 +1334,21 @@ async function handleSeedDummy(request, env) {
 
   // ── Reference data pools ──
   const submitters = [
-    { name: 'Sarah Johnson', id: 'sjohnson' },
-    { name: 'Michael Chen', id: 'mchen' },
-    { name: 'Emily Rodriguez', id: 'erodriguez' },
-    { name: 'David Kim', id: 'dkim' },
-    { name: 'Jessica Martinez', id: 'jmartinez' },
-    { name: 'Robert Anderson', id: 'randerson' },
-    { name: 'Amanda Thompson', id: 'athompson' },
-    { name: 'James Wilson', id: 'jwilson' },
-    { name: 'Lisa Park', id: 'lpark' },
-    { name: 'Thomas Brown', id: 'tbrown' },
-    { name: 'Rachel Green', id: 'rgreen' },
-    { name: 'Kevin Nguyen', id: 'knguyen' },
-    { name: 'Maria Garcia', id: 'mgarcia' },
-    { name: 'Daniel Lee', id: 'dlee' },
-    { name: 'Stephanie White', id: 'swhite' },
+    { name: 'Sarah Johnson', id: 'sjohnson', email: 'sjohnson@district.org' },
+    { name: 'Michael Chen', id: 'mchen', email: 'mchen@district.org' },
+    { name: 'Emily Rodriguez', id: 'erodriguez', email: 'erodriguez@district.org' },
+    { name: 'David Kim', id: 'dkim', email: 'dkim@district.org' },
+    { name: 'Jessica Martinez', id: 'jmartinez', email: 'jmartinez@district.org' },
+    { name: 'Robert Anderson', id: 'randerson', email: 'randerson@district.org' },
+    { name: 'Amanda Thompson', id: 'athompson', email: 'athompson@district.org' },
+    { name: 'James Wilson', id: 'jwilson', email: 'jwilson@district.org' },
+    { name: 'Lisa Park', id: 'lpark', email: 'lpark@district.org' },
+    { name: 'Thomas Brown', id: 'tbrown', email: 'tbrown@district.org' },
+    { name: 'Rachel Green', id: 'rgreen', email: 'rgreen@district.org' },
+    { name: 'Kevin Nguyen', id: 'knguyen', email: 'knguyen@district.org' },
+    { name: 'Maria Garcia', id: 'mgarcia', email: 'mgarcia@district.org' },
+    { name: 'Daniel Lee', id: 'dlee', email: 'dlee@district.org' },
+    { name: 'Stephanie White', id: 'swhite', email: 'swhite@district.org' },
   ];
 
   const approvers = [
@@ -1448,15 +1469,16 @@ async function handleSeedDummy(request, env) {
       allStmts.push(
         env.DB.prepare(`
           INSERT INTO dashboard_data (
-            rfp_number, submitter_name, submitter_id, budget_approver,
+            rfp_number, submitter_name, submitter_id, submitter_email, budget_approver,
             submission_date, request_type, vendor_name, vendor_number,
             vendor_address, invoice_number, employee_name, employee_id,
             description, status, assigned_to, ap_batch, mileage_total, creation_source, check_number
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           currentRfp,
           sub.name,
           sub.id,
+          sub.email,
           pick(approvers),
           submissionDate,
           reqType,
