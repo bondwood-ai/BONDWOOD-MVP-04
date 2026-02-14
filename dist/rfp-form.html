@@ -4993,12 +4993,20 @@
                 const q = this.value.trim();
                 if (q.length < 1 || !budgetDataLoaded) { closeBcDropdown(this); return; }
 
-                // Instant unauthorized check — works on partial codes as they're typed
-                if (partialCodeViolatesRestriction(q)) {
-                    this.classList.add('bc-error');
-                    showUnauthorizedAlert('Unauthorized Budget Code');
-                    closeBcDropdown(this);
-                    return;
+                // Instant unauthorized check — if user types something that matches NO codes in their pool
+                // but DOES match codes in the full system, it's unauthorized
+                if (USER_RESTRICTIONS.restricted_budget && q.length >= 2) {
+                    const pool = getBudgetCodePool();
+                    const poolHits = pool.some(c => c.includes(q));
+                    if (!poolHits) {
+                        const fullHits = UNIQUE_BUDGET_CODES.some(c => c.includes(q));
+                        if (fullHits) {
+                            this.classList.add('bc-error');
+                            showUnauthorizedAlert('Unauthorized Budget Code');
+                            closeBcDropdown(this);
+                            return;
+                        }
+                    }
                 }
 
                 // If exact match in pool, mark valid (green)
@@ -5271,22 +5279,18 @@
             if (!val) { input.classList.remove('bc-error', 'bc-valid'); removeBcTooltip(input); return; }
             if (!budgetDataLoaded) return;
 
-            // Check restriction rules first — works on partial AND full codes
-            if (partialCodeViolatesRestriction(val)) {
-                input.classList.remove('bc-valid');
-                input.classList.add('bc-error');
-                showUnauthorizedAlert('Unauthorized Budget Code');
-                return;
-            }
-
-            // Also check full codes against the filtered pool
-            if (USER_RESTRICTIONS.restricted_budget && BUDGET_CODE_MAP[val]) {
+            // Check restriction rules — pool-based check
+            if (USER_RESTRICTIONS.restricted_budget) {
                 const pool = getBudgetCodePool();
-                if (!pool.includes(val)) {
-                    input.classList.remove('bc-valid');
-                    input.classList.add('bc-error');
-                    showUnauthorizedAlert('Unauthorized Budget Code');
-                    return;
+                const inPool = pool.includes(val) || pool.some(c => c.includes(val));
+                if (!inPool) {
+                    const inFull = UNIQUE_BUDGET_CODES.includes(val) || UNIQUE_BUDGET_CODES.some(c => c.includes(val));
+                    if (inFull) {
+                        input.classList.remove('bc-valid');
+                        input.classList.add('bc-error');
+                        showUnauthorizedAlert('Unauthorized Budget Code');
+                        return;
+                    }
                 }
             }
 
@@ -5389,7 +5393,7 @@
                     const acVal = acInput.value.trim();
                     if (bcVal && !BUDGET_CODE_MAP[bcVal]) {
                         bcInput.classList.add('bc-error');
-                        if (partialCodeViolatesRestriction(bcVal)) {
+                        if (USER_RESTRICTIONS.restricted_budget && !getBudgetCodePool().some(c => c.includes(bcVal)) && UNIQUE_BUDGET_CODES.some(c => c.includes(bcVal))) {
                             showUnauthorizedAlert('Unauthorized Budget Code');
                         } else {
                             showBcTooltip(bcInput, 'Budget code not found');
@@ -5414,7 +5418,7 @@
                     const acVal = acInput.value.trim();
                     if (bcVal && !BUDGET_CODE_MAP[bcVal]) {
                         bcInput.classList.add('bc-error');
-                        if (partialCodeViolatesRestriction(bcVal)) {
+                        if (USER_RESTRICTIONS.restricted_budget && !getBudgetCodePool().some(c => c.includes(bcVal)) && UNIQUE_BUDGET_CODES.some(c => c.includes(bcVal))) {
                             showUnauthorizedAlert('Unauthorized Budget Code');
                         } else {
                             showBcTooltip(bcInput, 'Budget code not found');
