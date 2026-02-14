@@ -313,7 +313,7 @@
             max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             border: 1px solid var(--border-color); padding: 1.5rem 2rem;
         }
-        .rg-detail-header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+        .rg-detail-header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
         .rg-detail-header > div { flex: 1; }
         .rg-name-input {
             width: 100%; border: none; outline: none; background: transparent;
@@ -327,6 +327,36 @@
             font-family: 'Inter', sans-serif; font-size: 0.82rem; color: var(--text-secondary);
             padding: 0.25rem 0; margin-top: 0.25rem;
         }
+        /* Ensure seamless appearance in dark mode */
+        body.dark-mode .rg-name-input,
+        body.dark-mode .rg-desc-input,
+        body.dark-mode .rg-name-input:focus,
+        body.dark-mode .rg-desc-input:focus {
+            background: transparent; -webkit-text-fill-color: unset;
+        }
+        body.dark-mode .rg-name-input:-webkit-autofill,
+        body.dark-mode .rg-desc-input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px var(--card-bg) inset;
+            -webkit-text-fill-color: var(--text-primary);
+        }
+
+        /* Meta save bar */
+        .rg-meta-bar {
+            display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;
+            margin-bottom: 1.25rem; min-height: 32px;
+        }
+        .rg-meta-bar .rg-save-btn {
+            display: none; padding: 0.35rem 1rem; border-radius: 8px; border: none;
+            background: var(--primary-hex); color: #fff; font-family: 'Inter', sans-serif;
+            font-size: 0.78rem; font-weight: 600; cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .rg-meta-bar .rg-save-btn:hover { opacity: 0.85; }
+        .rg-meta-bar .rg-save-btn.visible { display: inline-flex; }
+        .rg-meta-bar .rg-unsaved {
+            font-size: 0.7rem; color: var(--text-secondary); font-style: italic; display: none;
+        }
+        .rg-meta-bar .rg-unsaved.visible { display: inline; }
         .rg-section { margin-bottom: 1.5rem; }
         .rg-section-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.25rem; }
         .rg-section-hint { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.75rem; opacity: 0.7; }
@@ -824,16 +854,20 @@
     </div>
 
     <!-- Restriction Group Detail Modal -->
-    <div class="modal-overlay" id="rgDetailModal" onclick="if(event.target===this)closeRgDetail()">
+    <div class="modal-overlay" id="rgDetailModal" onclick="if(event.target===this)tryCloseRgDetail()">
         <div class="rg-detail-panel">
             <div class="rg-detail-header">
                 <div>
-                    <input type="text" id="rgDetailName" class="rg-name-input" placeholder="Group Name" onchange="saveRgMeta()">
-                    <input type="text" id="rgDetailDesc" class="rg-desc-input" placeholder="Add a description..." onchange="saveRgMeta()">
+                    <input type="text" id="rgDetailName" class="rg-name-input" placeholder="Group Name" oninput="markRgMetaDirty()">
+                    <input type="text" id="rgDetailDesc" class="rg-desc-input" placeholder="Add a description..." oninput="markRgMetaDirty()">
                 </div>
-                <button onclick="closeRgDetail()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;flex-shrink:0;align-self:start;">
+                <button onclick="tryCloseRgDetail()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;flex-shrink:0;align-self:start;">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
+            </div>
+            <div class="rg-meta-bar">
+                <span class="rg-unsaved" id="rgUnsavedHint">Unsaved changes</span>
+                <button class="rg-save-btn" id="rgSaveMetaBtn" onclick="saveRgMeta()">Save</button>
             </div>
 
             <!-- Budget Code Rules -->
@@ -1865,6 +1899,9 @@
             } catch (e) { showToast('Failed to Delete Group', 'error'); }
         }
 
+        let rgMetaDirty = false;
+        let rgMetaOriginal = { name: '', desc: '' };
+
         async function openRgDetail(id) {
             currentRgId = id;
             const g = allRestrictionGroups.find(g => g.id === id);
@@ -1872,6 +1909,10 @@
 
             document.getElementById('rgDetailName').value = g.name;
             document.getElementById('rgDetailDesc').value = g.description || '';
+            rgMetaOriginal = { name: g.name, desc: g.description || '' };
+            rgMetaDirty = false;
+            updateMetaSaveBar();
+
             renderBudgetRules(g.budget_rules);
             renderRgVendorTags(g.vendors);
             document.getElementById('rgVendorSearch').value = '';
@@ -1894,22 +1935,75 @@
             document.getElementById('rgDetailModal').classList.add('open');
         }
 
+        function markRgMetaDirty() {
+            const name = document.getElementById('rgDetailName').value.trim();
+            const desc = document.getElementById('rgDetailDesc').value.trim();
+            rgMetaDirty = (name !== rgMetaOriginal.name || desc !== rgMetaOriginal.desc);
+            updateMetaSaveBar();
+        }
+
+        function updateMetaSaveBar() {
+            document.getElementById('rgSaveMetaBtn').classList.toggle('visible', rgMetaDirty);
+            document.getElementById('rgUnsavedHint').classList.toggle('visible', rgMetaDirty);
+        }
+
+        function tryCloseRgDetail() {
+            if (rgMetaDirty) {
+                showRgUnsavedWarning();
+                return;
+            }
+            closeRgDetail();
+        }
+
+        function showRgUnsavedWarning() {
+            // Reuse the same pattern as confirm modal
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay open';
+            overlay.style.zIndex = '10001';
+            overlay.innerHTML = `
+                <div style="background:var(--card-bg);border-radius:14px;padding:1.5rem 2rem;max-width:380px;width:90%;border:1px solid var(--border-color);box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <h3 style="margin:0;font-size:1rem;font-weight:700;color:var(--text-primary);">Unsaved Changes</h3>
+                    </div>
+                    <p style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.25rem;">You have unsaved changes to the group name or description. Would you like to save before closing?</p>
+                    <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                        <button onclick="this.closest('.modal-overlay').remove();rgMetaDirty=false;closeRgDetail();" style="padding:0.4rem 1rem;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:500;cursor:pointer;">Discard</button>
+                        <button onclick="this.closest('.modal-overlay').remove();saveRgMeta().then(()=>closeRgDetail());" style="padding:0.4rem 1rem;border-radius:8px;border:none;background:var(--primary-hex);color:#fff;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;">Save & Close</button>
+                    </div>
+                </div>`;
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+            document.body.appendChild(overlay);
+        }
+
         function closeRgDetail() {
             document.getElementById('rgDetailModal').classList.remove('open');
             currentRgId = null;
+            rgMetaDirty = false;
             loadRestrictionGroups(); // refresh table counts
         }
 
         async function saveRgMeta() {
             if (!currentRgId) return;
             const name = document.getElementById('rgDetailName').value.trim();
-            if (!name) return;
+            if (!name) { showToast('Group Name Required', 'error'); return; }
+            const desc = document.getElementById('rgDetailDesc').value.trim();
             try {
-                await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}`, {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, description: document.getElementById('rgDetailDesc').value.trim() })
+                    body: JSON.stringify({ name, description: desc })
                 });
-            } catch (e) {}
+                if (!resp.ok) throw new Error();
+                // Update local cache
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g) { g.name = name; g.description = desc; }
+                rgMetaOriginal = { name, desc };
+                rgMetaDirty = false;
+                updateMetaSaveBar();
+                showToast('Group Saved', 'success');
+            } catch (e) {
+                showToast('Failed to Save Group', 'error');
+            }
         }
 
         // ─── Budget Rules ───
