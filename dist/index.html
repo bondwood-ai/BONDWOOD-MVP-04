@@ -1807,12 +1807,26 @@
                 container.innerHTML = '<div class="adv-no-items">No options</div>';
                 return;
             }
+            // Preserve any previously checked values before rebuilding
+            const previouslyChecked = new Set(
+                Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value)
+            );
             container.innerHTML = values.map(val => {
                 let display = val;
                 if (field === 'status') display = STATUS_LABELS[val] || val;
                 else if (field === 'request_type') display = TYPE_LABELS[val] || val;
-                return `<label><input type="checkbox" value="${val}" onchange="updateChecklistCount(this)">${display}</label>`;
+                const checked = previouslyChecked.has(val) ? ' checked' : '';
+                return `<label><input type="checkbox" value="${val}"${checked} onchange="updateChecklistCount(this)">${display}</label>`;
             }).join('');
+            // Restore count badge
+            if (previouslyChecked.size > 0) {
+                const cfg = ADV_FIELDS[field];
+                if (cfg) {
+                    const badge = document.getElementById(cfg.countId);
+                    const count = container.querySelectorAll('input[type="checkbox"]:checked').length;
+                    if (count > 0) { badge.textContent = count; badge.style.display = 'inline'; }
+                }
+            }
         }
 
         function updateChecklistCount(checkbox) {
