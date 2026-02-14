@@ -939,6 +939,9 @@
             localStorage.setItem('theme', pref);
             applyTheme(pref);
             saveThemePref(pref);
+            formDirty = true;
+            document.getElementById('saveBtn').disabled = false;
+            document.getElementById('saveStatus').classList.remove('visible');
         });
 
         /* ========================================
