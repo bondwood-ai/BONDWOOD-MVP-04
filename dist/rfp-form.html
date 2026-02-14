@@ -1505,12 +1505,19 @@
            ======================================== */
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let VENDOR_DATA = [];
-        let USER_RESTRICTIONS = {};
+        let USER_RESTRICTIONS = { restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] };
+
+        async function loadUserRestrictionRules(email) {
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/restriction-rules?email=${encodeURIComponent(email)}`);
+                if (resp.ok) return await resp.json();
+            } catch (e) { console.warn('Failed to load restriction rules:', e); }
+            return { restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] };
+        }
 
         function getVendorPool() {
-            const r = USER_RESTRICTIONS.vendors;
-            if (!r || !r.length) return VENDOR_DATA;
-            const allowed = new Set(r);
+            if (!USER_RESTRICTIONS.restricted_vendors) return VENDOR_DATA;
+            const allowed = new Set(USER_RESTRICTIONS.vendor_numbers);
             return VENDOR_DATA.filter(v => allowed.has(v.c));
         }
 
@@ -1871,7 +1878,7 @@
                     if (resp.ok) {
                         const impUser = await resp.json();
                         const perms = impUser.permissions || {};
-                        USER_RESTRICTIONS = impUser.restrictions || {};
+                        USER_RESTRICTIONS = await loadUserRestrictionRules(impEmail);
                         const um = document.getElementById('userMgmtMenuItem');
                         const dm = document.getElementById('dataMgmtMenuItem');
                         if (um) um.style.display = perms.can_manage_users ? '' : 'none';
@@ -1898,7 +1905,7 @@
                 if (!permResp.ok) return;
                 const fullUser = await permResp.json();
                 const perms = fullUser.permissions || {};
-                USER_RESTRICTIONS = fullUser.restrictions || {};
+                USER_RESTRICTIONS = await loadUserRestrictionRules(user.email);
                 if (perms.can_manage_users) {
                     const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
                 }
@@ -4810,11 +4817,41 @@
         }
         let UNIQUE_BUDGET_CODES = []; // sorted unique budget codes
 
+        function budgetCodeMatchesRule(code, rule) {
+            // Parse budget code into components: fund(2) org(3) program(3) finance(3) course(3)
+            const clean = code.replace(/[^0-9]/g, '');
+            const fund = clean.substring(0, 2);
+            const org = clean.substring(2, 5);
+            const prog = clean.substring(5, 8);
+            const fin = clean.substring(8, 11);
+            const course = clean.substring(11, 14);
+
+            function fieldMatches(codeVal, ruleVal) {
+                if (!ruleVal) return true; // null/empty = any
+                const rv = ruleVal.toUpperCase();
+                const cv = codeVal.toUpperCase();
+                if (rv.includes('X')) {
+                    // Wildcard: compare only the non-X characters
+                    for (let i = 0; i < rv.length; i++) {
+                        if (rv[i] !== 'X' && (i >= cv.length || rv[i] !== cv[i])) return false;
+                    }
+                    return true;
+                }
+                return cv === rv;
+            }
+
+            return fieldMatches(fund, rule.fund) &&
+                   fieldMatches(org, rule.organization) &&
+                   fieldMatches(prog, rule.program) &&
+                   fieldMatches(fin, rule.finance) &&
+                   fieldMatches(course, rule.course);
+        }
+
         function getBudgetCodePool() {
-            const r = USER_RESTRICTIONS.budget_codes;
-            if (!r || !r.length) return UNIQUE_BUDGET_CODES;
-            const allowed = new Set(r);
-            return UNIQUE_BUDGET_CODES.filter(c => allowed.has(c));
+            if (!USER_RESTRICTIONS.restricted_budget) return UNIQUE_BUDGET_CODES;
+            const rules = USER_RESTRICTIONS.budget_rules;
+            if (!rules || !rules.length) return UNIQUE_BUDGET_CODES;
+            return UNIQUE_BUDGET_CODES.filter(code => rules.some(rule => budgetCodeMatchesRule(code, rule)));
         }
         let budgetDataLoaded = false;
 

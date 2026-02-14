@@ -307,6 +307,83 @@
         body.data-readonly #saveBudgetBtn { display: none !important; }
         body.data-readonly .edit-modal-panel input:not([readonly]) { background: var(--readonly-bg); pointer-events: none; }
         body.data-readonly .edit-modal-panel .role-checkboxes { pointer-events: none; opacity: 0.6; }
+        /* Restriction Group Detail Panel */
+        .rg-detail-panel {
+            background: var(--card-bg); border-radius: 14px; width: 720px; max-width: 96vw;
+            max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color); padding: 1.5rem 2rem;
+        }
+        .rg-detail-header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+        .rg-detail-header > div { flex: 1; }
+        .rg-name-input {
+            width: 100%; border: none; outline: none; background: transparent;
+            font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 700;
+            color: var(--text-primary); padding: 0.25rem 0;
+            border-bottom: 2px solid transparent;
+        }
+        .rg-name-input:focus { border-bottom-color: var(--primary-hex); }
+        .rg-desc-input {
+            width: 100%; border: none; outline: none; background: transparent;
+            font-family: 'Inter', sans-serif; font-size: 0.82rem; color: var(--text-secondary);
+            padding: 0.25rem 0; margin-top: 0.25rem;
+        }
+        .rg-section { margin-bottom: 1.5rem; }
+        .rg-section-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.25rem; }
+        .rg-section-hint { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.75rem; opacity: 0.7; }
+
+        .rg-rule-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
+        .rg-rule-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-color); }
+        .rg-rule-table td { font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-family: 'Inter', monospace; }
+        .rg-rule-table .wildcard { color: var(--primary-hex); font-weight: 600; }
+        .rg-rule-table .any { color: var(--text-secondary); font-style: italic; opacity: 0.5; }
+        .rg-rule-table .del-btn { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 2px; }
+        .rg-rule-table .del-btn:hover { color: var(--negative-color); }
+
+        .rg-rule-add {
+            display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;
+        }
+        .rg-rule-add input {
+            padding: 0.35rem 0.5rem; border: 1px solid var(--border-color); border-radius: 6px;
+            font-family: 'Inter', sans-serif; font-size: 0.78rem; color: var(--text-primary);
+            background: var(--bg-color); text-transform: uppercase;
+        }
+        .rg-rule-add input::placeholder { text-transform: none; }
+        .rg-add-rule-btn {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid var(--primary-hex);
+            background: transparent; color: var(--primary-hex); font-family: 'Inter', sans-serif;
+            font-size: 0.75rem; font-weight: 600; cursor: pointer;
+        }
+        .rg-add-rule-btn:hover { background: color-mix(in srgb, var(--primary-hex) 10%, transparent); }
+
+        .restriction-search-wrap {
+            display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.6rem;
+            border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color);
+        }
+        .restriction-search-wrap input {
+            border: none; outline: none; background: transparent; font-family: 'Inter', sans-serif;
+            font-size: 0.8rem; color: var(--text-primary); flex: 1; min-width: 0;
+        }
+        .restriction-search-wrap input::placeholder { color: var(--text-secondary); }
+        .restriction-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; min-height: 1.5rem; }
+        .restriction-tag {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 500;
+            background: color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color)); color: var(--text-primary);
+            border: 1px solid color-mix(in srgb, var(--primary-hex) 25%, var(--border-color));
+        }
+        .restriction-tag button { background: none; border: none; cursor: pointer; padding: 0; line-height: 1; color: var(--text-secondary); font-size: 0.85rem; display: flex; }
+        .restriction-tag button:hover { color: var(--negative-color); }
+        .restriction-dropdown { max-height: 160px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); display: none; }
+        .restriction-dropdown.open { display: block; }
+        .restriction-dropdown-item { padding: 0.4rem 0.6rem; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        .restriction-dropdown-item:last-child { border-bottom: none; }
+        .restriction-dropdown-item:hover { background: color-mix(in srgb, var(--primary-hex) 8%, var(--card-bg)); }
+        .restriction-dropdown-item .rd-add { font-size: 0.7rem; font-weight: 600; color: var(--primary-hex); }
+        .restriction-dropdown-item.already { opacity: 0.4; pointer-events: none; }
+        .restriction-dropdown-item .rd-sub { font-size: 0.65rem; color: var(--text-secondary); margin-left: 0.5rem; }
+
+        .rg-no-rules { font-size: 0.78rem; color: var(--text-secondary); font-style: italic; padding: 0.5rem 0; }
     </style>
 
     <script>
@@ -399,6 +476,7 @@
         <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab('vendors')">Vendors</button>
             <button class="tab-btn" onclick="switchTab('budget-codes')">Budget Codes</button>
+            <button class="tab-btn" onclick="switchTab('restriction-groups')">Restriction Groups</button>
         </div>
 
         <!-- ============ VENDORS TAB ============ -->
@@ -503,6 +581,37 @@
                     </table>
                 </div>
                 <div class="pagination" id="budgetPagination"></div>
+            </div>
+        </div>
+
+        <!-- ============ RESTRICTION GROUPS TAB ============ -->
+        <div class="tab-panel" id="panel-restriction-groups">
+            <div class="add-form-card" id="rgAddForm">
+                <div class="form-grid" style="grid-template-columns:1fr 2fr auto;">
+                    <div class="form-group"><label>Group Name</label><input type="text" id="addRgName" placeholder="e.g. Elementary Schools" oninput="checkRgFormValid()"></div>
+                    <div class="form-group"><label>Description</label><input type="text" id="addRgDesc" placeholder="Optional description"></div>
+                    <div class="form-group" style="align-self:end;">
+                        <button class="add-btn" id="addRgBtn" disabled onclick="createRestrictionGroup()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                            Create Group
+                        </button>
+                    </div>
+                </div>
+                <div class="form-msg" id="rgFormMsg"></div>
+            </div>
+
+            <div class="table-card" style="border-top:none;">
+                <table>
+                    <thead><tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Budget Rules</th>
+                        <th>Vendors</th>
+                        <th>Assigned Users</th>
+                        <th class="no-sort" style="width:60px;"></th>
+                    </tr></thead>
+                    <tbody id="rgBody"><tr><td colspan="6" class="empty-state">Loading restriction groups...</td></tr></tbody>
+                </table>
             </div>
         </div>
     </main>
@@ -628,6 +737,51 @@
             <p style="font-size:0.82rem;font-weight:600;margin-top:0.75rem;">Please contact an Administrator to have this budget code added to the system.</p>
             <div class="modal-footer">
                 <button class="btn-primary accent" onclick="closeAdminReview()">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restriction Group Detail Modal -->
+    <div class="modal-overlay" id="rgDetailModal" onclick="if(event.target===this)closeRgDetail()">
+        <div class="rg-detail-panel">
+            <div class="rg-detail-header">
+                <div>
+                    <input type="text" id="rgDetailName" class="rg-name-input" placeholder="Group Name" onchange="saveRgMeta()">
+                    <input type="text" id="rgDetailDesc" class="rg-desc-input" placeholder="Add a description..." onchange="saveRgMeta()">
+                </div>
+                <button onclick="closeRgDetail()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;flex-shrink:0;align-self:start;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Budget Code Rules -->
+            <div class="rg-section">
+                <div class="rg-section-title">Budget Code Rules</div>
+                <div class="rg-section-hint">Each rule defines a pattern. A budget code matches if any component set below matches. Leave a field blank for "any".</div>
+                <div id="rgBudgetRules"></div>
+                <div class="rg-rule-add">
+                    <input type="text" id="rgRuleFund" placeholder="Fund" maxlength="2" style="width:60px;">
+                    <input type="text" id="rgRuleOrg" placeholder="Org" maxlength="3" style="width:70px;">
+                    <input type="text" id="rgRuleProg" placeholder="Program" maxlength="3" style="width:80px;">
+                    <input type="text" id="rgRuleFin" placeholder="Finance" maxlength="3" style="width:80px;">
+                    <input type="text" id="rgRuleCourse" placeholder="Course" maxlength="3" style="width:80px;">
+                    <button class="rg-add-rule-btn" onclick="addBudgetRule()">
+                        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                        Add Rule
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vendor Restrictions -->
+            <div class="rg-section">
+                <div class="rg-section-title">Vendor Restrictions</div>
+                <div class="rg-section-hint">Add vendors this group allows access to.</div>
+                <div class="restriction-search-wrap" style="margin-bottom:0.5rem;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="rgVendorSearch" placeholder="Search vendors..." autocomplete="off" oninput="searchRgVendors()">
+                </div>
+                <div id="rgVendorTags" class="restriction-tags"></div>
+                <div id="rgVendorDropdown" class="restriction-dropdown"></div>
             </div>
         </div>
     </div>
@@ -821,9 +975,11 @@
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            const idx = tab === 'vendors' ? 0 : 1;
-            document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+            const tabs = ['vendors', 'budget-codes', 'restriction-groups'];
+            const idx = tabs.indexOf(tab);
+            document.querySelectorAll('.tab-btn')[idx >= 0 ? idx : 0].classList.add('active');
             document.getElementById(`panel-${tab}`).classList.add('active');
+            if (tab === 'restriction-groups' && !rgDataLoaded) loadRestrictionGroups();
         }
 
         /* ========================================
@@ -1526,6 +1682,228 @@
             const t = document.getElementById('toast');
             t.textContent = msg; t.className = 'toast ' + (type || 'success'); t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        /* ========================================
+           RESTRICTION GROUPS
+           ======================================== */
+        let rgDataLoaded = false;
+        let allRestrictionGroups = [];
+        let currentRgId = null;
+        let rgVendorData = []; // cached vendor list
+
+        function escapeHTML(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        async function loadRestrictionGroups() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups`);
+                const data = await resp.json();
+                allRestrictionGroups = data.groups || [];
+                rgDataLoaded = true;
+                renderRgTable();
+            } catch (e) {
+                document.getElementById('rgBody').innerHTML = '<tr><td colspan="6" class="empty-state">Failed to load restriction groups.</td></tr>';
+            }
+        }
+
+        function renderRgTable() {
+            const body = document.getElementById('rgBody');
+            if (!allRestrictionGroups.length) {
+                body.innerHTML = '<tr><td colspan="6" class="empty-state">No restriction groups yet. Create one above.</td></tr>';
+                return;
+            }
+            body.innerHTML = allRestrictionGroups.map(g => `
+                <tr onclick="openRgDetail(${g.id})" style="cursor:pointer;">
+                    <td style="font-weight:600;">${escapeHTML(g.name)}</td>
+                    <td style="color:var(--text-secondary);font-size:0.78rem;">${escapeHTML(g.description || '—')}</td>
+                    <td><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
+                    <td><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
+                    <td style="font-size:0.78rem;color:var(--text-secondary);">${g.assigned_users.length || '—'}</td>
+                    <td><button onclick="event.stopPropagation();deleteRg(${g.id},'${escapeHTML(g.name)}')" class="rg-rule-table del-btn" title="Delete group" style="padding:4px;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button></td>
+                </tr>
+            `).join('');
+        }
+
+        function checkRgFormValid() {
+            document.getElementById('addRgBtn').disabled = !document.getElementById('addRgName').value.trim();
+        }
+
+        async function createRestrictionGroup() {
+            const name = document.getElementById('addRgName').value.trim();
+            const desc = document.getElementById('addRgDesc').value.trim();
+            if (!name) return;
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description: desc })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { showToast(data.error || 'Failed to Create Group', 'error'); return; }
+                document.getElementById('addRgName').value = '';
+                document.getElementById('addRgDesc').value = '';
+                document.getElementById('addRgBtn').disabled = true;
+                showToast('Group Created', 'success');
+                await loadRestrictionGroups();
+                openRgDetail(data.id);
+            } catch (e) { showToast('Failed to Create Group', 'error'); }
+        }
+
+        async function deleteRg(id, name) {
+            if (!confirm(`Delete restriction group "${name}"? This will remove it from all assigned users.`)) return;
+            try {
+                await fetch(`${API_BASE}/api/restriction-groups/${id}`, { method: 'DELETE' });
+                showToast('Group Deleted', 'success');
+                loadRestrictionGroups();
+            } catch (e) { showToast('Failed to Delete Group', 'error'); }
+        }
+
+        async function openRgDetail(id) {
+            currentRgId = id;
+            const g = allRestrictionGroups.find(g => g.id === id);
+            if (!g) return;
+
+            document.getElementById('rgDetailName').value = g.name;
+            document.getElementById('rgDetailDesc').value = g.description || '';
+            renderBudgetRules(g.budget_rules);
+            renderRgVendorTags(g.vendors);
+            document.getElementById('rgVendorSearch').value = '';
+            document.getElementById('rgVendorDropdown').classList.remove('open');
+
+            // Load vendor data for search if not cached
+            if (!rgVendorData.length) {
+                try {
+                    const resp = await fetch(`${API_BASE}/api/vendors?limit=2000`);
+                    const data = await resp.json();
+                    const arr = Array.isArray(data) ? data : (data.vendors || data.data || []);
+                    rgVendorData = arr.map(v => ({ n: v.vendor_name || v.name || '—', c: v.vendor_number || v.code || '—' })).sort((a, b) => a.n.localeCompare(b.n));
+                } catch (e) {}
+            }
+
+            document.getElementById('rgDetailModal').classList.add('open');
+        }
+
+        function closeRgDetail() {
+            document.getElementById('rgDetailModal').classList.remove('open');
+            currentRgId = null;
+            loadRestrictionGroups(); // refresh table counts
+        }
+
+        async function saveRgMeta() {
+            if (!currentRgId) return;
+            const name = document.getElementById('rgDetailName').value.trim();
+            if (!name) return;
+            try {
+                await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description: document.getElementById('rgDetailDesc').value.trim() })
+                });
+            } catch (e) {}
+        }
+
+        // ─── Budget Rules ───
+        function renderBudgetRules(rules) {
+            const container = document.getElementById('rgBudgetRules');
+            if (!rules || !rules.length) {
+                container.innerHTML = '<div class="rg-no-rules">No budget code rules defined. Add one below.</div>';
+                return;
+            }
+            const cell = (v) => v ? (v.includes('X') ? `<span class="wildcard">${escapeHTML(v)}</span>` : escapeHTML(v)) : '<span class="any">Any</span>';
+            container.innerHTML = `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Org</th><th>Program</th><th>Finance</th><th>Course</th><th></th></tr></thead><tbody>` +
+                rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}</td><td><button class="del-btn" onclick="deleteBudgetRule(${r.id})"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td></tr>`).join('') +
+                `</tbody></table>`;
+        }
+
+        async function addBudgetRule() {
+            if (!currentRgId) return;
+            const fund = document.getElementById('rgRuleFund').value.trim() || null;
+            const organization = document.getElementById('rgRuleOrg').value.trim() || null;
+            const program = document.getElementById('rgRuleProg').value.trim() || null;
+            const finance = document.getElementById('rgRuleFin').value.trim() || null;
+            const course = document.getElementById('rgRuleCourse').value.trim() || null;
+            if (!fund && !organization && !program && !finance && !course) {
+                showToast('At Least One Field Required', 'error'); return;
+            }
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}/budget-rules`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fund, organization, program, finance, course })
+                });
+                if (!resp.ok) { showToast('Failed to Add Rule', 'error'); return; }
+                // Clear inputs
+                ['rgRuleFund', 'rgRuleOrg', 'rgRuleProg', 'rgRuleFin', 'rgRuleCourse'].forEach(id => document.getElementById(id).value = '');
+                // Refresh
+                const data = await resp.json();
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g) { g.budget_rules.push({ id: data.id, fund, organization, program, finance, course }); renderBudgetRules(g.budget_rules); }
+                showToast('Rule Added', 'success');
+            } catch (e) { showToast('Failed to Add Rule', 'error'); }
+        }
+
+        async function deleteBudgetRule(ruleId) {
+            if (!currentRgId) return;
+            try {
+                await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}/budget-rules/${ruleId}`, { method: 'DELETE' });
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g) { g.budget_rules = g.budget_rules.filter(r => r.id !== ruleId); renderBudgetRules(g.budget_rules); }
+                showToast('Rule Removed', 'success');
+            } catch (e) { showToast('Failed to Remove Rule', 'error'); }
+        }
+
+        // ─── Vendor Restrictions ───
+        function renderRgVendorTags(vendors) {
+            const container = document.getElementById('rgVendorTags');
+            if (!vendors || !vendors.length) {
+                container.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary);font-style:italic;">No vendors added</span>';
+                return;
+            }
+            container.innerHTML = vendors.map(vn => {
+                const v = rgVendorData.find(v => v.c === vn);
+                const label = v ? `${v.n} (${vn})` : vn;
+                return `<span class="restriction-tag">${escapeHTML(label)}<button onclick="removeRgVendor('${escapeHTML(vn)}')">&times;</button></span>`;
+            }).join('');
+        }
+
+        function searchRgVendors() {
+            const q = document.getElementById('rgVendorSearch').value.trim().toUpperCase();
+            const dropdown = document.getElementById('rgVendorDropdown');
+            if (q.length < 1) { dropdown.classList.remove('open'); return; }
+
+            const g = allRestrictionGroups.find(g => g.id === currentRgId);
+            const existing = new Set(g ? g.vendors : []);
+            const matches = rgVendorData.filter(v => v.n.toUpperCase().includes(q) || v.c.toUpperCase().includes(q)).slice(0, 50);
+
+            if (!matches.length) {
+                dropdown.innerHTML = '<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-secondary);text-align:center;">No matches</div>';
+            } else {
+                dropdown.innerHTML = matches.map(v => `<div class="restriction-dropdown-item${existing.has(v.c) ? ' already' : ''}" onclick="addRgVendor('${escapeHTML(v.c)}')"><span>${escapeHTML(v.n)}<span class="rd-sub">${escapeHTML(v.c)}</span></span><span class="rd-add">${existing.has(v.c) ? '✓ Added' : '+ Add'}</span></div>`).join('');
+            }
+            dropdown.classList.add('open');
+        }
+
+        async function addRgVendor(vendorNumber) {
+            if (!currentRgId) return;
+            try {
+                await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}/vendors`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vendor_numbers: [vendorNumber] })
+                });
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g && !g.vendors.includes(vendorNumber)) { g.vendors.push(vendorNumber); }
+                renderRgVendorTags(g.vendors);
+                searchRgVendors(); // refresh dropdown checkmarks
+            } catch (e) {}
+        }
+
+        async function removeRgVendor(vendorNumber) {
+            if (!currentRgId) return;
+            try {
+                await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}/vendors/${encodeURIComponent(vendorNumber)}`, { method: 'DELETE' });
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g) { g.vendors = g.vendors.filter(v => v !== vendorNumber); renderRgVendorTags(g.vendors); }
+                searchRgVendors();
+            } catch (e) {}
         }
 
         /* ========================================

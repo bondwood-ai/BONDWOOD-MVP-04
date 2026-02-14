@@ -208,6 +208,43 @@ export default {
         return handleUpdateUserRestrictions(request, env);
       }
 
+      // ── Restriction Groups ──
+      if (path === '/api/restriction-groups' && method === 'GET') {
+        return handleGetRestrictionGroups(env);
+      }
+      if (path === '/api/restriction-groups' && method === 'POST') {
+        return handleCreateRestrictionGroup(request, env);
+      }
+      const rgMatch = path.match(/^\/api\/restriction-groups\/(\d+)$/);
+      if (rgMatch && method === 'PUT') {
+        return handleUpdateRestrictionGroup(parseInt(rgMatch[1]), request, env);
+      }
+      if (rgMatch && method === 'DELETE') {
+        return handleDeleteRestrictionGroup(parseInt(rgMatch[1]), env);
+      }
+      const rgBrMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/budget-rules$/);
+      if (rgBrMatch && method === 'POST') {
+        return handleAddBudgetRule(parseInt(rgBrMatch[1]), request, env);
+      }
+      const rgBrDelMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/budget-rules\/(\d+)$/);
+      if (rgBrDelMatch && method === 'DELETE') {
+        return handleDeleteBudgetRule(parseInt(rgBrDelMatch[1]), parseInt(rgBrDelMatch[2]), env);
+      }
+      const rgVendorMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/vendors$/);
+      if (rgVendorMatch && method === 'POST') {
+        return handleAddGroupVendors(parseInt(rgVendorMatch[1]), request, env);
+      }
+      const rgVendorDelMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/vendors\/(.+)$/);
+      if (rgVendorDelMatch && method === 'DELETE') {
+        return handleDeleteGroupVendor(parseInt(rgVendorDelMatch[1]), decodeURIComponent(rgVendorDelMatch[2]), env);
+      }
+      if (path === '/api/users/restriction-groups' && method === 'PUT') {
+        return handleAssignUserGroups(request, env);
+      }
+      if (path === '/api/users/restriction-rules' && method === 'GET') {
+        return handleGetUserRestrictionRules(env, url);
+      }
+
       // ── Profile ──
       if (path === '/api/profile' && method === 'PUT') {
         return handleUpdateProfile(request, env);
@@ -516,6 +553,160 @@ async function handleUpdateUserRestrictions(request, env) {
   ).bind(restrictionsJson, email.toLowerCase().trim()).run();
 
   return json({ message: 'Restrictions updated', email, restrictions: clean });
+}
+
+
+/* ========================================
+   RESTRICTION GROUPS – CRUD
+   ======================================== */
+async function handleGetRestrictionGroups(env) {
+  const { results: groups } = await env.DB.prepare('SELECT * FROM restriction_groups ORDER BY name').all();
+  const { results: rules } = await env.DB.prepare('SELECT * FROM restriction_group_budget_rules ORDER BY id').all();
+  const { results: vendors } = await env.DB.prepare('SELECT * FROM restriction_group_vendors ORDER BY vendor_number').all();
+  const { results: assignments } = await env.DB.prepare('SELECT * FROM user_restriction_assignments').all();
+
+  const enriched = groups.map(g => ({
+    ...g,
+    budget_rules: rules.filter(r => r.group_id === g.id),
+    vendors: vendors.filter(v => v.group_id === g.id).map(v => v.vendor_number),
+    assigned_users: assignments.filter(a => a.group_id === g.id).map(a => a.user_email),
+  }));
+
+  return json({ groups: enriched });
+}
+
+async function handleCreateRestrictionGroup(request, env) {
+  const { name, description } = await request.json();
+  if (!name || !name.trim()) return json({ error: 'Name is required' }, 400);
+
+  try {
+    const res = await env.DB.prepare(
+      'INSERT INTO restriction_groups (name, description) VALUES (?, ?)'
+    ).bind(name.trim(), (description || '').trim() || null).run();
+    return json({ message: 'Group created', id: res.meta.last_row_id, name: name.trim() });
+  } catch (e) {
+    if (e.message.includes('UNIQUE')) return json({ error: 'A group with that name already exists' }, 409);
+    throw e;
+  }
+}
+
+async function handleUpdateRestrictionGroup(id, request, env) {
+  const { name, description } = await request.json();
+  if (!name || !name.trim()) return json({ error: 'Name is required' }, 400);
+
+  await env.DB.prepare(
+    'UPDATE restriction_groups SET name = ?, description = ? WHERE id = ?'
+  ).bind(name.trim(), (description || '').trim() || null, id).run();
+  return json({ message: 'Group updated' });
+}
+
+async function handleDeleteRestrictionGroup(id, env) {
+  // CASCADE will clean up rules, vendors, and assignments
+  await env.DB.prepare('DELETE FROM restriction_group_budget_rules WHERE group_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM restriction_group_vendors WHERE group_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM user_restriction_assignments WHERE group_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM restriction_groups WHERE id = ?').bind(id).run();
+  return json({ message: 'Group deleted' });
+}
+
+async function handleAddBudgetRule(groupId, request, env) {
+  const { fund, organization, program, finance, course } = await request.json();
+  // At least one field must be set
+  if (!fund && !organization && !program && !finance && !course) {
+    return json({ error: 'At least one component must be specified' }, 400);
+  }
+  const res = await env.DB.prepare(
+    'INSERT INTO restriction_group_budget_rules (group_id, fund, organization, program, finance, course) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(
+    groupId,
+    fund?.trim()?.toUpperCase() || null,
+    organization?.trim() || null,
+    program?.trim()?.toUpperCase() || null,
+    finance?.trim() || null,
+    course?.trim() || null
+  ).run();
+  return json({ message: 'Rule added', id: res.meta.last_row_id });
+}
+
+async function handleDeleteBudgetRule(groupId, ruleId, env) {
+  await env.DB.prepare(
+    'DELETE FROM restriction_group_budget_rules WHERE id = ? AND group_id = ?'
+  ).bind(ruleId, groupId).run();
+  return json({ message: 'Rule deleted' });
+}
+
+async function handleAddGroupVendors(groupId, request, env) {
+  const { vendor_numbers } = await request.json();
+  if (!Array.isArray(vendor_numbers) || !vendor_numbers.length) {
+    return json({ error: 'vendor_numbers array is required' }, 400);
+  }
+  let added = 0;
+  for (const vn of vendor_numbers) {
+    try {
+      await env.DB.prepare(
+        'INSERT OR IGNORE INTO restriction_group_vendors (group_id, vendor_number) VALUES (?, ?)'
+      ).bind(groupId, String(vn).trim()).run();
+      added++;
+    } catch (e) { /* skip duplicates */ }
+  }
+  return json({ message: `${added} vendor(s) added` });
+}
+
+async function handleDeleteGroupVendor(groupId, vendorNumber, env) {
+  await env.DB.prepare(
+    'DELETE FROM restriction_group_vendors WHERE group_id = ? AND vendor_number = ?'
+  ).bind(groupId, vendorNumber).run();
+  return json({ message: 'Vendor removed' });
+}
+
+async function handleAssignUserGroups(request, env) {
+  const { email, group_ids } = await request.json();
+  if (!email || !Array.isArray(group_ids)) {
+    return json({ error: 'email and group_ids array are required' }, 400);
+  }
+
+  // Clear existing assignments then insert new ones
+  await env.DB.prepare('DELETE FROM user_restriction_assignments WHERE user_email = ?')
+    .bind(email.toLowerCase().trim()).run();
+
+  for (const gid of group_ids) {
+    await env.DB.prepare(
+      'INSERT INTO user_restriction_assignments (user_email, group_id) VALUES (?, ?)'
+    ).bind(email.toLowerCase().trim(), gid).run();
+  }
+
+  return json({ message: 'Restriction groups assigned', email, group_ids });
+}
+
+async function handleGetUserRestrictionRules(env, url) {
+  const email = url.searchParams.get('email');
+  if (!email) return json({ error: 'email parameter required' }, 400);
+
+  const { results: assignments } = await env.DB.prepare(
+    'SELECT group_id FROM user_restriction_assignments WHERE user_email = ?'
+  ).bind(email.toLowerCase().trim()).all();
+
+  if (!assignments.length) {
+    return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] });
+  }
+
+  const groupIds = assignments.map(a => a.group_id);
+  const placeholders = groupIds.map(() => '?').join(',');
+
+  const { results: rules } = await env.DB.prepare(
+    `SELECT fund, organization, program, finance, course FROM restriction_group_budget_rules WHERE group_id IN (${placeholders})`
+  ).bind(...groupIds).all();
+
+  const { results: vendors } = await env.DB.prepare(
+    `SELECT DISTINCT vendor_number FROM restriction_group_vendors WHERE group_id IN (${placeholders})`
+  ).bind(...groupIds).all();
+
+  return json({
+    restricted_budget: rules.length > 0,
+    restricted_vendors: vendors.length > 0,
+    budget_rules: rules,
+    vendor_numbers: vendors.map(v => v.vendor_number),
+  });
 }
 
 
@@ -1645,6 +1836,35 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
     'ALTER TABLE user_data ADD COLUMN preferences TEXT',
+    `CREATE TABLE IF NOT EXISTS restriction_groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS restriction_group_budget_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL,
+      fund TEXT,
+      organization TEXT,
+      program TEXT,
+      finance TEXT,
+      course TEXT,
+      FOREIGN KEY (group_id) REFERENCES restriction_groups(id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS restriction_group_vendors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL,
+      vendor_number TEXT NOT NULL,
+      UNIQUE(group_id, vendor_number),
+      FOREIGN KEY (group_id) REFERENCES restriction_groups(id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS user_restriction_assignments (
+      user_email TEXT NOT NULL,
+      group_id INTEGER NOT NULL,
+      PRIMARY KEY(user_email, group_id),
+      FOREIGN KEY (group_id) REFERENCES restriction_groups(id) ON DELETE CASCADE
+    )`,
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
