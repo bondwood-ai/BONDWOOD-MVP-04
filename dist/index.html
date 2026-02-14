@@ -2999,7 +2999,7 @@
             hideImpersonationBanner();
             const banner = document.createElement('div');
             banner.id = 'impersonateBanner';
-            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(217,119,6,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;padding:0.5rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;';
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(217,119,6,0.4);color:#fff;padding:0.5rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;';
             banner.innerHTML = `
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 Impersonating: ${name}
