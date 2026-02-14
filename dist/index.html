@@ -1454,7 +1454,6 @@
             const statusFilter = document.getElementById('statusFilter').value;
 
             filteredRFPs = allRFPs.filter(rfp => {
-                if (currentUserRole !== 'admin' && rfp.submitterId !== currentUserId) return false;
 
                 // Advanced search filter
                 if (advancedSearchActive && advancedSearchRfpNumbers) {
