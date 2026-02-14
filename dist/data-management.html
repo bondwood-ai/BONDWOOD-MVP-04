@@ -1956,24 +1956,27 @@
         }
 
         function showRgUnsavedWarning() {
-            // Reuse the same pattern as confirm modal
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay open';
-            overlay.style.zIndex = '10001';
-            overlay.innerHTML = `
-                <div style="background:var(--card-bg);border-radius:14px;padding:1.5rem 2rem;max-width:380px;width:90%;border:1px solid var(--border-color);box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-                    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        <h3 style="margin:0;font-size:1rem;font-weight:700;color:var(--text-primary);">Unsaved Changes</h3>
+            const existing = document.getElementById('rgUnsavedModal');
+            if (existing) existing.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'rgUnsavedModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+            modal.innerHTML = `
+                <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">Unsaved Changes</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes to the group name or description that will be lost.</div>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;">
+                        <button id="rgUnsavedStayBtn" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Keep Editing</button>
+                        <button id="rgUnsavedDiscardBtn" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color);color:#fff;font-family:'Inter',sans-serif;">Discard Changes</button>
                     </div>
-                    <p style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5;margin-bottom:1.25rem;">You have unsaved changes to the group name or description. Would you like to save before closing?</p>
-                    <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
-                        <button onclick="this.closest('.modal-overlay').remove();rgMetaDirty=false;closeRgDetail();" style="padding:0.4rem 1rem;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:500;cursor:pointer;">Discard</button>
-                        <button onclick="this.closest('.modal-overlay').remove();saveRgMeta().then(()=>closeRgDetail());" style="padding:0.4rem 1rem;border-radius:8px;border:none;background:var(--primary-hex);color:#fff;font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;">Save & Close</button>
-                    </div>
-                </div>`;
-            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-            document.body.appendChild(overlay);
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+            document.getElementById('rgUnsavedStayBtn').onclick = function() { modal.remove(); };
+            document.getElementById('rgUnsavedDiscardBtn').onclick = function() { modal.remove(); rgMetaDirty = false; closeRgDetail(); };
         }
 
         function closeRgDetail() {
