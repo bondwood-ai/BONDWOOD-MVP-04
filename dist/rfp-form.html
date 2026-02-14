@@ -4957,6 +4957,16 @@
                 clearBcError(this);
                 const q = this.value.trim();
                 if (q.length < 1 || !budgetDataLoaded) { closeBcDropdown(this); return; }
+
+                // Instant unauthorized check
+                if (USER_RESTRICTIONS.restricted_budget && UNIQUE_BUDGET_CODES.includes(q) && !getBudgetCodePool().includes(q)) {
+                    this.classList.add('bc-error');
+                    showBcTooltip(this, 'Unauthorized budget code');
+                    showUnauthorizedAlert('Unauthorized Budget Code');
+                    closeBcDropdown(this);
+                    return;
+                }
+
                 const matches = getBudgetCodePool().filter(c => c.includes(q)).slice(0, 2000);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
@@ -5222,7 +5232,7 @@
             if (!budgetDataLoaded) return;
 
             // Check if code exists but is restricted
-            if (USER_RESTRICTIONS.restricted_budget && BUDGET_CODE_MAP[val]) {
+            if (USER_RESTRICTIONS.restricted_budget && (BUDGET_CODE_MAP[val] || UNIQUE_BUDGET_CODES.includes(val))) {
                 const pool = getBudgetCodePool();
                 if (!pool.includes(val)) {
                     input.classList.remove('bc-valid');
