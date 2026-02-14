@@ -443,6 +443,33 @@
         .search-row .cs-wrap { display: inline-block; }
         .search-row .cs-display { padding: 0.45rem 0.75rem; font-size: 0.8rem; font-weight: 500; border-radius: 8px; min-width: 130px; }
 
+        /* Approval Success Modal */
+        #approvalSuccessModal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 99999; backdrop-filter: blur(2px); }
+        #approvalSuccessModal.open { display: flex; }
+        .approval-success-content {
+            background: var(--card-bg); border-radius: 0.875rem; padding: 2rem 1.75rem;
+            width: 92%; max-width: 440px;
+            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .approval-success-icon { width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .approval-success-icon svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.5; fill: none; }
+        .approval-success-icon.advanced { background: var(--primary-hex); }
+        .approval-success-icon.approved { background: #2B6D51; }
+        .approval-success-title { font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; }
+        .approval-success-sub { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5; }
+        .approval-success-rfp { font-family: 'Inter', sans-serif; font-weight: 700; color: var(--primary-hex); }
+        .approval-success-actions { display: flex; gap: 0.75rem; }
+        .approval-success-actions button {
+            flex: 1; padding: 0.65rem 1rem; border-radius: 8px; font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+        }
+        .approval-btn-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
+        .approval-btn-secondary:hover { background: var(--bg-color); }
+        .approval-btn-primary { background: var(--primary-hex); border: none; color: var(--accent-text-color); }
+        .approval-btn-primary:hover { opacity: 0.9; }
+        .approval-btn-primary:disabled { opacity: 0.5; cursor: default; }
+
     </style>
 
     <script>
@@ -962,6 +989,21 @@
                         Approve
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ APPROVAL SUCCESS MODAL ============ -->
+    <div id="approvalSuccessModal" onclick="if(event.target===this)closeApprovalSuccess()">
+        <div class="approval-success-content">
+            <div class="approval-success-icon" id="approvalSuccessIcon">
+                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div class="approval-success-title" id="approvalSuccessTitle"></div>
+            <div class="approval-success-sub" id="approvalSuccessSub"></div>
+            <div class="approval-success-actions">
+                <button class="approval-btn-secondary" onclick="closeApprovalSuccess()">Back to Dashboard</button>
+                <button class="approval-btn-primary" id="approvalNextBtn" onclick="reviewNextSubmission()">Review Next Submission</button>
             </div>
         </div>
     </div>
@@ -2471,13 +2513,56 @@
                     })
                 });
 
+                const justApprovedRfpNumber = previewRfp.rfpNumber;
                 closePreviewModal();
                 allRFPs = await loadRFPData();
                 filterTable();
-                showAlert(`Request #${previewRfp.rfpNumber} has been ${isFullApproval ? 'approved' : 'advanced to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, isFullApproval ? 'Approved' : 'Advanced');
+                showApprovalSuccess(justApprovedRfpNumber, isFullApproval, newStatus);
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Approve Failed');
             }
+        }
+
+        function showApprovalSuccess(rfpNumber, isFullApproval, newStatus) {
+            const icon = document.getElementById('approvalSuccessIcon');
+            const title = document.getElementById('approvalSuccessTitle');
+            const sub = document.getElementById('approvalSuccessSub');
+            const nextBtn = document.getElementById('approvalNextBtn');
+
+            icon.className = 'approval-success-icon ' + (isFullApproval ? 'approved' : 'advanced');
+
+            if (isFullApproval) {
+                icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>';
+                title.textContent = 'Approved';
+                sub.innerHTML = `Request <span class="approval-success-rfp">#${rfpNumber}</span> has been approved.`;
+            } else {
+                icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5l7 7-7 7"/><path d="M5 12h15"/></svg>';
+                title.textContent = 'Advanced';
+                sub.innerHTML = `Request <span class="approval-success-rfp">#${rfpNumber}</span> has been advanced to ${WORKFLOW_LABELS[newStatus] || newStatus}.`;
+            }
+
+            // Check if there's a next RFP in the approval queue
+            const queue = allRFPs.filter(r => isInApprovalWorkflow(r.status) && String(r.rfpNumber) !== String(rfpNumber));
+            nextBtn.disabled = queue.length === 0;
+            nextBtn.title = queue.length === 0 ? 'No more submissions to review' : '';
+            if (queue.length === 0) {
+                nextBtn.textContent = 'Queue Empty';
+            } else {
+                nextBtn.textContent = `Review Next Submission (${queue.length})`;
+            }
+
+            document.getElementById('approvalSuccessModal').classList.add('open');
+        }
+
+        function closeApprovalSuccess() {
+            document.getElementById('approvalSuccessModal').classList.remove('open');
+        }
+
+        function reviewNextSubmission() {
+            const queue = allRFPs.filter(r => isInApprovalWorkflow(r.status));
+            if (queue.length === 0) return;
+            closeApprovalSuccess();
+            openPreviewModal(queue[0]);
         }
 
         async function handleAttachmentClick(url, name, ext) {
@@ -2524,6 +2609,8 @@
         // Close modals on Esc key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                const approvalS = document.getElementById('approvalSuccessModal');
+                if (approvalS && approvalS.classList.contains('open')) { closeApprovalSuccess(); return; }
                 const rejectM = document.getElementById('rejectModal');
                 if (rejectM && rejectM.style.display === 'flex') { closeRejectModal(); return; }
                 const advSearch = document.getElementById('advSearchModal');
