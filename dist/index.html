@@ -495,11 +495,15 @@
                     <button class="hamburger-menu-item" onclick="window.location.href='account.html'">
                         My Account
                     </button>
-                    <button class="hamburger-menu-item" onclick="window.location.href='users.html'">
+                    <button id="userMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='users.html'" style="display:none;">
                         User Management
                     </button>
-                    <button class="hamburger-menu-item" onclick="window.location.href='data-management.html'">
+                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='data-management.html'" style="display:none;">
                         Data Management
+                    </button>
+                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="closeHamburgerMenu();openImpersonateModal()" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Impersonate User
                     </button>
                 </div>
             </div>
@@ -1086,20 +1090,25 @@
            ======================================== */
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
 
-        let currentUserRole = 'admin'; // 'user' or 'admin'
+        let currentUserRole = 'user';
         let currentUserId = '';
         let currentUserName = '';
         let currentUserEmail = '';
         let currentUserRoles = [];
+        let currentUserPermissions = {};
+        let impersonateEmail = null; // null = normal mode, email string = impersonating
         let vendorListCache = null;
         let _dashboardEmployee = null;
 
         async function fetchDashboardUser() {
             try {
-                const resp = await fetch('/api/me');
-                if (!resp.ok) return;
-                const ct = resp.headers.get('content-type') || '';
-                if (!ct.includes('application/json')) return;
+                let resp = await fetch('/api/me');
+                let ct = resp.headers.get('content-type') || '';
+                if (!resp.ok || !ct.includes('application/json')) {
+                    resp = await fetch(`${API_BASE}/api/me`);
+                    ct = resp.headers.get('content-type') || '';
+                }
+                if (!resp.ok || !ct.includes('application/json')) return;
                 const user = await resp.json();
                 if (user.first_name && user.user_id) {
                     _dashboardEmployee = user;
@@ -1107,7 +1116,16 @@
                     currentUserId = user.user_id ? `E${user.user_id}` : '';
                     currentUserEmail = (user.email || '').toLowerCase().trim();
                     currentUserRoles = user.roles || [];
-                    console.log('[SSO] Logged in as:', currentUserName, currentUserId, 'Roles:', currentUserRoles);
+                    currentUserPermissions = user.permissions || {};
+
+                    // Set currentUserRole based on actual permissions
+                    if (currentUserPermissions.can_approve || currentUserPermissions.can_manage_users) {
+                        currentUserRole = 'admin';
+                    } else {
+                        currentUserRole = 'user';
+                    }
+
+                    console.log('[SSO] Logged in as:', currentUserName, currentUserId, 'Roles:', currentUserRoles, 'Permissions:', currentUserPermissions);
                 }
             } catch (e) {
                 console.warn('[SSO] Could not fetch user identity:', e);
@@ -1143,7 +1161,9 @@
         let allRFPsRaw = []; // raw API response for advanced search
         async function loadRFPData() {
             try {
-                const response = await fetch(`${API_BASE}/api/rfps?limit=5000`);
+                const effectiveEmail = impersonateEmail || currentUserEmail;
+                const emailParam = effectiveEmail ? `&email=${encodeURIComponent(effectiveEmail)}` : '';
+                const response = await fetch(`${API_BASE}/api/rfps?limit=5000${emailParam}`);
                 if (!response.ok) throw new Error(`API returned ${response.status}`);
                 const raw = await response.json();
                 const rfps = Array.isArray(raw) ? raw : (raw.rfps || raw.data || raw.results || []);
@@ -2823,15 +2843,135 @@
         }
 
         /* ========================================
-           USER ROLE
+           IMPERSONATION MODE
            ======================================== */
-        function toggleUserRole() {
-            currentUserRole = currentUserRole === 'admin' ? 'user' : 'admin';
-            const rtl = document.getElementById('roleToggleLabel');
-            if (rtl) rtl.textContent = currentUserRole === 'admin' ? 'Switch to User' : 'Switch to Admin';
-            document.getElementById('dashboardSubtitle').textContent = currentUserRole === 'admin' ? 'Viewing all submissions' : 'Viewing your submissions';
+        async function openImpersonateModal() {
+            // Only admins+ can impersonate
+            if (!currentUserPermissions.can_manage_users) {
+                showToast('You do not have permission to impersonate users', 'error');
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/users`);
+                if (!resp.ok) throw new Error('Failed to load users');
+                const data = await resp.json();
+                const users = (data.users || []).filter(u => u.status !== 'inactive');
+
+                const modal = document.createElement('div');
+                modal.id = 'impersonateModal';
+                modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);';
+                modal.innerHTML = `
+                    <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;width:90%;max-width:400px;max-height:70vh;display:flex;flex-direction:column;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                            <h3 style="font-family:Inter,sans-serif;font-size:1rem;font-weight:700;color:var(--text-primary);margin:0;">Impersonate User</h3>
+                            <button onclick="closeImpersonateModal()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-secondary);">✕</button>
+                        </div>
+                        ${impersonateEmail ? `<button onclick="stopImpersonation()" style="width:100%;padding:0.6rem;margin-bottom:0.75rem;border-radius:8px;border:1px solid var(--negative-color);background:var(--negative-color);color:#fff;font-family:Inter,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                            Stop Impersonating — Return to ${currentUserName}
+                        </button>` : ''}
+                        <input type="text" id="impersonateSearch" placeholder="Search users..." oninput="filterImpersonateList()" style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;font-size:0.82rem;margin-bottom:0.75rem;background:var(--field-bg);color:var(--text-primary);outline:none;">
+                        <div id="impersonateList" style="overflow-y:auto;flex:1;max-height:45vh;">
+                            ${users.map(u => `
+                                <div class="impersonate-user-row" data-email="${u.email}" data-name="${u.first_name} ${u.last_name}" onclick="impersonateUser('${u.email}', '${u.first_name} ${u.last_name}')"
+                                    style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;border-radius:8px;cursor:pointer;transition:background 0.12s;${impersonateEmail === u.email ? 'background:var(--pale-accent);font-weight:600;' : ''}"
+                                    onmouseover="this.style.background='var(--accent-color-light)'" onmouseout="this.style.background='${impersonateEmail === u.email ? 'var(--pale-accent)' : ''}'">
+                                    <div style="width:32px;height:32px;border-radius:50%;background:var(--primary-hex);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">
+                                        ${(u.first_name?.[0] || '').toUpperCase()}${(u.last_name?.[0] || '').toUpperCase()}
+                                    </div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div style="font-size:0.82rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.first_name} ${u.last_name}</div>
+                                        <div style="font-size:0.72rem;color:var(--text-secondary);">${u.email} · ${(u.roles || ['user']).join(', ')}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                modal.addEventListener('click', (e) => { if (e.target === modal) closeImpersonateModal(); });
+                document.body.appendChild(modal);
+                document.getElementById('impersonateSearch').focus();
+            } catch (e) {
+                showToast('Failed to load users: ' + e.message, 'error');
+            }
+        }
+
+        function filterImpersonateList() {
+            const q = (document.getElementById('impersonateSearch')?.value || '').toLowerCase();
+            document.querySelectorAll('.impersonate-user-row').forEach(row => {
+                const name = (row.dataset.name || '').toLowerCase();
+                const email = (row.dataset.email || '').toLowerCase();
+                row.style.display = (name.includes(q) || email.includes(q)) ? 'flex' : 'none';
+            });
+        }
+
+        function closeImpersonateModal() {
+            const m = document.getElementById('impersonateModal');
+            if (m) m.remove();
+        }
+
+        async function impersonateUser(email, name) {
+            closeImpersonateModal();
+            impersonateEmail = email.toLowerCase().trim();
+
+            // Fetch impersonated user's permissions to set correct role view
+            try {
+                const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impersonateEmail)}`);
+                if (resp.ok) {
+                    const impUser = await resp.json();
+                    const impPerms = impUser.permissions || {};
+                    currentUserRole = (impPerms.can_approve || impPerms.can_manage_users) ? 'admin' : 'user';
+                }
+            } catch (e) {
+                currentUserRole = 'user';
+            }
+
+            document.getElementById('dashboardSubtitle').textContent = `Impersonating: ${name}`;
+            showToast(`Now viewing as ${name}`, 'success');
+
+            // Show impersonation banner
+            showImpersonationBanner(name);
+
+            // Reload data with impersonated user's permissions
+            allRFPs = await loadRFPData();
             buildColumnSelector();
             filterTable();
+        }
+
+        async function stopImpersonation() {
+            closeImpersonateModal();
+            impersonateEmail = null;
+
+            // Restore original user's role
+            currentUserRole = (currentUserPermissions.can_approve || currentUserPermissions.can_manage_users) ? 'admin' : 'user';
+
+            document.getElementById('dashboardSubtitle').textContent = 'Viewing all submissions';
+            hideImpersonationBanner();
+            showToast('Returned to your account', 'success');
+
+            allRFPs = await loadRFPData();
+            buildColumnSelector();
+            filterTable();
+        }
+
+        function showImpersonationBanner(name) {
+            hideImpersonationBanner();
+            const banner = document.createElement('div');
+            banner.id = 'impersonateBanner';
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:#d97706;color:#fff;padding:0.4rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;';
+            banner.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Impersonating: ${name}
+                <button onclick="stopImpersonation()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;padding:0.2rem 0.6rem;cursor:pointer;font-family:inherit;font-size:0.72rem;font-weight:600;">Stop</button>
+            `;
+            document.body.appendChild(banner);
+            document.body.style.paddingTop = '2rem';
+        }
+
+        function hideImpersonationBanner() {
+            const b = document.getElementById('impersonateBanner');
+            if (b) b.remove();
+            document.body.style.paddingTop = '';
         }
 
         /* ========================================
@@ -3762,6 +3902,22 @@
 
             // Fetch logged-in user identity from SSO
             await fetchDashboardUser();
+
+            // Show impersonate option for admins+
+            if (currentUserPermissions.can_manage_users) {
+                const imp = document.getElementById('impersonateMenuItem');
+                if (imp) imp.style.display = '';
+                const um = document.getElementById('userMgmtMenuItem');
+                if (um) um.style.display = '';
+            }
+            if (currentUserPermissions.can_manage_vendors) {
+                const dm = document.getElementById('dataMgmtMenuItem');
+                if (dm) dm.style.display = '';
+            }
+
+            // Set subtitle based on role
+            const sub = document.getElementById('dashboardSubtitle');
+            if (sub) sub.textContent = currentUserRole === 'admin' ? 'Viewing all submissions' : 'Viewing your submissions';
 
             // Load saved theme + column preferences
             await loadThemePref();
