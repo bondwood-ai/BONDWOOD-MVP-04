@@ -748,10 +748,15 @@
                         <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;">Permanently rejects the request. This cannot be undone.</div>
                     </div>
                 </label>
+                <div style="margin-top:1rem;">
+                    <label style="font-size:0.78rem;font-weight:600;color:var(--text-primary);font-family:'Inter',sans-serif;display:block;margin-bottom:0.35rem;">Reason for Rejection <span style="color:var(--negative-color);">*</span></label>
+                    <textarea id="rejectReason" rows="3" placeholder="Enter the reason for rejecting this request..." style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:'Inter',sans-serif;font-size:0.85rem;resize:vertical;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;" oninput="document.getElementById('rejectConfirmBtn').disabled=!this.value.trim()"></textarea>
+                    <div id="rejectReasonError" style="font-size:0.72rem;color:var(--negative-color);margin-top:0.25rem;display:none;">A reason is required to reject a request.</div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeRejectModal()">Cancel</button>
-                <button class="btn-reject" onclick="confirmReject()" style="padding:0.5rem 1.25rem;">Confirm Reject</button>
+                <button class="btn-reject" id="rejectConfirmBtn" onclick="confirmReject()" style="padding:0.5rem 1.25rem;" disabled>Confirm Reject</button>
             </div>
         </div>
     </div>
@@ -1725,14 +1730,23 @@
             // Open reject type picker — reuse the reject modal but adapt for bulk
             document.getElementById('rejectPrevLabel').textContent = 'Returns each request to its previous workflow step.';
             document.querySelector('#rejectModal input[value="previous"]').checked = true;
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectReasonError').style.display = 'none';
+            document.getElementById('rejectConfirmBtn').disabled = true;
             document.getElementById('rejectModal').style.display = 'flex';
 
             // Replace the confirm handler temporarily for bulk
-            const confirmBtn = document.querySelector('#rejectModal .btn-reject');
+            const confirmBtn = document.getElementById('rejectConfirmBtn');
             const originalOnclick = confirmBtn.getAttribute('onclick');
             confirmBtn.setAttribute('onclick', '');
             confirmBtn.onclick = async function() {
                 const rejectType = document.querySelector('#rejectModal input[name="rejectType"]:checked').value;
+                const reason = document.getElementById('rejectReason').value.trim();
+                if (!reason) {
+                    document.getElementById('rejectReasonError').style.display = 'block';
+                    document.getElementById('rejectReason').focus();
+                    return;
+                }
                 closeRejectModal();
 
                 const label = rejectType === 'permanent' ? 'permanently reject' : 'reject back to previous step';
@@ -1745,8 +1759,8 @@
                 for (const rfp of selected) {
                     const newStatus = rejectType === 'permanent' ? 'rejected' : (WORKFLOW_PREV[rfp.status] || 'draft');
                     const auditText = rejectType === 'permanent'
-                        ? `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request (bulk action)`
-                        : `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
+                        ? `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request — Reason: ${reason} (bulk action)`
+                        : `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" — Reason: ${reason} (bulk action)`;
 
                     try {
                         await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
@@ -2417,6 +2431,9 @@
                 ? `Returns the request to "${WORKFLOW_LABELS[prevStatus] || prevStatus}".`
                 : 'Returns the request to the previous workflow step.';
             document.querySelector('#rejectModal input[value="previous"]').checked = true;
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectReasonError').style.display = 'none';
+            document.getElementById('rejectConfirmBtn').disabled = true;
             document.getElementById('rejectModal').style.display = 'flex';
         }
 
@@ -2427,6 +2444,14 @@
         async function confirmReject() {
             if (!previewRfp) return;
             const rejectType = document.querySelector('#rejectModal input[name="rejectType"]:checked').value;
+            const reason = document.getElementById('rejectReason').value.trim();
+
+            if (!reason) {
+                document.getElementById('rejectReasonError').style.display = 'block';
+                document.getElementById('rejectReason').focus();
+                return;
+            }
+
             const msg = rejectType === 'permanent'
                 ? 'Are you sure you want to permanently reject this request? This cannot be undone.'
                 : `Are you sure you want to reject this request back to "${WORKFLOW_LABELS[WORKFLOW_PREV[previewRfp.status]] || 'previous step'}"?`;
@@ -2438,10 +2463,10 @@
             let newStatus, auditText;
             if (rejectType === 'permanent') {
                 newStatus = 'rejected';
-                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request`;
+                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request — Reason: ${reason}`;
             } else {
                 newStatus = WORKFLOW_PREV[previewRfp.status] || 'draft';
-                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
+                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" — Reason: ${reason}`;
             }
 
             try {
@@ -2464,14 +2489,43 @@
                     })
                 });
 
-                closeRejectModal();
+                const justRejectedRfpNumber = previewRfp.rfpNumber;
+                const isPermanent = rejectType === 'permanent';
                 closePreviewModal();
                 allRFPs = await loadRFPData();
                 filterTable();
-                showAlert(`Request #${previewRfp.rfpNumber} has been ${rejectType === 'permanent' ? 'permanently rejected' : 'sent back to ' + (WORKFLOW_LABELS[newStatus] || newStatus)}.`, 'Request Rejected');
+                showRejectionSuccess(justRejectedRfpNumber, isPermanent, newStatus);
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Reject Failed');
             }
+        }
+
+        function showRejectionSuccess(rfpNumber, isPermanent, newStatus) {
+            const icon = document.getElementById('approvalSuccessIcon');
+            const title = document.getElementById('approvalSuccessTitle');
+            const sub = document.getElementById('approvalSuccessSub');
+            const nextBtn = document.getElementById('approvalNextBtn');
+
+            icon.className = 'approval-success-icon';
+            icon.style.background = 'var(--negative-color)';
+            icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>';
+            title.textContent = 'Request Rejected';
+            if (isPermanent) {
+                sub.innerHTML = `Request <span class="approval-success-rfp">#${rfpNumber}</span> has been permanently rejected.`;
+            } else {
+                sub.innerHTML = `Request <span class="approval-success-rfp">#${rfpNumber}</span> has been sent back to ${WORKFLOW_LABELS[newStatus] || newStatus}.`;
+            }
+
+            const queue = allRFPs.filter(r => isInApprovalWorkflow(r.status) && String(r.rfpNumber) !== String(rfpNumber));
+            nextBtn.disabled = queue.length === 0;
+            nextBtn.title = queue.length === 0 ? 'No more submissions to review' : '';
+            if (queue.length === 0) {
+                nextBtn.textContent = 'Queue Empty';
+            } else {
+                nextBtn.textContent = `Review Next Submission (${queue.length})`;
+            }
+
+            document.getElementById('approvalSuccessModal').classList.add('open');
         }
 
         async function approveRFP() {
@@ -2529,6 +2583,7 @@
             const sub = document.getElementById('approvalSuccessSub');
             const nextBtn = document.getElementById('approvalNextBtn');
 
+            icon.style.background = '';
             icon.className = 'approval-success-icon ' + (isFullApproval ? 'approved' : 'advanced');
 
             if (isFullApproval) {
