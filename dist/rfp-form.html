@@ -5313,9 +5313,19 @@
                 input.classList.add('bc-valid');
                 removeBcTooltip(input);
             } else {
-                input.classList.remove('bc-valid');
-                input.classList.add('bc-error');
-                showBcTooltip(input, 'Budget code not found');
+                // Partial code — check if it matches anything in the relevant pool
+                const pool = USER_RESTRICTIONS.restricted_budget ? getBudgetCodePool() : UNIQUE_BUDGET_CODES;
+                const hasMatches = pool.some(c => c.includes(val));
+                if (hasMatches) {
+                    // Partial match exists — not an error, just incomplete
+                    input.classList.remove('bc-error', 'bc-valid');
+                    removeBcTooltip(input);
+                } else {
+                    // Genuinely not found — red outline only, no tooltip
+                    input.classList.remove('bc-valid');
+                    input.classList.add('bc-error');
+                    removeBcTooltip(input);
+                }
             }
         }
 
@@ -5395,8 +5405,6 @@
                         bcInput.classList.add('bc-error');
                         if (USER_RESTRICTIONS.restricted_budget && !getBudgetCodePool().some(c => c.includes(bcVal)) && UNIQUE_BUDGET_CODES.some(c => c.includes(bcVal))) {
                             showUnauthorizedAlert('Unauthorized Budget Code');
-                        } else {
-                            showBcTooltip(bcInput, 'Budget code not found');
                         }
                         hasError = true;
                     }
@@ -5420,8 +5428,6 @@
                         bcInput.classList.add('bc-error');
                         if (USER_RESTRICTIONS.restricted_budget && !getBudgetCodePool().some(c => c.includes(bcVal)) && UNIQUE_BUDGET_CODES.some(c => c.includes(bcVal))) {
                             showUnauthorizedAlert('Unauthorized Budget Code');
-                        } else {
-                            showBcTooltip(bcInput, 'Budget code not found');
                         }
                         hasError = true;
                     }
