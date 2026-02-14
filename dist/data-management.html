@@ -699,17 +699,17 @@
         <!-- ============ RESTRICTION GROUPS TAB ============ -->
         <div class="tab-panel" id="panel-restriction-groups">
             <div class="add-form-card" id="rgAddForm">
-                <div class="form-grid" style="grid-template-columns:1fr 2fr auto;">
+                <div class="form-grid" style="grid-template-columns:1fr 2fr;">
                     <div class="form-group"><label>Group Name</label><input type="text" id="addRgName" placeholder="e.g. Elementary Schools" oninput="checkRgFormValid()"></div>
                     <div class="form-group"><label>Description</label><input type="text" id="addRgDesc" placeholder="Optional description"></div>
-                    <div class="form-group" style="align-self:end;">
-                        <button class="add-btn" id="addRgBtn" disabled onclick="createRestrictionGroup()">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
-                            Create Group
-                        </button>
-                    </div>
                 </div>
-                <div class="form-msg" id="rgFormMsg"></div>
+                <div class="form-actions">
+                    <button class="btn-primary accent" id="addRgBtn" disabled onclick="createRestrictionGroup()">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                        Create Group
+                    </button>
+                    <span class="form-message" id="rgFormMsg"></span>
+                </div>
             </div>
 
             <div class="table-card" style="border-top:none;">
