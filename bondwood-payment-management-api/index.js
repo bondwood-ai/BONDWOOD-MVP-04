@@ -803,10 +803,10 @@ async function handleListRFPs(env, url, request) {
       try { roles = JSON.parse(userData[0].user_roles || '["user"]'); } catch (e) { roles = ['user']; }
       const permissions = await resolvePermissions(roles, env);
 
-      // If user can only view own (no broader view permissions), filter by their email
+      // If user can only view own (no broader view permissions), filter by their email OR submitter_id
       if (permissions.can_view_own && !permissions.can_approve && !permissions.can_view_history && !permissions.can_manage_users) {
-        where.push('LOWER(d.submitter_email) = ?');
-        params.push(email);
+        where.push("(LOWER(d.submitter_email) = ? OR d.submitter_id = (SELECT 'E' || user_id FROM user_data WHERE LOWER(user_email) = ?))");
+        params.push(email, email);
       }
     }
   }
