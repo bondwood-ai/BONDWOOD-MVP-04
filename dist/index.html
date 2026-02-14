@@ -2842,6 +2842,23 @@
         }
 
         /* ========================================
+           TOAST NOTIFICATION
+           ======================================== */
+        function showToast(msg, type) {
+            let t = document.getElementById('toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'toast';
+                t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:0.6rem 1.25rem;border-radius:8px;font-family:Inter,sans-serif;font-size:0.82rem;font-weight:600;color:#fff;z-index:99999;opacity:0;transition:opacity 0.3s;pointer-events:none;';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.background = type === 'error' ? '#FA050F' : '#2B6D51';
+            t.style.opacity = '1';
+            setTimeout(() => { t.style.opacity = '0'; }, 3000);
+        }
+
+        /* ========================================
            IMPERSONATION MODE
            ======================================== */
         async function openImpersonateModal() {
