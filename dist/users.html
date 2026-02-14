@@ -690,15 +690,32 @@
         /* ========================================
            IMPERSONATION BANNER (cross-page)
            ======================================== */
-        function checkImpersonation() {
+        async function checkImpersonation() {
             const impName = sessionStorage.getItem('impersonateName');
+            const impEmail = sessionStorage.getItem('impersonateEmail');
             if (!impName) return;
+
             const banner = document.createElement('div');
             banner.id = 'impersonateBanner';
-            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:#d97706;color:#fff;padding:0.4rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;';
-            banner.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Impersonating: ' + impName + ' <button onclick="stopImpersonation()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;padding:0.2rem 0.6rem;cursor:pointer;font-family:inherit;font-size:0.72rem;font-weight:600;">Stop</button>';
-            document.body.appendChild(banner);
-            document.body.style.paddingTop = '2rem';
+            banner.style.cssText = 'width:calc(100% + 2rem);background:#d97706;color:#fff;padding:0.4rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;margin:-1rem -1rem 0 -1rem;';
+            banner.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Impersonating: ' + impName + ' <button onclick="stopImpersonation()" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);border-radius:6px;color:#fff;padding:0.2rem 0.6rem;cursor:pointer;font-family:inherit;font-size:0.72rem;font-weight:600;">Stop</button>';
+            document.body.prepend(banner);
+
+            if (impEmail) {
+                try {
+                    const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impEmail)}`);
+                    if (resp.ok) {
+                        const impUser = await resp.json();
+                        const perms = impUser.permissions || {};
+                        const um = document.getElementById('userMgmtMenuItem');
+                        const dm = document.getElementById('dataMgmtMenuItem');
+                        const imp = document.getElementById('impersonateMenuItem');
+                        if (um) um.style.display = perms.can_manage_users ? '' : 'none';
+                        if (dm) dm.style.display = perms.can_manage_vendors ? '' : 'none';
+                        if (imp) imp.style.display = perms.can_manage_users ? '' : 'none';
+                    }
+                } catch (e) {}
+            }
         }
         function stopImpersonation() {
             sessionStorage.removeItem('impersonateEmail');
@@ -709,7 +726,6 @@
         document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
-            checkImpersonation();
             await fetchCurrentUser();
 
             // Show admin menu items based on permissions
@@ -726,6 +742,9 @@
             populateRoleFilter();
             initCustomSelect(document.getElementById("statusFilter"));
             initCustomSelect(document.getElementById("roleFilter"));
+
+            // Check impersonation last — overrides menu visibility
+            await checkImpersonation();
         });
 
         async function loadRoleDefinitions() {

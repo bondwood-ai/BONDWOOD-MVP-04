@@ -2927,22 +2927,33 @@
         }
 
         async function impersonateUser(email, name) {
+            // Can't impersonate yourself
+            if (email.toLowerCase().trim() === currentUserEmail) {
+                closeImpersonateModal();
+                showToast('You cannot impersonate yourself', 'error');
+                return;
+            }
+
             closeImpersonateModal();
             impersonateEmail = email.toLowerCase().trim();
             sessionStorage.setItem('impersonateEmail', impersonateEmail);
             sessionStorage.setItem('impersonateName', name);
 
             // Fetch impersonated user's permissions to set correct role view
+            let impPerms = {};
             try {
                 const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impersonateEmail)}`);
                 if (resp.ok) {
                     const impUser = await resp.json();
-                    const impPerms = impUser.permissions || {};
+                    impPerms = impUser.permissions || {};
                     currentUserRole = (impPerms.can_approve || impPerms.can_manage_users) ? 'admin' : 'user';
                 }
             } catch (e) {
                 currentUserRole = 'user';
             }
+
+            // Re-gate menu items based on impersonated user's permissions
+            updateMenuVisibility(impPerms);
 
             document.getElementById('dashboardSubtitle').textContent = `Impersonating: ${name}`;
             showToast(`Now viewing as ${name}`, 'success');
@@ -2962,8 +2973,9 @@
             sessionStorage.removeItem('impersonateEmail');
             sessionStorage.removeItem('impersonateName');
 
-            // Restore original user's role
+            // Restore original user's role and menu visibility
             currentUserRole = (currentUserPermissions.can_approve || currentUserPermissions.can_manage_users) ? 'admin' : 'user';
+            updateMenuVisibility(currentUserPermissions);
 
             document.getElementById('dashboardSubtitle').textContent = 'Viewing all submissions';
             hideImpersonationBanner();
@@ -2974,24 +2986,31 @@
             filterTable();
         }
 
+        function updateMenuVisibility(perms) {
+            const um = document.getElementById('userMgmtMenuItem');
+            const dm = document.getElementById('dataMgmtMenuItem');
+            const imp = document.getElementById('impersonateMenuItem');
+            if (um) um.style.display = perms.can_manage_users ? '' : 'none';
+            if (dm) dm.style.display = perms.can_manage_vendors ? '' : 'none';
+            if (imp) imp.style.display = perms.can_manage_users ? '' : 'none';
+        }
+
         function showImpersonationBanner(name) {
             hideImpersonationBanner();
             const banner = document.createElement('div');
             banner.id = 'impersonateBanner';
-            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:#d97706;color:#fff;padding:0.4rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;';
+            banner.style.cssText = 'width:100%;background:#d97706;color:#fff;padding:0.4rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;margin:-1rem -1rem 0 -1rem;width:calc(100% + 2rem);';
             banner.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 Impersonating: ${name}
-                <button onclick="stopImpersonation()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;padding:0.2rem 0.6rem;cursor:pointer;font-family:inherit;font-size:0.72rem;font-weight:600;">Stop</button>
+                <button onclick="stopImpersonation()" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);border-radius:6px;color:#fff;padding:0.2rem 0.6rem;cursor:pointer;font-family:inherit;font-size:0.72rem;font-weight:600;">Stop</button>
             `;
-            document.body.appendChild(banner);
-            document.body.style.paddingTop = '2rem';
+            document.body.prepend(banner);
         }
 
         function hideImpersonationBanner() {
             const b = document.getElementById('impersonateBanner');
             if (b) b.remove();
-            document.body.style.paddingTop = '';
         }
 
         /* ========================================
@@ -3960,14 +3979,16 @@
                 const impEmail = sessionStorage.getItem('impersonateEmail');
                 const impName = sessionStorage.getItem('impersonateName');
                 impersonateEmail = impEmail;
+                let impPerms = {};
                 try {
                     const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impEmail)}`);
                     if (resp.ok) {
                         const impUser = await resp.json();
-                        const impPerms = impUser.permissions || {};
+                        impPerms = impUser.permissions || {};
                         currentUserRole = (impPerms.can_approve || impPerms.can_manage_users) ? 'admin' : 'user';
                     }
                 } catch (e) { currentUserRole = 'user'; }
+                updateMenuVisibility(impPerms);
                 document.getElementById('dashboardSubtitle').textContent = `Impersonating: ${impName}`;
                 showImpersonationBanner(impName);
                 allRFPs = await loadRFPData();
