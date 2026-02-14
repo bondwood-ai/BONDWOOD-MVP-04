@@ -299,6 +299,14 @@
             .form-grid, .edit-grid, .form-grid-budget { grid-template-columns: 1fr; }
             .search-input { min-width: unset; }
         }
+        /* Read-only mode for non-admin users */
+        body.data-readonly .add-form-card { display: none !important; }
+        body.data-readonly .bulk-delete-btn { display: none !important; }
+        body.data-readonly .cb-cell { display: none !important; }
+        body.data-readonly #saveVendorBtn { display: none !important; }
+        body.data-readonly #saveBudgetBtn { display: none !important; }
+        body.data-readonly .edit-modal-panel input:not([readonly]) { background: var(--readonly-bg); pointer-events: none; }
+        body.data-readonly .edit-modal-panel .role-checkboxes { pointer-events: none; opacity: 0.6; }
     </style>
 
     <script>
@@ -398,7 +406,7 @@
 
         <!-- ============ VENDORS TAB ============ -->
         <div class="tab-panel active" id="panel-vendors">
-            <div class="add-form-card">
+            <div class="add-form-card" id="vendorAddForm">
                 <div class="form-grid" id="vendorFormGrid">
                     <div class="form-group"><label>Vendor Name</label><input type="text" id="addVendorName" placeholder="e.g. BSN SPORTS, LLC" oninput="checkVendorFormValid()" onblur="this.value=this.value.toUpperCase()"></div>
                     <div class="form-group"><label>Vendor Number</label><input type="text" id="addVendorNumber" placeholder="e.g. 12345" oninput="checkVendorFormValid()"></div>
@@ -451,7 +459,7 @@
 
         <!-- ============ BUDGET CODES TAB ============ -->
         <div class="tab-panel" id="panel-budget-codes">
-            <div class="add-form-card">
+            <div class="add-form-card" id="budgetAddForm">
                 <div class="form-grid-budget" id="budgetFormGrid">
                     <div class="form-group"><label>Budget Code</label><input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode(); checkBudgetFormValid()"></div>
                     <div class="form-group"><label>Account Code</label><input type="text" id="addAccountCode" placeholder="e.g. 401" oninput="checkBudgetFormValid()"></div>
@@ -636,6 +644,7 @@
 
     <script>
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
+        let canEditData = false; // set after permissions load
         const PAGE_SIZE = 250;
         const AVAILABLE_ROLES = ['admin', 'owner', 'accountant', 'form_builder', 'form_viewer'];
         const ROLE_LABELS = { admin: 'Admin', owner: 'Owner', accountant: 'Accountant', form_builder: 'Form Builder', form_viewer: 'Form Viewer' };
@@ -965,6 +974,8 @@
             document.getElementById('editVendorState').value = v.vendor_state || '';
             document.getElementById('editVendorZip').value = v.vendor_zip || '';
             renderRoleCheckboxes('editVendorRoles', getDummyRoles(v.vendor_number));
+            // Update title based on permissions
+            document.querySelector('#editVendorModal .edit-modal-panel h3').textContent = canEditData ? 'Edit Vendor' : 'View Vendor';
             document.getElementById('editVendorModal').classList.add('open');
         }
 
@@ -1276,6 +1287,7 @@
             document.getElementById('editCourse').value = (b.course || '').toString().trim();
             const compositeKey = (b.budget_code||'') + '|' + (b.account_code||'');
             renderRoleCheckboxes('editBudgetRoles', getDummyRoles(compositeKey));
+            document.querySelector('#editBudgetModal .edit-modal-panel h3').textContent = canEditData ? 'Edit Budget Code' : 'View Budget Code';
             document.getElementById('editBudgetModal').classList.add('open');
         }
 
@@ -1620,7 +1632,7 @@
                 const user = await resp.json();
                 if (!user.email) return;
 
-                // Show admin menu items based on permissions
+                // Show admin menu items and set edit permissions
                 try {
                     const permResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(user.email)}`);
                     if (permResp.ok) {
@@ -1630,8 +1642,11 @@
                             const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
                             const imp = document.getElementById('impersonateMenuItem'); if (imp) imp.style.display = '';
                         }
+                        canEditData = !!perms.can_manage_vendors;
                     }
                 } catch (e) {}
+
+                applyEditPermissions();
 
                 const prefsResp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(user.email)}`);
                 if (!prefsResp.ok) return;
@@ -1641,6 +1656,12 @@
                     applyTheme(data.prefs.theme);
                 }
             } catch (e) { console.warn('[PREFS] Failed to load theme:', e); }
+        }
+
+        function applyEditPermissions() {
+            if (canEditData) return; // admins keep full access
+            // Add read-only class to body — CSS handles hiding
+            document.body.classList.add('data-readonly');
         }
 
         function toggleHamburgerMenu() { const m=document.getElementById('hamburgerMenu');if(m.classList.contains('open'))closeHamburgerMenu();else{m.style.display='block';document.getElementById('hamburgerOverlay').style.display='block';m.offsetHeight;m.classList.add('open');m.style.transform='translateX(0)';} }

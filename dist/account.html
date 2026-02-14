@@ -330,11 +330,11 @@
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
-                    <button class="hamburger-menu-item" onclick="window.location.href='index.html'">
+                    <button class="hamburger-menu-item" onclick="navigateAway('index.html')">
                         
                         Dashboard
                     </button>
-                    <button class="hamburger-menu-item" onclick="window.location.href='rfp-form.html'">
+                    <button class="hamburger-menu-item" onclick="navigateAway('rfp-form.html')">
                         
                         New Request
                     </button>
@@ -348,15 +348,15 @@
                         
                         My Account
                     </button>
-                    <button id="userMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='users.html'" style="display:none;">
+                    <button id="userMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('users.html')" style="display:none;">
                         
                         User Management
                     </button>
-                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='data-management.html'" style="display:none;">
+                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('data-management.html')" style="display:none;">
                         
                         Data Management
                     </button>
-                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="window.location.href='index.html?impersonate=1'" style="display:none;">
+                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="navigateAway('index.html?impersonate=1')" style="display:none;">
                         Impersonate User
                     </button>
                 </div>
@@ -528,7 +528,47 @@
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let profileData = null;
         let formDirty = false;
+        let formSubmitting = false;
         let selectedFile = null;
+
+        // Unsaved changes: beforeunload for tab close/refresh
+        window.addEventListener('beforeunload', function(e) {
+            if (formDirty && !formSubmitting) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes.';
+                return 'You have unsaved changes.';
+            }
+        });
+
+        function navigateAway(url) {
+            if (formDirty && !formSubmitting) {
+                showUnsavedWarningModal(url);
+            } else {
+                window.location.href = url;
+            }
+        }
+
+        function showUnsavedWarningModal(destinationUrl) {
+            const existing = document.getElementById('unsavedWarningModal');
+            if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'unsavedWarningModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+            modal.innerHTML = `
+                <div style="background:var(--card-bg, #fff);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary, #111);margin-bottom:0.5rem;">Unsaved Changes</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary, #666);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes that will be lost if you leave this page.</div>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;">
+                        <button id="unsavedStayBtn" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color, #ddd);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg, #fff);color:var(--text-primary, #111);font-family:'Inter',sans-serif;">Stay on Page</button>
+                        <button id="unsavedLeaveBtn" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color, #dc2626);color:#fff;font-family:'Inter',sans-serif;">Leave Without Saving</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('unsavedStayBtn').onclick = () => modal.remove();
+            document.getElementById('unsavedLeaveBtn').onclick = () => { formDirty = false; formSubmitting = true; modal.remove(); window.location.href = destinationUrl; };
+        }
 
         function showToast(msg, duration = 4000) {
             const el = document.getElementById('toastError');
@@ -1253,6 +1293,7 @@
             }
         }
         function stopImpersonation() {
+            formDirty = false;
             sessionStorage.removeItem('impersonateEmail');
             sessionStorage.removeItem('impersonateName');
             window.location.href = 'index.html';

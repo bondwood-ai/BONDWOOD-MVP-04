@@ -1246,7 +1246,7 @@
                         const statusColor = r.status === 'approved' ? 'var(--positive-color)' :
                                            r.status === 'rejected' ? 'var(--negative-color)' :
                                            'var(--text-secondary)';
-                        return `<tr>
+                        return `<tr onclick="window.location.href='rfp-form.html?id=${r.rfp_number}'" style="cursor:pointer;" onmouseover="this.style.background='var(--accent-color-light)'" onmouseout="this.style.background=''">
                             <td style="font-weight:600;">${r.rfp_number || '—'}</td>
                             <td style="color:${statusColor};font-weight:600;text-transform:capitalize;font-size:0.75rem;">${status}</td>
                             <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.vendor_name || '—')}</td>
