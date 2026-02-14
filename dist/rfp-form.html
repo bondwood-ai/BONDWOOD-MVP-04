@@ -310,6 +310,22 @@
         body.dark-mode #mileageErrorBanner { background: rgba(248, 113, 113, 0.1); border-color: #f87171; color: #f87171; }
         body.dark-mode .vendor-error-msg { color: #f87171; background: rgba(248, 113, 113, 0.1); }
         body.dark-mode .input-error { border-color: #f87171 !important; box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15) !important; }
+
+        /* Unauthorized floating pill */
+        .unauthorized-pill {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(220, 38, 38, 0.88); color: #fff; backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 0.55rem 1.25rem; border-radius: 10px;
+            font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600;
+            display: flex; align-items: center; gap: 0.5rem;
+            z-index: 99999; pointer-events: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            animation: pillIn 0.25s ease-out;
+        }
+        .unauthorized-pill.fade-out { animation: pillOut 0.4s ease-in forwards; }
+        @keyframes pillIn { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes pillOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
         .vendor-section {
             display: grid; grid-template-columns: 1fr 1fr;
             border: 1px solid var(--border-color); border-radius: 12px;
@@ -1714,6 +1730,17 @@
             const exactByName = getVendorPool().find(v => v.n.toUpperCase() === nameVal.toUpperCase());
             const exactByNum = getVendorPool().find(v => v.c === numVal);
 
+            // Check if vendor exists but is restricted
+            if (USER_RESTRICTIONS.restricted_vendors) {
+                const fullByName = nameVal ? VENDOR_DATA.find(v => v.n.toUpperCase() === nameVal.toUpperCase()) : null;
+                const fullByNum = numVal ? VENDOR_DATA.find(v => v.c === numVal) : null;
+                if ((fullByName && !exactByName) || (fullByNum && !exactByNum)) {
+                    showVendorError('You do not have access to this vendor.');
+                    showUnauthorizedAlert('Unauthorized Vendor');
+                    return false;
+                }
+            }
+
             if (nameVal && numVal) {
                 if (exactByName && exactByNum && exactByName.c === exactByNum.c) {
                     selectedVendor = exactByName;
@@ -1756,6 +1783,23 @@
             document.getElementById('vendorNumber').classList.remove('input-error');
             const el = document.getElementById('vendorErrorMsg');
             if (el) el.style.display = 'none';
+        }
+
+        let _unauthorizedTimer = null;
+        function showUnauthorizedAlert(msg) {
+            const existing = document.querySelector('.unauthorized-pill');
+            if (existing) existing.remove();
+            clearTimeout(_unauthorizedTimer);
+
+            const pill = document.createElement('div');
+            pill.className = 'unauthorized-pill';
+            pill.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>' + msg;
+            document.body.appendChild(pill);
+
+            _unauthorizedTimer = setTimeout(() => {
+                pill.classList.add('fade-out');
+                setTimeout(() => pill.remove(), 400);
+            }, 3000);
         }
 
         function updateActiveItem(items) {
@@ -5176,6 +5220,19 @@
             const val = input.value.trim();
             if (!val) { input.classList.remove('bc-error', 'bc-valid'); removeBcTooltip(input); return; }
             if (!budgetDataLoaded) return;
+
+            // Check if code exists but is restricted
+            if (USER_RESTRICTIONS.restricted_budget && BUDGET_CODE_MAP[val]) {
+                const pool = getBudgetCodePool();
+                if (!pool.includes(val)) {
+                    input.classList.remove('bc-valid');
+                    input.classList.add('bc-error');
+                    showBcTooltip(input, 'Unauthorized budget code');
+                    showUnauthorizedAlert('Unauthorized Budget Code');
+                    return;
+                }
+            }
+
             if (BUDGET_CODE_MAP[val]) {
                 // Check mileage rows have 366 or 368 available
                 const row = input.closest('tr');
