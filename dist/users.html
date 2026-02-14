@@ -1546,6 +1546,50 @@
         }
 
         /* ========================================
+           CONFIRM MODAL
+           ======================================== */
+        function showConfirmModal(title, message) {
+            return new Promise(resolve => {
+                const existing = document.getElementById('confirmActionModal');
+                if (existing) existing.remove();
+
+                const modal = document.createElement('div');
+                modal.id = 'confirmActionModal';
+                modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+
+                modal.innerHTML = `
+                    <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:440px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
+                        <svg viewBox="0 0 24 24" width="36" height="36" stroke="#d97706" stroke-width="2" fill="none" style="margin-bottom:0.75rem;">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">${title}</div>
+                        <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">${message}</div>
+                        <div style="display:flex;gap:0.75rem;justify-content:center;">
+                            <button id="confirmModalCancel" style="padding:0.55rem 1.5rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);transition:all 0.15s;">Cancel</button>
+                            <button id="confirmModalYes" style="padding:0.55rem 1.5rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;background:#d97706;border:none;color:#fff;transition:all 0.15s;">Yes</button>
+                        </div>
+                    </div>`;
+
+                function cleanup(result) {
+                    modal.remove();
+                    document.removeEventListener('keydown', onKey);
+                    resolve(result);
+                }
+                function onKey(e) {
+                    if (e.key === 'Escape') cleanup(false);
+                }
+
+                modal.addEventListener('click', e => { if (e.target === modal) cleanup(false); });
+                modal.querySelector('#confirmModalCancel').addEventListener('click', () => cleanup(false));
+                modal.querySelector('#confirmModalYes').addEventListener('click', () => cleanup(true));
+                document.addEventListener('keydown', onKey);
+
+                document.body.appendChild(modal);
+            });
+        }
+
+        /* ========================================
            ACTIVATE / DEACTIVATE
            ======================================== */
         async function toggleUserStatus() {
@@ -1553,8 +1597,13 @@
             const isActive = selectedUser.status !== 'inactive';
             const newStatus = isActive ? 'inactive' : 'active';
             const action = isActive ? 'deactivate' : 'activate';
+            const name = ((selectedUser.first_name || '') + ' ' + (selectedUser.last_name || '')).trim();
 
-            if (!confirm(`Are you sure you want to ${action} ${selectedUser.first_name} ${selectedUser.last_name}?`)) return;
+            const confirmed = await showConfirmModal(
+                isActive ? 'Deactivate Account' : 'Activate Account',
+                `Are you sure you want to ${action} <strong>${escapeHTML(name)}</strong>?${isActive ? ' They will no longer be able to access the system.' : ''}`
+            );
+            if (!confirmed) return;
 
             try {
                 const resp = await fetch(`${API_BASE}/api/users/status`, {
@@ -1564,11 +1613,11 @@
                 });
                 if (!resp.ok) throw new Error('Failed to update status');
                 selectedUser.status = newStatus;
-                showToast(`Account ${action}d`, 'success');
+                showToast(`Account ${action.charAt(0).toUpperCase() + action.slice(1)}d`, 'success');
                 openDetail(encodeURIComponent(selectedUser.email)); // refresh panel
                 renderTable();
             } catch (e) {
-                showToast('Failed to update status: ' + e.message, 'error');
+                showToast('Failed to Update Status: ' + e.message, 'error');
             }
         }
 
