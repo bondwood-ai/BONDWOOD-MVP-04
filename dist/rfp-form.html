@@ -4026,6 +4026,8 @@
                         : `Request #${currentRfpNumber} has been sent back to ${FORM_WORKFLOW_LABELS[newStatus] || newStatus}.`,
                     'Request Rejected'
                 );
+                formDirty = false;
+                formSubmitting = true;
                 setTimeout(() => { window.location.href = 'index.html'; }, 1500);
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Reject Failed');
@@ -4077,6 +4079,8 @@
                         : `Request #${currentRfpNumber} has been advanced to ${FORM_WORKFLOW_LABELS[newStatus] || newStatus}.`,
                     isFullApproval ? 'Approved' : 'Advanced'
                 );
+                formDirty = false;
+                formSubmitting = true;
                 setTimeout(() => { window.location.href = 'index.html'; }, 1500);
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Approve Failed');

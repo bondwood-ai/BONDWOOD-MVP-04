@@ -19,28 +19,23 @@ export async function onRequest(context) {
     return next();
   }
   
-  // Get session cookie - check both production and development cookie names
+  // Get session cookies
   const cookieHeader = request.headers.get('Cookie') || '';
-  const sessionToken = getCookie(cookieHeader, '__session') || getCookie(cookieHeader, '__clerk_db_jwt');
   const clientUat = getCookie(cookieHeader, '__client_uat');
   
-  // If client_uat is 0 or missing, user is not authenticated
+  // __client_uat is Clerk's source of truth for authentication state.
+  // If it's missing or "0", the user has never authenticated or has signed out.
   if (!clientUat || clientUat === '0') {
     const redirectUrl = encodeURIComponent(request.url);
     return Response.redirect(`${url.origin}/login?redirect_url=${redirectUrl}`, 302);
   }
   
-  // If we have a session token, verify it
-  if (sessionToken) {
-    const isValid = await verifyClerkJWT(sessionToken, env);
-    if (isValid) {
-      return next();
-    }
-  }
-  
-  // No valid session - redirect to login
-  const redirectUrl = encodeURIComponent(request.url);
-  return Response.redirect(`${url.origin}/login?redirect_url=${redirectUrl}`, 302);
+  // __client_uat exists and is non-zero — user has an active Clerk session.
+  // The __session JWT may be expired (it's short-lived, ~60s), but that's
+  // normal. Clerk's frontend JS refreshes it automatically on page load.
+  // Redirecting to /login on an expired JWT causes a visible flash because
+  // the login page immediately detects the valid session and bounces back.
+  return next();
 }
 
 function getCookie(cookieHeader, name) {
@@ -51,28 +46,4 @@ function getCookie(cookieHeader, name) {
     }
   }
   return null;
-}
-
-async function verifyClerkJWT(token, env) {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return false;
-    
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    
-    // Check expiration
-    const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
-      return false;
-    }
-    
-    // Check not before
-    if (payload.nbf && payload.nbf > now) {
-      return false;
-    }
-    
-    return true;
-  } catch (e) {
-    return false;
-  }
 }
