@@ -1435,10 +1435,11 @@
         let formDirty = false;
         let formSubmitting = false;
         let historyGuardActive = false;
+        let navigatingViaModal = false; // flag to suppress beforeunload when our modal is handling it
 
-        // Native beforeunload for refresh / tab close (browser forces its own UI — no custom modal possible)
+        // Native beforeunload for refresh / tab close ONLY
         window.addEventListener('beforeunload', function(e) {
-            if (formDirty && !formSubmitting) {
+            if (formDirty && !formSubmitting && !navigatingViaModal) {
                 e.preventDefault();
                 e.returnValue = 'You have unsaved changes.';
                 return 'You have unsaved changes.';
@@ -1464,6 +1465,7 @@
             if (formDirty && !formSubmitting) {
                 showUnsavedWarningModal(url);
             } else {
+                navigatingViaModal = true;
                 window.location.href = url;
             }
         }
@@ -1490,7 +1492,7 @@
             document.body.appendChild(modal);
             document.getElementById('unsavedStayBtn').onclick = function() {
                 modal.remove();
-                // Re-push guard state if this was a back-button interception
+                navigatingViaModal = false;
                 if (destinationUrl === '__history_back__') {
                     history.pushState({ formGuard: true }, '');
                 }
@@ -1498,9 +1500,9 @@
             document.getElementById('unsavedLeaveBtn').onclick = function() {
                 formDirty = false;
                 formSubmitting = true;
+                navigatingViaModal = true;
                 modal.remove();
                 if (destinationUrl === '__history_back__') {
-                    // Guard state already popped by the back press; one more back to leave the page
                     history.back();
                 } else {
                     window.location.href = destinationUrl;
@@ -1515,6 +1517,16 @@
                 activateHistoryGuard();
             }
         }
+
+        // Global interceptor: catch any <a> link clicks when form is dirty
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href]');
+            if (!link || !formDirty || formSubmitting) return;
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+            e.preventDefault();
+            navigateAway(href);
+        });
 
         /* ========================================
            VENDOR AUTOCOMPLETE
