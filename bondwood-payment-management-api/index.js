@@ -1156,34 +1156,41 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   }
 
   // Audit log - separate from data batch so it can't break the save
+  // Skip auto-audit when this is a workflow-only status change (approve/reject)
+  // because the caller posts its own audit entry via /audit-log
+  const isWorkflowOnly = body.status && !body.submitter_name && !body.line_items && !body.mileage_trips && !body.description && !body.vendor_name && !body.assigned_to;
   let auditDebug = {};
-  try {
-    console.log('[AUDIT] oldItems count:', oldItems.length, 'oldTrips count:', oldTrips.length);
-    console.log('[AUDIT] newItems:', newItems !== null ? newItems.length : 'null', 'newTrips:', newTrips !== null ? newTrips.length : 'null');
-    console.log('[AUDIT] body.status:', body.status, 'oldHeader.status:', oldHeader.status);
+  if (!isWorkflowOnly) {
+    try {
+      console.log('[AUDIT] oldItems count:', oldItems.length, 'oldTrips count:', oldTrips.length);
+      console.log('[AUDIT] newItems:', newItems !== null ? newItems.length : 'null', 'newTrips:', newTrips !== null ? newTrips.length : 'null');
+      console.log('[AUDIT] body.status:', body.status, 'oldHeader.status:', oldHeader.status);
 
-    const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
-    console.log('[AUDIT] Generated entries:', auditEntries.length, JSON.stringify(auditEntries.map(e => e.action)));
+      const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
+      console.log('[AUDIT] Generated entries:', auditEntries.length, JSON.stringify(auditEntries.map(e => e.action)));
 
-    auditDebug = {
-      oldItemCount: oldItems.length,
-      oldTripCount: oldTrips.length,
-      newItemCount: newItems !== null ? newItems.length : 'null',
-      newTripCount: newTrips !== null ? newTrips.length : 'null',
-      entriesGenerated: auditEntries.length,
-      entryActions: auditEntries.map(e => e.action),
-    };
+      auditDebug = {
+        oldItemCount: oldItems.length,
+        oldTripCount: oldTrips.length,
+        newItemCount: newItems !== null ? newItems.length : 'null',
+        newTripCount: newTrips !== null ? newTrips.length : 'null',
+        entriesGenerated: auditEntries.length,
+        entryActions: auditEntries.map(e => e.action),
+      };
 
-    const now = new Date().toISOString();
-    for (const entry of auditEntries) {
-      await env.DB.prepare(
-        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
-      ).bind(rfpNumber, entry.action, entry.description, performer, now).run();
+      const now = new Date().toISOString();
+      for (const entry of auditEntries) {
+        await env.DB.prepare(
+          'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+        ).bind(rfpNumber, entry.action, entry.description, performer, now).run();
+      }
+      auditDebug.written = true;
+    } catch (auditErr) {
+      console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
+      auditDebug.error = auditErr.message;
     }
-    auditDebug.written = true;
-  } catch (auditErr) {
-    console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
-    auditDebug.error = auditErr.message;
+  } else {
+    auditDebug = { skipped: true, reason: 'workflow-only status change' };
   }
 
   return json({ rfp_number: rfpNumber, message: 'RFP updated', _auditDebug: auditDebug });
