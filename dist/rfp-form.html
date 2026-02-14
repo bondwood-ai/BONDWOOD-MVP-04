@@ -951,7 +951,7 @@
                 <div class="row-actions-toolbar" id="rowActionsToolbar">
                     <span class="selected-count"><span id="selectedCount">0</span> row(s) selected</span>
                     <button class="delete-rows-btn" onclick="deleteSelectedRows()">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         Delete
                     </button>
                 </div>
@@ -982,7 +982,7 @@
                             Add Row
                         </button>
                         <button class="add-row-btn" onclick="openCaptureInvoiceModal()" style="background:var(--primary-hex);color:var(--accent-text-color);">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                             Capture Invoice
                         </button>
                         <button class="btn-primary-sm-alt" onclick="importLineItems()">
@@ -1010,7 +1010,7 @@
                     <div class="row-actions-toolbar" id="mileageActionsToolbar">
                         <span class="selected-count"><span id="mileageSelectedCount">0</span> trip(s) selected</span>
                         <button class="delete-rows-btn" onclick="deleteMileageSelectedRows()">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                             Delete
                         </button>
                     </div>
@@ -1138,7 +1138,7 @@
             <div class="capture-modal-box">
                 <div class="capture-modal-header">
                     <h3>
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                         Capture Invoice
                     </h3>
                     <button class="att-close-btn" onclick="closeCaptureInvoiceModal()">&times;</button>
@@ -1176,7 +1176,7 @@
         <div class="button-container" id="approvalButtons" style="display:none;">
             <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
             <button class="btn btn-reject-form" onclick="openFormRejectModal()">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 Reject
             </button>
             <button class="btn btn-approve-form" onclick="approveFormRFP()">
@@ -3047,7 +3047,7 @@
                 console.error('Invoice extraction failed:', err);
                 banner.style.background = 'var(--negative-color)';
                 banner.innerHTML = `
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6L6 18M6 6l12 12"/></svg>
                     Extraction failed: ${err.message} — try again or enter line items manually
                 `;
                 setTimeout(() => { banner.style.transform = 'translateY(-100%)'; }, 5000);
@@ -3229,7 +3229,7 @@
                     const errText = await resp.text();
                     console.error('[ATTACH] Upload failed:', resp.status, errText);
                     overlayIcon.style.animation = 'none';
-                    overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/>';
+                    overlayIcon.innerHTML = '<path d="M18 6L6 18M6 6l12 12"/>';
                     overlayIcon.setAttribute('stroke', 'var(--negative-color)');
                     overlayTitle.textContent = 'Upload Failed';
                     overlayMsg.textContent = `Error ${resp.status}. Your RFP was saved but attachments were not uploaded.`;
@@ -3271,7 +3271,7 @@
             } catch (err) {
                 console.error('[ATTACH] Upload error:', err);
                 overlayIcon.style.animation = 'none';
-                overlayIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/>';
+                overlayIcon.innerHTML = '<path d="M18 6L6 18M6 6l12 12"/>';
                 overlayIcon.setAttribute('stroke', 'var(--negative-color)');
                 overlayTitle.textContent = 'Upload Error';
                 overlayMsg.textContent = err.message;
@@ -3359,8 +3359,8 @@
                     </div>
                     <div class="attachment-actions">
                         ${isViewable ? `<button onclick="viewAttachment('${att.id}')" title="View"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>` : ''}
-                        <button onclick="downloadAttachmentLocal('${att.id}')" title="Download"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
-                        <button class="delete-btn" onclick="removeAttachment('${att.id}')" title="Delete"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                        <button onclick="downloadAttachmentLocal('${att.id}')" title="Download"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M17 11l-5 5-5-5"/><path d="M5 19h14"/></svg></button>
+                        <button class="delete-btn" onclick="removeAttachment('${att.id}')" title="Delete"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
                     </div>
                 </div>`;
             }).join('');
