@@ -1435,11 +1435,12 @@
         let formDirty = false;
         let formSubmitting = false;
         let historyGuardActive = false;
-        let navigatingViaModal = false; // flag to suppress beforeunload when our modal is handling it
+        let navigatingViaModal = false;
+        let isImpersonating = !!sessionStorage.getItem('impersonateName');
 
-        // Native beforeunload for refresh / tab close ONLY
+        // Native beforeunload — skip during impersonation
         window.addEventListener('beforeunload', function(e) {
-            if (formDirty && !formSubmitting && !navigatingViaModal) {
+            if (formDirty && !formSubmitting && !navigatingViaModal && !isImpersonating) {
                 e.preventDefault();
                 e.returnValue = 'You have unsaved changes.';
                 return 'You have unsaved changes.';
@@ -1448,7 +1449,7 @@
 
         // History API guard: intercept browser back/forward with custom modal
         window.addEventListener('popstate', function(e) {
-            if (formDirty && !formSubmitting) {
+            if (formDirty && !formSubmitting && !isImpersonating) {
                 // Don't re-push yet — let the modal decide
                 showUnsavedWarningModal('__history_back__');
             }
@@ -1462,7 +1463,7 @@
         }
 
         function navigateAway(url) {
-            if (formDirty && !formSubmitting) {
+            if (formDirty && !formSubmitting && !isImpersonating) {
                 showUnsavedWarningModal(url);
             } else {
                 navigatingViaModal = true;
@@ -1521,7 +1522,7 @@
         // Global interceptor: catch any <a> link clicks when form is dirty
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a[href]');
-            if (!link || !formDirty || formSubmitting) return;
+            if (!link || !formDirty || formSubmitting || isImpersonating) return;
             const href = link.getAttribute('href');
             if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
             e.preventDefault();
@@ -1944,6 +1945,7 @@
             }
         }
         function stopImpersonation() {
+            formDirty = false;
             sessionStorage.removeItem('impersonateEmail');
             sessionStorage.removeItem('impersonateName');
             window.location.href = 'index.html';
@@ -3637,6 +3639,7 @@
            FORM ACTIONS
            ======================================== */
         async function saveDraft() {
+            if (isImpersonating) { showAlert('Cannot save while impersonating a user.', 'Impersonation Mode'); return; }
             // Collect form data (same structure as performSubmission)
             const requestType = currentRequestType;
             const lineItems = [];
@@ -3915,6 +3918,7 @@
         }
 
         function submitForm() {
+            if (isImpersonating) { showAlert('Cannot submit while impersonating a user.', 'Impersonation Mode'); return; }
             // Vendor validation
             if (currentRequestType === 'vendor') {
                 if (!document.getElementById('vendorName').value.trim()) { showAlert('Please enter vendor name.', 'Validation'); return; }
