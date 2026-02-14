@@ -848,13 +848,16 @@
                         
                         My Account
                     </button>
-                    <button class="hamburger-menu-item" onclick="navigateAway('users.html')">
+                    <button id="userMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('users.html')" style="display:none;">
                         
                         User Management
                     </button>
-                    <button class="hamburger-menu-item" onclick="navigateAway('data-management.html')">
+                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('data-management.html')" style="display:none;">
                         
                         Data Management
+                    </button>
+                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="navigateAway('index.html?impersonate=1')" style="display:none;">
+                        Impersonate User
                     </button>
                 </div>
             </div>
@@ -1838,10 +1841,33 @@
         /* ========================================
            INITIALIZATION
            ======================================== */
+        async function loadMenuPermissions() {
+            try {
+                const resp = await fetch('/api/me');
+                if (!resp.ok) return;
+                const ct = resp.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) return;
+                const user = await resp.json();
+                if (!user.email) return;
+                const permResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(user.email)}`);
+                if (!permResp.ok) return;
+                const fullUser = await permResp.json();
+                const perms = fullUser.permissions || {};
+                if (perms.can_manage_users) {
+                    const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
+                    const imp = document.getElementById('impersonateMenuItem'); if (imp) imp.style.display = '';
+                }
+                if (perms.can_manage_vendors) {
+                    const dm = document.getElementById('dataMgmtMenuItem'); if (dm) dm.style.display = '';
+                }
+            } catch (e) { console.warn('[MENU] Permission check failed:', e); }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
             loadBrandData();
             loadThemePref();
+            loadMenuPermissions();
             setupVendorAutocomplete();
             loadBudgetCodes();
             mileageSitesPromise = loadMileageSites();

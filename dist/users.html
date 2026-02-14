@@ -430,9 +430,12 @@
                         
                         User Management
                     </button>
-                    <button class="hamburger-menu-item" onclick="window.location.href='data-management.html'">
+                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='data-management.html'" style="display:none;">
                         
                         Data Management
+                    </button>
+                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="window.location.href='index.html?impersonate=1'" style="display:none;">
+                        Impersonate User
                     </button>
                 </div>
             </div>
@@ -688,6 +691,15 @@
             initTheme();
             loadBrandData();
             await fetchCurrentUser();
+
+            // Show admin menu items based on permissions
+            if (currentUserPermissions.can_manage_users) {
+                const imp = document.getElementById('impersonateMenuItem'); if (imp) imp.style.display = '';
+            }
+            if (currentUserPermissions.can_manage_vendors) {
+                const dm = document.getElementById('dataMgmtMenuItem'); if (dm) dm.style.display = '';
+            }
+
             loadThemePref();
             await loadRoleDefinitions();
             await loadUsers();

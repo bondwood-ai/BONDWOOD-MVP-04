@@ -502,7 +502,6 @@
                         Data Management
                     </button>
                     <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="closeHamburgerMenu();openImpersonateModal()" style="display:none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         Impersonate User
                     </button>
                 </div>
@@ -3928,6 +3927,13 @@
             allRFPs = await loadRFPData();
             filterTable();
             initCustomSelect(document.getElementById("statusFilter"));
+
+            // Check for impersonate query param
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('impersonate') === '1' && currentUserPermissions.can_manage_users) {
+                history.replaceState(null, '', window.location.pathname); // clean URL
+                openImpersonateModal();
+            }
 
             // Preload vendor data in background for Capture Invoice
             fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`)
