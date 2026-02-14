@@ -197,6 +197,11 @@ export default {
         return handleUpdateUserStatus(request, env);
       }
 
+      // ── Role Definitions ──
+      if (path === '/api/role-definitions' && method === 'GET') {
+        return handleGetRoleDefinitions(env);
+      }
+
       // ── Profile ──
       if (path === '/api/profile' && method === 'PUT') {
         return handleUpdateProfile(request, env);
@@ -332,7 +337,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -341,14 +346,16 @@ async function handleMe(request, env, url) {
 
   const u = results[0];
 
-  // Fetch roles
+  // Parse roles from JSON array on user_data
   let roles = [];
   try {
-    const { results: roleResults } = await env.DB.prepare(
-      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
-    ).bind(email.toLowerCase().trim()).all();
-    roles = roleResults.map(r => r.role);
-  } catch (e) { /* user_roles table may not exist yet */ }
+    roles = JSON.parse(u.user_roles || '["user"]');
+  } catch (e) {
+    roles = ['user'];
+  }
+
+  // Resolve permissions from role_definitions
+  const permissions = await resolvePermissions(roles, env);
 
   return json({
     user_id: u.user_id,
@@ -360,7 +367,75 @@ async function handleMe(request, env, url) {
     title: u.title || '',
     profile_picture_key: u.profile_picture_key || null,
     roles,
+    permissions,
   });
+}
+
+
+/* ========================================
+   ROLE / PERMISSION HELPERS
+   ======================================== */
+async function resolvePermissions(roles, env) {
+  if (!roles || roles.length === 0) roles = ['user'];
+
+  const placeholders = roles.map(() => '?').join(',');
+  const { results } = await env.DB.prepare(
+    `SELECT permissions FROM role_definitions WHERE role_name IN (${placeholders})`
+  ).bind(...roles).all();
+
+  // Merge all role permissions — any true wins
+  const merged = {};
+  for (const row of results) {
+    try {
+      const perms = JSON.parse(row.permissions);
+      Object.assign(merged, perms);
+    } catch (e) {}
+  }
+  return merged;
+}
+
+// Guard: returns 403 Response if user lacks permission, null if OK
+async function requirePermission(request, env, permissionKey) {
+  const email = getEmailFromRequest(request);
+  if (!email) return json({ error: 'Unauthorized' }, 401);
+
+  const { results } = await env.DB.prepare(
+    'SELECT user_roles FROM user_data WHERE LOWER(user_email) = ?'
+  ).bind(email).all();
+
+  if (!results.length) return json({ error: 'User not found' }, 404);
+
+  let roles = [];
+  try {
+    roles = JSON.parse(results[0].user_roles || '["user"]');
+  } catch (e) {
+    roles = ['user'];
+  }
+
+  const permissions = await resolvePermissions(roles, env);
+
+  if (!permissions[permissionKey]) {
+    return json({ error: 'Forbidden', required: permissionKey }, 403);
+  }
+
+  return null; // Permission granted
+}
+
+
+/* ========================================
+   ROLE DEFINITIONS – CRUD
+   ======================================== */
+async function handleGetRoleDefinitions(env) {
+  const { results } = await env.DB.prepare(
+    'SELECT role_name, description, permissions, created_at, updated_at FROM role_definitions ORDER BY role_name'
+  ).all();
+
+  const parsed = results.map(r => ({
+    ...r,
+    permissions: JSON.parse(r.permissions || '{}'),
+  }));
+
+  return json({ roles: parsed, count: parsed.length });
 }
 
 
@@ -1740,36 +1815,29 @@ async function handleDeleteAttachment(key, env) {
    ======================================== */
 async function handleGetUsers(env) {
   const { results: users } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status FROM user_data ORDER BY user_first_name ASC'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles FROM user_data ORDER BY user_first_name ASC'
   ).all();
 
-  let allRoles = [];
-  try {
-    const { results: roleResults } = await env.DB.prepare(
-      'SELECT user_email, role FROM user_roles ORDER BY user_email, role'
-    ).all();
-    allRoles = roleResults;
-  } catch (e) { /* user_roles table may not exist yet */ }
-
-  const roleMap = {};
-  for (const r of allRoles) {
-    const email = r.user_email.toLowerCase();
-    if (!roleMap[email]) roleMap[email] = [];
-    roleMap[email].push(r.role);
-  }
-
-  const merged = users.map(u => ({
-    user_id: u.user_id,
-    first_name: u.user_first_name,
-    last_name: u.user_last_name,
-    email: u.user_email,
-    phone_number: u.phone_number || '',
-    department: u.department || '',
-    title: u.title || '',
-    profile_picture_key: u.profile_picture_key || null,
-    status: u.status || 'active',
-    roles: roleMap[u.user_email.toLowerCase()] || [],
-  }));
+  const merged = users.map(u => {
+    let roles = [];
+    try {
+      roles = JSON.parse(u.user_roles || '["user"]');
+    } catch (e) {
+      roles = ['user'];
+    }
+    return {
+      user_id: u.user_id,
+      first_name: u.user_first_name,
+      last_name: u.user_last_name,
+      email: u.user_email,
+      phone_number: u.phone_number || '',
+      department: u.department || '',
+      title: u.title || '',
+      profile_picture_key: u.profile_picture_key || null,
+      status: u.status || 'active',
+      roles,
+    };
+  });
 
   return json({ users: merged, total: merged.length });
 }
