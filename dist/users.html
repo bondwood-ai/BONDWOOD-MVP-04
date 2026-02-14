@@ -222,7 +222,7 @@
 
         .detail-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem 1.5rem;
             position: sticky; top: 0; background: var(--card-bg); z-index: 2;
         }
         .detail-header h3 { font-size: 1rem; font-weight: 700; }
@@ -248,6 +248,16 @@
         .detail-identity h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.1rem; }
         .detail-identity .detail-email { font-size: 0.78rem; color: var(--text-secondary); }
         .detail-identity .detail-eid { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.1rem; }
+
+        .detail-impersonate-btn {
+            margin-left: auto; align-self: center; flex-shrink: 0;
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.4rem 0.85rem; border-radius: 8px;
+            font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600;
+            cursor: pointer; transition: all 0.15s;
+            background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary);
+        }
+        .detail-impersonate-btn:hover { background: var(--bg-color); color: var(--text-primary); border-color: var(--text-secondary); }
 
         .detail-section { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); }
         .detail-section-title {
@@ -467,9 +477,6 @@
                         
                         Data Management
                     </button>
-                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="window.location.href='index.html?impersonate=1'" style="display:none;">
-                        Impersonate User
-                    </button>
                 </div>
             </div>
 
@@ -565,6 +572,10 @@
                 <div class="detail-email" id="detailEmail">—</div>
                 <div class="detail-eid" id="detailEid">—</div>
             </div>
+            <button class="detail-impersonate-btn" id="detailImpersonateBtn" onclick="impersonateFromDetail()" style="display:none;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Impersonate
+            </button>
         </div>
 
         <!-- Account Info Section -->
@@ -762,10 +773,8 @@
                         const perms = impUser.permissions || {};
                         const um = document.getElementById('userMgmtMenuItem');
                         const dm = document.getElementById('dataMgmtMenuItem');
-                        const imp = document.getElementById('impersonateMenuItem');
                         if (um) um.style.display = perms.can_manage_users ? '' : 'none';
                         if (dm) dm.style.display = perms.can_manage_vendors ? '' : 'none';
-                        if (imp) imp.style.display = perms.can_manage_users ? '' : 'none';
                     }
                 } catch (e) {}
             }
@@ -776,15 +785,20 @@
             window.location.href = 'index.html';
         }
 
+        function impersonateFromDetail() {
+            if (!selectedUser) return;
+            const name = ((selectedUser.first_name || '') + ' ' + (selectedUser.last_name || '')).trim() || 'Unknown';
+            sessionStorage.setItem('impersonateEmail', selectedUser.email.toLowerCase().trim());
+            sessionStorage.setItem('impersonateName', name);
+            window.location.href = 'index.html';
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
             await fetchCurrentUser();
 
             // Show admin menu items based on permissions
-            if (currentUserPermissions.can_manage_users) {
-                const imp = document.getElementById('impersonateMenuItem'); if (imp) imp.style.display = '';
-            }
             if (currentUserPermissions.can_manage_vendors) {
                 const dm = document.getElementById('dataMgmtMenuItem'); if (dm) dm.style.display = '';
             }
@@ -1138,6 +1152,16 @@
 
             // Load RFPs for this user
             loadUserRfps(user.email, name);
+
+            // Impersonate button: show if admin, not self, not already impersonating
+            const impBtn = document.getElementById('detailImpersonateBtn');
+            const isImpersonating = !!sessionStorage.getItem('impersonateEmail');
+            const isSelf = user.email.toLowerCase() === currentUserEmail.toLowerCase();
+            if (currentUserPermissions.can_manage_users && !isSelf && !isImpersonating) {
+                impBtn.style.display = '';
+            } else {
+                impBtn.style.display = 'none';
+            }
 
             // Open panel
             const overlay = document.getElementById('detailOverlay');
