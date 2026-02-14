@@ -1505,6 +1505,14 @@
            ======================================== */
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let VENDOR_DATA = [];
+        let USER_RESTRICTIONS = {};
+
+        function getVendorPool() {
+            const r = USER_RESTRICTIONS.vendors;
+            if (!r || !r.length) return VENDOR_DATA;
+            const allowed = new Set(r);
+            return VENDOR_DATA.filter(v => allowed.has(v.c));
+        }
 
         // Load vendor data from API
         async function loadVendorData() {
@@ -1542,7 +1550,7 @@
             let bestMatch = null;
             let bestScore = 0;
 
-            for (const v of VENDOR_DATA) {
+            for (const v of getVendorPool()) {
                 if (!v.n || v.n === '—') continue;
                 const vName = clean(v.n);
                 const vStripped = stripSuffix(vName);
@@ -1614,7 +1622,7 @@
                     document.getElementById('vendorAddress').value = '';
                     return;
                 }
-                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 2000);
+                const matches = getVendorPool().filter(v => v.n.toUpperCase().includes(q)).slice(0, 2000);
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
@@ -1627,8 +1635,8 @@
                 vendorActiveIndex = -1;
                 const q = nameInput.value.trim().toUpperCase();
                 const matches = q.length >= 1
-                    ? VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q)).slice(0, 2000)
-                    : VENDOR_DATA.slice(0, 2000);
+                    ? getVendorPool().filter(v => v.n.toUpperCase().includes(q)).slice(0, 2000)
+                    : getVendorPool().slice(0, 2000);
                 renderVendorDropdown(nameDrop, matches, q, 'name');
             });
 
@@ -1642,7 +1650,7 @@
                         if (!isOpen) {
                             const q = nameInput.value.trim();
                             if (q.length >= 1) {
-                                const matches = VENDOR_DATA.filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 2000);
+                                const matches = getVendorPool().filter(v => v.n.toUpperCase().includes(q.toUpperCase())).slice(0, 2000);
                                 renderVendorDropdown(nameDrop, matches, q.toUpperCase(), 'name');
                             }
                             vendorActiveIndex = -1;
@@ -1696,8 +1704,8 @@
             }
 
             // No vendor selected — try exact match
-            const exactByName = VENDOR_DATA.find(v => v.n.toUpperCase() === nameVal.toUpperCase());
-            const exactByNum = VENDOR_DATA.find(v => v.c === numVal);
+            const exactByName = getVendorPool().find(v => v.n.toUpperCase() === nameVal.toUpperCase());
+            const exactByNum = getVendorPool().find(v => v.c === numVal);
 
             if (nameVal && numVal) {
                 if (exactByName && exactByNum && exactByName.c === exactByNum.c) {
@@ -1863,6 +1871,7 @@
                     if (resp.ok) {
                         const impUser = await resp.json();
                         const perms = impUser.permissions || {};
+                        USER_RESTRICTIONS = impUser.restrictions || {};
                         const um = document.getElementById('userMgmtMenuItem');
                         const dm = document.getElementById('dataMgmtMenuItem');
                         if (um) um.style.display = perms.can_manage_users ? '' : 'none';
@@ -1889,6 +1898,7 @@
                 if (!permResp.ok) return;
                 const fullUser = await permResp.json();
                 const perms = fullUser.permissions || {};
+                USER_RESTRICTIONS = fullUser.restrictions || {};
                 if (perms.can_manage_users) {
                     const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
                 }
@@ -2533,7 +2543,7 @@
                     if (rows[0].vendorNumber && VENDOR_DATA && VENDOR_DATA.length > 0) {
                         const vn = rows[0].vendorNumber;
                         const paddedVn = vn.length === 4 ? '0' + vn : vn;
-                        const match = VENDOR_DATA.find(v => v.c === paddedVn || v.c === vn);
+                        const match = getVendorPool().find(v => v.c === paddedVn || v.c === vn);
                         if (match) {
                             const vnInput = document.getElementById('vendorNumber');
                             const vnameInput = document.getElementById('vendorName');
@@ -4799,6 +4809,13 @@
             return accounts;
         }
         let UNIQUE_BUDGET_CODES = []; // sorted unique budget codes
+
+        function getBudgetCodePool() {
+            const r = USER_RESTRICTIONS.budget_codes;
+            if (!r || !r.length) return UNIQUE_BUDGET_CODES;
+            const allowed = new Set(r);
+            return UNIQUE_BUDGET_CODES.filter(c => allowed.has(c));
+        }
         let budgetDataLoaded = false;
 
         function loadBudgetCodes() {
@@ -4854,7 +4871,7 @@
                 clearBcError(this);
                 const q = this.value.trim();
                 if (q.length < 1 || !budgetDataLoaded) { closeBcDropdown(this); return; }
-                const matches = UNIQUE_BUDGET_CODES.filter(c => c.includes(q)).slice(0, 2000);
+                const matches = getBudgetCodePool().filter(c => c.includes(q)).slice(0, 2000);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, q);
             });
@@ -4862,7 +4879,7 @@
             bcInput.addEventListener('focus', function() {
                 if (!budgetDataLoaded) return;
                 const q = this.value.trim();
-                const matches = UNIQUE_BUDGET_CODES.slice(0, 2000);
+                const matches = getBudgetCodePool().slice(0, 2000);
                 bcActiveIndex = -1;
                 renderBcDropdown(this, matches, '');
                 // Scroll to current value if it exists

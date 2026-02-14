@@ -259,6 +259,64 @@
         }
         .detail-impersonate-btn:hover { background: var(--bg-color); color: var(--text-primary); border-color: var(--text-secondary); }
 
+        /* Restrictions */
+        .restriction-block { }
+        .restriction-header { display: flex; align-items: center; justify-content: space-between; }
+        .restriction-label { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+        .restriction-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
+        .restriction-toggle input { display: none; }
+        .restriction-toggle-track {
+            width: 34px; height: 18px; border-radius: 99px; background: #3f3f46; position: relative;
+            transition: background 0.2s;
+        }
+        .restriction-toggle input:checked + .restriction-toggle-track { background: var(--primary-hex); }
+        .restriction-toggle-thumb {
+            position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+            border-radius: 50%; background: #fff; transition: transform 0.2s;
+        }
+        .restriction-toggle input:checked + .restriction-toggle-track .restriction-toggle-thumb { transform: translateX(16px); }
+        .restriction-toggle-text { font-size: 0.72rem; font-weight: 500; color: var(--text-secondary); min-width: 72px; }
+        .restriction-body { margin-top: 0.6rem; }
+        .restriction-search-wrap {
+            display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.6rem;
+            border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color);
+        }
+        .restriction-search-wrap input {
+            border: none; outline: none; background: transparent; font-family: 'Inter', sans-serif;
+            font-size: 0.8rem; color: var(--text-primary); flex: 1; min-width: 0;
+        }
+        .restriction-search-wrap input::placeholder { color: var(--text-secondary); }
+        .restriction-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+        .restriction-tag {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 500;
+            background: color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color)); color: var(--text-primary);
+            border: 1px solid color-mix(in srgb, var(--primary-hex) 25%, var(--border-color));
+        }
+        .restriction-tag button {
+            background: none; border: none; cursor: pointer; padding: 0; line-height: 1;
+            color: var(--text-secondary); font-size: 0.85rem; display: flex;
+        }
+        .restriction-tag button:hover { color: var(--negative-color); }
+        .restriction-dropdown {
+            max-height: 160px; overflow-y: auto; margin-top: 0.35rem;
+            border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg);
+            display: none;
+        }
+        .restriction-dropdown.open { display: block; }
+        .restriction-dropdown-item {
+            padding: 0.4rem 0.6rem; font-size: 0.78rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-color); color: var(--text-primary);
+        }
+        .restriction-dropdown-item:last-child { border-bottom: none; }
+        .restriction-dropdown-item:hover { background: color-mix(in srgb, var(--primary-hex) 8%, var(--card-bg)); }
+        .restriction-dropdown-item .rd-add {
+            font-size: 0.7rem; font-weight: 600; color: var(--primary-hex); flex-shrink: 0;
+        }
+        .restriction-dropdown-item.already { opacity: 0.4; pointer-events: none; }
+        .restriction-dropdown-item .rd-sub { font-size: 0.65rem; color: var(--text-secondary); margin-left: 0.5rem; }
+
         .detail-section { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); }
         .detail-section-title {
             font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
@@ -604,6 +662,51 @@
             <div id="detailRoles"></div>
         </div>
 
+        <!-- Restrictions Section -->
+        <div class="detail-section" id="detailRestrictionsSection" style="display:none;">
+            <div class="detail-section-title">Restrictions</div>
+
+            <!-- Budget Codes -->
+            <div class="restriction-block">
+                <div class="restriction-header">
+                    <span class="restriction-label">Budget Codes</span>
+                    <label class="restriction-toggle">
+                        <input type="checkbox" id="restrictBudgetToggle" onchange="toggleRestriction('budget_codes')">
+                        <span class="restriction-toggle-track"><span class="restriction-toggle-thumb"></span></span>
+                        <span class="restriction-toggle-text" id="restrictBudgetText">Unrestricted</span>
+                    </label>
+                </div>
+                <div class="restriction-body" id="restrictBudgetBody" style="display:none;">
+                    <div class="restriction-search-wrap">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="restrictBudgetSearch" placeholder="Search budget codes..." autocomplete="off" oninput="searchRestrictionItems('budget_codes')">
+                    </div>
+                    <div class="restriction-tags" id="restrictBudgetTags"></div>
+                    <div class="restriction-dropdown" id="restrictBudgetDropdown"></div>
+                </div>
+            </div>
+
+            <!-- Vendors -->
+            <div class="restriction-block" style="margin-top:1rem;">
+                <div class="restriction-header">
+                    <span class="restriction-label">Vendors</span>
+                    <label class="restriction-toggle">
+                        <input type="checkbox" id="restrictVendorToggle" onchange="toggleRestriction('vendors')">
+                        <span class="restriction-toggle-track"><span class="restriction-toggle-thumb"></span></span>
+                        <span class="restriction-toggle-text" id="restrictVendorText">Unrestricted</span>
+                    </label>
+                </div>
+                <div class="restriction-body" id="restrictVendorBody" style="display:none;">
+                    <div class="restriction-search-wrap">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="restrictVendorSearch" placeholder="Search vendors..." autocomplete="off" oninput="searchRestrictionItems('vendors')">
+                    </div>
+                    <div class="restriction-tags" id="restrictVendorTags"></div>
+                    <div class="restriction-dropdown" id="restrictVendorDropdown"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- RFPs Section -->
         <div class="detail-section" style="border-bottom:none;flex:1;">
             <div class="detail-section-title">Submitted Requests <span id="detailRfpCount" style="font-weight:400;color:var(--text-secondary);"></span></div>
@@ -806,6 +909,7 @@
             loadThemePref();
             await loadRoleDefinitions();
             await loadUsers();
+            loadRestrictionsData(); // async, no await needed
             populateRoleFilter();
             initCustomSelect(document.getElementById("statusFilter"));
             initCustomSelect(document.getElementById("roleFilter"));
@@ -1150,6 +1254,9 @@
             // Roles
             renderRoleToggles(user);
 
+            // Restrictions
+            renderRestrictions(user);
+
             // Load RFPs for this user
             loadUserRfps(user.email, name);
 
@@ -1248,6 +1355,192 @@
                 renderTable();
             } catch (e) {
                 showToast('Failed to update role: ' + e.message, 'error');
+            }
+        }
+
+        /* ========================================
+           RESTRICTIONS MANAGEMENT
+           ======================================== */
+        function escapeHTML(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        let restrictionBudgetCodes = [];  // all available budget codes
+        let restrictionVendors = [];      // all available vendors [{n, c}]
+        let currentRestrictions = { budget_codes: [], vendors: [] };
+        let restrictionsDataLoaded = false;
+
+        async function loadRestrictionsData() {
+            if (restrictionsDataLoaded) return;
+            try {
+                const [bcRes, vRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/budget-codes`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/vendors?limit=2000`).then(r => r.json())
+                ]);
+                const bcData = Array.isArray(bcRes) ? bcRes : (bcRes.budget_codes || []);
+                const codes = new Set();
+                bcData.forEach(r => { if (r.budget_code) codes.add(r.budget_code); });
+                restrictionBudgetCodes = [...codes].sort();
+
+                const vData = Array.isArray(vRes) ? vRes : (vRes.vendors || vRes.data || []);
+                restrictionVendors = vData.map(v => ({
+                    n: v.vendor_name || v.name || '—',
+                    c: v.vendor_number || v.code || '—'
+                })).sort((a, b) => a.n.localeCompare(b.n));
+                restrictionsDataLoaded = true;
+            } catch (e) {
+                console.error('Failed to load restrictions data:', e);
+            }
+        }
+
+        function renderRestrictions(user) {
+            const section = document.getElementById('detailRestrictionsSection');
+            // Only show for submitter-role users, when viewer can manage users
+            if (!currentUserPermissions.can_manage_users) { section.style.display = 'none'; return; }
+            section.style.display = '';
+
+            currentRestrictions = {
+                budget_codes: (user.restrictions && Array.isArray(user.restrictions.budget_codes)) ? [...user.restrictions.budget_codes] : [],
+                vendors: (user.restrictions && Array.isArray(user.restrictions.vendors)) ? [...user.restrictions.vendors] : []
+            };
+
+            // Budget codes toggle
+            const bcOn = currentRestrictions.budget_codes.length > 0;
+            document.getElementById('restrictBudgetToggle').checked = bcOn;
+            document.getElementById('restrictBudgetText').textContent = bcOn ? 'Restricted' : 'Unrestricted';
+            document.getElementById('restrictBudgetBody').style.display = bcOn ? '' : 'none';
+            document.getElementById('restrictBudgetSearch').value = '';
+            renderRestrictionTags('budget_codes');
+
+            // Vendors toggle
+            const vOn = currentRestrictions.vendors.length > 0;
+            document.getElementById('restrictVendorToggle').checked = vOn;
+            document.getElementById('restrictVendorText').textContent = vOn ? 'Restricted' : 'Unrestricted';
+            document.getElementById('restrictVendorBody').style.display = vOn ? '' : 'none';
+            document.getElementById('restrictVendorSearch').value = '';
+            renderRestrictionTags('vendors');
+
+            // Close dropdowns
+            document.getElementById('restrictBudgetDropdown').classList.remove('open');
+            document.getElementById('restrictVendorDropdown').classList.remove('open');
+        }
+
+        function toggleRestriction(type) {
+            const isBudget = type === 'budget_codes';
+            const toggle = document.getElementById(isBudget ? 'restrictBudgetToggle' : 'restrictVendorToggle');
+            const text = document.getElementById(isBudget ? 'restrictBudgetText' : 'restrictVendorText');
+            const body = document.getElementById(isBudget ? 'restrictBudgetBody' : 'restrictVendorBody');
+
+            if (toggle.checked) {
+                text.textContent = 'Restricted';
+                body.style.display = '';
+            } else {
+                text.textContent = 'Unrestricted';
+                body.style.display = 'none';
+                // Clear restrictions for this type
+                currentRestrictions[type] = [];
+                renderRestrictionTags(type);
+                saveRestrictions();
+            }
+        }
+
+        function renderRestrictionTags(type) {
+            const isBudget = type === 'budget_codes';
+            const container = document.getElementById(isBudget ? 'restrictBudgetTags' : 'restrictVendorTags');
+            const items = currentRestrictions[type] || [];
+
+            if (items.length === 0) {
+                container.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary);font-style:italic;">No items added — user has full access</span>';
+                return;
+            }
+
+            container.innerHTML = items.map(item => {
+                let label = item;
+                if (!isBudget) {
+                    const v = restrictionVendors.find(v => v.c === item);
+                    label = v ? `${v.n} (${v.c})` : item;
+                }
+                return `<span class="restriction-tag">${escapeHTML(label)}<button onclick="removeRestrictionItem('${type}','${escapeHTML(item)}')">&times;</button></span>`;
+            }).join('');
+        }
+
+        function searchRestrictionItems(type) {
+            const isBudget = type === 'budget_codes';
+            const input = document.getElementById(isBudget ? 'restrictBudgetSearch' : 'restrictVendorSearch');
+            const dropdown = document.getElementById(isBudget ? 'restrictBudgetDropdown' : 'restrictVendorDropdown');
+            const q = input.value.trim().toUpperCase();
+
+            if (q.length < 1) { dropdown.classList.remove('open'); return; }
+
+            const existing = new Set(currentRestrictions[type] || []);
+            let matches = [];
+
+            if (isBudget) {
+                matches = restrictionBudgetCodes
+                    .filter(c => c.toUpperCase().includes(q))
+                    .slice(0, 50)
+                    .map(c => ({ id: c, label: c, sub: '', already: existing.has(c) }));
+            } else {
+                matches = restrictionVendors
+                    .filter(v => v.n.toUpperCase().includes(q) || v.c.toUpperCase().includes(q))
+                    .slice(0, 50)
+                    .map(v => ({ id: v.c, label: v.n, sub: v.c, already: existing.has(v.c) }));
+            }
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = '<div style="padding:0.5rem 0.6rem;font-size:0.75rem;color:var(--text-secondary);text-align:center;">No matches</div>';
+            } else {
+                dropdown.innerHTML = matches.map(m =>
+                    `<div class="restriction-dropdown-item${m.already ? ' already' : ''}" onclick="addRestrictionItem('${type}','${escapeHTML(m.id)}')">
+                        <span>${escapeHTML(m.label)}${m.sub ? `<span class="rd-sub">${escapeHTML(m.sub)}</span>` : ''}</span>
+                        <span class="rd-add">${m.already ? '✓ Added' : '+ Add'}</span>
+                    </div>`
+                ).join('');
+            }
+            dropdown.classList.add('open');
+        }
+
+        function addRestrictionItem(type, id) {
+            if (!currentRestrictions[type]) currentRestrictions[type] = [];
+            if (currentRestrictions[type].includes(id)) return;
+            currentRestrictions[type].push(id);
+            renderRestrictionTags(type);
+            searchRestrictionItems(type); // refresh dropdown to show checkmarks
+            saveRestrictions();
+        }
+
+        function removeRestrictionItem(type, id) {
+            currentRestrictions[type] = (currentRestrictions[type] || []).filter(x => x !== id);
+            renderRestrictionTags(type);
+            // If no items left, uncheck toggle
+            if (currentRestrictions[type].length === 0) {
+                const isBudget = type === 'budget_codes';
+                document.getElementById(isBudget ? 'restrictBudgetToggle' : 'restrictVendorToggle').checked = false;
+                document.getElementById(isBudget ? 'restrictBudgetText' : 'restrictVendorText').textContent = 'Unrestricted';
+                document.getElementById(isBudget ? 'restrictBudgetBody' : 'restrictVendorBody').style.display = 'none';
+            }
+            searchRestrictionItems(type);
+            saveRestrictions();
+        }
+
+        async function saveRestrictions() {
+            if (!selectedUser) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/users/restrictions`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: selectedUser.email, restrictions: currentRestrictions })
+                });
+                if (!res.ok) throw new Error('API error');
+                // Update local cache
+                selectedUser.restrictions = { ...currentRestrictions };
+                const u = allUsers.find(u => u.email === selectedUser.email);
+                if (u) u.restrictions = { ...currentRestrictions };
+                showToast('Restrictions saved', 'success');
+            } catch (e) {
+                showToast('Failed to save restrictions', 'error');
             }
         }
 

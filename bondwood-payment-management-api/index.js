@@ -204,6 +204,9 @@ export default {
       if (path === '/api/users/roles' && method === 'PUT') {
         return handleUpdateUserRoles(request, env);
       }
+      if (path === '/api/users/restrictions' && method === 'PUT') {
+        return handleUpdateUserRestrictions(request, env);
+      }
 
       // ── Profile ──
       if (path === '/api/profile' && method === 'PUT') {
@@ -483,6 +486,36 @@ async function handleUpdateUserRoles(request, env) {
   ).bind(rolesJson, email.toLowerCase().trim()).run();
 
   return json({ message: 'Roles updated', email, roles: JSON.parse(rolesJson) });
+}
+
+
+/* ========================================
+   USER RESTRICTIONS
+   ======================================== */
+async function handleUpdateUserRestrictions(request, env) {
+  const body = await request.json();
+  const { email, restrictions } = body;
+
+  if (!email || typeof restrictions !== 'object') {
+    return json({ error: 'email and restrictions object are required' }, 400);
+  }
+
+  // Validate structure
+  const clean = {};
+  if (Array.isArray(restrictions.budget_codes)) {
+    clean.budget_codes = restrictions.budget_codes.filter(c => typeof c === 'string' && c.trim()).map(c => c.trim());
+  }
+  if (Array.isArray(restrictions.vendors)) {
+    clean.vendors = restrictions.vendors.filter(v => typeof v === 'string' && v.trim()).map(v => v.trim());
+  }
+
+  const restrictionsJson = JSON.stringify(clean);
+
+  await env.DB.prepare(
+    'UPDATE user_data SET restrictions = ? WHERE LOWER(user_email) = ?'
+  ).bind(restrictionsJson, email.toLowerCase().trim()).run();
+
+  return json({ message: 'Restrictions updated', email, restrictions: clean });
 }
 
 
