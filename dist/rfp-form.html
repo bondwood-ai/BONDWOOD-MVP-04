@@ -4861,39 +4861,61 @@
         }
         let UNIQUE_BUDGET_CODES = []; // sorted unique budget codes
 
+        // Shared wildcard field matcher
+        function restrictionFieldMatches(codeVal, ruleVal) {
+            if (!ruleVal) return true; // null/empty = any
+            const rv = ruleVal.toUpperCase().trim();
+            const cv = codeVal.toUpperCase();
+            if (rv.includes('*')) { return cv.startsWith(rv.replace(/\*/g, '')); }
+            if (rv.includes('X')) {
+                for (let i = 0; i < rv.length; i++) {
+                    if (rv[i] !== 'X' && (i >= cv.length || rv[i] !== cv[i])) return false;
+                }
+                return true;
+            }
+            return cv === rv;
+        }
+
         function budgetCodeMatchesRule(code, rule) {
-            // Parse budget code into components: fund(2) org(3) program(3) finance(3) course(3)
             const clean = code.replace(/[^0-9]/g, '');
             const fund = clean.substring(0, 2);
             const org = clean.substring(2, 5);
             const prog = clean.substring(5, 8);
             const fin = clean.substring(8, 11);
             const course = clean.substring(11, 14);
+            return restrictionFieldMatches(fund, rule.fund) &&
+                   restrictionFieldMatches(org, rule.organization) &&
+                   restrictionFieldMatches(prog, rule.program) &&
+                   restrictionFieldMatches(fin, rule.finance) &&
+                   restrictionFieldMatches(course, rule.course);
+        }
 
-            function fieldMatches(codeVal, ruleVal) {
-                if (!ruleVal) return true; // null/empty = any
-                const rv = ruleVal.toUpperCase().trim();
-                const cv = codeVal.toUpperCase();
-                // * = trailing wildcard (prefix match): "8*" matches 800, 810, 899, etc.
-                if (rv.includes('*')) {
-                    const prefix = rv.replace(/\*/g, '');
-                    return cv.startsWith(prefix);
-                }
-                // X = single-char wildcard: "2XX" matches 200-299
-                if (rv.includes('X')) {
-                    for (let i = 0; i < rv.length; i++) {
-                        if (rv[i] !== 'X' && (i >= cv.length || rv[i] !== cv[i])) return false;
-                    }
-                    return true;
-                }
-                return cv === rv;
-            }
+        // Check restriction rules against partially-typed codes (as-you-type)
+        // Only validates components that have been fully entered
+        function partialCodeViolatesRestriction(typed) {
+            if (!USER_RESTRICTIONS.restricted_budget) return false;
+            const rules = USER_RESTRICTIONS.budget_rules;
+            if (!rules || !rules.length) return false;
+            const clean = typed.replace(/[^0-9]/g, '');
+            if (clean.length < 2) return false; // need at least fund
 
-            return fieldMatches(fund, rule.fund) &&
-                   fieldMatches(org, rule.organization) &&
-                   fieldMatches(prog, rule.program) &&
-                   fieldMatches(fin, rule.finance) &&
-                   fieldMatches(course, rule.course);
+            const fund = clean.substring(0, 2);
+            const org = clean.length >= 5 ? clean.substring(2, 5) : null;
+            const prog = clean.length >= 8 ? clean.substring(5, 8) : null;
+            const fin = clean.length >= 11 ? clean.substring(8, 11) : null;
+            const course = clean.length >= 14 ? clean.substring(11, 14) : null;
+
+            // Check if ANY rule could still match what's been typed so far
+            const couldMatch = rules.some(rule => {
+                if (fund.length === 2 && rule.fund && !restrictionFieldMatches(fund, rule.fund)) return false;
+                if (org && rule.organization && !restrictionFieldMatches(org, rule.organization)) return false;
+                if (prog && rule.program && !restrictionFieldMatches(prog, rule.program)) return false;
+                if (fin && rule.finance && !restrictionFieldMatches(fin, rule.finance)) return false;
+                if (course && rule.course && !restrictionFieldMatches(course, rule.course)) return false;
+                return true;
+            });
+
+            return !couldMatch;
         }
 
         function getBudgetCodePool() {
@@ -4958,8 +4980,8 @@
                 const q = this.value.trim();
                 if (q.length < 1 || !budgetDataLoaded) { closeBcDropdown(this); return; }
 
-                // Instant unauthorized check
-                if (USER_RESTRICTIONS.restricted_budget && UNIQUE_BUDGET_CODES.includes(q) && !getBudgetCodePool().includes(q)) {
+                // Instant unauthorized check — works on partial codes as they're typed
+                if (partialCodeViolatesRestriction(q)) {
                     this.classList.add('bc-error');
                     showBcTooltip(this, 'Unauthorized budget code');
                     showUnauthorizedAlert('Unauthorized Budget Code');
@@ -5231,8 +5253,17 @@
             if (!val) { input.classList.remove('bc-error', 'bc-valid'); removeBcTooltip(input); return; }
             if (!budgetDataLoaded) return;
 
-            // Check if code exists but is restricted
-            if (USER_RESTRICTIONS.restricted_budget && (BUDGET_CODE_MAP[val] || UNIQUE_BUDGET_CODES.includes(val))) {
+            // Check restriction rules first — works on partial AND full codes
+            if (partialCodeViolatesRestriction(val)) {
+                input.classList.remove('bc-valid');
+                input.classList.add('bc-error');
+                showBcTooltip(input, 'Unauthorized budget code');
+                showUnauthorizedAlert('Unauthorized Budget Code');
+                return;
+            }
+
+            // Also check full codes against the filtered pool
+            if (USER_RESTRICTIONS.restricted_budget && BUDGET_CODE_MAP[val]) {
                 const pool = getBudgetCodePool();
                 if (!pool.includes(val)) {
                     input.classList.remove('bc-valid');
@@ -5342,7 +5373,8 @@
                     const acVal = acInput.value.trim();
                     if (bcVal && !BUDGET_CODE_MAP[bcVal]) {
                         bcInput.classList.add('bc-error');
-                        showBcTooltip(bcInput, 'Budget code not found');
+                        showBcTooltip(bcInput, partialCodeViolatesRestriction(bcVal) ? 'Unauthorized budget code' : 'Budget code not found');
+                        if (partialCodeViolatesRestriction(bcVal)) showUnauthorizedAlert('Unauthorized Budget Code');
                         hasError = true;
                     }
                     if (acVal && bcVal) {
@@ -5363,7 +5395,8 @@
                     const acVal = acInput.value.trim();
                     if (bcVal && !BUDGET_CODE_MAP[bcVal]) {
                         bcInput.classList.add('bc-error');
-                        showBcTooltip(bcInput, 'Budget code not found');
+                        showBcTooltip(bcInput, partialCodeViolatesRestriction(bcVal) ? 'Unauthorized budget code' : 'Budget code not found');
+                        if (partialCodeViolatesRestriction(bcVal)) showUnauthorizedAlert('Unauthorized Budget Code');
                         hasError = true;
                     }
                     if (acVal) {
