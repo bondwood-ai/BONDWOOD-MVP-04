@@ -356,9 +356,6 @@
                         
                         Data Management
                     </button>
-                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="navigateAway('index.html?impersonate=1')" style="display:none;">
-                        Impersonate User
-                    </button>
                 </div>
             </div>
 
@@ -1007,7 +1004,6 @@
                 currentUserPermissions = realUser.permissions || {};
                 if (currentUserPermissions.can_manage_users) {
                     const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
-                    const imp = document.getElementById('impersonateMenuItem'); if (imp) imp.style.display = '';
                 }
                 if (currentUserPermissions.can_manage_vendors) {
                     const dm = document.getElementById('dataMgmtMenuItem'); if (dm) dm.style.display = '';
@@ -1284,10 +1280,8 @@
                         const perms = impUser.permissions || {};
                         const um = document.getElementById('userMgmtMenuItem');
                         const dm = document.getElementById('dataMgmtMenuItem');
-                        const imp = document.getElementById('impersonateMenuItem');
                         if (um) um.style.display = perms.can_manage_users ? '' : 'none';
                         if (dm) dm.style.display = perms.can_manage_vendors ? '' : 'none';
-                        if (imp) imp.style.display = perms.can_manage_users ? '' : 'none';
                     }
                 } catch (e) {}
             }

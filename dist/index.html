@@ -528,9 +528,6 @@
                     <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='data-management.html'" style="display:none;">
                         Data Management
                     </button>
-                    <button id="impersonateMenuItem" class="hamburger-menu-item" onclick="closeHamburgerMenu();openImpersonateModal()" style="display:none;">
-                        Impersonate User
-                    </button>
                 </div>
             </div>
 
@@ -3138,10 +3135,8 @@
         function updateMenuVisibility(perms) {
             const um = document.getElementById('userMgmtMenuItem');
             const dm = document.getElementById('dataMgmtMenuItem');
-            const imp = document.getElementById('impersonateMenuItem');
             if (um) um.style.display = perms.can_manage_users ? '' : 'none';
             if (dm) dm.style.display = perms.can_manage_vendors ? '' : 'none';
-            if (imp) imp.style.display = perms.can_manage_users ? '' : 'none';
         }
 
         function showImpersonationBanner(name) {
@@ -4091,10 +4086,8 @@
             // Fetch logged-in user identity from SSO
             await fetchDashboardUser();
 
-            // Show impersonate option for admins+
+            // Show admin menu items
             if (currentUserPermissions.can_manage_users) {
-                const imp = document.getElementById('impersonateMenuItem');
-                if (imp) imp.style.display = '';
                 const um = document.getElementById('userMgmtMenuItem');
                 if (um) um.style.display = '';
             }
