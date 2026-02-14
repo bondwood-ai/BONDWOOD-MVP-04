@@ -1397,7 +1397,13 @@
             if (g.name.toUpperCase().includes(upper)) return true;
             // Match description
             if ((g.description || '').toUpperCase().includes(upper)) return true;
-            // Match budget code patterns: check if query looks like a code and matches any rule
+            // Match individual budget rule field values (fund, org, program, finance, course)
+            const ruleFieldMatch = g.budget_rules.some(rule => {
+                const fields = [rule.fund, rule.organization, rule.program, rule.finance, rule.course];
+                return fields.some(f => f && f.toUpperCase().includes(upper));
+            });
+            if (ruleFieldMatch) return true;
+            // Match as a full positional budget code (fund+org+program+finance+course)
             const digits = q.replace(/[^0-9]/g, '');
             if (digits.length >= 2) {
                 const fund = digits.substring(0, 2);
@@ -1406,7 +1412,7 @@
                 const fin = digits.length >= 11 ? digits.substring(8, 11) : null;
                 const course = digits.length >= 14 ? digits.substring(11, 14) : null;
 
-                const ruleMatches = g.budget_rules.some(rule => {
+                const positionalMatch = g.budget_rules.some(rule => {
                     if (rule.fund && !rFieldMatch(fund, rule.fund)) return false;
                     if (org && rule.organization && !rFieldMatch(org, rule.organization)) return false;
                     if (prog && rule.program && !rFieldMatch(prog, rule.program)) return false;
@@ -1414,7 +1420,7 @@
                     if (course && rule.course && !rFieldMatch(course, rule.course)) return false;
                     return true;
                 });
-                if (ruleMatches) return true;
+                if (positionalMatch) return true;
             }
             // Match vendor numbers
             if (g.vendors.some(v => v.includes(q))) return true;
