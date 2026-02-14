@@ -2929,6 +2929,8 @@
         async function impersonateUser(email, name) {
             closeImpersonateModal();
             impersonateEmail = email.toLowerCase().trim();
+            sessionStorage.setItem('impersonateEmail', impersonateEmail);
+            sessionStorage.setItem('impersonateName', name);
 
             // Fetch impersonated user's permissions to set correct role view
             try {
@@ -2957,6 +2959,8 @@
         async function stopImpersonation() {
             closeImpersonateModal();
             impersonateEmail = null;
+            sessionStorage.removeItem('impersonateEmail');
+            sessionStorage.removeItem('impersonateName');
 
             // Restore original user's role
             currentUserRole = (currentUserPermissions.can_approve || currentUserPermissions.can_manage_users) ? 'admin' : 'user';
@@ -3950,6 +3954,25 @@
             if (urlParams.get('impersonate') === '1' && currentUserPermissions.can_manage_users) {
                 history.replaceState(null, '', window.location.pathname); // clean URL
                 openImpersonateModal();
+            }
+            // Restore impersonation from sessionStorage
+            else if (sessionStorage.getItem('impersonateEmail')) {
+                const impEmail = sessionStorage.getItem('impersonateEmail');
+                const impName = sessionStorage.getItem('impersonateName');
+                impersonateEmail = impEmail;
+                try {
+                    const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impEmail)}`);
+                    if (resp.ok) {
+                        const impUser = await resp.json();
+                        const impPerms = impUser.permissions || {};
+                        currentUserRole = (impPerms.can_approve || impPerms.can_manage_users) ? 'admin' : 'user';
+                    }
+                } catch (e) { currentUserRole = 'user'; }
+                document.getElementById('dashboardSubtitle').textContent = `Impersonating: ${impName}`;
+                showImpersonationBanner(impName);
+                allRFPs = await loadRFPData();
+                buildColumnSelector();
+                filterTable();
             }
 
             // Preload vendor data in background for Capture Invoice
