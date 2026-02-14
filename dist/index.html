@@ -3998,31 +3998,6 @@
                 filterTable();
             }
 
-            // Check for preview query param (from User Management submitted requests)
-            const previewRfpNum = urlParams.get('preview');
-            if (previewRfpNum) {
-                history.replaceState(null, '', window.location.pathname);
-                let rfpToPreview = allRFPs.find(r => String(r.rfpNumber) === previewRfpNum);
-                if (!rfpToPreview) {
-                    // RFP not in current list — build a minimal object from API
-                    try {
-                        const resp = await fetch(`${API_BASE}/api/rfps/${previewRfpNum}`);
-                        if (resp.ok) {
-                            const d = await resp.json();
-                            rfpToPreview = {
-                                rfpNumber: d.rfp_number, submitter: d.submitter_name || '—',
-                                submissionDate: d.submission_date, status: d.status || 'draft',
-                                vendor: d.vendor_name || d.employee_id || '—', amount: d.total_amount || 0,
-                                type: d.request_type || 'vendor', assignedTo: d.assigned_to || '—',
-                                daysSinceSubmission: d.submission_date ? Math.floor((Date.now() - new Date(d.submission_date)) / 86400000) : 0,
-                                submitterId: d.submitter_id || '',
-                            };
-                        }
-                    } catch (e) { console.warn('[PREVIEW] Failed to fetch RFP:', e); }
-                }
-                if (rfpToPreview) openPreviewModal(rfpToPreview);
-            }
-
             // Preload vendor data in background for Capture Invoice
             fetch(`${API_BASE}/api/vendors?limit=5000&_t=${Date.now()}`)
                 .then(r => r.json())
