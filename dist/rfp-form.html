@@ -4828,10 +4828,15 @@
 
             function fieldMatches(codeVal, ruleVal) {
                 if (!ruleVal) return true; // null/empty = any
-                const rv = ruleVal.toUpperCase();
+                const rv = ruleVal.toUpperCase().trim();
                 const cv = codeVal.toUpperCase();
+                // * = trailing wildcard (prefix match): "8*" matches 800, 810, 899, etc.
+                if (rv.includes('*')) {
+                    const prefix = rv.replace(/\*/g, '');
+                    return cv.startsWith(prefix);
+                }
+                // X = single-char wildcard: "2XX" matches 200-299
                 if (rv.includes('X')) {
-                    // Wildcard: compare only the non-X characters
                     for (let i = 0; i < rv.length; i++) {
                         if (rv[i] !== 'X' && (i >= cv.length || rv[i] !== cv[i])) return false;
                     }

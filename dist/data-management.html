@@ -333,11 +333,15 @@
 
         .rg-rule-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
         .rg-rule-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-color); }
-        .rg-rule-table td { font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-family: 'Inter', monospace; }
+        .rg-rule-table td { font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-family: 'Inter', monospace; position: relative; }
         .rg-rule-table .wildcard { color: var(--primary-hex); font-weight: 600; }
         .rg-rule-table .any { color: var(--text-secondary); font-style: italic; opacity: 0.5; }
-        .rg-rule-table .del-btn { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 2px; }
-        .rg-rule-table .del-btn:hover { color: var(--negative-color); }
+        .rg-rule-table tr { position: relative; }
+        .rg-rule-table tr .row-del { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 2px; opacity: 0; transition: opacity 0.15s; }
+        .rg-rule-table tr:hover .row-del { opacity: 1; }
+        .rg-rule-table tr .row-del:hover { color: var(--negative-color); }
+        .rg-wildcard-hint { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.75rem; line-height: 1.6; background: color-mix(in srgb, var(--border-color) 20%, transparent); border-radius: 8px; padding: 0.6rem 0.75rem; }
+        .rg-wildcard-hint code { font-family: 'Inter', monospace; font-weight: 600; color: var(--text-primary); background: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.68rem; }
 
         .rg-rule-add {
             display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;
@@ -757,7 +761,7 @@
             <!-- Budget Code Rules -->
             <div class="rg-section">
                 <div class="rg-section-title">Budget Code Rules</div>
-                <div class="rg-section-hint">Each rule defines a pattern. A budget code matches if any component set below matches. Leave a field blank for "any".</div>
+                <div class="rg-section-hint">Each rule defines which budget codes this group allows access to.</div>
                 <div id="rgBudgetRules"></div>
                 <div class="rg-rule-add">
                     <input type="text" id="rgRuleFund" placeholder="Fund" maxlength="2" style="width:60px;">
@@ -1719,7 +1723,7 @@
                     <td><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
                     <td><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
                     <td style="font-size:0.78rem;color:var(--text-secondary);">${g.assigned_users.length || '—'}</td>
-                    <td><button onclick="event.stopPropagation();deleteRg(${g.id},'${escapeHTML(g.name)}')" class="rg-rule-table del-btn" title="Delete group" style="padding:4px;">
+                    <td><button onclick="event.stopPropagation();deleteRg(${g.id},'${escapeHTML(g.name)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                     </button></td>
                 </tr>
@@ -1806,12 +1810,14 @@
         function renderBudgetRules(rules) {
             const container = document.getElementById('rgBudgetRules');
             if (!rules || !rules.length) {
-                container.innerHTML = '<div class="rg-no-rules">No budget code rules defined. Add one below.</div>';
+                container.innerHTML = '<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2.</div><div class="rg-no-rules">No budget code rules defined. Add one below.</div>';
                 return;
             }
-            const cell = (v) => v ? (v.includes('X') ? `<span class="wildcard">${escapeHTML(v)}</span>` : escapeHTML(v)) : '<span class="any">Any</span>';
-            container.innerHTML = `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Org</th><th>Program</th><th>Finance</th><th>Course</th><th></th></tr></thead><tbody>` +
-                rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}</td><td><button class="del-btn" onclick="deleteBudgetRule(${r.id})"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td></tr>`).join('') +
+            const cell = (v) => v ? (v.match(/[X*]/i) ? `<span class="wildcard">${escapeHTML(v)}</span>` : escapeHTML(v)) : '<span class="any">Any</span>';
+            container.innerHTML =
+                `<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2.</div>` +
+                `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Org</th><th>Program</th><th>Finance</th><th>Course</th></tr></thead><tbody>` +
+                rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}<button class="row-del" onclick="deleteBudgetRule(${r.id})" title="Delete rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td></tr>`).join('') +
                 `</tbody></table>`;
         }
 
