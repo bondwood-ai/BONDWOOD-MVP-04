@@ -260,30 +260,48 @@
         .detail-impersonate-btn:hover { background: var(--bg-color); color: var(--text-primary); border-color: var(--text-secondary); }
 
         /* Restriction Group Assignment */
-        .rg-assign-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .rg-assign-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.5rem 0.65rem; border-radius: 8px;
-            border: 1px solid var(--border-color); background: var(--bg-color);
+        /* Restriction Groups – search & chips */
+        .rg-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; min-height: 0; }
+        .rg-chip {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.3rem 0.55rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
+            background: color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));
+            color: var(--text-primary); border: 1px solid color-mix(in srgb, var(--primary-hex) 22%, transparent);
         }
-        .rg-assign-item.active { border-color: var(--primary-hex); background: color-mix(in srgb, var(--primary-hex) 6%, var(--bg-color)); }
-        .rg-assign-info { flex: 1; min-width: 0; }
-        .rg-assign-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
-        .rg-assign-desc { font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rg-assign-meta { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
-        .rg-assign-badge { font-size: 0.62rem; font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 4px; background: color-mix(in srgb, var(--border-color) 40%, transparent); color: var(--text-secondary); }
-        .restriction-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
-        .restriction-toggle input { display: none; }
-        .restriction-toggle-track {
-            width: 34px; height: 18px; border-radius: 99px; background: #3f3f46; position: relative;
-            transition: background 0.2s; flex-shrink: 0;
+        .rg-chip .chip-meta { font-size: 0.62rem; color: var(--text-secondary); font-weight: 400; }
+        .rg-chip .chip-x { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 0.95rem; line-height: 1; padding: 0 0 0 0.15rem; }
+        .rg-chip .chip-x:hover { color: var(--negative-color); }
+        .rg-search-wrap {
+            display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.6rem;
+            border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color);
+            transition: border-color 0.15s;
         }
-        .restriction-toggle input:checked + .restriction-toggle-track { background: var(--primary-hex); }
-        .restriction-toggle-thumb {
-            position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
-            border-radius: 50%; background: #fff; transition: transform 0.2s;
+        .rg-search-wrap.focused { border-color: var(--primary-hex); border-radius: 8px 8px 0 0; }
+        .rg-search-wrap svg { flex-shrink: 0; }
+        .rg-search-wrap input { border: none; outline: none; background: transparent; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: var(--text-primary); flex: 1; min-width: 0; }
+        .rg-search-wrap input::placeholder { color: var(--text-secondary); }
+        .rg-dropdown {
+            border: 1px solid var(--primary-hex); border-top: none; border-radius: 0 0 8px 8px;
+            max-height: 220px; overflow-y: auto; background: var(--card-bg); display: none;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
         }
-        .restriction-toggle input:checked + .restriction-toggle-track .restriction-toggle-thumb { transform: translateX(16px); }
+        .rg-dropdown.open { display: block; }
+        .rg-dd-item {
+            display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.65rem;
+            border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent); cursor: pointer;
+            transition: background 0.1s;
+        }
+        .rg-dd-item:last-child { border-bottom: none; }
+        .rg-dd-item:hover { background: color-mix(in srgb, var(--primary-hex) 5%, var(--card-bg)); }
+        .rg-dd-item.assigned { opacity: 0.45; cursor: default; }
+        .rg-dd-name { font-size: 0.78rem; font-weight: 600; color: var(--text-primary); }
+        .rg-dd-desc { font-size: 0.62rem; color: var(--text-secondary); margin-top: 0.05rem; }
+        .rg-dd-badges { display: flex; gap: 0.3rem; margin-top: 0.2rem; }
+        .rg-dd-badge { font-size: 0.6rem; font-weight: 600; padding: 0.08rem 0.35rem; border-radius: 4px; background: color-mix(in srgb, var(--border-color) 40%, transparent); color: var(--text-secondary); }
+        .rg-dd-action { font-size: 0.68rem; font-weight: 600; color: var(--primary-hex); flex-shrink: 0; margin-left: 0.5rem; }
+        .rg-dd-item.assigned .rg-dd-action { color: var(--text-secondary); }
+        .rg-dd-empty { padding: 0.75rem; text-align: center; font-size: 0.75rem; color: var(--text-secondary); }
+        .rg-no-assigned { font-size: 0.75rem; color: var(--text-secondary); font-style: italic; margin-bottom: 0.5rem; }
 
         .detail-section { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); }
         .detail-section-title {
@@ -633,8 +651,13 @@
         <!-- Restrictions Section -->
         <div class="detail-section" id="detailRestrictionsSection" style="display:none;">
             <div class="detail-section-title">Restriction Groups</div>
-            <div id="detailRestrictionGroups" class="rg-assign-list"></div>
-            <div id="detailNoGroups" style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;display:none;">No restriction groups configured. <a href="data-management.html" style="color:var(--primary-hex);">Create groups in Data Management.</a></div>
+            <div id="rgChipsContainer" class="rg-chips"></div>
+            <div class="rg-search-wrap" id="rgSearchWrap">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="rgSearchInput" placeholder="Search groups to assign..." oninput="filterRgDropdown()" onfocus="openRgDropdown()" autocomplete="off">
+            </div>
+            <div class="rg-dropdown" id="rgDropdown"></div>
+            <div id="detailNoGroups" style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;display:none;margin-top:0.5rem;">No restriction groups configured. <a href="data-management.html" style="color:var(--primary-hex);">Create groups in Data Management.</a></div>
         </div>
 
         <!-- RFPs Section -->
@@ -1310,62 +1333,158 @@
             } catch (e) { console.warn('Failed to load restriction groups:', e); }
         }
 
+        function getAssignedGroupIds(user) {
+            const email = (user.email || '').toLowerCase();
+            return new Set(allRestrictionGroups.filter(g => g.assigned_users.includes(email)).map(g => g.id));
+        }
+
+        function rgBadgeText(g) {
+            const parts = [];
+            if (g.budget_rules.length) parts.push(`${g.budget_rules.length} rule${g.budget_rules.length !== 1 ? 's' : ''}`);
+            if (g.vendors.length) parts.push(`${g.vendors.length} vendor${g.vendors.length !== 1 ? 's' : ''}`);
+            return parts.length ? parts.join(', ') : 'Empty';
+        }
+
         function renderRestrictions(user) {
             const section = document.getElementById('detailRestrictionsSection');
             if (!currentUserPermissions.can_manage_users) { section.style.display = 'none'; return; }
             section.style.display = '';
 
-            const container = document.getElementById('detailRestrictionGroups');
             const noGroupsMsg = document.getElementById('detailNoGroups');
-
             if (!allRestrictionGroups.length) {
-                container.innerHTML = '';
+                document.getElementById('rgChipsContainer').innerHTML = '';
+                document.getElementById('rgSearchWrap').style.display = 'none';
                 noGroupsMsg.style.display = '';
                 return;
             }
             noGroupsMsg.style.display = 'none';
+            document.getElementById('rgSearchWrap').style.display = '';
 
-            const assignedIds = new Set((allRestrictionGroups.filter(g =>
-                g.assigned_users.includes(user.email.toLowerCase())
-            )).map(g => g.id));
-
-            container.innerHTML = allRestrictionGroups.map(g => {
-                const isOn = assignedIds.has(g.id);
-                const budgetCount = g.budget_rules.length;
-                const vendorCount = g.vendors.length;
-                return `<div class="rg-assign-item${isOn ? ' active' : ''}">
-                    <div class="rg-assign-info">
-                        <div class="rg-assign-name">${escapeHTML(g.name)}</div>
-                        ${g.description ? `<div class="rg-assign-desc">${escapeHTML(g.description)}</div>` : ''}
-                        <div class="rg-assign-meta">
-                            ${budgetCount ? `<span class="rg-assign-badge">${budgetCount} budget rule${budgetCount !== 1 ? 's' : ''}</span>` : ''}
-                            ${vendorCount ? `<span class="rg-assign-badge">${vendorCount} vendor${vendorCount !== 1 ? 's' : ''}</span>` : ''}
-                            ${!budgetCount && !vendorCount ? '<span class="rg-assign-badge">Empty</span>' : ''}
-                        </div>
-                    </div>
-                    <label class="restriction-toggle">
-                        <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleGroupAssignment(${g.id}, this.checked)">
-                        <span class="restriction-toggle-track"><span class="restriction-toggle-thumb"></span></span>
-                    </label>
-                </div>`;
-            }).join('');
+            renderRgChips(user);
+            // Reset search and close dropdown when switching users
+            document.getElementById('rgSearchInput').value = '';
+            closeRgDropdown();
         }
 
-        async function toggleGroupAssignment(groupId, isOn) {
+        function renderRgChips(user) {
+            const container = document.getElementById('rgChipsContainer');
+            const assignedIds = getAssignedGroupIds(user);
+
+            if (!assignedIds.size) {
+                container.innerHTML = '<div class="rg-no-assigned">No groups assigned — this user has unrestricted access.</div>';
+                return;
+            }
+
+            container.innerHTML = allRestrictionGroups.filter(g => assignedIds.has(g.id)).map(g =>
+                `<span class="rg-chip">${escapeHTML(g.name)} <span class="chip-meta">(${rgBadgeText(g)})</span> <button class="chip-x" onclick="removeRgAssignment(${g.id})" title="Remove">&times;</button></span>`
+            ).join('');
+        }
+
+        function openRgDropdown() {
+            document.getElementById('rgSearchWrap').classList.add('focused');
+            filterRgDropdown();
+            document.getElementById('rgDropdown').classList.add('open');
+        }
+
+        function closeRgDropdown() {
+            document.getElementById('rgSearchWrap').classList.remove('focused');
+            document.getElementById('rgDropdown').classList.remove('open');
+        }
+
+        function groupMatchesQuery(g, q) {
+            const upper = q.toUpperCase();
+            // Match group name
+            if (g.name.toUpperCase().includes(upper)) return true;
+            // Match description
+            if ((g.description || '').toUpperCase().includes(upper)) return true;
+            // Match budget code patterns: check if query looks like a code and matches any rule
+            const digits = q.replace(/[^0-9]/g, '');
+            if (digits.length >= 2) {
+                const fund = digits.substring(0, 2);
+                const org = digits.length >= 5 ? digits.substring(2, 5) : null;
+                const prog = digits.length >= 8 ? digits.substring(5, 8) : null;
+                const fin = digits.length >= 11 ? digits.substring(8, 11) : null;
+                const course = digits.length >= 14 ? digits.substring(11, 14) : null;
+
+                const ruleMatches = g.budget_rules.some(rule => {
+                    if (rule.fund && !rFieldMatch(fund, rule.fund)) return false;
+                    if (org && rule.organization && !rFieldMatch(org, rule.organization)) return false;
+                    if (prog && rule.program && !rFieldMatch(prog, rule.program)) return false;
+                    if (fin && rule.finance && !rFieldMatch(fin, rule.finance)) return false;
+                    if (course && rule.course && !rFieldMatch(course, rule.course)) return false;
+                    return true;
+                });
+                if (ruleMatches) return true;
+            }
+            // Match vendor numbers
+            if (g.vendors.some(v => v.includes(q))) return true;
+            return false;
+        }
+
+        function rFieldMatch(codeVal, ruleVal) {
+            if (!ruleVal) return true;
+            const rv = ruleVal.toUpperCase().trim();
+            const cv = codeVal.toUpperCase();
+            if (rv.includes('*')) return cv.startsWith(rv.replace(/\*/g, ''));
+            if (rv.includes('X')) {
+                for (let i = 0; i < rv.length; i++) {
+                    if (rv[i] !== 'X' && (i >= cv.length || rv[i] !== cv[i])) return false;
+                }
+                return true;
+            }
+            return cv === rv;
+        }
+
+        function filterRgDropdown() {
+            if (!selectedUser) return;
+            const q = document.getElementById('rgSearchInput').value.trim();
+            const dropdown = document.getElementById('rgDropdown');
+            const assignedIds = getAssignedGroupIds(selectedUser);
+
+            let filtered = allRestrictionGroups;
+            if (q.length > 0) {
+                filtered = allRestrictionGroups.filter(g => groupMatchesQuery(g, q));
+            }
+
+            if (!filtered.length) {
+                dropdown.innerHTML = '<div class="rg-dd-empty">No matching groups</div>';
+                dropdown.classList.add('open');
+                return;
+            }
+
+            // Sort: unassigned first, then assigned
+            filtered.sort((a, b) => {
+                const aOn = assignedIds.has(a.id) ? 1 : 0;
+                const bOn = assignedIds.has(b.id) ? 1 : 0;
+                if (aOn !== bOn) return aOn - bOn;
+                return a.name.localeCompare(b.name);
+            });
+
+            dropdown.innerHTML = filtered.map(g => {
+                const isAssigned = assignedIds.has(g.id);
+                const budgetCount = g.budget_rules.length;
+                const vendorCount = g.vendors.length;
+                return `<div class="rg-dd-item${isAssigned ? ' assigned' : ''}" onclick="${isAssigned ? '' : `assignRgGroup(${g.id})`}">
+                    <div>
+                        <div class="rg-dd-name">${escapeHTML(g.name)}</div>
+                        ${g.description ? `<div class="rg-dd-desc">${escapeHTML(g.description)}</div>` : ''}
+                        <div class="rg-dd-badges">
+                            ${budgetCount ? `<span class="rg-dd-badge">${budgetCount} rule${budgetCount !== 1 ? 's' : ''}</span>` : ''}
+                            ${vendorCount ? `<span class="rg-dd-badge">${vendorCount} vendor${vendorCount !== 1 ? 's' : ''}</span>` : ''}
+                            ${!budgetCount && !vendorCount ? '<span class="rg-dd-badge">Empty</span>' : ''}
+                        </div>
+                    </div>
+                    <span class="rg-dd-action">${isAssigned ? '✓ Assigned' : '+ Assign'}</span>
+                </div>`;
+            }).join('');
+            dropdown.classList.add('open');
+        }
+
+        async function assignRgGroup(groupId) {
             if (!selectedUser) return;
             const email = selectedUser.email.toLowerCase();
-
-            // Build new assignment list
-            const currentIds = allRestrictionGroups
-                .filter(g => g.assigned_users.includes(email))
-                .map(g => g.id);
-
-            let newIds;
-            if (isOn) {
-                newIds = [...new Set([...currentIds, groupId])];
-            } else {
-                newIds = currentIds.filter(id => id !== groupId);
-            }
+            const currentIds = [...getAssignedGroupIds(selectedUser)];
+            const newIds = [...new Set([...currentIds, groupId])];
 
             try {
                 const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
@@ -1375,19 +1494,50 @@
                 });
                 if (!resp.ok) throw new Error('API error');
 
-                // Update local cache
                 allRestrictionGroups.forEach(g => {
                     g.assigned_users = g.assigned_users.filter(e => e !== email);
                     if (newIds.includes(g.id)) g.assigned_users.push(email);
                 });
-
-                renderRestrictions(selectedUser);
-                showToast(isOn ? 'Group Assigned' : 'Group Removed', 'success');
+                renderRgChips(selectedUser);
+                filterRgDropdown(); // refresh dropdown to show ✓
+                showToast('Group Assigned', 'success');
             } catch (e) {
-                showToast('Failed to Update Restrictions', 'error');
-                renderRestrictions(selectedUser); // revert toggle
+                showToast('Failed to Assign Group', 'error');
             }
         }
+
+        async function removeRgAssignment(groupId) {
+            if (!selectedUser) return;
+            const email = selectedUser.email.toLowerCase();
+            const currentIds = [...getAssignedGroupIds(selectedUser)];
+            const newIds = currentIds.filter(id => id !== groupId);
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, group_ids: newIds })
+                });
+                if (!resp.ok) throw new Error('API error');
+
+                allRestrictionGroups.forEach(g => {
+                    g.assigned_users = g.assigned_users.filter(e => e !== email);
+                    if (newIds.includes(g.id)) g.assigned_users.push(email);
+                });
+                renderRgChips(selectedUser);
+                filterRgDropdown(); // refresh dropdown
+                showToast('Group Removed', 'success');
+            } catch (e) {
+                showToast('Failed to Remove Group', 'error');
+            }
+        }
+
+        // Close dropdown on outside click
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#rgSearchWrap') && !e.target.closest('#rgDropdown') && !e.target.closest('.rg-chip')) {
+                closeRgDropdown();
+            }
+        });
 
         /* ========================================
            CONFIRM MODAL
