@@ -265,15 +265,21 @@
         .rg-chip {
             display: inline-flex; align-items: center; gap: 0.35rem;
             padding: 0.3rem 0.55rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
-            background: color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));
-            color: var(--text-primary); border: 1px solid color-mix(in srgb, var(--primary-hex) 22%, transparent);
+            background: transparent; color: var(--text-primary);
+            border: 1px solid var(--primary-hex);
         }
+        body.dark-mode .rg-chip {
+            background: var(--primary-hex); color: #fff; border-color: #ffffff;
+        }
+        body.dark-mode .rg-chip .chip-meta { color: rgba(255,255,255,0.65); }
+        body.dark-mode .rg-chip .chip-x { color: rgba(255,255,255,0.6); }
+        body.dark-mode .rg-chip .chip-x:hover { color: #fca5a5; }
         .rg-chip .chip-meta { font-size: 0.62rem; color: var(--text-secondary); font-weight: 400; }
         .rg-chip .chip-x { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 0.95rem; line-height: 1; padding: 0 0 0 0.15rem; }
         .rg-chip .chip-x:hover { color: var(--negative-color); }
         .rg-search-wrap {
             display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.6rem;
-            border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color);
+            border: 1px solid var(--border-color); border-radius: 8px; background: transparent;
             transition: border-color 0.15s;
         }
         .rg-search-wrap.focused { border-color: var(--primary-hex); border-radius: 8px 8px 0 0; }
