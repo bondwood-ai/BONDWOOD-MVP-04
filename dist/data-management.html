@@ -1900,7 +1900,16 @@
         }
 
         let rgMetaDirty = false;
-        let rgMetaOriginal = { name: '', desc: '' };
+        let rgMetaOriginal = { name: '', desc: '', approvers: { primary: '', sec1: '', sec2: '', sec3: '' } };
+
+        function getCurrentApprovers() {
+            return {
+                primary: (document.getElementById('rgApproverPrimary')?._value || ''),
+                sec1: (document.getElementById('rgApproverSec1')?._value || ''),
+                sec2: (document.getElementById('rgApproverSec2')?._value || ''),
+                sec3: (document.getElementById('rgApproverSec3')?._value || '')
+            };
+        }
 
         async function openRgDetail(id) {
             currentRgId = id;
@@ -1909,7 +1918,7 @@
 
             document.getElementById('rgDetailName').value = g.name;
             document.getElementById('rgDetailDesc').value = g.description || '';
-            rgMetaOriginal = { name: g.name, desc: g.description || '' };
+            rgMetaOriginal = { name: g.name, desc: g.description || '', approvers: { primary: '', sec1: '', sec2: '', sec3: '' } };
             rgMetaDirty = false;
             updateMetaSaveBar();
 
@@ -1931,6 +1940,7 @@
             // Load users and populate approver dropdowns
             await loadRgUsers();
             populateApproverDropdowns(g);
+            rgMetaOriginal.approvers = getCurrentApprovers();
 
             document.getElementById('rgDetailModal').classList.add('open');
         }
@@ -1938,7 +1948,12 @@
         function markRgMetaDirty() {
             const name = document.getElementById('rgDetailName').value.trim();
             const desc = document.getElementById('rgDetailDesc').value.trim();
-            rgMetaDirty = (name !== rgMetaOriginal.name || desc !== rgMetaOriginal.desc);
+            const approvers = getCurrentApprovers();
+            const approversDirty = approvers.primary !== rgMetaOriginal.approvers.primary ||
+                approvers.sec1 !== rgMetaOriginal.approvers.sec1 ||
+                approvers.sec2 !== rgMetaOriginal.approvers.sec2 ||
+                approvers.sec3 !== rgMetaOriginal.approvers.sec3;
+            rgMetaDirty = (name !== rgMetaOriginal.name || desc !== rgMetaOriginal.desc || approversDirty);
             updateMetaSaveBar();
         }
 
@@ -1966,7 +1981,7 @@
                 <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                     <svg viewBox="0 0 24 24" width="36" height="36" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">Unsaved Changes</div>
-                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes to the group name or description that will be lost.</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes that will be lost.</div>
                     <div style="display:flex;gap:0.5rem;justify-content:center;">
                         <button id="rgUnsavedStayBtn" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Keep Editing</button>
                         <button id="rgUnsavedDiscardBtn" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color);color:#fff;font-family:'Inter',sans-serif;">Discard Changes</button>
@@ -1991,16 +2006,30 @@
             const name = document.getElementById('rgDetailName').value.trim();
             if (!name) { showToast('Group Name Required', 'error'); return; }
             const desc = document.getElementById('rgDetailDesc').value.trim();
+            const approvers = getCurrentApprovers();
             try {
+                // Save name/description
                 const resp = await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, description: desc })
                 });
                 if (!resp.ok) throw new Error();
+                // Save approvers
+                const resp2 = await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}/approvers`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ primary_approver: approvers.primary, secondary_approver_1: approvers.sec1, secondary_approver_2: approvers.sec2, secondary_approver_3: approvers.sec3 })
+                });
+                if (!resp2.ok) throw new Error();
                 // Update local cache
                 const g = allRestrictionGroups.find(g => g.id === currentRgId);
-                if (g) { g.name = name; g.description = desc; }
-                rgMetaOriginal = { name, desc };
+                if (g) {
+                    g.name = name; g.description = desc;
+                    g.primary_approver = approvers.primary || null;
+                    g.secondary_approver_1 = approvers.sec1 || null;
+                    g.secondary_approver_2 = approvers.sec2 || null;
+                    g.secondary_approver_3 = approvers.sec3 || null;
+                }
+                rgMetaOriginal = { name, desc, approvers };
                 rgMetaDirty = false;
                 updateMetaSaveBar();
                 showToast('Group Saved', 'success');
@@ -2246,7 +2275,7 @@
 
             drop.classList.remove('open');
             trigger.classList.remove('open');
-            saveApprovers();
+            markRgMetaDirty();
         }
 
         function clearApprover(containerId) {
@@ -2258,7 +2287,7 @@
             textEl.textContent = container.dataset.placeholder;
             textEl.classList.add('placeholder');
             trigger.classList.remove('has-value');
-            saveApprovers();
+            markRgMetaDirty();
         }
 
         function populateApproverDropdowns(group) {
