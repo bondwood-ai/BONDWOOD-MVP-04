@@ -479,11 +479,6 @@
                     </select>
                     <select id="roleFilter" onchange="applyFilters()" style="padding:0.45rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;font-size:0.78rem;font-weight:600;background:var(--card-bg);color:var(--text-primary);cursor:pointer;">
                         <option value="all">All Roles</option>
-                        <option value="admin">Admin</option>
-                        <option value="owner">Owner</option>
-                        <option value="accountant">Accountant</option>
-                        <option value="form_builder">Form Builder</option>
-                        <option value="form_viewer">Form Viewer</option>
                     </select>
                 </div>
             </header>
@@ -672,9 +667,9 @@
            CONFIGURATION & STATE
            ======================================== */
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
-        const AVAILABLE_ROLES = ['admin', 'owner', 'accountant', 'form_builder', 'form_viewer'];
-        const ROLE_LABELS = { admin: 'Admin', owner: 'Owner', accountant: 'Accountant', form_builder: 'Form Builder', form_viewer: 'Form Viewer' };
-        const ROLE_COLORS = ['#00babc', '#f57f2f', '#cb3694', '#4e59a5', '#00babc'];
+        let AVAILABLE_ROLES = [];
+        let ROLE_LABELS = {};
+        let ROLE_COLORS = ['#00babc', '#f57f2f', '#cb3694', '#4e59a5', '#00babc', '#2B6D51', '#d97706'];
 
         let allUsers = [];
         let filteredUsers = [];
@@ -684,6 +679,7 @@
         let selectedUser = null;
         let currentUserEmail = '';
         let currentUserRoles = [];
+        let currentUserPermissions = {};
 
         /* ========================================
            INIT
@@ -693,10 +689,46 @@
             loadBrandData();
             await fetchCurrentUser();
             loadThemePref();
+            await loadRoleDefinitions();
             await loadUsers();
+            populateRoleFilter();
             initCustomSelect(document.getElementById("statusFilter"));
             initCustomSelect(document.getElementById("roleFilter"));
         });
+
+        async function loadRoleDefinitions() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/role-definitions`);
+                if (!resp.ok) throw new Error('Failed to load roles');
+                const data = await resp.json();
+                const isSuperUser = currentUserRoles.includes('super_user');
+
+                AVAILABLE_ROLES = [];
+                ROLE_LABELS = {};
+
+                for (const role of (data.roles || [])) {
+                    // Hide super_user from non-super_users
+                    if (role.role_name === 'super_user' && !isSuperUser) continue;
+                    AVAILABLE_ROLES.push(role.role_name);
+                    // Format label: "super_user" → "Super User", "admin" → "Admin"
+                    ROLE_LABELS[role.role_name] = role.role_name
+                        .split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                }
+                console.log('[ROLES] Loaded:', AVAILABLE_ROLES);
+            } catch (e) {
+                console.warn('[ROLES] Failed to load role definitions:', e);
+                // Fallback
+                AVAILABLE_ROLES = ['user', 'submitter', 'admin'];
+                ROLE_LABELS = { user: 'User', submitter: 'Submitter', admin: 'Admin' };
+            }
+        }
+
+        function populateRoleFilter() {
+            const select = document.getElementById('roleFilter');
+            if (!select) return;
+            select.innerHTML = '<option value="all">All Roles</option>' +
+                AVAILABLE_ROLES.map(r => `<option value="${r}">${ROLE_LABELS[r] || r}</option>`).join('');
+        }
 
         async function fetchCurrentUser() {
             try {
@@ -711,6 +743,7 @@
                 if (user.error) return;
                 currentUserEmail = user.email || '';
                 currentUserRoles = user.roles || [];
+                currentUserPermissions = user.permissions || {};
                 console.log('[AUTH] User:', currentUserEmail, 'Roles:', currentUserRoles);
             } catch (e) {
                 console.warn('[AUTH] Could not verify user:', e);
@@ -1031,7 +1064,18 @@
         function renderRoleToggles(user) {
             const roles = user.roles || [];
             const container = document.getElementById('detailRoles');
-            container.innerHTML = AVAILABLE_ROLES.map(role => {
+            const isSuperUser = currentUserRoles.includes('super_user');
+
+            // Determine which roles to show as toggles
+            let assignableRoles = AVAILABLE_ROLES.filter(r => {
+                // super_user can only be assigned by other super_users
+                if (r === 'super_user' && !isSuperUser) return false;
+                // Don't show 'user' as a toggle — it's the default fallback
+                if (r === 'user') return false;
+                return true;
+            });
+
+            container.innerHTML = assignableRoles.map(role => {
                 const isOn = roles.includes(role);
                 return `<div class="role-manage-row">
                     <span class="role-manage-name">${ROLE_LABELS[role] || role}</span>
@@ -1044,31 +1088,36 @@
             if (!selectedUser) return;
             const isOn = btn.classList.contains('on');
 
+            // Build new roles array
+            let newRoles = [...(selectedUser.roles || [])];
+            if (isOn) {
+                newRoles = newRoles.filter(r => r !== role);
+            } else {
+                newRoles.push(role);
+            }
+
+            // If empty, default to 'user'
+            if (newRoles.length === 0) newRoles = ['user'];
+            // If adding a higher role, remove 'user' since it's redundant
+            if (newRoles.length > 1 && newRoles.includes('user')) {
+                newRoles = newRoles.filter(r => r !== 'user');
+            }
+
             try {
-                if (isOn) {
-                    // Remove role
-                    const resp = await fetch(`${API_BASE}/api/user-roles`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: selectedUser.email, role: role })
-                    });
-                    if (!resp.ok) throw new Error('Failed to remove role');
-                    btn.classList.remove('on');
-                    selectedUser.roles = (selectedUser.roles || []).filter(r => r !== role);
-                } else {
-                    // Add role
-                    const resp = await fetch(`${API_BASE}/api/user-roles`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: selectedUser.email, role: role })
-                    });
-                    if (!resp.ok) throw new Error('Failed to add role');
-                    btn.classList.add('on');
-                    if (!selectedUser.roles) selectedUser.roles = [];
-                    selectedUser.roles.push(role);
+                const resp = await fetch(`${API_BASE}/api/users/roles`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: selectedUser.email, roles: newRoles })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to update roles');
                 }
+
+                selectedUser.roles = newRoles;
+                btn.classList.toggle('on');
                 showToast(`${ROLE_LABELS[role]} role ${isOn ? 'removed' : 'added'}`, 'success');
-                renderTable(); // Refresh table badges
+                renderTable();
             } catch (e) {
                 showToast('Failed to update role: ' + e.message, 'error');
             }

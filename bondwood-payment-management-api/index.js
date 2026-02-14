@@ -201,6 +201,9 @@ export default {
       if (path === '/api/role-definitions' && method === 'GET') {
         return handleGetRoleDefinitions(env);
       }
+      if (path === '/api/users/roles' && method === 'PUT') {
+        return handleUpdateUserRoles(request, env);
+      }
 
       // ── Profile ──
       if (path === '/api/profile' && method === 'PUT') {
@@ -445,6 +448,41 @@ async function handleGetRoleDefinitions(env) {
   }));
 
   return json({ roles: parsed, count: parsed.length });
+}
+
+
+/* ========================================
+   USER ROLES – UPDATE
+   ======================================== */
+async function handleUpdateUserRoles(request, env) {
+  const body = await request.json();
+  const { email, roles } = body;
+
+  if (!email || !Array.isArray(roles)) {
+    return json({ error: 'email and roles array are required' }, 400);
+  }
+
+  // Validate all roles exist in role_definitions
+  if (roles.length > 0) {
+    const placeholders = roles.map(() => '?').join(',');
+    const { results: validRoles } = await env.DB.prepare(
+      `SELECT role_name FROM role_definitions WHERE role_name IN (${placeholders})`
+    ).bind(...roles).all();
+
+    const validNames = validRoles.map(r => r.role_name);
+    const invalid = roles.filter(r => !validNames.includes(r));
+    if (invalid.length) {
+      return json({ error: 'Invalid roles: ' + invalid.join(', ') }, 400);
+    }
+  }
+
+  const rolesJson = JSON.stringify(roles.length > 0 ? roles : ['user']);
+
+  await env.DB.prepare(
+    'UPDATE user_data SET user_roles = ? WHERE LOWER(user_email) = ?'
+  ).bind(rolesJson, email.toLowerCase().trim()).run();
+
+  return json({ message: 'Roles updated', email, roles: JSON.parse(rolesJson) });
 }
 
 
