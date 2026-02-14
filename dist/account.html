@@ -946,26 +946,25 @@
            ======================================== */
         async function loadProfile() {
             try {
+                // Always fetch real user first (for permissions)
                 const resp = await fetch('/api/me');
                 if (!resp.ok) throw new Error('Failed to load profile');
                 const ct = resp.headers.get('content-type') || '';
                 if (!ct.includes('application/json')) throw new Error('Invalid response');
-                profileData = await resp.json();
-                if (profileData.error) throw new Error(profileData.error);
+                let realUser = await resp.json();
+                if (realUser.error) throw new Error(realUser.error);
 
-                // Enrich with full profile from Worker (includes profile_picture_key, roles, etc.)
+                // Enrich real user from Worker
                 try {
-                    const enrichResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(profileData.email)}`);
+                    const enrichResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(realUser.email)}`);
                     if (enrichResp.ok) {
                         const enriched = await enrichResp.json();
-                        if (!enriched.error) {
-                            profileData = { ...profileData, ...enriched };
-                        }
+                        if (!enriched.error) realUser = { ...realUser, ...enriched };
                     }
                 } catch (e) { console.warn('[ACCOUNT] Worker enrich failed:', e); }
 
-                // Store permissions and show admin menu items
-                currentUserPermissions = profileData.permissions || {};
+                // Store real user permissions for menu gating
+                currentUserPermissions = realUser.permissions || {};
                 if (currentUserPermissions.can_manage_users) {
                     const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
                     const imp = document.getElementById('impersonateMenuItem'); if (imp) imp.style.display = '';
@@ -973,6 +972,37 @@
                 if (currentUserPermissions.can_manage_vendors) {
                     const dm = document.getElementById('dataMgmtMenuItem'); if (dm) dm.style.display = '';
                 }
+
+                // If impersonating, load that user's profile instead
+                const impEmail = sessionStorage.getItem('impersonateEmail');
+                if (impEmail) {
+                    try {
+                        const impResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impEmail)}`);
+                        if (impResp.ok) {
+                            const impUser = await impResp.json();
+                            if (!impUser.error) {
+                                profileData = impUser;
+                                currentUserEmail = impEmail;
+                            } else {
+                                console.warn('[ACCOUNT] Impersonate user error:', impUser.error);
+                                profileData = realUser;
+                                currentUserEmail = realUser.email || '';
+                            }
+                        } else {
+                            console.warn('[ACCOUNT] Impersonate fetch not ok:', impResp.status);
+                            profileData = realUser;
+                            currentUserEmail = realUser.email || '';
+                        }
+                    } catch (e) {
+                        console.warn('[ACCOUNT] Impersonate fetch failed:', e);
+                        profileData = realUser;
+                        currentUserEmail = realUser.email || '';
+                    }
+                } else {
+                    profileData = realUser;
+                    currentUserEmail = realUser.email || '';
+                }
+                console.log('[ACCOUNT] profileData email:', profileData.email, 'impEmail:', impEmail);
 
                 // Identity
                 const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
