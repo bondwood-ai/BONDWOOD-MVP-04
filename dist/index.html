@@ -1745,8 +1745,8 @@
                 for (const rfp of selected) {
                     const newStatus = rejectType === 'permanent' ? 'rejected' : (WORKFLOW_PREV[rfp.status] || 'draft');
                     const auditText = rejectType === 'permanent'
-                        ? `${currentUserName || 'Reviewer'} permanently rejected the request (bulk action)`
-                        : `${currentUserName || 'Reviewer'} rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
+                        ? `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request (bulk action)`
+                        : `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
 
                     try {
                         await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
@@ -1800,8 +1800,8 @@
                 if (!newStatus) continue;
                 const isFullApproval = newStatus === 'approved';
                 const auditText = isFullApproval
-                    ? `${currentUserName || 'Reviewer'} approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''} (bulk action)`
-                    : `${currentUserName || 'Reviewer'} advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
+                    ? `<strong>${currentUserName || 'Reviewer'}</strong> approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''} (bulk action)`
+                    : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
 
                 try {
                     const updateBody = { status: newStatus };
@@ -2438,10 +2438,10 @@
             let newStatus, auditText;
             if (rejectType === 'permanent') {
                 newStatus = 'rejected';
-                auditText = `${currentUserName || 'Reviewer'} permanently rejected the request`;
+                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request`;
             } else {
                 newStatus = WORKFLOW_PREV[previewRfp.status] || 'draft';
-                auditText = `${currentUserName || 'Reviewer'} rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
+                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
             }
 
             try {
@@ -2489,8 +2489,8 @@
             }
 
             const auditText = isFullApproval
-                ? `${currentUserName || 'Reviewer'} approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''}`
-                : `${currentUserName || 'Reviewer'} advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
+                ? `<strong>${currentUserName || 'Reviewer'}</strong> approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''}`
+                : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
 
             try {
                 const updateBody = { status: newStatus };
