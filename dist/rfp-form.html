@@ -3848,6 +3848,36 @@
 
             if (!hasItems && !hasMileage) { showAlert('Please add at least one line item or mileage trip.', 'Validation'); return; }
 
+            // Attachment validation for vendor payments:
+            // Must have at least one attachment per distinct invoice number
+            if (currentRequestType === 'vendor' && hasItems) {
+                const invoiceNumbers = new Set();
+                rows.forEach(r => {
+                    const desc = r.querySelector('.line-desc').value.trim();
+                    const inv = r.querySelector('.line-invoice').value.trim();
+                    if (desc && inv) invoiceNumbers.add(inv);
+                });
+
+                const distinctCount = invoiceNumbers.size;
+                const attCount = attachments.length;
+
+                if (distinctCount === 0) {
+                    // Line items exist but none have invoice numbers — still require at least 1 attachment
+                    if (attCount === 0) {
+                        showAlert('At least one attachment is required for vendor payments. Please attach supporting documentation for your invoice(s).', 'Attachment Required');
+                        return;
+                    }
+                } else if (attCount < distinctCount) {
+                    const missing = distinctCount - attCount;
+                    const invoiceList = Array.from(invoiceNumbers).join(', ');
+                    showAlert(
+                        `You have ${distinctCount} distinct invoice number${distinctCount > 1 ? 's' : ''} (${invoiceList}) but only ${attCount} attachment${attCount !== 1 ? 's' : ''}. Each distinct invoice number requires at least one supporting attachment.`,
+                        'Attachments Required'
+                    );
+                    return;
+                }
+            }
+
             // Submit directly (no signature needed - using SSO identity)
             performSubmission();
         }
