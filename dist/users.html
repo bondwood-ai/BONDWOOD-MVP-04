@@ -60,8 +60,6 @@
         body.dark-mode th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
         body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
         body.dark-mode tbody tr.selected { background: rgba(91, 122, 255, 0.15); }
-        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
-        body.dark-mode .theme-toggle svg { fill: #5b7aff; }
         body.dark-mode .btn-primary { background: #333; color: #fff; }
         body.dark-mode .btn-primary:hover { background: #444; }
         body.dark-mode .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
@@ -335,14 +333,6 @@
         /* ============ FOOTER ============ */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; }
         .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Inter', sans-serif; }
-        .theme-toggle {
-            background: var(--card-bg); border: 1px solid var(--border-color);
-            border-radius: 50%; width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: all 0.3s ease;
-        }
-        .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
 
         /* ============ LOADING ============ */
         .loading-spinner {
@@ -585,9 +575,6 @@
     <div class="footer">
         <div class="ownership-text">
             <span>POWERED BY BONDWOOD</span>
-            <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">
-                <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
-            </button>
         </div>
     </div>
 
@@ -705,6 +692,7 @@
             initTheme();
             loadBrandData();
             await fetchCurrentUser();
+            loadThemePref();
             await loadUsers();
             initCustomSelect(document.getElementById("statusFilter"));
             initCustomSelect(document.getElementById("roleFilter"));
@@ -1412,23 +1400,36 @@
             menu.style.setProperty('--menu-highlight-active', highlightActive);
         }
 
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        function applyTheme(pref) {
+            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (pref === 'dark') document.body.classList.add('dark-mode');
+            else if (pref === 'light') document.body.classList.remove('dark-mode');
+            else document.body.classList.toggle('dark-mode', sys);
         }
 
         function initTheme() {
-            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const savedTheme = localStorage.getItem('theme');
-            if (systemPrefersDark) document.body.classList.add('dark-mode');
-            if (savedTheme === 'dark' && !systemPrefersDark) document.body.classList.add('dark-mode');
-            else if (savedTheme === 'light' && systemPrefersDark) document.body.classList.remove('dark-mode');
+            const saved = localStorage.getItem('theme');
+            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark') document.body.classList.add('dark-mode');
+            else if (saved === 'light') document.body.classList.remove('dark-mode');
+            else if (sys) document.body.classList.add('dark-mode');
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                if (!localStorage.getItem('theme')) {
-                    document.body.classList.toggle('dark-mode', e.matches);
-                }
+                const pref = localStorage.getItem('theme');
+                if (!pref || pref === 'system') document.body.classList.toggle('dark-mode', e.matches);
             });
+        }
+
+        async function loadThemePref() {
+            if (!currentUserEmail) return;
+            try {
+                const resp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (data.prefs && data.prefs.theme) {
+                    localStorage.setItem('theme', data.prefs.theme);
+                    applyTheme(data.prefs.theme);
+                }
+            } catch (e) { console.warn('[PREFS] Failed to load theme:', e); }
         }
 
         /* ========================================

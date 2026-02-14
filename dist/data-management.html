@@ -49,8 +49,6 @@
         body.dark-mode th { background: var(--primary-hex); }
         body.dark-mode th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
         body.dark-mode tbody tr:hover { background: var(--row-hover-bg, #252525); }
-        body.dark-mode .theme-toggle { background: #1a1a1a; border-color: #2c2c2c; }
-        body.dark-mode .theme-toggle svg { fill: #5b7aff; }
         body.dark-mode .btn-primary.accent { background: var(--primary-hex); color: var(--accent-text-color); }
         body.dark-mode .btn-primary.accent:hover { opacity: 0.85; }
         body.dark-mode .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
@@ -293,9 +291,6 @@
         /* ============ FOOTER ============ */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; }
         .ownership-text { display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-secondary); padding: 0.5rem; }
-        .theme-toggle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-color); background: var(--card-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: box-shadow 0.15s; }
-        .theme-toggle:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .theme-toggle svg { width: 16px; height: 16px; fill: var(--text-primary); }
 
         @media (max-width: 900px) {
             .form-grid-budget { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
@@ -632,9 +627,6 @@
     <div class="footer">
         <div class="ownership-text">
             <span>POWERED BY BONDWOOD</span>
-            <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">
-                <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
-            </button>
         </div>
     </div>
     <div class="toast" id="toast"></div>
@@ -765,6 +757,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
+            loadThemePref();
             await withLoadingModal(
                 () => Promise.all([loadVendors(), loadBudgetCodes(), loadBudgetComponents()]),
                 'Loading data…'
@@ -1561,11 +1554,39 @@
             menu.style.background=mc;menu.style.setProperty('--menu-highlight-hover',hh);menu.style.setProperty('--menu-highlight-active',ha);
         }
 
-        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); }
+        function applyTheme(pref) {
+            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (pref === 'dark') document.body.classList.add('dark-mode');
+            else if (pref === 'light') document.body.classList.remove('dark-mode');
+            else document.body.classList.toggle('dark-mode', sys);
+        }
         function initTheme() {
-            const sp=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;const sv=localStorage.getItem('theme');
-            if(sp)document.body.classList.add('dark-mode');if(sv==='dark'&&!sp)document.body.classList.add('dark-mode');else if(sv==='light'&&sp)document.body.classList.remove('dark-mode');
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{if(!localStorage.getItem('theme'))document.body.classList.toggle('dark-mode',e.matches);});
+            const saved = localStorage.getItem('theme');
+            const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark') document.body.classList.add('dark-mode');
+            else if (saved === 'light') document.body.classList.remove('dark-mode');
+            else if (sys) document.body.classList.add('dark-mode');
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                const pref = localStorage.getItem('theme');
+                if (!pref || pref === 'system') document.body.classList.toggle('dark-mode', e.matches);
+            });
+        }
+        async function loadThemePref() {
+            try {
+                const resp = await fetch('/api/me');
+                if (!resp.ok) return;
+                const ct = resp.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) return;
+                const user = await resp.json();
+                if (!user.email) return;
+                const prefsResp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(user.email)}`);
+                if (!prefsResp.ok) return;
+                const data = await prefsResp.json();
+                if (data.prefs && data.prefs.theme) {
+                    localStorage.setItem('theme', data.prefs.theme);
+                    applyTheme(data.prefs.theme);
+                }
+            } catch (e) { console.warn('[PREFS] Failed to load theme:', e); }
         }
 
         function toggleHamburgerMenu() { const m=document.getElementById('hamburgerMenu');if(m.classList.contains('open'))closeHamburgerMenu();else{m.style.display='block';document.getElementById('hamburgerOverlay').style.display='block';m.offsetHeight;m.classList.add('open');m.style.transform='translateX(0)';} }
