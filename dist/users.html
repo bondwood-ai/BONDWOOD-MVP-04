@@ -345,13 +345,15 @@
         .role-toggle.on::after { transform: translateX(18px); }
 
         /* RFP mini-table in detail panel */
-        .detail-rfp-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        .detail-rfp-table { width: calc(100% + 3rem); margin-left: -1.5rem; margin-right: -1.5rem; border-collapse: collapse; margin-top: 0.5rem; }
         .detail-rfp-table th {
             font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.04em; color: var(--text-secondary); text-align: left;
             padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color);
             position: static; background: transparent;
         }
+        .detail-rfp-table th:first-child, .detail-rfp-table td:first-child { padding-left: 1.5rem; }
+        .detail-rfp-table th:last-child, .detail-rfp-table td:last-child { padding-right: 1.5rem; }
         .detail-rfp-table td {
             font-size: 0.78rem; padding: 0.4rem 0.5rem;
             border-bottom: 1px solid var(--border-color);
