@@ -1439,10 +1439,11 @@
             } else {
                 text.textContent = 'Unrestricted';
                 body.style.display = 'none';
-                // Clear restrictions for this type
+                // Clear restrictions for this type (only save if there were items)
+                const hadItems = (currentRestrictions[type] || []).length > 0;
                 currentRestrictions[type] = [];
                 renderRestrictionTags(type);
-                saveRestrictions();
+                if (hadItems) saveRestrictions();
             }
         }
 
@@ -1538,9 +1539,9 @@
                 selectedUser.restrictions = { ...currentRestrictions };
                 const u = allUsers.find(u => u.email === selectedUser.email);
                 if (u) u.restrictions = { ...currentRestrictions };
-                showToast('Restrictions saved', 'success');
+                showToast('Restrictions Saved', 'success');
             } catch (e) {
-                showToast('Failed to save restrictions', 'error');
+                showToast('Failed to Save Restrictions', 'error');
             }
         }
 
