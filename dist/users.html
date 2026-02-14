@@ -1271,7 +1271,7 @@
                 const nameUpper = userName.toUpperCase();
                 const emailLower = email.toLowerCase();
                 const userRfps = allRfps.filter(r => {
-                    const sub = (r.submitter || '').toUpperCase();
+                    const sub = (r.submitter_name || '').toUpperCase();
                     const em = (r.submitter_email || '').toLowerCase();
                     return sub === nameUpper || em === emailLower || sub.includes(nameUpper);
                 });
@@ -1326,6 +1326,11 @@
             if (!ts) return '—';
             const d = new Date(ts);
             return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+
+        function linkifyText(text) {
+            if (!text) return text;
+            return text.replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--primary-hex);text-decoration:underline;word-break:break-all;">$1</a>');
         }
 
         function togglePreviewSection(id) {
@@ -1388,7 +1393,7 @@
                 let auditHtml = '';
                 if (auditLogs.length > 0) {
                     const aid = 'paudit_' + rfpNumber;
-                    auditHtml = `<div style="margin-top:1rem;"><button onclick="togglePreviewSection('${aid}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);text-align:left;font-family:'Inter',sans-serif;"><svg id="${aid}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>Audit Log <span style="font-size:0.7rem;font-weight:500;color:var(--text-secondary);margin-left:0.25rem;">(${auditLogs.length})</span></button><div id="${aid}" style="display:none;margin-top:0.4rem;"><div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">${auditLogs.map((log,i) => `<div style="display:flex;gap:0.75rem;padding:0.6rem 0.85rem;${i<auditLogs.length-1?'border-bottom:1px solid var(--border-color);':''}align-items:flex-start;"><span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);min-width:18px;text-align:right;padding-top:1px;">${i+1}.</span><div style="flex:1;"><div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${log.description}</div><div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.15rem;">${formatPreviewTimestamp(log.created_at || log.performed_at)}</div></div></div>`).join('')}</div></div></div>`;
+                    auditHtml = `<div style="margin-top:1rem;"><button onclick="togglePreviewSection('${aid}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);text-align:left;font-family:'Inter',sans-serif;"><svg id="${aid}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>Audit Log <span style="font-size:0.7rem;font-weight:500;color:var(--text-secondary);margin-left:0.25rem;">(${auditLogs.length})</span></button><div id="${aid}" style="display:none;margin-top:0.4rem;"><div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">${auditLogs.map((log,i) => `<div style="display:flex;gap:0.75rem;padding:0.6rem 0.85rem;${i<auditLogs.length-1?'border-bottom:1px solid var(--border-color);':''}align-items:flex-start;"><span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);min-width:18px;text-align:right;padding-top:1px;">${i+1}.</span><div style="flex:1;"><div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${linkifyText(log.description)}</div><div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.15rem;">${formatPreviewTimestamp(log.created_at || log.performed_at)}</div></div></div>`).join('')}</div></div></div>`;
                 }
 
                 body.innerHTML = `

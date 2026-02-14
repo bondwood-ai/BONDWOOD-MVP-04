@@ -2104,6 +2104,11 @@
             }
         }
 
+        function linkifyText(text) {
+            if (!text) return text;
+            return text.replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--primary-hex);text-decoration:underline;word-break:break-all;">$1</a>');
+        }
+
         function formatAuditTimestamp(isoStr) {
             if (!isoStr) return '—';
             try {
@@ -2322,7 +2327,7 @@
                                 <div style="display:flex;gap:0.75rem;padding:0.6rem 0.85rem;${i < auditEntries.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}align-items:flex-start;">
                                     <span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);min-width:18px;text-align:right;padding-top:1px;">${i + 1}.</span>
                                     <div style="flex:1;">
-                                        <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${entry.text}</div>
+                                        <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${linkifyText(entry.text)}</div>
                                         <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.15rem;">${entry.timestamp}</div>
                                     </div>
                                 </div>
