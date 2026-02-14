@@ -222,6 +222,10 @@ export default {
       if (rgMatch && method === 'DELETE') {
         return handleDeleteRestrictionGroup(parseInt(rgMatch[1]), env);
       }
+      const rgApprMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/approvers$/);
+      if (rgApprMatch && method === 'PUT') {
+        return handleUpdateGroupApprovers(parseInt(rgApprMatch[1]), request, env);
+      }
       const rgBrMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/budget-rules$/);
       if (rgBrMatch && method === 'POST') {
         return handleAddBudgetRule(parseInt(rgBrMatch[1]), request, env);
@@ -607,6 +611,20 @@ async function handleDeleteRestrictionGroup(id, env) {
   await env.DB.prepare('DELETE FROM user_restriction_assignments WHERE group_id = ?').bind(id).run();
   await env.DB.prepare('DELETE FROM restriction_groups WHERE id = ?').bind(id).run();
   return json({ message: 'Group deleted' });
+}
+
+async function handleUpdateGroupApprovers(groupId, request, env) {
+  const body = await request.json();
+  const primary = (body.primary_approver || '').trim().toLowerCase() || null;
+  const sec1 = (body.secondary_approver_1 || '').trim().toLowerCase() || null;
+  const sec2 = (body.secondary_approver_2 || '').trim().toLowerCase() || null;
+  const sec3 = (body.secondary_approver_3 || '').trim().toLowerCase() || null;
+
+  await env.DB.prepare(
+    'UPDATE restriction_groups SET primary_approver = ?, secondary_approver_1 = ?, secondary_approver_2 = ?, secondary_approver_3 = ? WHERE id = ?'
+  ).bind(primary, sec1, sec2, sec3, groupId).run();
+
+  return json({ message: 'Approvers updated', primary_approver: primary, secondary_approver_1: sec1, secondary_approver_2: sec2, secondary_approver_3: sec3 });
 }
 
 async function handleAddBudgetRule(groupId, request, env) {
@@ -1865,6 +1883,10 @@ async function handleMigrate(env) {
       PRIMARY KEY(user_email, group_id),
       FOREIGN KEY (group_id) REFERENCES restriction_groups(id) ON DELETE CASCADE
     )`,
+    'ALTER TABLE restriction_groups ADD COLUMN primary_approver TEXT',
+    'ALTER TABLE restriction_groups ADD COLUMN secondary_approver_1 TEXT',
+    'ALTER TABLE restriction_groups ADD COLUMN secondary_approver_2 TEXT',
+    'ALTER TABLE restriction_groups ADD COLUMN secondary_approver_3 TEXT',
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,

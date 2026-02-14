@@ -388,6 +388,21 @@
         .restriction-dropdown-item .rd-sub { font-size: 0.65rem; color: var(--text-secondary); margin-left: 0.5rem; }
 
         .rg-no-rules { font-size: 0.78rem; color: var(--text-secondary); font-style: italic; padding: 0.5rem 0; }
+
+        /* Approver assignment */
+        .rg-approver-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+        .rg-approver-row { display: flex; align-items: center; gap: 0.75rem; }
+        .rg-approver-row label {
+            font-size: 0.78rem; font-weight: 500; color: var(--text-secondary);
+            min-width: 140px; flex-shrink: 0;
+        }
+        .rg-approver-row.primary label { font-weight: 700; color: var(--text-primary); }
+        .rg-approver-row select {
+            flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--border-color); border-radius: 8px;
+            background: var(--bg-color); color: var(--text-primary); font-family: 'Inter', sans-serif;
+            font-size: 0.8rem; outline: none; cursor: pointer; appearance: auto;
+        }
+        .rg-approver-row select:focus { border-color: var(--primary-hex); }
     </style>
 
     <script>
@@ -786,6 +801,38 @@
                 </div>
                 <div id="rgVendorTags" class="restriction-tags"></div>
                 <div id="rgVendorDropdown" class="restriction-dropdown"></div>
+            </div>
+
+            <!-- Approvers -->
+            <div class="rg-section">
+                <div class="rg-section-title">Approvers</div>
+                <div class="rg-section-hint">Assign approvers for the first approval step after submission.</div>
+                <div class="rg-approver-grid">
+                    <div class="rg-approver-row primary">
+                        <label>Primary Approver</label>
+                        <select id="rgApproverPrimary" onchange="saveApprovers()">
+                            <option value="">— Select —</option>
+                        </select>
+                    </div>
+                    <div class="rg-approver-row">
+                        <label>Secondary Approver 1</label>
+                        <select id="rgApproverSec1" onchange="saveApprovers()">
+                            <option value="">— None —</option>
+                        </select>
+                    </div>
+                    <div class="rg-approver-row">
+                        <label>Secondary Approver 2</label>
+                        <select id="rgApproverSec2" onchange="saveApprovers()">
+                            <option value="">— None —</option>
+                        </select>
+                    </div>
+                    <div class="rg-approver-row">
+                        <label>Secondary Approver 3</label>
+                        <select id="rgApproverSec3" onchange="saveApprovers()">
+                            <option value="">— None —</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1785,6 +1832,10 @@
                 } catch (e) {}
             }
 
+            // Load users and populate approver dropdowns
+            await loadRgUsers();
+            populateApproverDropdowns(g);
+
             document.getElementById('rgDetailModal').classList.add('open');
         }
 
@@ -1910,6 +1961,70 @@
                 if (g) { g.vendors = g.vendors.filter(v => v !== vendorNumber); renderRgVendorTags(g.vendors); }
                 searchRgVendors();
             } catch (e) {}
+        }
+
+        // ─── Approvers ───
+        let rgUserList = []; // cached user list for approver dropdowns
+
+        async function loadRgUsers() {
+            if (rgUserList.length) return;
+            try {
+                const resp = await fetch(`${API_BASE}/api/users`);
+                const data = await resp.json();
+                rgUserList = (data.users || [])
+                    .filter(u => u.status !== 'inactive')
+                    .sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
+            } catch (e) { console.warn('Failed to load users for approver dropdown:', e); }
+        }
+
+        function populateApproverDropdowns(group) {
+            const selects = [
+                document.getElementById('rgApproverPrimary'),
+                document.getElementById('rgApproverSec1'),
+                document.getElementById('rgApproverSec2'),
+                document.getElementById('rgApproverSec3'),
+            ];
+            const fields = ['primary_approver', 'secondary_approver_1', 'secondary_approver_2', 'secondary_approver_3'];
+            const placeholders = ['— Select —', '— None —', '— None —', '— None —'];
+
+            selects.forEach((sel, i) => {
+                const current = (group[fields[i]] || '').toLowerCase();
+                sel.innerHTML = `<option value="">${placeholders[i]}</option>` +
+                    rgUserList.map(u => {
+                        const email = (u.email || '').toLowerCase();
+                        const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim();
+                        const selected = email === current ? ' selected' : '';
+                        return `<option value="${escapeHTML(email)}"${selected}>${escapeHTML(name)} (${escapeHTML(email)})</option>`;
+                    }).join('');
+            });
+        }
+
+        async function saveApprovers() {
+            if (!currentRgId) return;
+            const primary = document.getElementById('rgApproverPrimary').value;
+            const sec1 = document.getElementById('rgApproverSec1').value;
+            const sec2 = document.getElementById('rgApproverSec2').value;
+            const sec3 = document.getElementById('rgApproverSec3').value;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups/${currentRgId}/approvers`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ primary_approver: primary, secondary_approver_1: sec1, secondary_approver_2: sec2, secondary_approver_3: sec3 })
+                });
+                if (!resp.ok) throw new Error('API error');
+                // Update local cache
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g) {
+                    g.primary_approver = primary || null;
+                    g.secondary_approver_1 = sec1 || null;
+                    g.secondary_approver_2 = sec2 || null;
+                    g.secondary_approver_3 = sec3 || null;
+                }
+                showToast('Approvers Saved', 'success');
+            } catch (e) {
+                showToast('Failed to Save Approvers', 'error');
+            }
         }
 
         /* ========================================
