@@ -1591,12 +1591,14 @@
 
             if (!matchingGroups.length) return getVendorPool();
 
-            // If ANY matching group has no vendor restrictions → all vendors for this code
-            if (matchingGroups.some(g => g.vendor_numbers.length === 0)) return VENDOR_DATA;
+            // If ANY matching group has vendor restrictions, enforce them
+            // (a restricted group's vendor list is not overridden by unrestricted groups)
+            const restrictedGroups = matchingGroups.filter(g => g.vendor_numbers.length > 0);
+            if (!restrictedGroups.length) return VENDOR_DATA;
 
-            // Otherwise, union of vendor restrictions from matching groups
+            // Union of vendor restrictions from all restricted matching groups
             const allowed = new Set();
-            matchingGroups.forEach(g => g.vendor_numbers.forEach(v => allowed.add(v)));
+            restrictedGroups.forEach(g => g.vendor_numbers.forEach(v => allowed.add(v)));
             return VENDOR_DATA.filter(v => allowed.has(v.c));
         }
 
@@ -3638,7 +3640,7 @@
             return new Promise(resolve => {
                 _utilityModalResolve = resolve;
                 document.getElementById('utilityModalTitle').textContent = title;
-                document.getElementById('utilityModalMessage').textContent = message;
+                document.getElementById('utilityModalMessage').innerHTML = message;
                 document.getElementById('utilityModalFooter').innerHTML = `
                     <button onclick="closeUtilityModal(true)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);min-width:80px;">OK</button>
                 `;
@@ -5434,6 +5436,37 @@
             if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
         }
 
+        // Real-time vendor + budget code compatibility check
+        function _escH(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        function checkVendorBudgetCompatibility(budgetCode) {
+            if (!budgetCode || !USER_RESTRICTIONS.groups || !USER_RESTRICTIONS.groups.length) return;
+            if (currentRequestType !== 'vendor') return;
+            const vendorNum = document.getElementById('vendorNumber')?.value?.trim();
+            if (!vendorNum) return;
+
+            const pool = getVendorPoolForBudgetCode(budgetCode);
+            // pool === VENDOR_DATA means unrestricted — no conflict
+            if (pool === VENDOR_DATA) return;
+            if (pool.some(v => v.c === vendorNum)) return;
+
+            // Find which group restricts this code
+            const matchingGroup = USER_RESTRICTIONS.groups.find(g =>
+                g.budget_rules.length > 0 && g.vendor_numbers.length > 0 &&
+                g.budget_rules.some(rule => budgetCodeMatchesRule(budgetCode, rule))
+            );
+            const groupName = matchingGroup ? matchingGroup.name : 'its restriction group';
+            const vendorName = document.getElementById('vendorName')?.value?.trim() || vendorNum;
+            const allowedNames = pool.map(v => v.n).slice(0, 5).join(', ');
+
+            showAlert(
+                `<strong>${_escH(vendorName)}</strong> is not an authorized vendor for budget code <strong>${_escH(budgetCode)}</strong> under the <strong>${_escH(groupName)}</strong> restriction group.` +
+                (allowedNames ? `<br><br>Authorized vendors: ${_escH(allowedNames)}` : ''),
+                'Vendor Restriction Conflict'
+            );
+        }
+
         function selectBudgetCode(input, code, row) {
             input.value = code;
             input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -5459,6 +5492,7 @@
             clearBcError(input);
             input.classList.remove('bc-error');
             input.classList.add('bc-valid');
+            checkVendorBudgetCompatibility(code);
             // Clear and focus account field
             if (acInput) {
                 acInput.value = '';
@@ -5530,6 +5564,7 @@
                 input.classList.remove('bc-error');
                 input.classList.add('bc-valid');
                 removeBcTooltip(input);
+                checkVendorBudgetCompatibility(val);
             } else {
                 // Partial code — check if it matches anything in the relevant pool
                 const pool = USER_RESTRICTIONS.restricted_budget ? getBudgetCodePool() : UNIQUE_BUDGET_CODES;
