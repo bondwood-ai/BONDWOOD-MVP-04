@@ -1174,9 +1174,9 @@ async function handleCreateRFP(request, env) {
   }
 
   // ── Auto-advance workflow when submitted ──
-  if (status === 'submitted' && body.restriction_group_id) {
+  if (status === 'submitted') {
     try {
-      const advancement = await advanceToNextStep(env, nextRfp, 'submitted', body.restriction_group_id);
+      const advancement = await advanceToNextStep(env, nextRfp, 'submitted', body.restriction_group_id || null);
       if (advancement) {
         await env.DB.prepare(
           'UPDATE dashboard_data SET status = ?, assigned_to = ?, assigned_to_email = ? WHERE rfp_number = ?'
