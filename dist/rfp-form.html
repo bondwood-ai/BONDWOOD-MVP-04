@@ -4622,8 +4622,16 @@
             const vendor = data.request_type === 'reimbursement' ? (data.employee_id || data.employee_name || '—') : (data.vendor_name || data.vendor_number || '—');
             const typeLabel = data.request_type === 'vendor' ? 'Vendor Payment' : 'Employee Reimbursement';
 
-            const w = window.open('', '_blank', 'width=900,height=700');
-            w.document.write(`<!DOCTYPE html><html><head><title>RFP #${rfpNum}</title>
+            let iframe = document.getElementById('rfpPrintFrame');
+            if (iframe) iframe.remove();
+            iframe = document.createElement('iframe');
+            iframe.id = 'rfpPrintFrame';
+            iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;';
+            document.body.appendChild(iframe);
+
+            const pDoc = iframe.contentDocument || iframe.contentWindow.document;
+            pDoc.open();
+            pDoc.write(`<!DOCTYPE html><html><head><title>RFP #${rfpNum}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
@@ -4661,13 +4669,24 @@
             <div class="total-row">Total: $${fmtAmt(total)}</div>
             ${auditHtml}
             </body></html>`);
-            w.document.close();
-            w.onload = () => { w.document.fonts.ready.then(() => w.print()); };
+            pDoc.close();
+            iframe.onload = () => {
+                try { pDoc.fonts.ready.then(() => { iframe.contentWindow.print(); }); }
+                catch (e) { iframe.contentWindow.print(); }
+            };
         }
 
         function printAuditLog(rfpNumber, entries) {
-            const w = window.open('', '_blank', 'width=700,height=600');
-            w.document.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
+            let iframe = document.getElementById('auditPrintFrame');
+            if (iframe) iframe.remove();
+            iframe = document.createElement('iframe');
+            iframe.id = 'auditPrintFrame';
+            iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
@@ -4690,8 +4709,11 @@
                 </tbody>
             </table>
             </body></html>`);
-            w.document.close();
-            w.onload = () => { w.document.fonts.ready.then(() => w.print()); };
+            doc.close();
+            iframe.onload = () => {
+                try { doc.fonts.ready.then(() => { iframe.contentWindow.print(); }); }
+                catch (e) { iframe.contentWindow.print(); }
+            };
         }
 
         function formatCurrency(num) { return '$' + formatNumber(num); }
