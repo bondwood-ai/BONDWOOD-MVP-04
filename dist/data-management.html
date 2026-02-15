@@ -958,7 +958,7 @@
             </div>
 
             <!-- Assigned Users -->
-            <div class="rg-section">
+            <div class="rg-section" style="padding-bottom:12rem;">
                 <div class="rg-section-title">Assigned Users</div>
                 <div id="rgAssignedUsers" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
                 <div style="position:relative;" id="rgUserSearchWrapper">
@@ -2350,6 +2350,11 @@
                 }).join('');
             }
             drop.style.display = 'block';
+            // Scroll the modal panel so the dropdown is visible
+            setTimeout(() => {
+                const wrapper = document.getElementById('rgUserSearchWrapper');
+                if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
         }
 
         function addUserToRg(email) {
