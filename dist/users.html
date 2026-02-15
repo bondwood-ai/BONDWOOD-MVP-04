@@ -223,7 +223,7 @@
 
         .detail-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem 1.5rem;
             position: sticky; top: 0; background: var(--card-bg); z-index: 2;
         }
         .detail-header h3 { font-size: 1rem; font-weight: 700; }
@@ -235,7 +235,6 @@
 
         .detail-profile {
             padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;
-            border-bottom: 1px solid var(--border-color);
         }
         .detail-avatar {
             width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
@@ -250,7 +249,7 @@
         .detail-identity .detail-email { font-size: 0.78rem; color: var(--text-secondary); }
         .detail-identity .detail-eid { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.1rem; }
 
-        .detail-section { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); }
+        .detail-section { padding: 1.25rem 1.5rem; }
         .detail-section-title {
             font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.75rem;
@@ -263,27 +262,27 @@
         .detail-field .value {
             font-size: 0.84rem; font-weight: 500; color: var(--text-primary); margin-top: 0.15rem;
         }
+        .detail-input {
+            width: 100%; padding: 0.3rem 0.5rem; border: 1px solid var(--border-color); border-radius: 6px;
+            font-size: 0.84rem; font-weight: 500; color: var(--text-primary); margin-top: 0.15rem;
+            background: var(--field-bg, var(--bg-color)); font-family: 'Inter', sans-serif;
+            outline: none; box-sizing: border-box; transition: border-color 0.15s;
+        }
+        .detail-input:focus { border-color: var(--primary-hex); }
 
-        /* Role management in detail panel */
-        .role-manage-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);
+        /* Role management in detail panel — pills */
+        .role-pill {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+            background: color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));
+            border: 1px solid color-mix(in srgb, var(--primary-hex) 25%, var(--border-color));
+            color: var(--text-primary);
         }
-        .role-manage-row:last-child { border-bottom: none; }
-        .role-manage-name { font-size: 0.82rem; font-weight: 600; }
-        .role-toggle {
-            position: relative; width: 38px; height: 20px; border-radius: 99px;
-            background: var(--border-color); cursor: pointer; transition: background 0.2s;
-            border: none; padding: 0;
+        .role-pill button {
+            background: none; border: none; cursor: pointer; padding: 0; line-height: 1;
+            font-size: 0.85rem; color: var(--text-secondary); transition: color 0.15s;
         }
-        .role-toggle.on { background: var(--positive-color); }
-        .role-toggle::after {
-            content: ''; position: absolute; top: 2px; left: 2px;
-            width: 16px; height: 16px; border-radius: 50%;
-            background: #fff; transition: transform 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        .role-toggle.on::after { transform: translateX(18px); }
+        .role-pill button:hover { color: var(--negative-color); }
 
         /* RFP mini-table in detail panel */
         .detail-rfp-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
@@ -597,18 +596,26 @@
         <div class="detail-section">
             <div class="detail-section-title">Account Information</div>
             <div class="detail-grid">
-                <div class="detail-field"><label>Department</label><div class="value" id="detailDept">—</div></div>
-                <div class="detail-field"><label>Title</label><div class="value" id="detailJobTitle">—</div></div>
-                <div class="detail-field"><label>Phone</label><div class="value" id="detailPhone">—</div></div>
+                <div class="detail-field"><label>Department</label><input type="text" id="detailDept" class="detail-input" value="" placeholder="—"></div>
+                <div class="detail-field"><label>Title</label><input type="text" id="detailJobTitle" class="detail-input" value="" placeholder="—"></div>
+                <div class="detail-field"><label>Phone</label><input type="text" id="detailPhone" class="detail-input" value="" placeholder="—"></div>
                 <div class="detail-field">
                     <label>Status</label>
                     <div class="value" id="detailStatus">—</div>
                 </div>
             </div>
-            <div style="margin-top:1rem;display:flex;gap:0.5rem;" id="detailStatusActions">
+            <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;" id="detailStatusActions">
+                <button class="btn-primary accent" id="btnSaveUserDetails" onclick="saveUserDetails()" style="font-size:0.75rem;display:none;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                    Save Changes
+                </button>
                 <button class="btn-primary danger" id="btnDeactivate" onclick="toggleUserStatus()" style="font-size:0.75rem;">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
                     Deactivate Account
+                </button>
+                <button class="btn-primary" id="btnImpersonate" onclick="impersonateFromDetail()" style="font-size:0.75rem;background:var(--primary-hex);color:#fff;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Impersonate
                 </button>
             </div>
         </div>
@@ -616,7 +623,13 @@
         <!-- Roles Section -->
         <div class="detail-section">
             <div class="detail-section-title">Role Management</div>
-            <div id="detailRoles"></div>
+            <div id="detailRolePills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
+            <div style="position:relative;" id="roleSearchWrapper">
+                <input type="text" id="roleSearchInput" placeholder="Add role..." autocomplete="off"
+                    style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.78rem;font-family:'Inter',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
+                    oninput="filterRoleDropdown()" onfocus="filterRoleDropdown()">
+                <div id="roleDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:160px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+            </div>
         </div>
 
         <!-- Restriction Groups Section -->
@@ -632,7 +645,7 @@
         </div>
 
         <!-- RFPs Section -->
-        <div class="detail-section" style="border-bottom:none;flex:1;">
+        <div class="detail-section" style="flex:1;">
             <div class="detail-section-title">Submitted Requests <span id="detailRfpCount" style="font-weight:400;color:var(--text-secondary);"></span></div>
             <div id="detailRfps">
                 <div class="detail-rfp-empty">No requests found</div>
@@ -775,6 +788,7 @@
         let currentPage = 1;
         const PAGE_SIZE = 50;
         let selectedUser = null;
+        let detailOriginals = {};
         let currentUserEmail = '';
         let currentUserRoles = [];
         let currentUserPermissions = {};
@@ -1118,9 +1132,17 @@
             document.getElementById('detailName').textContent = name;
             document.getElementById('detailEmail').textContent = user.email || '—';
             document.getElementById('detailEid').textContent = user.user_id ? 'Employee ID: E' + user.user_id : '';
-            document.getElementById('detailDept').textContent = user.department || '—';
-            document.getElementById('detailJobTitle').textContent = user.title || '—';
-            document.getElementById('detailPhone').textContent = user.phone_number || '—';
+            document.getElementById('detailDept').value = user.department || '';
+            document.getElementById('detailJobTitle').value = user.title || '';
+            document.getElementById('detailPhone').value = user.phone_number || '';
+
+            // Track original values for change detection
+            detailOriginals = {
+                department: user.department || '',
+                title: user.title || '',
+                phone_number: user.phone_number || '',
+            };
+            document.getElementById('btnSaveUserDetails').style.display = 'none';
 
             const isActive = user.status !== 'inactive';
             document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${isActive ? 'active' : 'inactive'}">
@@ -1185,65 +1207,103 @@
            ======================================== */
         function renderRoleToggles(user) {
             const roles = user.roles || [];
-            const container = document.getElementById('detailRoles');
+            const container = document.getElementById('detailRolePills');
             const isSuperUser = currentUserRoles.includes('super_user');
 
-            // Determine which roles to show as toggles
-            let assignableRoles = AVAILABLE_ROLES.filter(r => {
-                // super_user can only be assigned by other super_users
-                if (r === 'super_user' && !isSuperUser) return false;
-                // Don't show 'user' as a toggle — it's the default fallback
+            if (!roles.length || (roles.length === 1 && roles[0] === 'user')) {
+                container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-secondary);font-style:italic;">Default user role</span>';
+            } else {
+                container.innerHTML = roles.filter(r => r !== 'user').map(role => {
+                    const canRemove = (role !== 'super_user' || isSuperUser);
+                    return `<span class="role-pill">
+                        ${ROLE_LABELS[role] || role}
+                        ${canRemove ? `<button onclick="removeRole('${role}')" title="Remove">&times;</button>` : ''}
+                    </span>`;
+                }).join('');
+            }
+            document.getElementById('roleSearchInput').value = '';
+        }
+
+        function filterRoleDropdown() {
+            if (!selectedUser) return;
+            const q = document.getElementById('roleSearchInput').value.toLowerCase().trim();
+            const currentRoles = selectedUser.roles || [];
+            const isSuperUser = currentUserRoles.includes('super_user');
+
+            const available = AVAILABLE_ROLES.filter(r => {
                 if (r === 'user') return false;
+                if (currentRoles.includes(r)) return false;
+                if (r === 'super_user' && !isSuperUser) return false;
+                if (q && !(ROLE_LABELS[r] || r).toLowerCase().includes(q)) return false;
                 return true;
             });
 
-            container.innerHTML = assignableRoles.map(role => {
-                const isOn = roles.includes(role);
-                return `<div class="role-manage-row">
-                    <span class="role-manage-name">${ROLE_LABELS[role] || role}</span>
-                    <button class="role-toggle ${isOn ? 'on' : ''}" onclick="toggleRole('${role}', this)" data-role="${role}"></button>
-                </div>`;
-            }).join('');
+            const drop = document.getElementById('roleDropdown');
+            if (!available.length) {
+                drop.innerHTML = '<div style="padding:0.5rem 0.65rem;font-size:0.75rem;color:var(--text-secondary);">No roles available</div>';
+            } else {
+                drop.innerHTML = available.map(r => `
+                    <div style="padding:0.4rem 0.65rem;font-size:0.78rem;cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--row-hover-bg)'" onmouseout="this.style.background=''" onclick="addRole('${r}')">
+                        ${ROLE_LABELS[r] || r}
+                    </div>
+                `).join('');
+            }
+            drop.style.display = 'block';
         }
 
-        async function toggleRole(role, btn) {
+        async function addRole(role) {
             if (!selectedUser) return;
-            const isOn = btn.classList.contains('on');
-
-            // Build new roles array
             let newRoles = [...(selectedUser.roles || [])];
-            if (isOn) {
-                newRoles = newRoles.filter(r => r !== role);
-            } else {
-                newRoles.push(role);
-            }
-
-            // If empty, default to 'user'
-            if (newRoles.length === 0) newRoles = ['user'];
-            // If adding a higher role, remove 'user' since it's redundant
+            newRoles.push(role);
             if (newRoles.length > 1 && newRoles.includes('user')) {
                 newRoles = newRoles.filter(r => r !== 'user');
             }
-
             try {
                 const resp = await fetch(`${API_BASE}/api/users/roles`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: selectedUser.email, roles: newRoles })
                 });
-                if (!resp.ok) {
-                    const err = await resp.json().catch(() => ({}));
-                    throw new Error(err.error || 'Failed to update roles');
-                }
-
+                if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || 'Failed');
                 selectedUser.roles = newRoles;
-                btn.classList.toggle('on');
-                showToast(`${ROLE_LABELS[role]} role ${isOn ? 'removed' : 'added'}`, 'success');
+                renderRoleToggles(selectedUser);
+                document.getElementById('roleDropdown').style.display = 'none';
+                showToast(`${ROLE_LABELS[role] || role} role added`, 'success');
                 renderTable();
             } catch (e) {
-                showToast('Failed to update role: ' + e.message, 'error');
+                showToast('Failed to add role: ' + e.message, 'error');
             }
         }
+
+        async function removeRole(role) {
+            if (!selectedUser) return;
+            let newRoles = (selectedUser.roles || []).filter(r => r !== role);
+            if (newRoles.length === 0) newRoles = ['user'];
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/roles`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: selectedUser.email, roles: newRoles })
+                });
+                if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || 'Failed');
+                selectedUser.roles = newRoles;
+                renderRoleToggles(selectedUser);
+                showToast(`${ROLE_LABELS[role] || role} role removed`, 'success');
+                renderTable();
+            } catch (e) {
+                showToast('Failed to remove role: ' + e.message, 'error');
+            }
+        }
+
+        // Close dropdowns on click outside
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#roleSearchWrapper')) {
+                const d = document.getElementById('roleDropdown');
+                if (d) d.style.display = 'none';
+            }
+            if (!e.target.closest('#rgSearchWrapper')) {
+                const d = document.getElementById('rgSearchResults');
+                if (d) d.style.display = 'none';
+            }
+        });
 
         /* ========================================
            ACTIVATE / DEACTIVATE
@@ -1270,6 +1330,59 @@
             } catch (e) {
                 showToast('Failed to update status: ' + e.message, 'error');
             }
+        }
+
+        function impersonateFromDetail() {
+            if (!selectedUser) return;
+            if (selectedUser.email.toLowerCase() === currentUserEmail) {
+                showToast('You cannot impersonate yourself', 'error');
+                return;
+            }
+            const name = ((selectedUser.first_name || '') + ' ' + (selectedUser.last_name || '')).trim();
+            sessionStorage.setItem('impersonateEmail', selectedUser.email.toLowerCase().trim());
+            sessionStorage.setItem('impersonateName', name);
+            window.location.href = 'index.html';
+        }
+
+        // Show/hide Save button when account info fields change
+        function checkDetailChanges() {
+            const dept = document.getElementById('detailDept').value.trim();
+            const title = document.getElementById('detailJobTitle').value.trim();
+            const phone = document.getElementById('detailPhone').value.trim();
+            const changed = dept !== detailOriginals.department || title !== detailOriginals.title || phone !== detailOriginals.phone_number;
+            document.getElementById('btnSaveUserDetails').style.display = changed ? 'inline-flex' : 'none';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            ['detailDept', 'detailJobTitle', 'detailPhone'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', checkDetailChanges);
+            });
+        });
+
+        async function saveUserDetails() {
+            if (!selectedUser) return;
+            const btn = document.getElementById('btnSaveUserDetails');
+            btn.disabled = true;
+            try {
+                const dept = document.getElementById('detailDept').value.trim();
+                const title = document.getElementById('detailJobTitle').value.trim();
+                const phone = document.getElementById('detailPhone').value.trim();
+                const resp = await fetch(`${API_BASE}/api/profile`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: selectedUser.email, department: dept, title: title, phone_number: phone })
+                });
+                if (!resp.ok) throw new Error('Failed to save');
+                selectedUser.department = dept;
+                selectedUser.title = title;
+                selectedUser.phone_number = phone;
+                detailOriginals = { department: dept, title: title, phone_number: phone };
+                btn.style.display = 'none';
+                showToast('User details saved', 'success');
+                renderTable();
+            } catch (e) {
+                showToast('Failed to save: ' + e.message, 'error');
+            }
+            btn.disabled = false;
         }
 
         /* ========================================
