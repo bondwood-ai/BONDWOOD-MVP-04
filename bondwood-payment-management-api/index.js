@@ -19,6 +19,18 @@ function json(data, status = 200) {
   });
 }
 
+function getRequestEmail(request) {
+  let email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  if (!email) {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/CF_Authorization=([^;]+)/);
+    if (match) {
+      try { email = JSON.parse(atob(match[1].split('.')[1])).email; } catch (e) {}
+    }
+  }
+  return email ? email.toLowerCase().trim() : null;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -161,7 +173,7 @@ export default {
       const rfpMatch = path.match(/^\/api\/rfps\/(\d+)$/);
       if (rfpMatch) {
         const rfpNumber = parseInt(rfpMatch[1]);
-        if (method === 'GET') return handleGetRFP(rfpNumber, env);
+        if (method === 'GET') return handleGetRFP(rfpNumber, request, env);
         if (method === 'PUT') return handleUpdateRFP(rfpNumber, request, env);
         if (method === 'DELETE') return handleDeleteRFP(rfpNumber, env);
       }
@@ -1091,12 +1103,36 @@ async function handleListRFPs(env, url, request) {
 /* ========================================
    RFPs – GET SINGLE
    ======================================== */
-async function handleGetRFP(rfpNumber, env) {
+async function handleGetRFP(rfpNumber, request, env) {
   const { results: header } = await env.DB.prepare(
     'SELECT * FROM dashboard_data WHERE rfp_number = ? AND deleted_at IS NULL'  ).bind(rfpNumber).all();
 
   if (!header.length) {
     return json({ error: 'RFP not found' }, 404);
+  }
+
+  // Access control: only submitter or admin can view
+  const requestEmail = getRequestEmail(request);
+  if (requestEmail) {
+    const rfpOwner = (header[0].submitter_email || '').toLowerCase();
+    const isOwner = requestEmail === rfpOwner;
+
+    if (!isOwner) {
+      // Check if user is admin/super_user
+      const { results: userRow } = await env.DB.prepare(
+        'SELECT user_roles FROM user_data WHERE LOWER(user_email) = ?'
+      ).bind(requestEmail).all();
+      let isAdmin = false;
+      if (userRow.length) {
+        try {
+          const roles = JSON.parse(userRow[0].user_roles || '["user"]');
+          isAdmin = roles.includes('admin') || roles.includes('super_user');
+        } catch (e) {}
+      }
+      if (!isAdmin) {
+        return json({ error: 'Access denied' }, 403);
+      }
+    }
   }
 
   const { results: lineItems } = await env.DB.prepare(
