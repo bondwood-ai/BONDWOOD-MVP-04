@@ -834,6 +834,88 @@
         .type-selector .cs-display { padding: 0.5rem 0.75rem; font-size: 0.85rem; min-width: 240px; }
         .type-selector .cs-wrap { flex-shrink: 0; }
 
+        /* ═══════════════════════════════════════ */
+        /* ═══ SPLIT LAYOUT                    ═══ */
+        /* ═══════════════════════════════════════ */
+        body { padding: 0; padding-bottom: 0; }
+
+        .split-chip {
+            display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            padding: 0.2rem 0.55rem; border-radius: 100px;
+            background: var(--pale-accent); color: var(--secondary-hex);
+        }
+
+        .split-body {
+            display: grid; grid-template-columns: 360px 1fr;
+            min-height: calc(100vh - 60px);
+        }
+        .split-left {
+            border-right: 1px solid var(--border-color); padding: 1.5rem 1.25rem;
+            display: flex; flex-direction: column; gap: 1.25rem;
+            overflow-y: auto; background: var(--card-bg);
+            max-height: calc(100vh - 60px); position: sticky; top: 60px;
+        }
+        .split-right {
+            padding: 1.5rem 1.75rem; overflow-y: auto; background: var(--bg-color);
+        }
+
+        .split-sec-label {
+            font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 0.75rem;
+        }
+        .split-divider { height: 1px; background: var(--border-color); }
+        .split-kv { display: flex; flex-direction: column; gap: 0; }
+        .split-kv-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.55rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+        }
+        .split-kv-row:last-child { border-bottom: none; }
+        .split-kv-key { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; flex-shrink: 0; margin-right: 0.75rem; }
+        .split-kv-val { text-align: right; max-width: 62%; }
+        .split-kv-val input, .split-kv-val select, .split-kv-val .cs-wrap {
+            font-size: 0.8rem; padding: 0.35rem 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 5px; font-family: 'Inter', sans-serif; width: 100%;
+            background: var(--field-bg); color: var(--text-primary);
+        }
+        .split-kv-val input:focus, .split-kv-val select:focus { outline: none; border-color: var(--secondary-hex); }
+        .split-kv-val input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; font-size: 0.78rem; color: var(--text-secondary); }
+        .split-kv-val .cs-display { padding: 0.35rem 0.5rem; font-size: 0.8rem; min-width: unset; }
+
+        .split-address-row { flex-direction: column; align-items: stretch; }
+        .split-address-row textarea {
+            width: 100%; min-height: 50px; padding: 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 5px; font-size: 0.78rem; font-family: 'Inter', sans-serif;
+            resize: vertical; background: var(--field-bg); color: var(--text-primary); margin-top: 0.35rem;
+        }
+        .split-address-row textarea:focus { outline: none; border-color: var(--secondary-hex); }
+        .split-address-row textarea[readonly] { background: var(--readonly-bg); color: var(--text-secondary); cursor: not-allowed; }
+
+        /* Override type-selector in split layout */
+        .split-left .type-selector {
+            margin-bottom: 0; gap: 0; display: flex; flex-direction: column;
+        }
+        .split-left .type-selector label { display: none; }
+        .split-left .type-selector select { min-width: unset; width: 100%; font-size: 0.8rem; padding: 0.35rem 0.5rem; }
+
+        /* Override attachments button in split layout */
+        .split-left .attachments-trigger-btn {
+            padding: 0.6rem 0.75rem; font-size: 0.78rem; border-radius: 6px;
+        }
+        .split-left .attachments-trigger-btn svg { width: 16px; height: 16px; }
+
+        /* Responsive: collapse split on small screens */
+        @media (max-width: 900px) {
+            .split-body { grid-template-columns: 1fr; }
+            .split-left { max-height: none; position: static; border-right: none; border-bottom: 1px solid var(--border-color); }
+        }
+
+        /* Print: hide split chrome */
+        @media print {
+            .split-body { display: block; }
+            .split-left { display: none; }
+            .split-right { padding: 1rem; }
+        }
+
     </style>
 
     <script>
@@ -915,7 +997,7 @@
     </select>
 
     <!-- ============ HEADER BANNER ============ -->
-    <div id="headerBanner" style="background:var(--primary-hex, #000);margin:-1rem -1rem 1rem -1rem;padding:0.75rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
+    <div id="headerBanner" style="background:var(--primary-hex, #000);padding:0.75rem 2rem 0 2rem;position:sticky;top:0;z-index:100;">
         <div style="display:flex;justify-content:space-between;align-items:center;max-width:100%;padding-bottom:0.75rem;">
             <div style="display:flex;align-items:center;gap:0.75rem;">
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
@@ -927,66 +1009,109 @@
         <div id="bannerAccent" style="height:4px;background:var(--secondary-hex, #0728eb);margin:0 -2rem;"></div>
     </div>
 
-    <!-- ============ MAIN CONTENT ============ -->
-    <main class="main-content">
-        <h2 class="page-title">Request for Payment Form</h2>
-
-        <div class="form-content-wrapper">
-        <!-- Request Details -->
-                <!-- RFP Number -->
-                <div class="rfp-number-row" id="rfpNumberRow" style="display:none;">
-                    <label>RFP No.</label>
-                    <span id="rfpNumber"></span>
+    <!-- ============ SPLIT BODY ============ -->
+    <div class="split-body">
+        <!-- ═══ LEFT PANEL ═══ -->
+        <aside class="split-left">
+            <!-- RFP number + status (shown when editing existing) -->
+            <div id="rfpNumberRow" style="display:none;margin-bottom:0.25rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-family:'Inter',monospace;font-size:0.82rem;font-weight:600;color:var(--text-primary);letter-spacing:0.03em;" id="rfpNumber"></span>
+                    <span class="split-chip" id="statusChip">Draft</span>
                 </div>
+            </div>
 
-                <!-- Request Type -->
-                <div class="type-selector" id="typeSelectorRow">
-                    <label for="requestTypeSelect">Request Type</label>
-                    <select id="requestTypeSelect" onchange="selectType(this.value)">
-                        <option value="vendor">Vendor Payment</option>
-                        <option value="reimbursement">Employee Reimbursement</option>
-                    </select>
-                </div>
-
-                <!-- Vendor Section -->
-                <div class="vendor-section" id="vendorSection">
-                    <div class="cell header-cell">Vendor Name</div>
-                    <div class="cell header-cell">Vendor Number</div>
-                    <div class="cell">
-                        <div class="vendor-autocomplete">
-                            <input type="text" id="vendorName" placeholder="Search vendor name..." autocomplete="off">
-                            <div class="vendor-dropdown" id="vendorNameDropdown"></div>
+            <div>
+                <div class="split-sec-label">Payment Info</div>
+                <div class="split-kv">
+                    <div class="split-kv-row">
+                        <span class="split-kv-key">Request Type</span>
+                        <div class="split-kv-val" style="max-width:65%;">
+                            <div class="type-selector" id="typeSelectorRow">
+                                <select id="requestTypeSelect" onchange="selectType(this.value)">
+                                    <option value="vendor">Vendor Payment</option>
+                                    <option value="reimbursement">Employee Reimbursement</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="cell">
-                        <div class="vendor-autocomplete">
-                            <input type="text" id="vendorNumber" placeholder="—" readonly autocomplete="off">
-                            <div class="vendor-dropdown" id="vendorNumberDropdown"></div>
+                </div>
+            </div>
+
+            <!-- Vendor Section (key-value layout) -->
+            <div id="vendorSection">
+                <div class="split-kv">
+                    <div class="split-kv-row">
+                        <span class="split-kv-key">Vendor Name</span>
+                        <div class="split-kv-val" style="max-width:65%;">
+                            <div class="vendor-autocomplete">
+                                <input type="text" id="vendorName" placeholder="Search vendor..." autocomplete="off">
+                                <div class="vendor-dropdown" id="vendorNameDropdown"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="cell header-cell" style="grid-column:1/-1;">Remit-To Address</div>
-                    <div class="cell" style="grid-column:1/-1;">
+                    <div class="split-kv-row">
+                        <span class="split-kv-key">Vendor #</span>
+                        <div class="split-kv-val" style="max-width:65%;">
+                            <div class="vendor-autocomplete">
+                                <input type="text" id="vendorNumber" placeholder="—" readonly autocomplete="off">
+                                <div class="vendor-dropdown" id="vendorNumberDropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="split-kv-row split-address-row">
+                        <span class="split-kv-key">Remit-To Address</span>
                         <textarea id="vendorAddress" placeholder="—" readonly></textarea>
                     </div>
                 </div>
 
-                <!-- Employee Reimbursement Section (hidden by default) -->
-                <div class="vendor-section" id="employeeSection" style="display:none;">
-                    <div class="cell header-cell">Employee Name</div>
-                    <div class="cell header-cell">Employee ID</div>
-                    <div class="cell">
-                        <input type="text" id="employeeName" placeholder="Employee name">
+            </div>
+
+            <!-- Employee Section (hidden by default) -->
+            <div id="employeeSection" style="display:none;">
+                <div class="split-kv">
+                    <div class="split-kv-row">
+                        <span class="split-kv-key">Employee Name</span>
+                        <div class="split-kv-val" style="max-width:65%;">
+                            <input type="text" id="employeeName" placeholder="Employee name">
+                        </div>
                     </div>
-                    <div class="cell">
-                        <input type="text" id="employeeId" placeholder="e.g. EMP-1234">
+                    <div class="split-kv-row">
+                        <span class="split-kv-key">Employee ID</span>
+                        <div class="split-kv-val" style="max-width:65%;">
+                            <input type="text" id="employeeId" placeholder="e.g. EMP-1234">
+                        </div>
                     </div>
                 </div>
-
-        <!-- Line Items -->
-        <div style="margin-bottom:1.5rem;" id="lineItemsContainer">
-            <div style="margin-bottom:0.75rem;">
-                <h3 style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Item Detail</h3>
             </div>
+
+            <div class="split-divider"></div>
+
+            <!-- Notes -->
+            <div>
+                <div class="split-sec-label">Notes</div>
+                <textarea id="description" placeholder="Payment notes..." oninput="autoResize(this)" style="width:100%;min-height:60px;padding:0.5rem;border:1px solid var(--border-color);border-radius:5px;font-family:inherit;font-size:0.8rem;resize:vertical;background:var(--field-bg);color:var(--text-primary);outline:none;"></textarea>
+            </div>
+
+            <div class="split-divider"></div>
+
+            <!-- Attachments -->
+            <div>
+                <div class="split-sec-label">Attachments</div>
+                <button class="attachments-trigger-btn" onclick="openAttachmentsModal()" style="font-size:0.78rem;padding:0.6rem 0.75rem;border-radius:6px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    Attachments <span class="att-badge" id="attBadge" style="display:none;">0</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ═══ RIGHT PANEL ═══ -->
+        <main class="split-right">
+            <!-- Line Items -->
+            <div id="lineItemsContainer" style="margin-bottom:1.5rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <h3 style="font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700;color:var(--text-primary);">Line Items</h3>
+                </div>
 
                 <!-- Row Actions -->
                 <div class="row-actions-toolbar" id="rowActionsToolbar">
@@ -1038,10 +1163,10 @@
                         </div>
                     </div>
                 </div>
-        </div>
+            </div>
 
-        <!-- Mileage Reimbursement Section -->
-        <div class="mileage-section" id="mileageSection" style="margin-bottom:1.25rem;">
+            <!-- Mileage Reimbursement Section -->
+            <div class="mileage-section" id="mileageSection" style="margin-bottom:1.25rem;">
                 <div class="mileage-check-row">
                     <input type="checkbox" id="mileageCheck" onchange="toggleMileageTable()">
                     <label for="mileageCheck">Submit Business Mileage</label>
@@ -1093,154 +1218,132 @@
                         </div>
                     </div>
                 </div>
-        </div>
-
-        <!-- Notes -->
-        <div class="form-container">
-            <div class="section-header">
-                <span>Notes</span>
             </div>
-            <textarea id="description" placeholder="Enter any notes about this payment..." oninput="autoResize(this)" style="width:100%;min-height:80px;padding:1.25rem;border:none;border-radius:0;font-family:inherit;font-size:0.9rem;resize:vertical;background:transparent;color:var(--text-primary);outline:none;display:block;box-sizing:border-box;"></textarea>
-        </div>
 
-        <!-- Attachments -->
-        <div style="margin-bottom:1.5rem;">
-            <button class="attachments-trigger-btn" onclick="openAttachmentsModal()">
-                <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                Attachments <span class="att-badge" id="attBadge" style="display:none;">0</span>
-            </button>
-        </div>
+            <!-- Submit Buttons -->
+            <div class="button-container" id="draftButtons">
+                <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
+                <button class="btn btn-save" onclick="saveDraft()">Save Draft</button>
+                <button class="btn btn-submit" onclick="submitForm()">Submit for Approval</button>
+            </div>
+            <div class="button-container" id="approvalButtons" style="display:none;">
+                <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
+                <button class="btn btn-reject-form" onclick="openFormRejectModal()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    Reject
+                </button>
+                <button class="btn btn-approve-form" onclick="approveFormRFP()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+                    Approve
+                </button>
+            </div>
+            <div class="button-container" id="approvedButtons" style="display:none;">
+                <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
+                <button class="btn btn-audit" onclick="printFormRFP()" style="background:var(--primary-hex);color:var(--accent-text-color);border:none;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Print RFP
+                </button>
+            </div>
 
-        <div id="attachments-modal">
-            <div class="att-modal-content">
-                <div class="att-modal-header">
-                    <h3>
-                        Attachments<span class="att-rfp-label" id="attRfpLabel"></span>
-                    </h3>
-                    <button class="att-close-btn" onclick="closeAttachmentsModal()">&times;</button>
+        </main>
+    </div><!-- /split-body -->
+
+    <!-- ============ MODALS (unchanged) ============ -->
+    <div id="attachments-modal">
+        <div class="att-modal-content">
+            <div class="att-modal-header">
+                <h3>
+                    Attachments<span class="att-rfp-label" id="attRfpLabel"></span>
+                </h3>
+                <button class="att-close-btn" onclick="closeAttachmentsModal()">&times;</button>
+            </div>
+            <div class="att-drop-zone" id="attDropZone"
+                 onclick="document.getElementById('attachmentInput').click()"
+                 ondragover="event.preventDefault();this.classList.add('dragover')"
+                 ondragleave="this.classList.remove('dragover')"
+                 ondrop="event.preventDefault();this.classList.remove('dragover');handleAttachmentDrop(event)">
+                <div class="att-drop-icon">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 </div>
-                <div class="att-drop-zone" id="attDropZone"
-                     onclick="document.getElementById('attachmentInput').click()"
+                <p class="att-drop-main">Drop files here or click to browse</p>
+                <p class="att-drop-hint">.pdf, .docx, .xlsx, .png, .jpeg, .html</p>
+                <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx,.html" style="display:none;" onchange="handleAttachmentSelect(event)">
+            </div>
+            <div class="att-progress" id="attProgress">
+                <div class="att-progress-track"><div class="att-progress-fill" id="attProgressBar"></div></div>
+                <span class="att-progress-text" id="attProgressText">Uploading...</span>
+            </div>
+            <div id="attSuccessBanner" style="display:none;margin-bottom:0.75rem;padding:0.6rem 1rem;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:0.8rem;font-weight:600;color:#166534;text-align:center;display:none;align-items:center;justify-content:center;gap:0.4rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="#166534" stroke-width="2.5" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
+                <span id="attSuccessText"></span>
+            </div>
+            <div class="att-file-list" id="attachmentsList"></div>
+        </div>
+    </div>
+
+    <!-- Import XLSX Modal -->
+    <div id="import-modal">
+        <div class="import-modal-box">
+            <div class="att-modal-header">
+                <h3>Import Line Items</h3>
+                <button class="att-close-btn" onclick="closeImportFileModal()">&times;</button>
+            </div>
+            <div style="padding:0 1.75rem;">
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to populate line items. Headers are auto-detected. If no headers, columns must be in this order:</p>
+                <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:0.01em;">Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
+                <div class="att-drop-zone" id="importDropZone"
+                     onclick="document.getElementById('importFileInput').click()"
                      ondragover="event.preventDefault();this.classList.add('dragover')"
                      ondragleave="this.classList.remove('dragover')"
-                     ondrop="event.preventDefault();this.classList.remove('dragover');handleAttachmentDrop(event)">
+                     ondrop="event.preventDefault();this.classList.remove('dragover');handleImportDrop(event)">
                     <div class="att-drop-icon">
                         <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     </div>
-                    <p class="att-drop-main">Drop files here or click to browse</p>
-                    <p class="att-drop-hint">.pdf, .docx, .xlsx, .png, .jpeg, .html</p>
-                    <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx,.html" style="display:none;" onchange="handleAttachmentSelect(event)">
+                    <p class="att-drop-main">Drop your file here or <span style="color:var(--primary-hex);font-weight:600;">browse</span></p>
+                    <p class="att-drop-hint">.xlsx, .xls, .csv</p>
+                    <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFileSelect(event)">
                 </div>
-                <div class="att-progress" id="attProgress">
-                    <div class="att-progress-track"><div class="att-progress-fill" id="attProgressBar"></div></div>
-                    <span class="att-progress-text" id="attProgressText">Uploading...</span>
-                </div>
-                <div id="attSuccessBanner" style="display:none;margin-bottom:0.75rem;padding:0.6rem 1rem;background:#ecfdf5;border:1px solid #86efac;border-radius:8px;font-size:0.8rem;font-weight:600;color:#166534;text-align:center;display:none;align-items:center;justify-content:center;gap:0.4rem;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="#166534" stroke-width="2.5" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
-                    <span id="attSuccessText"></span>
-                </div>
-                <div class="att-file-list" id="attachmentsList"></div>
+                <div id="importFilePreview" style="display:none;" class="att-file-list"></div>
+            </div>
+            <div class="import-modal-footer">
+                <button class="import-btn-cancel" onclick="closeImportFileModal()">Cancel</button>
+                <button class="import-btn-confirm" id="importConfirmBtn" disabled onclick="executeImport()">Import</button>
             </div>
         </div>
+    </div>
 
-        <!-- Import XLSX Modal -->
-        <div id="import-modal">
-            <div class="import-modal-box">
-                <div class="att-modal-header">
-                    <h3>Import Line Items</h3>
-                    <button class="att-close-btn" onclick="closeImportFileModal()">&times;</button>
-                </div>
-                <div style="padding:0 1.75rem;">
-                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to populate line items. Headers are auto-detected. If no headers, columns must be in this order:</p>
-                    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:0.01em;">Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
-                    <div class="att-drop-zone" id="importDropZone"
-                         onclick="document.getElementById('importFileInput').click()"
-                         ondragover="event.preventDefault();this.classList.add('dragover')"
-                         ondragleave="this.classList.remove('dragover')"
-                         ondrop="event.preventDefault();this.classList.remove('dragover');handleImportDrop(event)">
-                        <div class="att-drop-icon">
-                            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        </div>
-                        <p class="att-drop-main">Drop your file here or <span style="color:var(--primary-hex);font-weight:600;">browse</span></p>
-                        <p class="att-drop-hint">.xlsx, .xls, .csv</p>
-                        <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFileSelect(event)">
-                    </div>
-                    <div id="importFilePreview" style="display:none;" class="att-file-list"></div>
-                </div>
-                <div class="import-modal-footer">
-                    <button class="import-btn-cancel" onclick="closeImportFileModal()">Cancel</button>
-                    <button class="import-btn-confirm" id="importConfirmBtn" disabled onclick="executeImport()">Import</button>
-                </div>
+    <!-- Capture Invoice Modal -->
+    <div id="captureInvoiceModal" onclick="if(event.target===this)closeCaptureInvoiceModal()">
+        <div class="capture-modal-box">
+            <div class="capture-modal-header">
+                <h3>
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Capture Invoice
+                </h3>
+                <button class="att-close-btn" onclick="closeCaptureInvoiceModal()">&times;</button>
             </div>
-        </div>
-
-        <!-- Capture Invoice Modal -->
-        <div id="captureInvoiceModal" onclick="if(event.target===this)closeCaptureInvoiceModal()">
-            <div class="capture-modal-box">
-                <div class="capture-modal-header">
-                    <h3>
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        Capture Invoice
-                    </h3>
-                    <button class="att-close-btn" onclick="closeCaptureInvoiceModal()">&times;</button>
-                </div>
-                <div class="capture-modal-body">
-                    <div class="capture-notice">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
-                        <div>
-                            <p><strong>PDF files only.</strong> The invoice must be a <strong>digital PDF</strong> — not a scanned or photographed copy. Text extraction requires selectable text to read invoice data accurately.</p>
-                        </div>
-                    </div>
-                    <div class="att-drop-zone" id="captureDropZone"
-                         onclick="document.getElementById('captureInvoiceInput').click()"
-                         ondragover="event.preventDefault();this.classList.add('dragover')"
-                         ondragleave="this.classList.remove('dragover')"
-                         ondrop="event.preventDefault();this.classList.remove('dragover');handleCaptureInvoiceDrop(event)">
-                        <div class="att-drop-icon">
-                            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        </div>
-                        <p class="att-drop-main">Drop your PDF here or <span style="color:var(--primary-hex);font-weight:600;">browse</span></p>
-                        <p class="att-drop-hint">.pdf only</p>
-                        <input type="file" id="captureInvoiceInput" accept=".pdf" style="display:none;" onchange="handleCaptureInvoiceSelect(event)">
+            <div class="capture-modal-body">
+                <div class="capture-notice">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary-hex)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
+                    <div>
+                        <p><strong>PDF files only.</strong> The invoice must be a <strong>digital PDF</strong> — not a scanned or photographed copy. Text extraction requires selectable text to read invoice data accurately.</p>
                     </div>
                 </div>
+                <div class="att-drop-zone" id="captureDropZone"
+                     onclick="document.getElementById('captureInvoiceInput').click()"
+                     ondragover="event.preventDefault();this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="event.preventDefault();this.classList.remove('dragover');handleCaptureInvoiceDrop(event)">
+                    <div class="att-drop-icon">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <p class="att-drop-main">Drop your PDF here or <span style="color:var(--primary-hex);font-weight:600;">browse</span></p>
+                    <p class="att-drop-hint">.pdf only</p>
+                    <input type="file" id="captureInvoiceInput" accept=".pdf" style="display:none;" onchange="handleCaptureInvoiceSelect(event)">
+                </div>
             </div>
         </div>
-
-
-        <!-- Submit Buttons -->
-        <div class="button-container" id="draftButtons">
-            <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
-            <button class="btn btn-save" onclick="saveDraft()">Save Draft</button>
-            <button class="btn btn-submit" onclick="submitForm()">Submit for Approval</button>
-        </div>
-        <div class="button-container" id="approvalButtons" style="display:none;">
-            <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
-            <button class="btn btn-reject-form" onclick="openFormRejectModal()">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                Reject
-            </button>
-            <button class="btn btn-approve-form" onclick="approveFormRFP()">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 6L9 17l-5-5"/></svg>
-                Approve
-            </button>
-        </div>
-        <div class="button-container" id="approvedButtons" style="display:none;">
-            <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
-            <button class="btn btn-audit" onclick="printFormRFP()" style="background:var(--primary-hex);color:var(--accent-text-color);border:none;">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Print RFP
-            </button>
-        </div>
-
-        <!-- Footer -->
-        </div><!-- /form-content-wrapper -->
-        <div class="footer">
-            <div class="ownership-text">
-                <span>POWERED BY BONDWOOD</span>
-            </div>
-        </div>
-    </main>
+    </div>
 
     <!-- ============ SIGNATURE MODAL ============ -->
     <div class="sig-overlay" id="sigOverlay" onclick="if(event.target===this)closeSignatureModal()">
@@ -4186,6 +4289,13 @@
             document.getElementById('draftButtons').style.display = (!isApproval && !isApproved) ? '' : 'none';
             document.getElementById('approvalButtons').style.display = isApproval ? '' : 'none';
             document.getElementById('approvedButtons').style.display = isApproved ? '' : 'none';
+            // Update topbar status chip
+            const chip = document.getElementById('statusChip');
+            if (chip) {
+                chip.textContent = FORM_WORKFLOW_LABELS[status] || status;
+                chip.style.background = isApproved ? 'rgba(43,109,81,0.7)' : isApproval ? 'rgba(7,40,235,0.5)' : status === 'rejected' ? 'rgba(250,5,15,0.5)' : 'rgba(255,255,255,0.15)';
+                chip.style.color = '#fff';
+            }
         }
 
         function openFormRejectModal() {
