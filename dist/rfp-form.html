@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="bondwood-logo-modern-dark.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
@@ -34,7 +34,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Google Sans Flex', sans-serif;
             background: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
@@ -86,7 +86,7 @@
             width: 100%; padding: 0.65rem 0.75rem; border: none;
             background: none; color: rgba(255,255,255,0.85);
             cursor: pointer; border-radius: 6px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Google Sans Flex', sans-serif;
             font-size: 0.9rem; font-weight: 500;
             transition: all 0.15s ease; text-align: left;
             text-decoration: none; box-sizing: border-box;
@@ -111,7 +111,7 @@
         /* ============ MAIN LAYOUT ============ */
         .main-content { padding: 0; }
         .form-content-wrapper { max-width: 1100px; margin: 0 auto; }
-        .page-title { font-family: 'Inter', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem 0; }
+        .page-title { font-family: 'Google Sans Flex', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem 0; }
 
         /* ============ FORM CONTAINER ============ */
         .form-container {
@@ -132,7 +132,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Google Sans Flex', sans-serif;
             border-radius: 12px 12px 0 0;
         }
 
@@ -144,9 +144,9 @@
             display: flex; justify-content: flex-end; align-items: center;
             margin-bottom: 1.25rem; gap: 0.5rem;
         }
-        .rfp-number-row label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); font-family: 'Inter', sans-serif; }
+        .rfp-number-row label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); font-family: 'Google Sans Flex', sans-serif; }
         .rfp-number-row span {
-            font-family: 'Inter', sans-serif; font-size: 1rem;
+            font-family: 'Google Sans Flex', sans-serif; font-size: 1rem;
             color: var(--text-primary); font-weight: 400;
             letter-spacing: 0.05em;
             background: var(--readonly-bg); padding: 0.45rem 0.85rem;
@@ -155,10 +155,10 @@
 
         /* ============ REQUEST TYPE ============ */
         .type-selector { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
-        .type-selector label { font-weight: 600; font-size: 0.85rem; font-family: 'Inter', sans-serif; color: var(--text-primary); white-space: nowrap; }
+        .type-selector label { font-weight: 600; font-size: 0.85rem; font-family: 'Google Sans Flex', sans-serif; color: var(--text-primary); white-space: nowrap; }
         .type-selector select {
             padding: 0.5rem 2rem 0.5rem 0.75rem; border: 1px solid var(--border-color);
-            border-radius: 6px; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+            border-radius: 6px; font-size: 0.85rem; font-family: 'Google Sans Flex', sans-serif;
             background: var(--field-bg); color: var(--text-primary); cursor: pointer;
             appearance: auto; min-width: 240px;
         }
@@ -185,7 +185,7 @@
         .vendor-dropdown-item:last-child { border-bottom: none; }
         .vendor-dropdown-item:hover, .vendor-dropdown-item.active { background: color-mix(in srgb, var(--primary-hex) 8%, var(--card-bg)); }
         .vendor-dropdown-item .vd-name { font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
-        .vendor-dropdown-item .vd-code { font-size: 0.72rem; color: var(--text-secondary); font-family: 'Inter', sans-serif; flex-shrink: 0; background: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.02em; }
+        .vendor-dropdown-item .vd-code { font-size: 0.72rem; color: var(--text-secondary); font-family: 'Google Sans Flex', sans-serif; flex-shrink: 0; background: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.02em; }
         .vendor-dropdown-empty { padding: 0.6rem 0.75rem; font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
         .input-error { border-color: #FA050F !important; box-shadow: 0 0 0 2px rgba(250, 5, 15, 0.15) !important; }
         /* ============ CUSTOM DATE PICKER ============ */
@@ -193,7 +193,7 @@
             position: fixed; z-index: 10000; display: none;
             background: var(--card-bg); border: 1px solid var(--border-color);
             border-radius: 10px; box-shadow: 0 12px 36px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
-            width: 280px; font-family: 'Inter', sans-serif;
+            width: 280px; font-family: 'Google Sans Flex', sans-serif;
             padding: 0.75rem; user-select: none;
         }
         .bw-datepicker.open { display: block; }
@@ -208,7 +208,7 @@
         .bw-dp-header button:hover { background: var(--bg-color); }
         .bw-dp-month-label {
             font-size: 0.88rem; font-weight: 700; color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Google Sans Flex', sans-serif;
         }
         .bw-dp-weekdays {
             display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
@@ -225,7 +225,7 @@
             font-size: 0.78rem; font-weight: 500; padding: 0.35rem 0;
             border-radius: 6px; cursor: pointer; color: var(--text-primary);
             transition: background 0.12s, color 0.12s;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Google Sans Flex', sans-serif;
         }
         .bw-dp-day:hover { background: var(--bg-color); }
         .bw-dp-day.today { font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--primary-hex); }
@@ -237,7 +237,7 @@
             margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);
         }
         .bw-dp-footer button {
-            background: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+            background: none; border: none; cursor: pointer; font-family: 'Google Sans Flex', sans-serif;
             font-size: 0.72rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;
         }
         .bw-dp-clear { color: var(--text-secondary); }
@@ -248,7 +248,7 @@
         .vendor-error-msg {
             grid-column: 1 / -1; padding: 0.5rem 1rem; font-size: 0.78rem; color: #FA050F;
             background: rgba(250, 5, 15, 0.06); display: none;
-            font-weight: 500; font-family: 'Inter', sans-serif;
+            font-weight: 500; font-family: 'Google Sans Flex', sans-serif;
         }
 
         /* ============ BUDGET CODE AUTOCOMPLETE ============ */
@@ -267,7 +267,7 @@
         .bc-dropdown.open { display: block; }
         .bc-dropdown-item {
             padding: 0.4rem 0.6rem; cursor: pointer; font-size: 0.8rem;
-            font-family: 'Inter', sans-serif; letter-spacing: 0.03em;
+            font-family: 'Google Sans Flex', sans-serif; letter-spacing: 0.03em;
             border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
             color: var(--text-primary);
         }
@@ -278,7 +278,7 @@
         .bc-dropdown-item .bc-match { font-weight: 700; color: var(--secondary-hex); }
         .bc-dropdown-empty {
             padding: 0.45rem 0.6rem; font-size: 0.75rem; color: var(--text-secondary);
-            text-align: center; font-family: 'Inter', sans-serif;
+            text-align: center; font-family: 'Google Sans Flex', sans-serif;
         }
         .bc-error {
             border-color: #FA050F !important;
@@ -291,7 +291,7 @@
         .bc-error-tooltip {
             position: absolute; bottom: calc(100% + 32px); left: 0; right: 0;
             background: #FA050F; color: #fff; font-size: 0.68rem; padding: 0.25rem 0.5rem;
-            border-radius: 4px; font-family: 'Inter', sans-serif; font-weight: 500;
+            border-radius: 4px; font-family: 'Google Sans Flex', sans-serif; font-weight: 500;
             text-align: center; white-space: nowrap; z-index: 150; pointer-events: none;
         }
         .bc-error-tooltip::after {
@@ -318,7 +318,7 @@
             background: rgba(220, 38, 38, 0.88); color: #fff; backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             padding: 0.55rem 1.25rem; border-radius: 10px;
-            font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600;
+            font-family: 'Google Sans Flex', sans-serif; font-size: 0.8rem; font-weight: 600;
             display: flex; align-items: center; gap: 0.5rem;
             z-index: 99999; pointer-events: none;
             box-shadow: 0 8px 24px rgba(0,0,0,0.2);
@@ -337,7 +337,7 @@
         .vendor-section .cell { padding: 0.75rem 1rem; }
         .vendor-section .cell.header-cell {
             background: var(--primary-hex); color: var(--accent-text-color);
-            font-weight: 600; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+            font-weight: 600; font-size: 0.85rem; font-family: 'Google Sans Flex', sans-serif;
         }
         .vendor-section .cell.header-cell:first-child { border-radius: 12px 0 0 0; }
         .vendor-section .cell.header-cell:nth-child(2) { border-radius: 0 12px 0 0; }
@@ -385,7 +385,7 @@
             background: var(--primary-hex); color: var(--accent-text-color);
             padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
             font-size: 0.8rem; letter-spacing: 0.01em;
-            white-space: nowrap; font-family: 'Inter', sans-serif;
+            white-space: nowrap; font-family: 'Google Sans Flex', sans-serif;
         }
         .items-table thead tr th:first-child { border-radius: 8px 0 0 0; }
         .items-table thead tr th:last-child { border-radius: 0 8px 0 0; }
@@ -442,7 +442,7 @@
         .add-row-btn {
             display: inline-flex; align-items: center; gap: 6px;
             background: var(--primary-hex); color: var(--accent-text-color); border: none;
-            padding: 0.45rem 1rem; border-radius: 6px; font-family: 'Inter', sans-serif;
+            padding: 0.45rem 1rem; border-radius: 6px; font-family: 'Google Sans Flex', sans-serif;
             font-weight: 600; font-size: 0.8rem; cursor: pointer;
         }
         .add-row-btn:hover { opacity: 0.85; }
@@ -451,7 +451,7 @@
             display: grid; grid-template-columns: 140px 160px;
             gap: 0.5rem; margin-bottom: 0.35rem; align-items: center;
         }
-        .total-row label { text-align: right; font-weight: 600; font-size: 0.85rem; font-family: 'Inter', sans-serif; }
+        .total-row label { text-align: right; font-weight: 600; font-size: 0.85rem; font-family: 'Google Sans Flex', sans-serif; }
         .total-row input {
             padding: 0.4rem 0.6rem; border: 1px solid var(--border-color);
             border-radius: 6px; font-family: inherit; font-size: 0.9rem;
@@ -476,7 +476,7 @@
         }
         .mileage-check-row input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 11px; background-position: center; background-repeat: no-repeat; }
         .mileage-check-row input[type="checkbox"]:hover { border-color: var(--primary-hex); }
-        .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; }
         .mileage-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
         .mileage-table {
             width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px;
@@ -497,7 +497,7 @@
             background: var(--primary-hex); color: var(--accent-text-color);
             padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
             font-size: 0.8rem; letter-spacing: 0.01em;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Google Sans Flex', sans-serif;
         }
         .mileage-table td {
             padding: 0.35rem; border-bottom: 1px solid var(--border-color); position: relative;
@@ -536,7 +536,7 @@
             display: flex; align-items: center; justify-content: center; gap: 0.75rem;
             width: 100%; padding: 1rem; background: var(--primary-hex);
             color: var(--accent-text-color); border: none;
-            border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 1rem;
+            border-radius: 8px; font-family: 'Google Sans Flex', sans-serif; font-size: 1rem;
             font-weight: 600; cursor: pointer; transition: all 0.2s; position: relative;
         }
         .attachments-trigger-btn:hover { opacity: 0.9; }
@@ -562,13 +562,13 @@
             padding: 1.25rem 1.75rem; margin-top: 1.25rem;
         }
         .import-btn-cancel {
-            padding: 0.55rem 1.25rem; border-radius: 6px; font-family: 'Inter', sans-serif;
+            padding: 0.55rem 1.25rem; border-radius: 6px; font-family: 'Google Sans Flex', sans-serif;
             font-weight: 600; font-size: 0.85rem; cursor: pointer;
             background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);
         }
         .import-btn-cancel:hover { background: var(--bg-color); }
         .import-btn-confirm {
-            padding: 0.55rem 1.25rem; border-radius: 6px; font-family: 'Inter', sans-serif;
+            padding: 0.55rem 1.25rem; border-radius: 6px; font-family: 'Google Sans Flex', sans-serif;
             font-weight: 600; font-size: 0.85rem; cursor: pointer;
             background: var(--primary-hex); border: none; color: var(--accent-text-color);
         }
@@ -598,12 +598,12 @@
         }
         .success-icon { width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: #2B6D51; display: flex; align-items: center; justify-content: center; }
         .success-icon svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.5; fill: none; }
-        .success-modal-title { font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; }
+        .success-modal-title { font-family: 'Google Sans Flex', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; }
         .success-modal-sub { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
-        .success-modal-rfp { font-family: 'Inter', sans-serif; font-weight: 700; color: var(--primary-hex); }
+        .success-modal-rfp { font-family: 'Google Sans Flex', sans-serif; font-weight: 700; color: var(--primary-hex); }
         .success-modal-actions { display: flex; gap: 0.75rem; }
         .success-modal-actions button {
-            flex: 1; padding: 0.65rem 1rem; border-radius: 8px; font-family: 'Inter', sans-serif;
+            flex: 1; padding: 0.65rem 1rem; border-radius: 8px; font-family: 'Google Sans Flex', sans-serif;
             font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
         }
         .success-btn-secondary {
@@ -679,7 +679,7 @@
         }
         .btn {
             padding: 0.65rem 1.5rem; border: none; border-radius: 6px;
-            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.9rem;
+            font-family: 'Google Sans Flex', sans-serif; font-weight: 600; font-size: 0.9rem;
             cursor: pointer; transition: all 0.2s; display: inline-flex;
             align-items: center; justify-content: center; gap: 6px;
         }
@@ -700,7 +700,7 @@
             padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.2);
             color: var(--accent-text-color); border: 1px solid rgba(255,255,255,0.3);
             border-radius: 5px; font-size: 0.75rem; font-weight: 600;
-            cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+            cursor: pointer; font-family: 'Google Sans Flex', sans-serif; transition: all 0.15s;
         }
         .btn-primary-sm:hover { background: rgba(255,255,255,0.3); }
         .btn-primary-sm svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; }
@@ -709,7 +709,7 @@
             padding: 0.35rem 0.75rem; background: #d1d5db;
             color: #000; border: 1px solid #d1d5db;
             border-radius: 5px; font-size: 0.75rem; font-weight: 600;
-            cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+            cursor: pointer; font-family: 'Google Sans Flex', sans-serif; transition: all 0.15s;
             -webkit-appearance: none; appearance: none; color-scheme: light;
         }
         .btn-primary-sm-alt:hover { background: #9ca3af; }
@@ -717,7 +717,7 @@
 
         /* ============ FOOTER ============ */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0.5rem 0; background: var(--bg-color); z-index: 100; }
-        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Inter', sans-serif; }
+        .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Google Sans Flex', sans-serif; }
 
         /* ============ PDF POPUP OVERLAY ============ */
         .pdf-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 10001; }
@@ -746,15 +746,15 @@
             display: flex; justify-content: space-between; align-items: center;
             padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
         }
-        .sig-modal-header h3 { font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+        .sig-modal-header h3 { font-family: 'Google Sans Flex', sans-serif; font-size: 1rem; font-weight: 600; color: var(--text-primary); }
         .sig-modal-header button { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 0.25rem; border-radius: 4px; }
         .sig-modal-header button:hover { background: var(--bg-color); color: var(--text-primary); }
         .sig-modal-header button svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
         .sig-modal-body { padding: 1.5rem 1.25rem; }
-        .sig-modal-body label { display: block; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        .sig-modal-body label { display: block; font-family: 'Google Sans Flex', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
         .sig-modal-body input {
             width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border-color);
-            border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 0.95rem;
+            border-radius: 6px; font-family: 'Google Sans Flex', sans-serif; font-size: 0.95rem;
             background: var(--field-bg); color: var(--text-primary);
         }
         .sig-modal-body input:focus { outline: none; border-color: var(--secondary-hex); }
@@ -777,13 +777,13 @@
         }
         .sig-modal-footer .btn-cancel {
             padding: 0.55rem 1.25rem; background: var(--card-bg); color: var(--text-primary);
-            border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Inter', sans-serif;
+            border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Google Sans Flex', sans-serif;
             font-weight: 600; font-size: 0.85rem; cursor: pointer;
         }
         .sig-modal-footer .btn-cancel:hover { background: var(--bg-color); }
         .sig-modal-footer .btn-confirm {
             padding: 0.55rem 1.25rem; background: var(--primary-hex); color: var(--accent-text-color);
-            border: none; border-radius: 6px; font-family: 'Inter', sans-serif;
+            border: none; border-radius: 6px; font-family: 'Google Sans Flex', sans-serif;
             font-weight: 600; font-size: 0.85rem; cursor: pointer;
         }
         .sig-modal-footer .btn-confirm:hover { opacity: 0.9; }
@@ -817,14 +817,14 @@
         }
         /* ============ CUSTOM SELECT ============ */
         .cs-wrap { position: relative; display: inline-block; }
-        .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #ffffff; color: #000000; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; user-select: none; }
+        .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #ffffff; color: #000000; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; white-space: nowrap; user-select: none; }
         .cs-display:hover { border-color: var(--text-secondary); }
         .cs-text { overflow: hidden; text-overflow: ellipsis; }
         .cs-arrow { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
         .cs-wrap.open .cs-arrow { transform: rotate(180deg); }
         .cs-options { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; display: none; overflow-y: auto; max-height: 260px; padding: 4px 0; }
         .cs-wrap.open .cs-options { display: block; }
-        .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Inter', sans-serif; color: #000000; white-space: nowrap; border-radius: 4px; margin: 0 4px; }
+        .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; color: #000000; white-space: nowrap; border-radius: 4px; margin: 0 4px; }
         .cs-option:hover { background: color-mix(in srgb, var(--primary-hex) 10%, transparent); }
         .cs-option.selected { font-weight: 600; background: color-mix(in srgb, var(--primary-hex) 14%, transparent); }
         body.dark-mode .cs-display { background: #1a1a1a; color: #ffffff; border-color: var(--border-color); }
@@ -862,7 +862,7 @@
     <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
         <div style="padding:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Inter',sans-serif;">Menu</h3>
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Google Sans Flex',sans-serif;">Menu</h3>
                 <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
                 </button>
@@ -925,7 +925,7 @@
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Google Sans Flex',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
         </div>
         <div id="bannerAccent" style="height:4px;background:var(--secondary-hex, #0728eb);margin:0 -2rem;"></div>
@@ -989,7 +989,7 @@
         <!-- Line Items -->
         <div style="margin-bottom:1.5rem;" id="lineItemsContainer">
             <div style="margin-bottom:0.75rem;">
-                <h3 style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Item Detail</h3>
+                <h3 style="font-family:'Google Sans Flex',sans-serif;font-size:1rem;font-weight:600;color:var(--text-primary);">Item Detail</h3>
             </div>
 
                 <!-- Row Actions -->
@@ -1061,7 +1061,7 @@
                     </div>
 
                     <div class="mileage-table-scroll">
-                        <div id="mileageErrorBanner" style="display:none;background:#fef2f2;border:1px solid #FA050F;border-radius:8px;padding:0.5rem 0.85rem;margin-bottom:0.5rem;font-size:0.82rem;font-weight:600;color:#FA050F;font-family:'Inter',sans-serif;">
+                        <div id="mileageErrorBanner" style="display:none;background:#fef2f2;border:1px solid #FA050F;border-radius:8px;padding:0.5rem 0.85rem;margin-bottom:0.5rem;font-size:0.82rem;font-weight:600;color:#FA050F;font-family:'Google Sans Flex',sans-serif;">
                         </div>
                         <table class="mileage-table">
                             <thead>
@@ -1157,7 +1157,7 @@
                 </div>
                 <div style="padding:0 1.75rem;">
                     <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">Upload a spreadsheet to populate line items. Headers are auto-detected. If no headers, columns must be in this order:</p>
-                    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:0.01em;">Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
+                    <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:1rem;font-family:'Google Sans Flex',sans-serif;font-weight:600;letter-spacing:0.01em;">Description &nbsp;·&nbsp; Invoice # &nbsp;·&nbsp; Invoice Date &nbsp;·&nbsp; Budget Code &nbsp;·&nbsp; Account &nbsp;·&nbsp; Amount</p>
                     <div class="att-drop-zone" id="importDropZone"
                          onclick="document.getElementById('importFileInput').click()"
                          ondragover="event.preventDefault();this.classList.add('dragover')"
@@ -1278,7 +1278,7 @@
     <div id="formRejectModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:9997;backdrop-filter:blur(2px);" onclick="if(event.target===this)closeFormRejectModal()">
         <div style="background:var(--card-bg);border-radius:14px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;">
             <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;">
-                <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:'Inter',sans-serif;margin:0;">Reject Request</h3>
+                <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;margin:0;">Reject Request</h3>
                 <button onclick="closeFormRejectModal()" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);display:flex;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
             </div>
             <div style="padding:1rem 1.25rem;">
@@ -1286,26 +1286,26 @@
                 <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;margin-bottom:0.5rem;">
                     <input type="radio" name="formRejectType" value="previous" style="margin-top:2px;accent-color:var(--primary-hex);" checked>
                     <div>
-                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Inter',sans-serif;">Reject to Previous Step</div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;">Reject to Previous Step</div>
                         <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;" id="formRejectPrevLabel">Returns the request to the previous workflow step.</div>
                     </div>
                 </label>
                 <label style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.75rem;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;">
                     <input type="radio" name="formRejectType" value="permanent" style="margin-top:2px;accent-color:#FA050F;">
                     <div>
-                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Inter',sans-serif;">Reject Permanently</div>
+                        <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;">Reject Permanently</div>
                         <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.15rem;">Permanently rejects the request. This cannot be undone.</div>
                     </div>
                 </label>
                 <div style="margin-top:1rem;">
-                    <label style="font-size:0.78rem;font-weight:600;color:var(--text-primary);font-family:'Inter',sans-serif;display:block;margin-bottom:0.35rem;">Reason for Rejection <span style="color:var(--negative-color);">*</span></label>
-                    <textarea id="formRejectReason" rows="3" placeholder="Enter the reason for rejecting this request..." style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:'Inter',sans-serif;font-size:0.85rem;resize:vertical;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;" oninput="document.getElementById('formRejectConfirmBtn').disabled=!this.value.trim()"></textarea>
+                    <label style="font-size:0.78rem;font-weight:600;color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;display:block;margin-bottom:0.35rem;">Reason for Rejection <span style="color:var(--negative-color);">*</span></label>
+                    <textarea id="formRejectReason" rows="3" placeholder="Enter the reason for rejecting this request..." style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:'Google Sans Flex',sans-serif;font-size:0.85rem;resize:vertical;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;" oninput="document.getElementById('formRejectConfirmBtn').disabled=!this.value.trim()"></textarea>
                     <div id="formRejectReasonError" style="font-size:0.72rem;color:var(--negative-color);margin-top:0.25rem;display:none;">A reason is required to reject a request.</div>
                 </div>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:0.5rem;padding:1rem 1.25rem;">
-                <button onclick="closeFormRejectModal()" style="padding:0.5rem 1rem;background:var(--card-bg);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;">Cancel</button>
-                <button id="formRejectConfirmBtn" onclick="confirmFormReject()" style="padding:0.5rem 1.25rem;background:var(--negative-color);color:#fff;border:none;border-radius:6px;font-family:'Inter',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;" disabled>Confirm Reject</button>
+                <button onclick="closeFormRejectModal()" style="padding:0.5rem 1rem;background:var(--card-bg);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;font-family:'Google Sans Flex',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;">Cancel</button>
+                <button id="formRejectConfirmBtn" onclick="confirmFormReject()" style="padding:0.5rem 1.25rem;background:var(--negative-color);color:#fff;border:none;border-radius:6px;font-family:'Google Sans Flex',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;" disabled>Confirm Reject</button>
             </div>
         </div>
     </div>
@@ -1316,7 +1316,7 @@
             <div style="position:relative;padding:1.5rem 1.5rem 0;border:none !important;">
                 <button onclick="closeUtilityModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);display:flex;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
                 <div id="utilityModalIcon" style="display:none;text-align:center;margin-bottom:0.75rem;"></div>
-                <h3 id="utilityModalTitle" style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:'Inter',sans-serif;margin:0;text-align:center;">Notice</h3>
+                <h3 id="utilityModalTitle" style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;margin:0;text-align:center;">Notice</h3>
             </div>
             <div style="padding:1rem 1.5rem;border:none !important;">
                 <p id="utilityModalMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.6;margin:0;"></p>
@@ -1516,11 +1516,11 @@
             modal.innerHTML = `
                 <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                     <svg viewBox="0 0 24 24" width="36" height="36" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">Unsaved Changes</div>
+                    <div style="font-family:'Google Sans Flex',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">Unsaved Changes</div>
                     <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes that will be lost if you leave this page.</div>
                     <div style="display:flex;gap:0.5rem;justify-content:center;">
-                        <button id="unsavedStayBtn" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Stay on Page</button>
-                        <button id="unsavedLeaveBtn" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color);color:#fff;font-family:'Inter',sans-serif;">Leave Without Saving</button>
+                        <button id="unsavedStayBtn" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;">Stay on Page</button>
+                        <button id="unsavedLeaveBtn" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color);color:#fff;font-family:'Google Sans Flex',sans-serif;">Leave Without Saving</button>
                     </div>
                 </div>
             `;
@@ -3173,7 +3173,7 @@
             if (!banner) {
                 banner = document.createElement('div');
                 banner.id = 'extractionBanner';
-                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:var(--secondary-hex);color:#fff;padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;font-family:"Inter",sans-serif;display:flex;align-items:center;gap:0.5rem;justify-content:center;transition:transform 0.3s ease;';
+                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:var(--secondary-hex);color:#fff;padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;font-family:"Google Sans Flex",sans-serif;display:flex;align-items:center;gap:0.5rem;justify-content:center;transition:transform 0.3s ease;';
                 document.body.appendChild(banner);
             }
             banner.innerHTML = `
@@ -3410,7 +3410,7 @@
                 overlay.innerHTML = `
                     <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                         <svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--secondary-hex)" stroke-width="2" fill="none" style="animation:spin 1s linear infinite;margin-bottom:1rem;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        <div id="uploadOverlayTitle" style="font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Uploading Attachments...</div>
+                        <div id="uploadOverlayTitle" style="font-family:'Google Sans Flex',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Uploading Attachments...</div>
                         <div id="uploadOverlayMsg" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">Please wait. Do not close or navigate away.</div>
                     </div>
                 `;
@@ -3678,10 +3678,10 @@
             modal.innerHTML = `
                 <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:440px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
                     <svg viewBox="0 0 24 24" width="36" height="36" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">${title}</div>
+                    <div style="font-family:'Google Sans Flex',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">${title}</div>
                     <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">${message}</div>
                     <div style="display:flex;gap:0.5rem;justify-content:center;">
-                        <button style="flex:1;max-width:200px;padding:0.6rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);font-family:'Inter',sans-serif;" onclick="this.closest('#validationWarningModal').remove()">Got It</button>
+                        <button style="flex:1;max-width:200px;padding:0.6rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);font-family:'Google Sans Flex',sans-serif;" onclick="this.closest('#validationWarningModal').remove()">Got It</button>
                     </div>
                 </div>
             `;
@@ -3734,7 +3734,7 @@
                 document.getElementById('utilityModalTitle').textContent = title;
                 document.getElementById('utilityModalMessage').innerHTML = `
                     <span style="display:block;margin-bottom:0.75rem;">${message}</span>
-                    <input type="text" id="utilityPromptInput" placeholder="${placeholder}" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.9rem;font-family:'Inter',sans-serif;background:var(--bg-color);color:var(--text-primary);box-sizing:border-box;">
+                    <input type="text" id="utilityPromptInput" placeholder="${placeholder}" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.9rem;font-family:'Google Sans Flex',sans-serif;background:var(--bg-color);color:var(--text-primary);box-sizing:border-box;">
                 `;
                 document.getElementById('utilityModalFooter').innerHTML = `
                     <button onclick="closeUtilityModal(null)" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);">Cancel</button>
@@ -4851,23 +4851,23 @@
             const pDoc = iframe.contentDocument || iframe.contentWindow.document;
             pDoc.open();
             pDoc.write(`<!DOCTYPE html><html><head><title>RFP #${rfpNum}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
-                body { font-family: 'Inter', sans-serif; padding: 40px; color: #222; font-size: 11px; }
+                body { font-family: 'Google Sans Flex', sans-serif; padding: 40px; color: #222; font-size: 11px; }
                 h1 { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 2px; }
-                h2 { font-family: 'Inter', sans-serif; font-size: 13px; margin: 20px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                h2 { font-family: 'Google Sans Flex', sans-serif; font-size: 13px; margin: 20px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
                 .subtitle { font-size: 10px; color: #666; margin-bottom: 16px; }
                 .header-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 20px; margin-bottom: 16px; }
-                .header-grid .label { font-family: 'Inter', sans-serif; font-size: 9px; text-transform: uppercase; color: #999; font-weight: 700; }
+                .header-grid .label { font-family: 'Google Sans Flex', sans-serif; font-size: 9px; text-transform: uppercase; color: #999; font-weight: 700; }
                 .header-grid .value { font-size: 12px; font-weight: 600; }
                 table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
-                th { font-family: 'Inter', sans-serif; background: #f5f5f5; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ddd; font-weight: 700; font-size: 10px; }
+                th { font-family: 'Google Sans Flex', sans-serif; background: #f5f5f5; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ddd; font-weight: 700; font-size: 10px; }
                 td { padding: 5px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
                 td.num { text-align: right; width: 30px; color: #999; }
                 td.amt { text-align: right; font-weight: 600; }
-                .total-row { font-family: 'Inter', sans-serif; text-align: right; font-size: 13px; font-weight: 700; padding: 8px 8px 0; border-top: 2px solid #333; }
-                .status-badge { font-family: 'Inter', sans-serif; display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #2B6D51; color: #fff; }
+                .total-row { font-family: 'Google Sans Flex', sans-serif; text-align: right; font-size: 13px; font-weight: 700; padding: 8px 8px 0; border-top: 2px solid #333; }
+                .status-badge { font-family: 'Google Sans Flex', sans-serif; display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #2B6D51; color: #fff; }
                 @media print { body { padding: 20px; } }
             </style></head><body>
             <h1>Request for Payment – #${rfpNum}</h1>
@@ -4906,14 +4906,14 @@
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             doc.open();
             doc.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
-                body { font-family: 'Inter', sans-serif; padding: 40px; color: #222; }
+                body { font-family: 'Google Sans Flex', sans-serif; padding: 40px; color: #222; }
                 h1 { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 4px; }
                 .subtitle { font-size: 11px; color: #666; margin-bottom: 20px; }
                 table { width: 100%; border-collapse: collapse; font-size: 11px; }
-                th { font-family: 'Inter', sans-serif; background: #f5f5f5; text-align: left; padding: 6px 10px; border-bottom: 2px solid #ddd; font-weight: 700; }
+                th { font-family: 'Google Sans Flex', sans-serif; background: #f5f5f5; text-align: left; padding: 6px 10px; border-bottom: 2px solid #ddd; font-weight: 700; }
                 td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
                 td.num { text-align: right; width: 30px; color: #999; font-weight: 600; }
                 td.ts { width: 150px; color: #666; font-size: 10px; }
