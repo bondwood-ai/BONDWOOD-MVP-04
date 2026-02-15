@@ -730,6 +730,10 @@
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                         Create Group
                     </button>
+                    <button class="btn-primary" onclick="openImportModal('restriction-groups')" style="margin-left:0.35rem;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import XLSX
+                    </button>
                     <span class="form-message" id="rgFormMsg"></span>
                 </div>
             </div>
@@ -739,9 +743,9 @@
                     <thead><tr>
                         <th>Name</th>
                         <th>Description</th>
-                        <th>Budget Rules</th>
-                        <th>Vendors</th>
-                        <th>Assigned Users</th>
+                        <th style="text-align:center;">Budget Rules</th>
+                        <th style="text-align:center;">Vendors</th>
+                        <th style="text-align:center;">Assigned Users</th>
                         <th class="no-sort" style="width:60px;"></th>
                     </tr></thead>
                     <tbody id="rgBody"><tr><td colspan="6" class="empty-state">Loading restriction groups...</td></tr></tbody>
@@ -944,6 +948,12 @@
                         <div class="approver-select" id="rgApproverSec3" data-field="secondary_approver_3" data-placeholder="None"></div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Assigned Users -->
+            <div class="rg-section">
+                <div class="rg-section-title">Assigned Users</div>
+                <div id="rgAssignedUsers" style="display:flex;flex-wrap:wrap;gap:0.35rem;"></div>
             </div>
         </div>
     </div>
@@ -1690,7 +1700,7 @@
 
         function openImportModal(type) {
             importType = type; importRows = [];
-            document.getElementById('importModalTitle').textContent = type === 'vendors' ? 'Import Vendors' : 'Import Budget Codes';
+            document.getElementById('importModalTitle').textContent = type === 'vendors' ? 'Import Vendors' : type === 'restriction-groups' ? 'Import Restriction Groups' : 'Import Budget Codes';
             document.getElementById('importFileName').textContent = '';
             document.getElementById('importPreview').style.display = 'none';
             document.getElementById('importPreview').innerHTML = '';
@@ -1705,6 +1715,16 @@
                         <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">
                             Upload a spreadsheet to import vendors. Headers are auto-detected; if absent, columns must be in this order:
                             <div style="margin-top:0.4rem;font-weight:600;">Vendor Number &nbsp;·&nbsp; Vendor Name &nbsp;·&nbsp; <span style="font-weight:400;color:var(--text-secondary);">Address &nbsp;·&nbsp; City &nbsp;·&nbsp; State &nbsp;·&nbsp; ZIP</span></div>
+                        </div>
+                    </div>
+                </div>`;
+            } else if (type === 'restriction-groups') {
+                guide.innerHTML = `<div style="background:color-mix(in srgb, var(--primary-hex) 8%, transparent);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);border-radius:8px;padding:0.75rem 1rem;">
+                    <div style="display:flex;align-items:flex-start;gap:0.6rem;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-hex)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
+                        <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">
+                            Columns in order: <strong>Name</strong> · <strong>Fund</strong> · <strong>Org</strong> · <strong>Program</strong> · <strong>Finance</strong> · <strong>Course</strong> · <span style="color:var(--text-secondary);">Primary Approver · Secondary 1 · Secondary 2 · Secondary 3</span> · <strong>Vendor</strong>
+                            <div style="margin-top:0.35rem;font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">Multiple rows with the same Name create one group with multiple rules/vendors. Leave B–F blank to add only a vendor restriction.</div>
                         </div>
                     </div>
                 </div>`;
@@ -1762,13 +1782,96 @@
                 if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
                 preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
-            } catch (e) { showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : 'budgetFormMsg', 'Parse error: ' + e.message, 'error'); }
+            } catch (e) { showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : importType === 'restriction-groups' ? 'rgFormMsg' : 'budgetFormMsg', 'Parse error: ' + e.message, 'error'); }
         }
 
         async function confirmImport() {
             if (!importRows.length) return;
             document.getElementById('importConfirmBtn').disabled = true;
             let success = 0, failed = 0;
+
+            if (importType === 'restriction-groups') {
+                // Group rows by name
+                const groups = {};
+                const colKeys = Object.keys(importRows[0]);
+                for (const row of importRows) {
+                    const name = String(row[colKeys[0]] || row['Name'] || row['name'] || '').trim();
+                    if (!name) { failed++; continue; }
+                    if (!groups[name]) groups[name] = { rows: [], approvers: null };
+                    groups[name].rows.push(row);
+                    if (!groups[name].approvers) {
+                        groups[name].approvers = {
+                            primary: String(row[colKeys[6]] || row['Primary Approver'] || '').trim(),
+                            sec1: String(row[colKeys[7]] || row['Secondary 1'] || '').trim(),
+                            sec2: String(row[colKeys[8]] || row['Secondary 2'] || '').trim(),
+                            sec3: String(row[colKeys[9]] || row['Secondary 3'] || '').trim()
+                        };
+                    }
+                }
+
+                for (const [name, gData] of Object.entries(groups)) {
+                    try {
+                        // Create the group
+                        const createResp = await fetch(`${API_BASE}/api/restriction-groups`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, description: '' })
+                        });
+                        if (!createResp.ok) { failed += gData.rows.length; continue; }
+                        const created = await createResp.json();
+                        const gid = created.id;
+
+                        // Add budget rules (rows where any of Fund/Org/Program/Finance/Course is non-empty)
+                        for (const row of gData.rows) {
+                            const fund = String(row[colKeys[1]] || row['Fund'] || '').trim();
+                            const org = String(row[colKeys[2]] || row['Org'] || row['Organization'] || '').trim();
+                            const program = String(row[colKeys[3]] || row['Program'] || '').trim();
+                            const finance = String(row[colKeys[4]] || row['Finance'] || '').trim();
+                            const course = String(row[colKeys[5]] || row['Course'] || '').trim();
+                            if (fund || org || program || finance || course) {
+                                await fetch(`${API_BASE}/api/restriction-groups/${gid}/budget-rules`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ fund, organization: org, program, finance, course })
+                                });
+                            }
+                        }
+
+                        // Add vendors (collect unique vendor numbers from all rows)
+                        const vendors = [];
+                        for (const row of gData.rows) {
+                            const v = String(row[colKeys[10]] || row['Vendor'] || row['Vendor Number'] || '').trim();
+                            if (v && !vendors.includes(v)) vendors.push(v);
+                        }
+                        if (vendors.length) {
+                            await fetch(`${API_BASE}/api/restriction-groups/${gid}/vendors`, {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ vendor_numbers: vendors })
+                            });
+                        }
+
+                        // Set approvers if provided
+                        const app = gData.approvers;
+                        if (app.primary || app.sec1 || app.sec2 || app.sec3) {
+                            await fetch(`${API_BASE}/api/restriction-groups/${gid}/approvers`, {
+                                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    primary_approver: app.primary,
+                                    secondary_approver_1: app.sec1,
+                                    secondary_approver_2: app.sec2,
+                                    secondary_approver_3: app.sec3
+                                })
+                            });
+                        }
+                        success += gData.rows.length;
+                    } catch (e) { failed += gData.rows.length; }
+                }
+
+                closeImportModal();
+                const groupCount = Object.keys(groups).length;
+                showToast(`Created ${groupCount} group${groupCount !== 1 ? 's' : ''} from ${success} row${success !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}.`, failed ? 'error' : 'success');
+                await withLoadingModal(() => loadRestrictionGroups(), 'Refreshing restriction groups…');
+                return;
+            }
+
             for (const row of importRows) {
                 try {
                     if (importType === 'vendors') {
@@ -1878,9 +1981,9 @@
                 <tr onclick="openRgDetail(${g.id})" style="cursor:pointer;">
                     <td style="font-weight:600;">${escapeHTML(g.name)}</td>
                     <td style="color:var(--text-secondary);font-size:0.78rem;">${escapeHTML(g.description || '—')}</td>
-                    <td><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
-                    <td><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
-                    <td style="font-size:0.78rem;color:var(--text-secondary);">${g.assigned_users.length || '—'}</td>
+                    <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
+                    <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
+                    <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.assigned_users.length}</span></td>
                     <td><button onclick="event.stopPropagation();deleteRg(${g.id},'${escapeHTML(g.name)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                     </button></td>
@@ -1987,6 +2090,19 @@
             await loadRgUsers();
             populateApproverDropdowns(g);
             rgMetaOriginal.approvers = getCurrentApprovers();
+
+            // Show assigned users
+            const auContainer = document.getElementById('rgAssignedUsers');
+            const assignedEmails = g.assigned_users || [];
+            if (assignedEmails.length === 0) {
+                auContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);">No users assigned</span>';
+            } else {
+                auContainer.innerHTML = assignedEmails.map(email => {
+                    const u = rgUserList.find(u => u.email === email);
+                    const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+                    return `<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;background:color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));color:var(--text-primary);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);">${escapeHTML(name)}</span>`;
+                }).join('');
+            }
 
             document.getElementById('rgDetailModal').classList.add('open');
         }

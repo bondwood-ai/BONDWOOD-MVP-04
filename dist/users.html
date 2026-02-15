@@ -334,7 +334,7 @@
         .rfp-preview-footer { display: flex; justify-content: flex-start; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
         .rfp-preview-footer a {
             display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem;
-            background: var(--text-primary); color: var(--card-bg); border-radius: 8px;
+            background: var(--primary-hex); color: #ffffff; border-radius: 8px;
             font-size: 0.8rem; font-weight: 600; font-family: 'Inter', sans-serif;
             text-decoration: none; transition: opacity 0.15s;
         }
@@ -347,7 +347,21 @@
             font-size: 0.72rem; font-weight: 600; font-family: 'Inter', sans-serif;
             background: color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));
             color: var(--text-primary); border: 1px solid var(--primary-hex);
+            position: relative; cursor: default;
         }
+        .rg-pill .rg-tooltip {
+            display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 0.5rem 0.65rem; min-width: 220px; max-width: 320px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 20;
+            font-weight: 400; font-size: 0.72rem; color: var(--text-primary); text-align: left;
+            white-space: normal; pointer-events: none;
+        }
+        .rg-pill .rg-tooltip::after {
+            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border: 5px solid transparent; border-top-color: var(--border-color);
+        }
+        .rg-pill:hover .rg-tooltip { display: block; }
         .rg-pill-x {
             background: none; border: none; cursor: pointer; padding: 0; margin: 0;
             color: var(--text-secondary); display: flex; align-items: center; transition: color 0.15s;
@@ -1471,6 +1485,8 @@
                     }
                 } catch (e) {}
 
+                const reimbVendor = isReimb ? ('EE' + (h.submitter_id || '').replace(/^E/i, '') + ' EMPLOYEE REIMBURSEMENT') : '';
+
                 body.innerHTML = `
                     <div class="rpg">
                         <div class="rpg-cell"><div class="rpg-label">RFP No.</div><div class="rpg-value" style="font-weight:700;">${rfpNumber}</div></div>
@@ -1481,7 +1497,7 @@
                         <div class="rpg-cell"><div class="rpg-label">Total</div><div class="rpg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(displayTotal)}</div></div>
                     </div>
                     <div class="rpg rpg-2col">
-                        <div class="rpg-cell"><div class="rpg-label">${isReimb ? 'Employee' : 'Vendor'}</div><div class="rpg-value">${escHtml(h.vendor_name || h.employee_name || '—')}</div></div>
+                        <div class="rpg-cell"><div class="rpg-label">${isReimb ? 'Employee' : 'Vendor'}</div><div class="rpg-value">${isReimb ? escHtml(reimbVendor) : escHtml(h.vendor_name || '—')}</div></div>
                         <div class="rpg-cell"><div class="rpg-label">Type</div><div class="rpg-value">${isReimb ? 'Employee Reimbursement' : 'Vendor Payment'}</div></div>
                     </div>
                     <div class="rp-line-items">
@@ -1562,7 +1578,29 @@
             pillsEl.innerHTML = userAssignedRgIds.map(id => {
                 const g = groups.find(gr => gr.id === id);
                 const name = g ? escHtml(g.name) : `Group #${id}`;
-                return `<span class="rg-pill">${name}<button class="rg-pill-x" onclick="removeRgFromUser(${id})" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`;
+                let tooltipHtml = '';
+                if (g) {
+                    const rules = g.budget_rules || [];
+                    const vendors = g.vendors || [];
+                    let parts = [];
+                    if (rules.length) {
+                        parts.push(`<div style="margin-bottom:0.3rem;"><span style="font-weight:700;text-transform:uppercase;font-size:0.62rem;letter-spacing:0.03em;color:var(--text-secondary);">Budget Rules</span></div>`);
+                        parts.push(rules.map(r => {
+                            const segs = [r.fund, r.organization, r.program, r.finance, r.course].filter(Boolean);
+                            return `<div style="font-family:monospace;font-size:0.7rem;padding:0.1rem 0;">${segs.join(' – ') || 'Any'}</div>`;
+                        }).join(''));
+                    }
+                    if (vendors.length) {
+                        if (rules.length) parts.push('<div style="height:0.35rem;"></div>');
+                        parts.push(`<div style="margin-bottom:0.15rem;"><span style="font-weight:700;text-transform:uppercase;font-size:0.62rem;letter-spacing:0.03em;color:var(--text-secondary);">Vendors</span></div>`);
+                        parts.push(`<div style="font-size:0.7rem;">${vendors.slice(0, 8).map(v => escHtml(v)).join(', ')}${vendors.length > 8 ? ` +${vendors.length - 8} more` : ''}</div>`);
+                    }
+                    if (!rules.length && !vendors.length) {
+                        parts.push('<div style="color:var(--text-secondary);">No restrictions configured</div>');
+                    }
+                    tooltipHtml = `<div class="rg-tooltip">${parts.join('')}</div>`;
+                }
+                return `<span class="rg-pill">${tooltipHtml}${name}<button class="rg-pill-x" onclick="removeRgFromUser(${id})" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`;
             }).join('');
         }
 
