@@ -89,6 +89,7 @@
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem; font-weight: 500;
             transition: all 0.15s ease; text-align: left;
+            text-decoration: none; box-sizing: border-box;
         }
         .hamburger-menu-item:hover { background: var(--menu-highlight-hover, rgba(255,255,255,0.12)); }
         .hamburger-menu-item.active { background: var(--menu-highlight-active, rgba(255,255,255,0.18)); color: #ffffff; font-weight: 600; }
@@ -870,32 +871,32 @@
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
-                    <button class="hamburger-menu-item" onclick="navigateAway('index.html')">
+                    <a class="hamburger-menu-item" href="index.html" onclick="event.preventDefault();navigateAway('index.html')">
                         
                         Dashboard
-                    </button>
-                    <button class="hamburger-menu-item active" onclick="navigateAway('rfp-form.html')">
+                    </a>
+                    <a class="hamburger-menu-item active" href="rfp-form.html" onclick="event.preventDefault();navigateAway('rfp-form.html')">
                         
                         New Request
-                    </button>
+                    </a>
                 </div>
             </div>
 
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
-                    <button class="hamburger-menu-item" onclick="navigateAway('account.html')">
+                    <a class="hamburger-menu-item" href="account.html" onclick="event.preventDefault();navigateAway('account.html')">
                         
                         My Account
-                    </button>
-                    <button id="userMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('users.html')" style="display:none;">
+                    </a>
+                    <a id="userMgmtMenuItem" class="hamburger-menu-item" href="users.html" onclick="event.preventDefault();navigateAway('users.html')" style="display:none;">
                         
                         User Management
-                    </button>
-                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('data-management.html')" style="display:none;">
+                    </a>
+                    <a id="dataMgmtMenuItem" class="hamburger-menu-item" href="data-management.html" onclick="event.preventDefault();navigateAway('data-management.html')" style="display:none;">
                         
                         Data Management
-                    </button>
+                    </a>
                 </div>
             </div>
 

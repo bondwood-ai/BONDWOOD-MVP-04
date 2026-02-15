@@ -99,6 +99,8 @@
             text-align: left;
             font-family: 'Inter', sans-serif;
             transition: all 0.15s ease;
+            text-decoration: none;
+            box-sizing: border-box;
         }
         .hamburger-menu-item:hover { background: var(--menu-highlight-hover, rgba(255,255,255,0.12)); }
         .hamburger-menu-item.active { background: var(--menu-highlight-active, rgba(255,255,255,0.18)); color: #ffffff; font-weight: 600; }
@@ -555,24 +557,24 @@
                     <button class="hamburger-menu-item active" onclick="selectModuleFromMenu('dashboard')">
                         Dashboard
                     </button>
-                    <button class="hamburger-menu-item" onclick="window.location.href='rfp-form.html'">
+                    <a class="hamburger-menu-item" href="rfp-form.html">
                         New Request
-                    </button>
+                    </a>
                 </div>
             </div>
 
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
-                    <button class="hamburger-menu-item" onclick="window.location.href='account.html'">
+                    <a class="hamburger-menu-item" href="account.html">
                         My Account
-                    </button>
-                    <button id="userMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='users.html'" style="display:none;">
+                    </a>
+                    <a id="userMgmtMenuItem" class="hamburger-menu-item" href="users.html" style="display:none;">
                         User Management
-                    </button>
-                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="window.location.href='data-management.html'" style="display:none;">
+                    </a>
+                    <a id="dataMgmtMenuItem" class="hamburger-menu-item" href="data-management.html" style="display:none;">
                         Data Management
-                    </button>
+                    </a>
                 </div>
             </div>
 
