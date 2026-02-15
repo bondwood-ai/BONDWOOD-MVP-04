@@ -770,6 +770,7 @@
                 <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;" id="importFileName"></p>
             </div>
             <input type="file" id="importFileInput" accept=".xlsx,.csv" style="display:none;" onchange="handleImportFile(this)">
+            <div id="importError" style="display:none;margin-bottom:0.75rem;padding:0.6rem 0.8rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:0.78rem;color:#dc2626;"></div>
             <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;font-size:0.75rem;"></div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeImportModal()">Cancel</button>
@@ -1902,6 +1903,7 @@
             document.getElementById('importPreview').innerHTML = '';
             document.getElementById('importConfirmBtn').disabled = true;
             document.getElementById('importFileInput').value = '';
+            document.getElementById('importError').style.display = 'none';
 
             const guide = document.getElementById('importColumnsGuide');
             if (type === 'vendors') {
@@ -1942,15 +1944,18 @@
         function closeImportModal() { document.getElementById('importModal').classList.remove('open'); importRows = []; }
 
         async function handleImportFile(input) {
-            const file = input.files[0];
+            const file = input.files ? input.files[0] : input;
             if (!file) return;
             document.getElementById('importFileName').textContent = file.name;
+            document.getElementById('importError').style.display = 'none';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importConfirmBtn').disabled = true;
             try {
                 let rows = [];
                 if (file.name.endsWith('.csv')) {
                     const text = await file.text();
                     const lines = text.trim().split('\n');
-                    if (lines.length < 2) return;
+                    if (lines.length < 2) { showImportError('File has no data rows.'); return; }
                     const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
                     rows = lines.slice(1).map(line => {
                         const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
@@ -1960,16 +1965,24 @@
                     });
                 } else {
                     if (!window.XLSX) {
-                        await new Promise((res, rej) => {
-                            const s = document.createElement('script');
-                            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-                            s.onload = res; s.onerror = rej; document.head.appendChild(s);
-                        });
+                        try {
+                            await new Promise((res, rej) => {
+                                const s = document.createElement('script');
+                                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                                s.onload = res; s.onerror = () => rej(new Error('Failed to load XLSX library')); document.head.appendChild(s);
+                            });
+                        } catch (e) {
+                            showImportError('Could not load the XLSX parser library. Check your network connection and try again.');
+                            return;
+                        }
                     }
-                    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+                    const ab = await file.arrayBuffer();
+                    const wb = XLSX.read(ab, { type: 'array' });
+                    console.log('[IMPORT] Sheets:', wb.SheetNames);
                     rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+                    console.log('[IMPORT] Parsed rows:', rows.length, rows.length > 0 ? Object.keys(rows[0]) : 'no keys');
                 }
-                if (!rows.length) return;
+                if (!rows.length) { showImportError('No data rows found in file. Check that the file has data below the header row.'); return; }
                 importRows = rows;
                 const preview = document.getElementById('importPreview');
                 const cols = Object.keys(rows[0]);
@@ -1978,7 +1991,35 @@
                 if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
                 preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
-            } catch (e) { showFormMsg(importType === 'vendors' ? 'vendorFormMsg' : importType === 'restriction-groups' ? 'rgFormMsg' : 'budgetFormMsg', 'Parse error: ' + e.message, 'error'); }
+            } catch (e) {
+                console.error('[IMPORT] Parse error:', e);
+                showImportError('Parse error: ' + e.message);
+            }
+        }
+
+        function showImportError(msg) {
+            const el = document.getElementById('importError');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        // Drag-drop support for import
+        document.addEventListener('DOMContentLoaded', () => {
+            const dz = document.getElementById('importDropZone');
+            if (!dz) return;
+            dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--primary-hex)'; dz.style.background = 'color-mix(in srgb, var(--primary-hex) 5%, transparent)'; });
+            dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--primary-hex)'; dz.style.background = ''; });
+            dz.addEventListener('drop', e => {
+                e.preventDefault();
+                dz.style.borderColor = 'var(--primary-hex)'; dz.style.background = '';
+                const file = e.dataTransfer.files[0];
+                if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.csv'))) {
+                    handleImportFile(file);
+                } else {
+                    showImportError('Please drop an .xlsx or .csv file.');
+                }
+            });
+        });
         }
 
         async function confirmImport() {
