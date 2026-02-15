@@ -1216,7 +1216,26 @@
             panel.classList.add('open');
         }
 
-        function closeDetail() {
+        function hasUnsavedDetailChanges() {
+            if (!selectedUser) return false;
+            const dept = document.getElementById('detailDept').value.trim();
+            const title = document.getElementById('detailJobTitle').value.trim();
+            const phone = document.getElementById('detailPhone').value.trim();
+            const fieldsChanged = dept !== detailOriginals.department || title !== detailOriginals.title || phone !== detailOriginals.phone_number;
+            const origRoles = [...(detailOriginals.roles || [])].sort();
+            const curRoles = [...pendingRoles].sort();
+            const rolesChanged = origRoles.length !== curRoles.length || origRoles.some((r, i) => r !== curRoles[i]);
+            const origRgIds = [...(detailOriginals.rgIds || [])].sort();
+            const curRgIds = [...pendingRgIds].sort();
+            const rgsChanged = origRgIds.length !== curRgIds.length || origRgIds.some((id, i) => id !== curRgIds[i]);
+            return fieldsChanged || rolesChanged || rgsChanged;
+        }
+
+        function closeDetail(force) {
+            if (!force && hasUnsavedDetailChanges()) {
+                showUnsavedWarning();
+                return;
+            }
             const panel = document.getElementById('detailPanel');
             const overlay = document.getElementById('detailOverlay');
             panel.classList.remove('open');
@@ -1224,10 +1243,37 @@
             selectedUser = null;
         }
 
+        function showUnsavedWarning() {
+            const existing = document.getElementById('unsavedModal');
+            if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'unsavedModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+            modal.innerHTML = `
+                <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
+                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">Unsaved Changes</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes. Would you like to keep editing or leave without saving?</div>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;">
+                        <button id="unsavedLeave" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Leave Without Saving</button>
+                        <button id="unsavedKeep" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:#fff;font-family:'Inter',sans-serif;">Keep Editing</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+            document.getElementById('unsavedKeep').onclick = () => modal.remove();
+            document.getElementById('unsavedLeave').onclick = () => { modal.remove(); closeDetail(true); };
+        }
+
         // Close detail panel on Esc key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && selectedUser) {
-                closeDetail();
+            if (e.key === 'Escape') {
+                const unsavedModal = document.getElementById('unsavedModal');
+                if (unsavedModal) { unsavedModal.remove(); return; }
+                if (selectedUser) closeDetail();
             }
         });
 
