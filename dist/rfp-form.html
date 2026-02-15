@@ -4188,6 +4188,39 @@
             document.getElementById('approvedButtons').style.display = isApproved ? '' : 'none';
         }
 
+        function lockFormForViewing() {
+            // Make all inputs, selects, textareas read-only/disabled
+            document.querySelectorAll('.form-container input:not([type="hidden"]), .form-container textarea').forEach(el => {
+                el.setAttribute('readonly', true);
+                el.style.cursor = 'not-allowed';
+            });
+            document.querySelectorAll('.form-container select').forEach(el => {
+                el.setAttribute('disabled', true);
+                el.style.cursor = 'not-allowed';
+            });
+            document.querySelectorAll('.form-container input[type="checkbox"]').forEach(el => {
+                el.setAttribute('disabled', true);
+            });
+
+            // Hide all action buttons (add row, remove, submit, save draft, approve/reject)
+            document.querySelectorAll('.add-row-btn, .remove-row-btn, .delete-row-btn, .remove-trip-btn').forEach(el => el.style.display = 'none');
+            document.getElementById('draftButtons').style.display = 'none';
+            document.getElementById('approvalButtons').style.display = 'none';
+
+            // Hide attachment upload
+            const attachDrop = document.getElementById('attachmentDropZone');
+            if (attachDrop) attachDrop.style.display = 'none';
+
+            // Show a view-only banner
+            const banner = document.createElement('div');
+            banner.style.cssText = 'background:color-mix(in srgb, var(--primary-hex) 10%, var(--bg-color));border:1px solid var(--primary-hex);border-radius:8px;padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.82rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:0.5rem;font-family:Inter,sans-serif;';
+            banner.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> This request has been submitted and is view-only.';
+            const formContainer = document.querySelector('.form-container');
+            if (formContainer) formContainer.insertBefore(banner, formContainer.firstChild);
+
+            formDirty = false;
+        }
+
         function openFormRejectModal() {
             const prevStatus = FORM_WORKFLOW_PREV[currentFormStatus];
             document.getElementById('formRejectPrevLabel').textContent = prevStatus
@@ -4344,20 +4377,26 @@
                 const data = await resp.json();
                 console.log('[LOAD] Data received:', JSON.stringify(data).substring(0, 500));
 
-                // Access control: only the submitter or admins can view
+                // Access control: submitter can always VIEW their own form; admins can view any
                 const impEmail = sessionStorage.getItem('impersonateEmail');
                 const effectiveEmail = impEmail ? impEmail.toLowerCase() : currentLoggedInEmail;
-                const rfpOwner = (data.submitter_email || '').toLowerCase();
 
-                if (effectiveEmail) {
-                    const isOwner = rfpOwner && effectiveEmail === rfpOwner;
-                    const isAdminNotImpersonating = !impEmail && currentUserIsAdmin;
-                    if (!isOwner && !isAdminNotImpersonating) {
-                        formDirty = false;
-                        window.location.href = 'index.html?denied=1';
-                        return;
-                    }
-                } else if (impEmail) {
+                // Check ownership by email OR by submitter_id
+                const rfpOwnerEmail = (data.submitter_email || '').toLowerCase();
+                const rfpOwnerId = (data.submitter_id || '').toUpperCase();
+                let currentEmpId = '';
+                // Ensure employee data is loaded for ID comparison
+                if (!_cachedEmployee) await fetchEmployeeData();
+                if (_cachedEmployee && _cachedEmployee.user_id) {
+                    currentEmpId = ('E' + _cachedEmployee.user_id).toUpperCase();
+                }
+
+                const isOwnerByEmail = rfpOwnerEmail && effectiveEmail && effectiveEmail === rfpOwnerEmail;
+                const isOwnerById = rfpOwnerId && currentEmpId && currentEmpId === rfpOwnerId;
+                const isOwner = isOwnerByEmail || isOwnerById;
+                const isAdmin = currentUserIsAdmin && !impEmail;
+
+                if (effectiveEmail && !isOwner && !isAdmin) {
                     formDirty = false;
                     window.location.href = 'index.html?denied=1';
                     return;
@@ -4482,6 +4521,12 @@
                 // Swap buttons if in approval workflow
                 if (data.status) {
                     showApprovalButtons(data.status);
+                }
+
+                // Lock form for non-admin submitters viewing submitted/in-progress forms
+                const viewStatuses = ['submitted', 'accounting-review', 'ap-review', 'approved', 'rejected'];
+                if (isOwner && !isAdmin && viewStatuses.includes(data.status)) {
+                    lockFormForViewing();
                 }
 
                 console.log('[LOAD] Complete');
