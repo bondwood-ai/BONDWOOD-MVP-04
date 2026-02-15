@@ -1562,19 +1562,41 @@
            ======================================== */
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let VENDOR_DATA = [];
-        let USER_RESTRICTIONS = { restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] };
+        let USER_RESTRICTIONS = { restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [], groups: [], has_unrestricted_group: false };
 
         async function loadUserRestrictionRules(email) {
             try {
                 const resp = await fetch(`${API_BASE}/api/users/restriction-rules?email=${encodeURIComponent(email)}`);
                 if (resp.ok) return await resp.json();
             } catch (e) { console.warn('Failed to load restriction rules:', e); }
-            return { restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] };
+            return { restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [], groups: [], has_unrestricted_group: false };
         }
 
         function getVendorPool() {
+            // If no vendor restrictions at all, or if user has any group without vendor restrictions → all vendors
             if (!USER_RESTRICTIONS.restricted_vendors) return VENDOR_DATA;
             const allowed = new Set(USER_RESTRICTIONS.vendor_numbers);
+            return VENDOR_DATA.filter(v => allowed.has(v.c));
+        }
+
+        // Get vendors allowed for a specific budget code (scoped to its restriction group)
+        function getVendorPoolForBudgetCode(budgetCode) {
+            if (!USER_RESTRICTIONS.groups || !USER_RESTRICTIONS.groups.length) return VENDOR_DATA;
+            if (!budgetCode) return getVendorPool();
+
+            // Find which group(s) this budget code belongs to
+            const matchingGroups = USER_RESTRICTIONS.groups.filter(g =>
+                g.budget_rules.length > 0 && g.budget_rules.some(rule => budgetCodeMatchesRule(budgetCode, rule))
+            );
+
+            if (!matchingGroups.length) return getVendorPool();
+
+            // If ANY matching group has no vendor restrictions → all vendors for this code
+            if (matchingGroups.some(g => g.vendor_numbers.length === 0)) return VENDOR_DATA;
+
+            // Otherwise, union of vendor restrictions from matching groups
+            const allowed = new Set();
+            matchingGroups.forEach(g => g.vendor_numbers.forEach(v => allowed.add(v)));
             return VENDOR_DATA.filter(v => allowed.has(v.c));
         }
 
@@ -4026,6 +4048,27 @@
                         `You have ${distinctCount} distinct invoice number${distinctCount > 1 ? 's' : ''} (${invoiceList}) but only ${attCount} attachment${attCount !== 1 ? 's' : ''}. Each distinct invoice number requires at least one supporting attachment.`
                     );
                     return;
+                }
+            }
+
+            // Vendor + budget code compatibility check (per-group restrictions)
+            if (currentRequestType === 'vendor' && USER_RESTRICTIONS.groups && USER_RESTRICTIONS.groups.length > 0) {
+                const selectedVendorNum = document.getElementById('vendorNumber').value.trim();
+                if (selectedVendorNum) {
+                    let incompatibleCode = null;
+                    rows.forEach(r => {
+                        if (incompatibleCode) return;
+                        const bc = r.querySelector('.line-budget')?.value?.trim();
+                        if (!bc) return;
+                        const pool = getVendorPoolForBudgetCode(bc);
+                        if (pool !== VENDOR_DATA && !pool.some(v => v.c === selectedVendorNum)) {
+                            incompatibleCode = bc;
+                        }
+                    });
+                    if (incompatibleCode) {
+                        showAlert(`The selected vendor is not authorized for budget code ${incompatibleCode}. Please choose a different vendor or budget code.`, 'Vendor Restriction');
+                        return;
+                    }
                 }
             }
 

@@ -1338,7 +1338,7 @@
                 <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
                     ${icon}
                     <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">${actionLabel} Account</div>
-                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">Are you sure you want to ${action} <strong style="color:var(--text-primary);">${escapeHTML(userName)}</strong>?${isActive ? ' They will no longer be able to access the system.' : ''}</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">Are you sure you want to ${action} <strong style="color:var(--text-primary);">${escHtml(userName)}</strong>?${isActive ? ' They will no longer be able to access the system.' : ''}</div>
                     <div style="display:flex;gap:0.5rem;justify-content:center;">
                         <button id="statusConfirmCancel" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Cancel</button>
                         <button id="statusConfirmOk" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:${actionColor};color:#fff;font-family:'Inter',sans-serif;">${actionLabel}</button>

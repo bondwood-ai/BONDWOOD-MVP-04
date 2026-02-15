@@ -2617,38 +2617,59 @@ async function handleUpdateUserRoles(request, env) {
 
 async function handleGetUserRestrictionRules(url, env) {
   const email = (url.searchParams.get('email') || '').toLowerCase().trim();
-  if (!email) return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] });
+  if (!email) return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [], groups: [] });
 
   try {
     const { results: assignments } = await env.DB.prepare(
-      'SELECT group_id FROM user_restriction_assignments WHERE LOWER(user_email) = ?'
+      'SELECT group_id, name FROM user_restriction_assignments WHERE LOWER(user_email) = ?'
     ).bind(email).all();
 
     if (!assignments.length) {
-      return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] });
+      return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [], groups: [] });
     }
 
     const groupIds = assignments.map(a => a.group_id);
     const placeholders = groupIds.map(() => '?').join(',');
 
     const { results: rules } = await env.DB.prepare(
-      `SELECT fund, organization, program, finance, course FROM restriction_group_budget_rules WHERE group_id IN (${placeholders})`
+      `SELECT group_id, fund, organization, program, finance, course FROM restriction_group_budget_rules WHERE group_id IN (${placeholders})`
     ).bind(...groupIds).all();
 
     const { results: vendors } = await env.DB.prepare(
-      `SELECT vendor_number FROM restriction_group_vendors WHERE group_id IN (${placeholders})`
+      `SELECT group_id, vendor_number FROM restriction_group_vendors WHERE group_id IN (${placeholders})`
     ).bind(...groupIds).all();
 
-    const vendorNumbers = vendors.map(v => v.vendor_number);
+    // Build per-group data
+    const groups = assignments.map(a => {
+      const groupRules = rules.filter(r => r.group_id === a.group_id).map(r => ({
+        fund: r.fund, organization: r.organization, program: r.program, finance: r.finance, course: r.course
+      }));
+      const groupVendors = vendors.filter(v => v.group_id === a.group_id).map(v => v.vendor_number);
+      return {
+        id: a.group_id,
+        name: a.name || null,
+        budget_rules: groupRules,
+        vendor_numbers: groupVendors
+      };
+    });
+
+    // Flat lists for backwards compatibility
+    const allRules = rules.map(r => ({ fund: r.fund, organization: r.organization, program: r.program, finance: r.finance, course: r.course }));
+    const allVendorNumbers = [...new Set(vendors.map(v => v.vendor_number))];
+
+    // A group with budget rules but NO vendor restrictions means "any vendor" for those codes
+    const hasUnrestrictedGroup = groups.some(g => g.budget_rules.length > 0 && g.vendor_numbers.length === 0);
 
     return json({
-      restricted_budget: rules.length > 0,
-      restricted_vendors: vendorNumbers.length > 0,
-      budget_rules: rules,
-      vendor_numbers: vendorNumbers,
+      restricted_budget: allRules.length > 0,
+      restricted_vendors: allVendorNumbers.length > 0 && !hasUnrestrictedGroup,
+      budget_rules: allRules,
+      vendor_numbers: allVendorNumbers,
+      groups: groups,
+      has_unrestricted_group: hasUnrestrictedGroup
     });
   } catch (e) {
-    return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [], error: e.message });
+    return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [], groups: [], error: e.message });
   }
 }
 
