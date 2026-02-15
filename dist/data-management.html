@@ -54,6 +54,7 @@
         body.dark-mode .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
         body.dark-mode .btn-primary.danger:hover { opacity: 0.85; }
         body.dark-mode input, body.dark-mode select { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
+        input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
         body.dark-mode input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); }
         body.dark-mode .edit-modal-panel { background: var(--card-bg); border-color: var(--border-color); }
 
@@ -208,6 +209,7 @@
             transition: border-color 0.2s, box-shadow 0.2s;
         }
         .form-group input:focus { outline: none; border-color: var(--secondary-hex); box-shadow: 0 0 0 2px rgba(7,40,235,0.12); }
+        .form-group input:focus-visible { outline: none; }
         .form-group input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); cursor: default; }
         .form-group input[readonly]:focus { border-color: var(--border-color); box-shadow: none; }
         .form-valid input:not([readonly]) { border-color: var(--positive-color); box-shadow: 0 0 0 2px rgba(43,109,81,0.15); }
