@@ -953,7 +953,7 @@
             <!-- Assigned Users -->
             <div class="rg-section">
                 <div class="rg-section-title">Assigned Users</div>
-                <div class="rg-section-sub">Assign users to this restriction group. Search by name or email.</div>
+                <div class="rg-section-hint">Assign users to this restriction group. Search by name or email.</div>
                 <div id="rgAssignedUserPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
                 <div style="position:relative;" id="rgUserSearchWrapper">
                     <input type="text" id="rgUserSearchInput" placeholder="Search users..." autocomplete="off"
@@ -2110,6 +2110,18 @@
             }).join('');
         }
 
+        function userAvatarHtml(u, size) {
+            size = size || 24;
+            const fs = Math.round(size * 0.44);
+            if (u && u.profile_picture_key) {
+                const url = `${API_BASE}/api/profile/picture/${encodeURIComponent(u.email)}?t=${Date.now()}`;
+                return `<img src="${url}" alt="" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<span style=\\'width:${size}px;height:${size}px;border-radius:50%;background:${AVATAR_COLORS[Math.abs(hashStr(u.email || '')) % AVATAR_COLORS.length]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;flex-shrink:0;\\'>${(((u.first_name||'')[0]||'')+((u.last_name||'')[0]||'')).toUpperCase()||'?'}</span>'">`;
+            }
+            const initials = u ? (((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '')).toUpperCase() || '?' : '?';
+            const color = AVATAR_COLORS[Math.abs(hashStr((u && u.email) || '')) % AVATAR_COLORS.length];
+            return `<span style="width:${size}px;height:${size}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;flex-shrink:0;">${initials}</span>`;
+        }
+
         function filterRgUserResults() {
             const query = document.getElementById('rgUserSearchInput').value.toLowerCase().trim();
             const results = document.getElementById('rgUserSearchResults');
@@ -2125,10 +2137,8 @@
             } else {
                 results.innerHTML = matches.map(u => {
                     const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim();
-                    const initials = ((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '') || '?';
-                    const color = AVATAR_COLORS[Math.abs(hashStr(u.email || '')) % AVATAR_COLORS.length];
                     return `<div onclick="addUserToRg('${escapeHTML((u.email || '').replace(/'/g, "\\'"))}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.8rem;font-family:'Inter',sans-serif;" onmouseover="this.style.background='var(--bg-color)'" onmouseout="this.style.background='transparent'">
-                        <span style="width:24px;height:24px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;flex-shrink:0;">${initials.toUpperCase()}</span>
+                        ${userAvatarHtml(u, 24)}
                         <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(name || u.email)}</span>
                         <span style="font-size:0.7rem;color:var(--text-secondary);">${escapeHTML(u.email || '')}</span>
                     </div>`;
@@ -2628,7 +2638,9 @@
                 const color = getAvatarColor(email);
                 const initials = getInitials(u);
                 return `<div class="approver-drop-item${sel}" onclick="selectApprover('${containerId}','${escapeHTML(email)}')">
-                    <div class="adi-avatar" style="background:${color};">${initials}</div>
+                    ${u.profile_picture_key
+                        ? `<img src="${API_BASE}/api/profile/picture/${encodeURIComponent(email)}?t=1" class="adi-avatar" style="background:transparent;object-fit:cover;" onerror="this.outerHTML='<div class=\\'adi-avatar\\' style=\\'background:${color}\\'>${initials}</div>'">`
+                        : `<div class="adi-avatar" style="background:${color};">${initials}</div>`}
                     <div class="adi-info"><div class="adi-name">${escapeHTML(name)}</div><div class="adi-email">${escapeHTML(email)}</div></div>
                     <svg class="adi-check" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>`;
