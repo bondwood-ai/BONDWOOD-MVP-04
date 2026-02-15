@@ -633,7 +633,7 @@
         </div>
 
         <!-- Restriction Groups Section -->
-        <div class="detail-section" id="detailRgSection">
+        <div class="detail-section" id="detailRgSection" style="padding-bottom:12rem;">
             <div class="detail-section-title">Restriction Groups</div>
             <div id="detailRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
             <div style="position:relative;" id="rgSearchWrapper">
@@ -789,6 +789,8 @@
         const PAGE_SIZE = 50;
         let selectedUser = null;
         let detailOriginals = {};
+        let pendingRoles = [];
+        let pendingRgIds = [];
         let currentUserEmail = '';
         let currentUserRoles = [];
         let currentUserPermissions = {};
@@ -1141,7 +1143,9 @@
                 department: user.department || '',
                 title: user.title || '',
                 phone_number: user.phone_number || '',
+                roles: [...(user.roles || [])],
             };
+            pendingRoles = [...(user.roles || [])];
             document.getElementById('btnSaveUserDetails').style.display = 'none';
 
             const isActive = user.status !== 'inactive';
@@ -1206,7 +1210,7 @@
            ROLE MANAGEMENT
            ======================================== */
         function renderRoleToggles(user) {
-            const roles = user.roles || [];
+            const roles = pendingRoles;
             const container = document.getElementById('detailRolePills');
             const isSuperUser = currentUserRoles.includes('super_user');
 
@@ -1227,7 +1231,7 @@
         function filterRoleDropdown() {
             if (!selectedUser) return;
             const q = document.getElementById('roleSearchInput').value.toLowerCase().trim();
-            const currentRoles = selectedUser.roles || [];
+            const currentRoles = pendingRoles;
             const isSuperUser = currentUserRoles.includes('super_user');
 
             const available = AVAILABLE_ROLES.filter(r => {
@@ -1251,46 +1255,23 @@
             drop.style.display = 'block';
         }
 
-        async function addRole(role) {
+        function addRole(role) {
             if (!selectedUser) return;
-            let newRoles = [...(selectedUser.roles || [])];
-            newRoles.push(role);
-            if (newRoles.length > 1 && newRoles.includes('user')) {
-                newRoles = newRoles.filter(r => r !== 'user');
+            pendingRoles.push(role);
+            if (pendingRoles.length > 1 && pendingRoles.includes('user')) {
+                pendingRoles = pendingRoles.filter(r => r !== 'user');
             }
-            try {
-                const resp = await fetch(`${API_BASE}/api/users/roles`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: selectedUser.email, roles: newRoles })
-                });
-                if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || 'Failed');
-                selectedUser.roles = newRoles;
-                renderRoleToggles(selectedUser);
-                document.getElementById('roleDropdown').style.display = 'none';
-                showToast(`${ROLE_LABELS[role] || role} role added`, 'success');
-                renderTable();
-            } catch (e) {
-                showToast('Failed to add role: ' + e.message, 'error');
-            }
+            renderRoleToggles(selectedUser);
+            document.getElementById('roleDropdown').style.display = 'none';
+            checkDetailChanges();
         }
 
-        async function removeRole(role) {
+        function removeRole(role) {
             if (!selectedUser) return;
-            let newRoles = (selectedUser.roles || []).filter(r => r !== role);
-            if (newRoles.length === 0) newRoles = ['user'];
-            try {
-                const resp = await fetch(`${API_BASE}/api/users/roles`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: selectedUser.email, roles: newRoles })
-                });
-                if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).error || 'Failed');
-                selectedUser.roles = newRoles;
-                renderRoleToggles(selectedUser);
-                showToast(`${ROLE_LABELS[role] || role} role removed`, 'success');
-                renderTable();
-            } catch (e) {
-                showToast('Failed to remove role: ' + e.message, 'error');
-            }
+            pendingRoles = pendingRoles.filter(r => r !== role);
+            if (pendingRoles.length === 0) pendingRoles = ['user'];
+            renderRoleToggles(selectedUser);
+            checkDetailChanges();
         }
 
         // Close dropdowns on click outside
@@ -1313,23 +1294,52 @@
             const isActive = selectedUser.status !== 'inactive';
             const newStatus = isActive ? 'inactive' : 'active';
             const action = isActive ? 'deactivate' : 'activate';
+            const userName = ((selectedUser.first_name || '') + ' ' + (selectedUser.last_name || '')).trim();
 
-            if (!confirm(`Are you sure you want to ${action} ${selectedUser.first_name} ${selectedUser.last_name}?`)) return;
+            // Show custom confirmation modal
+            const existing = document.getElementById('statusConfirmModal');
+            if (existing) existing.remove();
 
-            try {
-                const resp = await fetch(`${API_BASE}/api/users/status`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: selectedUser.email, status: newStatus })
-                });
-                if (!resp.ok) throw new Error('Failed to update status');
-                selectedUser.status = newStatus;
-                showToast(`Account ${action}d`, 'success');
-                openDetail(encodeURIComponent(selectedUser.email)); // refresh panel
-                renderTable();
-            } catch (e) {
-                showToast('Failed to update status: ' + e.message, 'error');
-            }
+            const modal = document.createElement('div');
+            modal.id = 'statusConfirmModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
+            const icon = isActive
+                ? '<svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--negative-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>'
+                : '<svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--positive-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>';
+            const actionColor = isActive ? 'var(--negative-color)' : 'var(--positive-color)';
+            const actionLabel = isActive ? 'Deactivate' : 'Activate';
+
+            modal.innerHTML = `
+                <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
+                    ${icon}
+                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">${actionLabel} Account</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">Are you sure you want to ${action} <strong style="color:var(--text-primary);">${escapeHTML(userName)}</strong>?${isActive ? ' They will no longer be able to access the system.' : ''}</div>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;">
+                        <button id="statusConfirmCancel" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Cancel</button>
+                        <button id="statusConfirmOk" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:${actionColor};color:#fff;font-family:'Inter',sans-serif;">${actionLabel}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+            document.getElementById('statusConfirmCancel').onclick = () => modal.remove();
+            document.getElementById('statusConfirmOk').onclick = async () => {
+                modal.remove();
+                try {
+                    const resp = await fetch(`${API_BASE}/api/users/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: selectedUser.email, status: newStatus })
+                    });
+                    if (!resp.ok) throw new Error('Failed to update status');
+                    selectedUser.status = newStatus;
+                    showToast(`Account ${action}d`, 'success');
+                    openDetail(encodeURIComponent(selectedUser.email));
+                    renderTable();
+                } catch (e) {
+                    showToast('Failed to update status: ' + e.message, 'error');
+                }
+            };
         }
 
         function impersonateFromDetail() {
@@ -1349,7 +1359,19 @@
             const dept = document.getElementById('detailDept').value.trim();
             const title = document.getElementById('detailJobTitle').value.trim();
             const phone = document.getElementById('detailPhone').value.trim();
-            const changed = dept !== detailOriginals.department || title !== detailOriginals.title || phone !== detailOriginals.phone_number;
+            const fieldsChanged = dept !== detailOriginals.department || title !== detailOriginals.title || phone !== detailOriginals.phone_number;
+
+            // Check roles
+            const origRoles = [...(detailOriginals.roles || [])].sort();
+            const curRoles = [...pendingRoles].sort();
+            const rolesChanged = origRoles.length !== curRoles.length || origRoles.some((r, i) => r !== curRoles[i]);
+
+            // Check RGs
+            const origRgIds = [...(detailOriginals.rgIds || [])].sort();
+            const curRgIds = [...pendingRgIds].sort();
+            const rgsChanged = origRgIds.length !== curRgIds.length || origRgIds.some((id, i) => id !== curRgIds[i]);
+
+            const changed = fieldsChanged || rolesChanged || rgsChanged;
             document.getElementById('btnSaveUserDetails').style.display = changed ? 'inline-flex' : 'none';
         }
         document.addEventListener('DOMContentLoaded', () => {
@@ -1367,15 +1389,49 @@
                 const dept = document.getElementById('detailDept').value.trim();
                 const title = document.getElementById('detailJobTitle').value.trim();
                 const phone = document.getElementById('detailPhone').value.trim();
+
+                // Save profile fields
                 const resp = await fetch(`${API_BASE}/api/profile`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: selectedUser.email, department: dept, title: title, phone_number: phone })
                 });
-                if (!resp.ok) throw new Error('Failed to save');
+                if (!resp.ok) throw new Error('Failed to save profile');
+
+                // Save roles if changed
+                const origRoles = [...(detailOriginals.roles || [])].sort();
+                const curRoles = [...pendingRoles].sort();
+                const rolesChanged = origRoles.length !== curRoles.length || origRoles.some((r, i) => r !== curRoles[i]);
+                if (rolesChanged) {
+                    const rResp = await fetch(`${API_BASE}/api/users/roles`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: selectedUser.email, roles: pendingRoles })
+                    });
+                    if (!rResp.ok) throw new Error('Failed to save roles');
+                    selectedUser.roles = [...pendingRoles];
+                }
+
+                // Save restriction groups if changed
+                const origRgIds = [...(detailOriginals.rgIds || [])].sort();
+                const curRgIds = [...pendingRgIds].sort();
+                const rgsChanged = origRgIds.length !== curRgIds.length || origRgIds.some((id, i) => id !== curRgIds[i]);
+                if (rgsChanged) {
+                    const gResp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: selectedUser.email, group_ids: pendingRgIds })
+                    });
+                    if (!gResp.ok) throw new Error('Failed to save restriction groups');
+                    userAssignedRgIds = [...pendingRgIds];
+                }
+
+                // Update local state
                 selectedUser.department = dept;
                 selectedUser.title = title;
                 selectedUser.phone_number = phone;
-                detailOriginals = { department: dept, title: title, phone_number: phone };
+                detailOriginals = {
+                    department: dept, title: title, phone_number: phone,
+                    roles: [...pendingRoles],
+                    rgIds: [...pendingRgIds],
+                };
                 btn.style.display = 'none';
                 showToast('User details saved', 'success');
                 renderTable();
@@ -1664,17 +1720,19 @@
                 }
             } catch (e) {}
 
+            pendingRgIds = [...userAssignedRgIds];
+            detailOriginals.rgIds = [...userAssignedRgIds];
             renderRgPills();
         }
 
         function renderRgPills() {
             const pillsEl = document.getElementById('detailRgPills');
-            if (userAssignedRgIds.length === 0) {
+            if (pendingRgIds.length === 0) {
                 pillsEl.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);">None assigned</span>';
                 return;
             }
             const groups = allRestrictionGroups || [];
-            pillsEl.innerHTML = userAssignedRgIds.map(id => {
+            pillsEl.innerHTML = pendingRgIds.map(id => {
                 const g = groups.find(gr => gr.id === id);
                 const name = g ? escHtml(g.name) : `Group #${id}`;
                 return `<span class="rg-pill">${name}<button class="rg-pill-x" onclick="removeRgFromUser(${id})" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`;
@@ -1688,19 +1746,23 @@
 
             if (!query) {
                 // Show all unassigned groups
-                const unassigned = groups.filter(g => !userAssignedRgIds.includes(g.id));
+                const unassigned = groups.filter(g => !pendingRgIds.includes(g.id));
                 if (unassigned.length === 0) {
                     resultsEl.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.78rem;color:var(--text-secondary);">All groups assigned</div>';
                 } else {
                     resultsEl.innerHTML = unassigned.map(g => rgResultItem(g)).join('');
                 }
                 resultsEl.style.display = '';
+                setTimeout(() => {
+                    const wrapper = document.getElementById('rgSearchWrapper');
+                    if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 50);
                 return;
             }
 
             // Search by name or budget rule codes
             const matches = groups.filter(g => {
-                if (userAssignedRgIds.includes(g.id)) return false;
+                if (pendingRgIds.includes(g.id)) return false;
                 if ((g.name || '').toLowerCase().includes(query)) return true;
                 // Search budget rules
                 const rules = g.budget_rules || [];
@@ -1719,6 +1781,11 @@
                 resultsEl.innerHTML = matches.map(g => rgResultItem(g)).join('');
             }
             resultsEl.style.display = '';
+            // Scroll panel so dropdown is visible
+            setTimeout(() => {
+                const wrapper = document.getElementById('rgSearchWrapper');
+                if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
         }
 
         function rgResultItem(g) {
@@ -1736,49 +1803,21 @@
             </div>`;
         }
 
-        async function addRgToUser(groupId) {
+        function addRgToUser(groupId) {
             if (!selectedUser) return;
-            if (userAssignedRgIds.includes(groupId)) return;
-
-            const newIds = [...userAssignedRgIds, groupId];
-            try {
-                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: selectedUser.email, group_ids: newIds })
-                });
-                if (!resp.ok) throw new Error('Failed');
-
-                userAssignedRgIds = newIds;
-                renderRgPills();
-                document.getElementById('rgSearchInput').value = '';
-                document.getElementById('rgSearchResults').style.display = 'none';
-                const name = (allRestrictionGroups || []).find(g => g.id === groupId)?.name || 'Group';
-                showToast(`${name} assigned`, 'success');
-            } catch (e) {
-                showToast('Failed to assign group', 'error');
-            }
+            if (pendingRgIds.includes(groupId)) return;
+            pendingRgIds.push(groupId);
+            renderRgPills();
+            document.getElementById('rgSearchInput').value = '';
+            document.getElementById('rgSearchResults').style.display = 'none';
+            checkDetailChanges();
         }
 
-        async function removeRgFromUser(groupId) {
+        function removeRgFromUser(groupId) {
             if (!selectedUser) return;
-            const newIds = userAssignedRgIds.filter(id => id !== groupId);
-
-            try {
-                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: selectedUser.email, group_ids: newIds })
-                });
-                if (!resp.ok) throw new Error('Failed');
-
-                userAssignedRgIds = newIds;
-                renderRgPills();
-                const name = (allRestrictionGroups || []).find(g => g.id === groupId)?.name || 'Group';
-                showToast(`${name} removed`, 'success');
-            } catch (e) {
-                showToast('Failed to remove group', 'error');
-            }
+            pendingRgIds = pendingRgIds.filter(id => id !== groupId);
+            renderRgPills();
+            checkDetailChanges();
         }
 
         // Close search results when clicking outside
