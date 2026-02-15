@@ -819,7 +819,7 @@
                 <div class="edit-group"><label>State</label><input type="text" id="editVendorState" maxlength="2" style="text-transform:uppercase;"></div>
                 <div class="edit-group"><label>ZIP</label><input type="text" id="editVendorZip" maxlength="10"></div>
             </div>
-            <div class="roles-section">
+            <div class="roles-section" style="padding-bottom:10rem;">
                 <label>Assigned Restriction Groups</label>
                 <div id="editVendorRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
                 <div style="position:relative;" id="editVendorRgDropWrap">
@@ -850,7 +850,7 @@
                 <div class="edit-group"><label>Finance</label><input type="text" id="editFinance"></div>
                 <div class="edit-group"><label>Course</label><input type="text" id="editCourse"></div>
             </div>
-            <div class="roles-section">
+            <div class="roles-section" style="padding-bottom:10rem;">
                 <label>Assigned Restriction Groups</label>
                 <div id="editBudgetRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
                 <div style="position:relative;" id="editBudgetRgDropWrap">
@@ -1091,6 +1091,10 @@
                 `).join('');
             }
             drop.style.display = 'block';
+            setTimeout(() => {
+                const w = document.getElementById('editVendorRgDropWrap');
+                if (w) w.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
         }
 
         async function addVendorToRg(groupId, vendorNumber) {
@@ -1152,6 +1156,10 @@
                 `).join('');
             }
             drop.style.display = 'block';
+            setTimeout(() => {
+                const w = document.getElementById('editBudgetRgDropWrap');
+                if (w) w.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
         }
 
         async function addBudgetToRg(groupId) {
