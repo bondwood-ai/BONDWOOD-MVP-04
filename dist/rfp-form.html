@@ -404,9 +404,20 @@
         .items-table input[type="number"], .items-table input.text-right { text-align: right; }
         .items-table tr.selected { background: var(--pale-accent) !important; }
         .items-table th.checkbox-col, .items-table td.checkbox-cell { text-align: center; width: 36px; }
+        .items-table th input[type="checkbox"], .mileage-table th input[type="checkbox"] { border-color: rgba(255,255,255,0.5); background: transparent; }
+        .items-table th input[type="checkbox"]:checked, .mileage-table th input[type="checkbox"]:checked { background: #ffffff; border-color: #ffffff; }
+        .items-table th input[type="checkbox"]:checked::after, .mileage-table th input[type="checkbox"]:checked::after { border-color: var(--primary-hex); }
+        .items-table th input[type="checkbox"]:hover, .mileage-table th input[type="checkbox"]:hover { border-color: #ffffff; }
         .items-table input[type="checkbox"] {
-            width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary-hex);
+            width: 16px; height: 16px; cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            border: 2px solid var(--border-color); border-radius: 50%;
+            background: var(--field-bg); position: relative; flex-shrink: 0;
+            transition: background 0.15s, border-color 0.15s;
         }
+        .items-table input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
+        .items-table input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 2px; left: 4.5px; width: 3.5px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .items-table input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
@@ -456,8 +467,15 @@
             margin-bottom: 1rem; padding: 0.6rem 0;
         }
         .mileage-check-row input[type="checkbox"] {
-            width: 18px; height: 18px; accent-color: var(--primary-hex); cursor: pointer;
+            width: 18px; height: 18px; cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            border: 2px solid var(--border-color); border-radius: 50%;
+            background: var(--field-bg); position: relative; flex-shrink: 0;
+            transition: background 0.15s, border-color 0.15s;
         }
+        .mileage-check-row input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
+        .mileage-check-row input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 2.5px; left: 5.5px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .mileage-check-row input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif; }
         .mileage-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
         .mileage-table {
@@ -465,9 +483,15 @@
         }
         .mileage-table th.mileage-checkbox-col, .mileage-table td.mileage-checkbox-cell { text-align: center; width: 36px; }
         .mileage-table input[type="checkbox"] {
-            width: 15px; height: 15px; accent-color: var(--primary-hex); cursor: pointer;
-            margin: 0;
+            width: 15px; height: 15px; cursor: pointer; margin: 0;
+            -webkit-appearance: none; appearance: none;
+            border: 2px solid var(--border-color); border-radius: 50%;
+            background: var(--field-bg); position: relative; flex-shrink: 0;
+            transition: background 0.15s, border-color 0.15s;
         }
+        .mileage-table input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
+        .mileage-table input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 1.5px; left: 4px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+        .mileage-table input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         .mileage-table tr.selected { background: var(--pale-accent) !important; }
         .mileage-table th {
             background: var(--primary-hex); color: var(--accent-text-color);

@@ -149,7 +149,20 @@
         .text-center { text-align: center; }
         .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary); font-size: 0.85rem; cursor: default; }
         .cb-cell { width: 36px; text-align: center; }
-        .cb-cell input[type="checkbox"] { accent-color: var(--primary-hex); cursor: pointer; width: 14px; height: 14px; }
+        .cb-cell input[type="checkbox"] {
+            cursor: pointer; width: 14px; height: 14px;
+            -webkit-appearance: none; appearance: none;
+            border: 2px solid var(--border-color); border-radius: 50%;
+            background: var(--field-bg); position: relative; flex-shrink: 0;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .cb-cell input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
+        .cb-cell input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 1px; left: 3.5px; width: 3px; height: 5.5px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+        .cb-cell input[type="checkbox"]:hover { border-color: var(--primary-hex); }
+        th.cb-cell input[type="checkbox"] { border-color: rgba(255,255,255,0.5); background: transparent; }
+        th.cb-cell input[type="checkbox"]:checked { background: #ffffff; border-color: #ffffff; }
+        th.cb-cell input[type="checkbox"]:checked::after { border-color: var(--primary-hex); }
+        th.cb-cell input[type="checkbox"]:hover { border-color: #ffffff; }
 
         /* ============ ROLE BADGES ============ */
         .role-badges { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -266,7 +279,14 @@
             font-size: 0.78rem; font-weight: 500; transition: all 0.15s; user-select: none;
         }
         .role-check-label:hover { background: var(--accent-color-light); }
-        .role-check-label input { accent-color: var(--primary-hex); }
+        .role-check-label input {
+            -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+            border: 2px solid var(--border-color); border-radius: 50%;
+            background: var(--field-bg); position: relative; cursor: pointer;
+            transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+        }
+        .role-check-label input:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
+        .role-check-label input:checked::after { content: ''; position: absolute; top: 1px; left: 3.5px; width: 3px; height: 5.5px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
         .role-check-label.checked { border-color: var(--primary-hex); background: rgba(7,40,235,0.06); }
 
         .new-component-list { margin: 0.5rem 0 1rem; padding: 0; list-style: none; }
