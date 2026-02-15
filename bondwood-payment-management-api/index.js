@@ -758,12 +758,34 @@ async function handleListRFPs(env, url) {
   const search = url.searchParams.get('search') || '';
   const sort = url.searchParams.get('sort') || 'rfp_number';
   const dir = (url.searchParams.get('dir') || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+  const email = (url.searchParams.get('email') || '').toLowerCase().trim();
 
   const allowedSorts = ['rfp_number', 'submission_date', 'submitter_name', 'vendor_name', 'status'];
   const sortCol = allowedSorts.includes(sort) ? sort : 'rfp_number';
 
   let where = ['d.deleted_at IS NULL'];
   let params = [];
+
+  // Check if the requesting user is an admin — if not, filter to only their RFPs
+  if (email) {
+    let isAdmin = false;
+    let submitterId = null;
+    try {
+      const { results: userRows } = await env.DB.prepare(
+        'SELECT user_id, user_roles FROM user_data WHERE LOWER(user_email) = ?'
+      ).bind(email).all();
+      if (userRows.length) {
+        const roles = JSON.parse(userRows[0].user_roles || '["user"]');
+        isAdmin = roles.includes('super_user') || roles.includes('admin');
+        submitterId = 'E' + userRows[0].user_id;
+      }
+    } catch (e) {}
+
+    if (!isAdmin && submitterId) {
+      where.push('d.submitter_id = ?');
+      params.push(submitterId);
+    }
+  }
 
   if (status && status !== 'all') {
     where.push('d.status = ?');
