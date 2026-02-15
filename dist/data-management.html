@@ -953,7 +953,14 @@
             <!-- Assigned Users -->
             <div class="rg-section">
                 <div class="rg-section-title">Assigned Users</div>
-                <div id="rgAssignedUsers" style="display:flex;flex-wrap:wrap;gap:0.35rem;"></div>
+                <div class="rg-section-sub">Assign users to this restriction group. Search by name or email.</div>
+                <div id="rgAssignedUserPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
+                <div style="position:relative;" id="rgUserSearchWrapper">
+                    <input type="text" id="rgUserSearchInput" placeholder="Search users..." autocomplete="off"
+                        style="width:100%;padding:0.45rem 0.7rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.8rem;font-family:'Inter',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
+                        oninput="filterRgUserResults()" onfocus="filterRgUserResults()">
+                    <div id="rgUserSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1745,31 +1752,49 @@
 
         function closeImportModal() { document.getElementById('importModal').classList.remove('open'); importRows = []; }
 
-        // Positional column names when no header row is detected
-        const POSITIONAL_COLS = {
-            'restriction-groups': ['Name','Fund','Org','Program','Finance','Course','Primary Approver','Secondary 1','Secondary 2','Secondary 3','Vendor'],
-            'vendors': ['Vendor Number','Vendor Name','Address','City','State','ZIP'],
-            'budget-codes': ['Budget Code','Account Code']
+        // Canonical column keys for each import type (positional order when no headers)
+        const IMPORT_CANONICAL_KEYS = {
+            'vendors': ['Vendor Number', 'Vendor Name', 'Address', 'City', 'State', 'ZIP'],
+            'restriction-groups': ['Name', 'Fund', 'Org', 'Program', 'Finance', 'Course', 'Primary Approver', 'Secondary 1', 'Secondary 2', 'Secondary 3', 'Vendor'],
+            'budget-codes': ['Budget Code', 'Account Code']
         };
-        // Known header keywords per import type (lowercase, alphanumeric only)
-        const HEADER_KEYWORDS_MAP = {
-            'restriction-groups': ['name','fund','org','organization','program','finance','course','primaryapprover','primary','secondary','secondary1','secondary2','secondary3','vendor','vendornumber'],
-            'vendors': ['vendornumber','vendorname','vendor','name','number','address','city','state','zip'],
-            'budget-codes': ['budgetcode','budget','accountcode','account','code']
-        };
+
+        // Header keyword patterns for detecting if first row is a header
+        const IMPORT_HEADER_KEYWORDS = new Set([
+            'name', 'fund', 'org', 'organization', 'program', 'finance', 'course',
+            'vendor', 'vendornumber', 'vendorname', 'address', 'city', 'state', 'zip',
+            'budgetcode', 'accountcode', 'account', 'primaryapprover', 'approver',
+            'secondary1', 'secondary2', 'secondary3', 'description', 'number'
+        ]);
+
+        function detectHeaders(firstRow) {
+            const norm = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+            const matches = firstRow.filter(cell => IMPORT_HEADER_KEYWORDS.has(norm(cell)));
+            return matches.length >= 2;
+        }
 
         async function handleImportFile(input) {
             const file = input.files[0];
             if (!file) return;
             document.getElementById('importFileName').textContent = file.name;
             try {
-                // Step 1: Read file into array-of-arrays (preserves column order)
-                let allRows = [];
+                let rows = [];
+                const canonical = IMPORT_CANONICAL_KEYS[importType] || [];
+
                 if (file.name.endsWith('.csv')) {
                     const text = await file.text();
-                    allRows = text.trim().split('\n').map(line =>
-                        line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
-                    );
+                    const lines = text.trim().split('\n');
+                    if (!lines.length) return;
+                    const firstCells = lines[0].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                    const hasHeaders = detectHeaders(firstCells);
+                    const dataStart = hasHeaders ? 1 : 0;
+                    const keys = hasHeaders ? firstCells : canonical;
+                    rows = lines.slice(dataStart).map(line => {
+                        const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                        const obj = {};
+                        keys.forEach((k, i) => obj[k] = vals[i] || '');
+                        return obj;
+                    });
                 } else {
                     if (!window.XLSX) {
                         await new Promise((res, rej) => {
@@ -1778,46 +1803,28 @@
                             s.onload = res; s.onerror = rej; document.head.appendChild(s);
                         });
                     }
-                    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', raw: false });
+                    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
                     const ws = wb.Sheets[wb.SheetNames[0]];
-                    allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+                    // Always read as raw arrays first to check for headers
+                    const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                    if (!allRows.length) return;
+                    const firstRow = allRows[0].map(c => String(c ?? '').trim());
+                    const hasHeaders = detectHeaders(firstRow);
+                    const dataStart = hasHeaders ? 1 : 0;
+                    const keys = hasHeaders ? firstRow : canonical;
+                    console.log('[IMPORT] Header detection:', hasHeaders ? 'HAS HEADERS' : 'NO HEADERS', '| Keys:', keys);
+                    rows = allRows.slice(dataStart).filter(r => r.some(c => c !== '')).map(cells => {
+                        const obj = {};
+                        keys.forEach((k, i) => obj[k] = (i < cells.length) ? String(cells[i] ?? '').trim() : '');
+                        return obj;
+                    });
                 }
-                if (!allRows.length) return;
-
-                // Step 2: Detect if first row is a header
-                const normalize = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-                const keywords = HEADER_KEYWORDS_MAP[importType] || [];
-                const firstRowNorm = allRows[0].map(c => normalize(c));
-                const headerMatches = firstRowNorm.filter(cell => keywords.includes(cell));
-                const hasHeaders = headerMatches.length >= 2;
-
-                console.log('[IMPORT] First row:', allRows[0]);
-                console.log('[IMPORT] Header matches:', headerMatches.length, '→', hasHeaders ? 'HAS HEADERS' : 'NO HEADERS');
-
-                // Step 3: Determine column names and data rows
-                let colNames, dataRows;
-                if (hasHeaders) {
-                    colNames = allRows[0].map(c => String(c).trim());
-                    dataRows = allRows.slice(1);
-                } else {
-                    colNames = POSITIONAL_COLS[importType] || allRows[0].map((_, i) => `Col ${i + 1}`);
-                    dataRows = allRows; // all rows are data
-                }
-
-                // Step 4: Convert array rows to objects using colNames (preserves order)
-                const rows = dataRows.filter(r => r.some(c => String(c).trim())).map(r => {
-                    const obj = {};
-                    colNames.forEach((name, i) => { obj[name] = (i < r.length) ? String(r[i] ?? '').trim() : ''; });
-                    return obj;
-                });
-
                 if (!rows.length) return;
                 importRows = rows;
-
-                // Step 5: Render preview
                 const preview = document.getElementById('importPreview');
+                const cols = Object.keys(rows[0]);
                 const show = rows.slice(0, 10);
-                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${colNames.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${colNames.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
                 if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
                 preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
@@ -1830,28 +1837,20 @@
             let success = 0, failed = 0;
 
             if (importType === 'restriction-groups') {
-                // Helper: get value from row by trying multiple key names
-                const getVal = (row, ...keys) => {
-                    for (const k of keys) {
-                        const v = row[k];
-                        if (v != null && String(v).trim()) return String(v).trim();
-                    }
-                    return '';
-                };
-
-                // Group rows by name
+                // Group rows by name — keys are always canonical: Name, Fund, Org, Program, Finance, Course, Primary Approver, Secondary 1-3, Vendor
                 const groups = {};
+                const k = (row, ...names) => { for (const n of names) { const v = String(row[n] || '').trim(); if (v) return v; } return ''; };
                 for (const row of importRows) {
-                    const name = getVal(row, 'Name', 'name', 'Group Name', 'Group', 'group_name');
+                    const name = k(row, 'Name', 'name', 'Group Name', 'Group');
                     if (!name) { failed++; continue; }
                     if (!groups[name]) groups[name] = { rows: [], approvers: null };
                     groups[name].rows.push(row);
                     if (!groups[name].approvers) {
                         groups[name].approvers = {
-                            primary: getVal(row, 'Primary Approver', 'Primary', 'primary_approver'),
-                            sec1: getVal(row, 'Secondary 1', 'secondary_1', 'Sec 1'),
-                            sec2: getVal(row, 'Secondary 2', 'secondary_2', 'Sec 2'),
-                            sec3: getVal(row, 'Secondary 3', 'secondary_3', 'Sec 3')
+                            primary: k(row, 'Primary Approver', 'Primary', 'Approver'),
+                            sec1: k(row, 'Secondary 1', 'Sec1'),
+                            sec2: k(row, 'Secondary 2', 'Sec2'),
+                            sec3: k(row, 'Secondary 3', 'Sec3')
                         };
                     }
                 }
@@ -1869,11 +1868,11 @@
 
                         // Add budget rules (rows where any of Fund/Org/Program/Finance/Course is non-empty)
                         for (const row of gData.rows) {
-                            const fund = getVal(row, 'Fund', 'fund');
-                            const org = getVal(row, 'Org', 'Organization', 'organization', 'org');
-                            const program = getVal(row, 'Program', 'program');
-                            const finance = getVal(row, 'Finance', 'finance');
-                            const course = getVal(row, 'Course', 'course');
+                            const fund = k(row, 'Fund', 'fund');
+                            const org = k(row, 'Org', 'Organization', 'org', 'organization');
+                            const program = k(row, 'Program', 'program', 'Prog');
+                            const finance = k(row, 'Finance', 'finance', 'Fin');
+                            const course = k(row, 'Course', 'course');
                             if (fund || org || program || finance || course) {
                                 await fetch(`${API_BASE}/api/restriction-groups/${gid}/budget-rules`, {
                                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1885,7 +1884,7 @@
                         // Add vendors (collect unique vendor numbers from all rows)
                         const vendors = [];
                         for (const row of gData.rows) {
-                            const v = getVal(row, 'Vendor', 'Vendor Number', 'vendor', 'vendor_number');
+                            const v = k(row, 'Vendor', 'Vendor Number', 'vendor', 'vendor_number');
                             if (v && !vendors.includes(v)) vendors.push(v);
                         }
                         if (vendors.length) {
@@ -2031,7 +2030,7 @@
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.assigned_users.length}</span></td>
-                    <td><button onclick="event.stopPropagation();deleteRg(${g.id},'${escapeHTML(g.name)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
+                    <td><button onclick="event.stopPropagation();deleteRg(${g.id})" data-name="${escapeHTML(g.name)}" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                     </button></td>
                 </tr>
@@ -2062,13 +2061,136 @@
             } catch (e) { showToast('Failed to Create Group', 'error'); }
         }
 
-        async function deleteRg(id, name) {
-            if (!confirm(`Delete restriction group "${name}"? This will remove it from all assigned users.`)) return;
+        async function deleteRg(id) {
+            const g = allRestrictionGroups.find(g => g.id === id);
+            const name = g ? g.name : 'this group';
+            // Show custom confirmation modal
+            const existing = document.getElementById('rgDeleteGroupModal');
+            if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'rgDeleteGroupModal';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);';
+            modal.innerHTML = `
+                <div style="background:var(--card-bg);border-radius:12px;padding:1.5rem;max-width:400px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+                    <div style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-primary);font-family:'Inter',sans-serif;">Delete Restriction Group</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.5;">Delete <strong>${escapeHTML(name)}</strong>? This will remove it from all assigned users.</div>
+                    <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                        <button id="rgDeleteGroupCancel" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Cancel</button>
+                        <button id="rgDeleteGroupConfirm" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color);color:#fff;font-family:'Inter',sans-serif;">Delete</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+            document.getElementById('rgDeleteGroupCancel').onclick = function() { modal.remove(); };
+            document.getElementById('rgDeleteGroupConfirm').onclick = async function() {
+                this.disabled = true; this.textContent = 'Deleting...';
+                try {
+                    await fetch(`${API_BASE}/api/restriction-groups/${id}`, { method: 'DELETE' });
+                    showToast('Group Deleted', 'success');
+                    modal.remove();
+                    loadRestrictionGroups();
+                } catch (e) { showToast('Failed to Delete Group', 'error'); modal.remove(); }
+            };
+        }
+
+        // ── Assigned Users Management ──
+        let rgAssignedEmails = [];
+        let currentRgIdForUsers = null;
+
+        function renderRgUserPills() {
+            const container = document.getElementById('rgAssignedUserPills');
+            if (!rgAssignedEmails.length) {
+                container.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;">No users assigned</span>';
+                return;
+            }
+            container.innerHTML = rgAssignedEmails.map(email => {
+                const u = rgUserList.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || email : email;
+                return `<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem 0.2rem 0.6rem;border-radius:99px;font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;background:color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));color:var(--text-primary);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);">${escapeHTML(name)}<button onclick="removeUserFromRg('${escapeHTML(email.replace(/'/g, "\\'"))}')" style="background:none;border:none;cursor:pointer;padding:0;margin-left:2px;color:var(--text-secondary);display:flex;align-items:center;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`;
+            }).join('');
+        }
+
+        function filterRgUserResults() {
+            const query = document.getElementById('rgUserSearchInput').value.toLowerCase().trim();
+            const results = document.getElementById('rgUserSearchResults');
+            if (!query) { results.style.display = 'none'; return; }
+            const matches = rgUserList.filter(u => {
+                const email = (u.email || '').toLowerCase();
+                const fullName = ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase();
+                return !rgAssignedEmails.some(e => e.toLowerCase() === email) &&
+                    (fullName.includes(query) || email.includes(query));
+            }).slice(0, 8);
+            if (!matches.length) {
+                results.innerHTML = '<div style="padding:0.5rem 0.7rem;font-size:0.78rem;color:var(--text-secondary);">No matching users</div>';
+            } else {
+                results.innerHTML = matches.map(u => {
+                    const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim();
+                    const initials = ((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '') || '?';
+                    const color = AVATAR_COLORS[Math.abs(hashStr(u.email || '')) % AVATAR_COLORS.length];
+                    return `<div onclick="addUserToRg('${escapeHTML((u.email || '').replace(/'/g, "\\'"))}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.8rem;font-family:'Inter',sans-serif;" onmouseover="this.style.background='var(--bg-color)'" onmouseout="this.style.background='transparent'">
+                        <span style="width:24px;height:24px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;flex-shrink:0;">${initials.toUpperCase()}</span>
+                        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(name || u.email)}</span>
+                        <span style="font-size:0.7rem;color:var(--text-secondary);">${escapeHTML(u.email || '')}</span>
+                    </div>`;
+                }).join('');
+            }
+            results.style.display = 'block';
+        }
+
+        function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return h; }
+
+        async function addUserToRg(email) {
+            if (!currentRgIdForUsers || rgAssignedEmails.some(e => e.toLowerCase() === email.toLowerCase())) return;
+            // Find user's current group assignments, add this one
             try {
-                await fetch(`${API_BASE}/api/restriction-groups/${id}`, { method: 'DELETE' });
-                showToast('Group Deleted', 'success');
-                loadRestrictionGroups();
-            } catch (e) { showToast('Failed to Delete Group', 'error'); }
+                // Get user's existing group IDs
+                let existingGroupIds = [];
+                try {
+                    const meResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email)}`);
+                    if (meResp.ok) {
+                        const meData = await meResp.json();
+                        existingGroupIds = (meData.restriction_groups || []).map(g => g.id);
+                    }
+                } catch (e) {}
+                const newGroupIds = [...new Set([...existingGroupIds, currentRgIdForUsers])];
+                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, group_ids: newGroupIds })
+                });
+                if (!resp.ok) throw new Error('Failed');
+                rgAssignedEmails.push(email);
+                renderRgUserPills();
+                document.getElementById('rgUserSearchInput').value = '';
+                document.getElementById('rgUserSearchResults').style.display = 'none';
+                const u = rgUserList.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+                showToast(`${name} assigned`, 'success');
+            } catch (e) { showToast('Failed to assign user', 'error'); }
+        }
+
+        async function removeUserFromRg(email) {
+            if (!currentRgIdForUsers) return;
+            try {
+                let existingGroupIds = [];
+                try {
+                    const meResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email)}`);
+                    if (meResp.ok) {
+                        const meData = await meResp.json();
+                        existingGroupIds = (meData.restriction_groups || []).map(g => g.id);
+                    }
+                } catch (e) {}
+                const newGroupIds = existingGroupIds.filter(id => id !== currentRgIdForUsers);
+                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, group_ids: newGroupIds })
+                });
+                if (!resp.ok) throw new Error('Failed');
+                rgAssignedEmails = rgAssignedEmails.filter(e => e.toLowerCase() !== email.toLowerCase());
+                renderRgUserPills();
+                const u = rgUserList.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
+                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+                showToast(`${name} removed`, 'success');
+            } catch (e) { showToast('Failed to remove user', 'error'); }
         }
 
         let rgMetaDirty = false;
@@ -2102,6 +2224,7 @@
 
         async function openRgDetail(id) {
             currentRgId = id;
+            currentRgIdForUsers = id;
             const g = allRestrictionGroups.find(g => g.id === id);
             if (!g) return;
 
@@ -2138,18 +2261,12 @@
             populateApproverDropdowns(g);
             rgMetaOriginal.approvers = getCurrentApprovers();
 
-            // Show assigned users
-            const auContainer = document.getElementById('rgAssignedUsers');
-            const assignedEmails = g.assigned_users || [];
-            if (assignedEmails.length === 0) {
-                auContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);">No users assigned</span>';
-            } else {
-                auContainer.innerHTML = assignedEmails.map(email => {
-                    const u = rgUserList.find(u => u.email === email);
-                    const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
-                    return `<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;background:color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));color:var(--text-primary);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);">${escapeHTML(name)}</span>`;
-                }).join('');
-            }
+            // Show assigned users with interactive pills
+            rgAssignedEmails = [...(g.assigned_users || [])];
+            renderRgUserPills();
+
+            document.getElementById('rgUserSearchInput').value = '';
+            document.getElementById('rgUserSearchResults').style.display = 'none';
 
             document.getElementById('rgDetailModal').classList.add('open');
         }
@@ -2628,6 +2745,10 @@
                     d.classList.remove('open');
                     d.previousElementSibling.classList.remove('open');
                 });
+            }
+            if (!e.target.closest('#rgUserSearchWrapper')) {
+                const dd = document.getElementById('rgUserSearchResults');
+                if (dd) dd.style.display = 'none';
             }
         });
 
