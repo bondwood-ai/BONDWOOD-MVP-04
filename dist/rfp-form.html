@@ -1918,6 +1918,41 @@
             document.getElementById('vendorNameDropdown').classList.remove('open');
             document.getElementById('vendorNumberDropdown').classList.remove('open');
             clearVendorError();
+            // Check all existing budget codes against newly selected vendor
+            checkAllBudgetCodesAgainstVendor();
+        }
+
+        function checkAllBudgetCodesAgainstVendor() {
+            if (!USER_RESTRICTIONS.groups || !USER_RESTRICTIONS.groups.length) return;
+            if (currentRequestType !== 'vendor') return;
+            const vendorNum = document.getElementById('vendorNumber')?.value?.trim();
+            if (!vendorNum) return;
+            const vendorName = document.getElementById('vendorName')?.value?.trim() || vendorNum;
+
+            const conflicts = [];
+            document.querySelectorAll('#lineItemsBody tr').forEach(r => {
+                const bc = r.querySelector('.line-budget-code')?.value?.trim();
+                if (!bc || bc.replace(/[^0-9]/g, '').length < 5) return;
+                const pool = getVendorPoolForBudgetCode(bc);
+                if (pool !== VENDOR_DATA && !pool.some(v => v.c === vendorNum)) {
+                    const matchingGroup = USER_RESTRICTIONS.groups.find(g =>
+                        g.budget_rules.length > 0 && g.vendor_numbers.length > 0 &&
+                        g.budget_rules.some(rule => budgetCodeMatchesRule(bc, rule))
+                    );
+                    conflicts.push({ code: bc, group: matchingGroup ? matchingGroup.name : 'its restriction group' });
+                }
+            });
+
+            if (conflicts.length > 0) {
+                const first = conflicts[0];
+                const pool = getVendorPoolForBudgetCode(first.code);
+                const allowedNames = pool.map(v => v.n).slice(0, 5).join(', ');
+                showAlert(
+                    `<strong>${_escH(vendorName)}</strong> is not an authorized vendor for budget code <strong>${_escH(first.code)}</strong> under the <strong>${_escH(first.group)}</strong> restriction group.` +
+                    (allowedNames ? `<br><br>Authorized vendors: ${_escH(allowedNames)}` : ''),
+                    'Vendor Restriction Conflict'
+                );
+            }
         }
 
         /* ========================================
@@ -2051,6 +2086,7 @@
                 // (impersonation already loaded the target user's restrictions)
                 if (!isImpersonating) {
                     USER_RESTRICTIONS = await loadUserRestrictionRules(user.email);
+                    console.log('[RESTRICT] Loaded restrictions for', user.email, ':', USER_RESTRICTIONS.groups?.length || 0, 'groups', JSON.stringify(USER_RESTRICTIONS.groups?.map(g => ({name: g.name, rules: g.budget_rules.length, vendors: g.vendor_numbers})) || []));
                 }
                 if (perms.can_manage_users) {
                     const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
@@ -4077,6 +4113,7 @@
             }
 
             // Vendor + budget code compatibility check (per-group restrictions)
+            console.log('[SUBMIT-CHECK] groups:', USER_RESTRICTIONS.groups?.length || 0);
             if (currentRequestType === 'vendor' && USER_RESTRICTIONS.groups && USER_RESTRICTIONS.groups.length > 0) {
                 const selectedVendorNum = document.getElementById('vendorNumber').value.trim();
                 if (selectedVendorNum) {
@@ -4084,8 +4121,10 @@
                     rows.forEach(r => {
                         if (incompatibleCode) return;
                         const bc = r.querySelector('.line-budget-code')?.value?.trim();
+                        console.log('[SUBMIT-CHECK] row bc:', bc, 'vendor:', selectedVendorNum);
                         if (!bc) return;
                         const pool = getVendorPoolForBudgetCode(bc);
+                        console.log('[SUBMIT-CHECK] pool:', pool === VENDOR_DATA ? 'ALL' : pool.length);
                         if (pool !== VENDOR_DATA && !pool.some(v => v.c === selectedVendorNum)) {
                             incompatibleCode = bc;
                         }
@@ -5524,12 +5563,14 @@
         function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
         function checkVendorBudgetCompatibility(budgetCode) {
+            console.log('[RESTRICT] checkVendorBudgetCompatibility called:', budgetCode, 'groups:', USER_RESTRICTIONS.groups?.length || 0);
             if (!budgetCode || !USER_RESTRICTIONS.groups || !USER_RESTRICTIONS.groups.length) return;
             if (currentRequestType !== 'vendor') return;
             const vendorNum = document.getElementById('vendorNumber')?.value?.trim();
             if (!vendorNum) return;
 
             const pool = getVendorPoolForBudgetCode(budgetCode);
+            console.log('[RESTRICT] vendor:', vendorNum, 'pool size:', pool === VENDOR_DATA ? 'ALL' : pool.length, 'pool vendors:', pool === VENDOR_DATA ? 'unrestricted' : pool.map(v => v.c).join(','));
             // pool === VENDOR_DATA means unrestricted — no conflict
             if (pool === VENDOR_DATA) return;
             if (pool.some(v => v.c === vendorNum)) return;
