@@ -367,8 +367,11 @@
         .rg-rule-table .wildcard { color: var(--primary-hex); font-weight: 600; }
         .rg-rule-table .any { color: var(--text-secondary); font-style: italic; opacity: 0.5; }
         .rg-rule-table tr { position: relative; }
-        .rg-rule-table tr .row-del { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 2px; opacity: 0; transition: opacity 0.15s; }
-        .rg-rule-table tr:hover .row-del { opacity: 1; }
+        .rg-rule-table tr .row-edit, .rg-rule-table tr .row-del { position: absolute; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 2px; opacity: 0; transition: opacity 0.15s; }
+        .rg-rule-table tr .row-edit { right: 24px; }
+        .rg-rule-table tr .row-del { right: 4px; }
+        .rg-rule-table tr:hover .row-edit, .rg-rule-table tr:hover .row-del { opacity: 1; }
+        .rg-rule-table tr .row-edit:hover { color: var(--primary-hex); }
         .rg-rule-table tr .row-del:hover { color: var(--negative-color); }
         .rg-wildcard-hint { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.75rem; line-height: 1.6; background: color-mix(in srgb, var(--border-color) 20%, transparent); border-radius: 8px; padding: 0.6rem 0.75rem; }
         .rg-wildcard-hint code { font-family: 'Inter', monospace; font-weight: 600; color: var(--text-primary); background: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.68rem; }
@@ -2125,7 +2128,7 @@
             container.innerHTML =
                 `<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2. Use <code>|</code> to separate distinct values (e.g. <code>01|04</code>). Use <code>:</code> for ranges (e.g. <code>600:699</code>).</div>` +
                 `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Org</th><th>Program</th><th>Finance</th><th>Course</th></tr></thead><tbody>` +
-                rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}<button class="row-del" onclick="deleteBudgetRule(${r.id})" title="Delete rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></td></tr>`).join('') +
+                rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}<button class="row-edit" onclick="editBudgetRule(${r.id})" title="Edit rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="row-del" onclick="deleteBudgetRule(${r.id})" title="Delete rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></td></tr>`).join('') +
                 `</tbody></table>`;
         }
 
@@ -2143,6 +2146,23 @@
             ['rgRuleFund', 'rgRuleOrg', 'rgRuleProg', 'rgRuleFin', 'rgRuleCourse'].forEach(id => document.getElementById(id).value = '');
             renderBudgetRules(pendingRules);
             markRgMetaDirty();
+        }
+
+        function editBudgetRule(ruleId) {
+            const rule = pendingRules.find(r => r.id === ruleId);
+            if (!rule) return;
+            // Populate input fields
+            document.getElementById('rgRuleFund').value = rule.fund || '';
+            document.getElementById('rgRuleOrg').value = rule.organization || '';
+            document.getElementById('rgRuleProg').value = rule.program || '';
+            document.getElementById('rgRuleFin').value = rule.finance || '';
+            document.getElementById('rgRuleCourse').value = rule.course || '';
+            // Remove the rule from pending
+            pendingRules = pendingRules.filter(r => r.id !== ruleId);
+            renderBudgetRules(pendingRules);
+            markRgMetaDirty();
+            // Focus the first field
+            document.getElementById('rgRuleFund').focus();
         }
 
         function deleteBudgetRule(ruleId) {
