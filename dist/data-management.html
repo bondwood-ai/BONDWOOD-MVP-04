@@ -2218,6 +2218,8 @@
         let originalRules = [];
         let pendingVendors = [];
         let originalVendors = [];
+        let pendingUsers = [];
+        let originalUsers = [];
         let tempRuleId = -1;
 
         function getCurrentApprovers() {
@@ -2241,6 +2243,12 @@
             return pendingVendors.some(v => !origSet.has(v));
         }
 
+        function usersChanged() {
+            if (pendingUsers.length !== originalUsers.length) return true;
+            const origSet = new Set(originalUsers.map(e => e.toLowerCase()));
+            return pendingUsers.some(e => !origSet.has(e.toLowerCase()));
+        }
+
         async function openRgDetail(id) {
             currentRgId = id;
             const g = allRestrictionGroups.find(g => g.id === id);
@@ -2252,11 +2260,13 @@
             rgMetaDirty = false;
             updateMetaSaveBar();
 
-            // Snapshot rules and vendors for dirty tracking
+            // Snapshot rules, vendors, and users for dirty tracking
             originalRules = JSON.parse(JSON.stringify(g.budget_rules || []));
             pendingRules = JSON.parse(JSON.stringify(g.budget_rules || []));
             originalVendors = [...(g.vendors || [])];
             pendingVendors = [...(g.vendors || [])];
+            originalUsers = [...(g.assigned_users || [])];
+            pendingUsers = [...(g.assigned_users || [])];
             tempRuleId = -1;
 
             renderBudgetRules(pendingRules);
@@ -2286,9 +2296,7 @@
         }
 
         function renderRgAssignedUsers() {
-            const g = allRestrictionGroups.find(g => g.id === currentRgId);
-            if (!g) return;
-            const assignedEmails = g.assigned_users || [];
+            const assignedEmails = pendingUsers;
             const container = document.getElementById('rgAssignedUsers');
             document.getElementById('rgUserSearchInput').value = '';
 
@@ -2311,8 +2319,7 @@
 
         function filterRgUserDropdown() {
             const q = document.getElementById('rgUserSearchInput').value.toLowerCase().trim();
-            const g = allRestrictionGroups.find(g => g.id === currentRgId);
-            const assignedEmails = new Set((g?.assigned_users || []).map(e => e.toLowerCase()));
+            const assignedEmails = new Set(pendingUsers.map(e => e.toLowerCase()));
 
             const available = rgUserList.filter(u => {
                 if (assignedEmails.has(u.email.toLowerCase())) return false;
@@ -2345,57 +2352,20 @@
             drop.style.display = 'block';
         }
 
-        async function addUserToRg(email) {
-            // Get user's current group assignments from allRestrictionGroups
-            const currentGroupIds = allRestrictionGroups
-                .filter(g => (g.assigned_users || []).some(e => e.toLowerCase() === email.toLowerCase()))
-                .map(g => g.id);
-            const newGroupIds = [...currentGroupIds, currentRgId];
-
-            try {
-                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, group_ids: newGroupIds })
-                });
-                if (!resp.ok) throw new Error('Failed');
-
-                // Update local data
-                const g = allRestrictionGroups.find(g => g.id === currentRgId);
-                if (g) g.assigned_users = [...(g.assigned_users || []), email];
-                renderRgAssignedUsers();
-                document.getElementById('rgUserDropdown').style.display = 'none';
-                const u = rgUserList.find(u => u.email === email);
-                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
-                showToast(`${name} added to group`, 'success');
-            } catch (e) {
-                showToast('Failed to add user: ' + e.message, 'error');
-            }
+        function addUserToRg(email) {
+            if (pendingUsers.some(e => e.toLowerCase() === email.toLowerCase())) return;
+            pendingUsers.push(email);
+            renderRgAssignedUsers();
+            document.getElementById('rgUserDropdown').style.display = 'none';
+            const u = rgUserList.find(u => u.email === email);
+            const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+            markRgMetaDirty();
         }
 
-        async function removeUserFromRg(email) {
-            // Get user's current group assignments, remove this one
-            const currentGroupIds = allRestrictionGroups
-                .filter(g => (g.assigned_users || []).some(e => e.toLowerCase() === email.toLowerCase()))
-                .map(g => g.id);
-            const newGroupIds = currentGroupIds.filter(id => id !== currentRgId);
-
-            try {
-                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, group_ids: newGroupIds })
-                });
-                if (!resp.ok) throw new Error('Failed');
-
-                // Update local data
-                const g = allRestrictionGroups.find(g => g.id === currentRgId);
-                if (g) g.assigned_users = (g.assigned_users || []).filter(e => e.toLowerCase() !== email.toLowerCase());
-                renderRgAssignedUsers();
-                const u = rgUserList.find(u => u.email === email);
-                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
-                showToast(`${name} removed from group`, 'success');
-            } catch (e) {
-                showToast('Failed to remove user: ' + e.message, 'error');
-            }
+        function removeUserFromRg(email) {
+            pendingUsers = pendingUsers.filter(e => e.toLowerCase() !== email.toLowerCase());
+            renderRgAssignedUsers();
+            markRgMetaDirty();
         }
 
         // Close user dropdown on click outside
@@ -2414,7 +2384,7 @@
                 approvers.sec1 !== rgMetaOriginal.approvers.sec1 ||
                 approvers.sec2 !== rgMetaOriginal.approvers.sec2 ||
                 approvers.sec3 !== rgMetaOriginal.approvers.sec3;
-            rgMetaDirty = (name !== rgMetaOriginal.name || desc !== rgMetaOriginal.desc || approversDirty || rulesChanged() || vendorsChanged());
+            rgMetaDirty = (name !== rgMetaOriginal.name || desc !== rgMetaOriginal.desc || approversDirty || rulesChanged() || vendorsChanged() || usersChanged());
             updateMetaSaveBar();
         }
 
@@ -2452,7 +2422,7 @@
             document.body.appendChild(modal);
             modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
             document.getElementById('rgUnsavedStayBtn').onclick = function() { modal.remove(); };
-            document.getElementById('rgUnsavedDiscardBtn').onclick = function() { modal.remove(); rgMetaDirty = false; pendingRules = JSON.parse(JSON.stringify(originalRules)); pendingVendors = [...originalVendors]; closeRgDetail(); };
+            document.getElementById('rgUnsavedDiscardBtn').onclick = function() { modal.remove(); rgMetaDirty = false; pendingRules = JSON.parse(JSON.stringify(originalRules)); pendingVendors = [...originalVendors]; pendingUsers = [...originalUsers]; closeRgDetail(); };
         }
 
         function closeRgDetail() {
@@ -2518,6 +2488,33 @@
                     });
                 }
 
+                // Sync assigned users — for each changed user, update their full group list
+                if (usersChanged()) {
+                    const origUserSet = new Set(originalUsers.map(e => e.toLowerCase()));
+                    const pendUserSet = new Set(pendingUsers.map(e => e.toLowerCase()));
+                    const usersToAdd = pendingUsers.filter(e => !origUserSet.has(e.toLowerCase()));
+                    const usersToRemove = originalUsers.filter(e => !pendUserSet.has(e.toLowerCase()));
+
+                    for (const email of usersToAdd) {
+                        const currentGroupIds = allRestrictionGroups
+                            .filter(g => g.id !== currentRgId && (g.assigned_users || []).some(e => e.toLowerCase() === email.toLowerCase()))
+                            .map(g => g.id);
+                        await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, group_ids: [...currentGroupIds, currentRgId] })
+                        });
+                    }
+                    for (const email of usersToRemove) {
+                        const currentGroupIds = allRestrictionGroups
+                            .filter(g => g.id !== currentRgId && (g.assigned_users || []).some(e => e.toLowerCase() === email.toLowerCase()))
+                            .map(g => g.id);
+                        await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, group_ids: currentGroupIds })
+                        });
+                    }
+                }
+
                 // Update local cache
                 const g = allRestrictionGroups.find(g => g.id === currentRgId);
                 if (g) {
@@ -2528,12 +2525,14 @@
                     g.secondary_approver_3 = approvers.sec3 || null;
                     g.budget_rules = JSON.parse(JSON.stringify(pendingRules));
                     g.vendors = [...pendingVendors];
+                    g.assigned_users = [...pendingUsers];
                 }
 
                 // Reset originals to current state
                 rgMetaOriginal = { name, desc, approvers };
                 originalRules = JSON.parse(JSON.stringify(pendingRules));
                 originalVendors = [...pendingVendors];
+                originalUsers = [...pendingUsers];
                 rgMetaDirty = false;
                 updateMetaSaveBar();
                 showToast('Group Saved', 'success');
@@ -2586,18 +2585,48 @@
         function editBudgetRule(ruleId) {
             const rule = pendingRules.find(r => r.id === ruleId);
             if (!rule) return;
-            // Populate input fields
-            document.getElementById('rgRuleFund').value = rule.fund || '';
-            document.getElementById('rgRuleOrg').value = rule.organization || '';
-            document.getElementById('rgRuleProg').value = rule.program || '';
-            document.getElementById('rgRuleFin').value = rule.finance || '';
-            document.getElementById('rgRuleCourse').value = rule.course || '';
-            // Remove the rule from pending
-            pendingRules = pendingRules.filter(r => r.id !== ruleId);
+            // Replace the rule's table row with inline inputs
+            const rows = document.querySelectorAll('.rg-rule-table tbody tr');
+            const idx = pendingRules.indexOf(rule);
+            if (idx < 0 || !rows[idx]) return;
+            const tr = rows[idx];
+            tr.innerHTML = `
+                <td><input type="text" value="${escapeHTML(rule.fund || '')}" id="editRuleFund" style="width:100%;padding:0.25rem 0.4rem;border:1px solid var(--primary-hex);border-radius:4px;font-family:'Inter',sans-serif;font-size:0.78rem;text-transform:uppercase;background:var(--bg-color);color:var(--text-primary);outline:none;box-sizing:border-box;"></td>
+                <td><input type="text" value="${escapeHTML(rule.organization || '')}" id="editRuleOrg" style="width:100%;padding:0.25rem 0.4rem;border:1px solid var(--primary-hex);border-radius:4px;font-family:'Inter',sans-serif;font-size:0.78rem;text-transform:uppercase;background:var(--bg-color);color:var(--text-primary);outline:none;box-sizing:border-box;"></td>
+                <td><input type="text" value="${escapeHTML(rule.program || '')}" id="editRuleProg" style="width:100%;padding:0.25rem 0.4rem;border:1px solid var(--primary-hex);border-radius:4px;font-family:'Inter',sans-serif;font-size:0.78rem;text-transform:uppercase;background:var(--bg-color);color:var(--text-primary);outline:none;box-sizing:border-box;"></td>
+                <td><input type="text" value="${escapeHTML(rule.finance || '')}" id="editRuleFin" style="width:100%;padding:0.25rem 0.4rem;border:1px solid var(--primary-hex);border-radius:4px;font-family:'Inter',sans-serif;font-size:0.78rem;text-transform:uppercase;background:var(--bg-color);color:var(--text-primary);outline:none;box-sizing:border-box;"></td>
+                <td style="display:flex;align-items:center;gap:0.3rem;">
+                    <input type="text" value="${escapeHTML(rule.course || '')}" id="editRuleCourse" style="flex:1;padding:0.25rem 0.4rem;border:1px solid var(--primary-hex);border-radius:4px;font-family:'Inter',sans-serif;font-size:0.78rem;text-transform:uppercase;background:var(--bg-color);color:var(--text-primary);outline:none;box-sizing:border-box;">
+                    <button onclick="saveEditedRule(${ruleId})" title="Save" style="background:var(--positive-color);border:none;border-radius:4px;padding:0.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></button>
+                    <button onclick="renderBudgetRules(pendingRules)" title="Cancel" style="background:var(--text-secondary);border:none;border-radius:4px;padding:0.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+                </td>
+            `;
+            tr.style.background = 'color-mix(in srgb, var(--primary-hex) 6%, transparent)';
+            document.getElementById('editRuleFund').focus();
+            // Enter to save, Escape to cancel
+            tr.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); saveEditedRule(ruleId); }
+                if (e.key === 'Escape') { e.preventDefault(); renderBudgetRules(pendingRules); }
+            });
+        }
+
+        function saveEditedRule(ruleId) {
+            const fund = document.getElementById('editRuleFund').value.trim() || null;
+            const organization = document.getElementById('editRuleOrg').value.trim() || null;
+            const program = document.getElementById('editRuleProg').value.trim() || null;
+            const finance = document.getElementById('editRuleFin').value.trim() || null;
+            const course = document.getElementById('editRuleCourse').value.trim() || null;
+            if (!fund && !organization && !program && !finance && !course) {
+                showToast('At Least One Field Required', 'error'); return;
+            }
+            const rule = pendingRules.find(r => r.id === ruleId);
+            if (rule) {
+                rule.fund = fund; rule.organization = organization;
+                rule.program = program; rule.finance = finance; rule.course = course;
+            }
             renderBudgetRules(pendingRules);
             markRgMetaDirty();
-            // Focus the first field
-            document.getElementById('rgRuleFund').focus();
+            showToast('Rule updated', 'success');
         }
 
         function deleteBudgetRule(ruleId) {
