@@ -297,7 +297,48 @@
             font-size: 0.78rem; padding: 0.4rem 0.5rem;
             border-bottom: 1px solid var(--border-color);
         }
-        .detail-rfp-table tbody tr { cursor: default; }
+        .detail-rfp-table tbody tr { cursor: pointer; transition: background 0.1s; }
+        .detail-rfp-table tbody tr:hover { background: color-mix(in srgb, var(--primary-hex) 6%, transparent); }
+
+        /* ============ RFP PREVIEW MODAL ============ */
+        .rfp-preview-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); z-index: 7000;
+            align-items: center; justify-content: center;
+        }
+        .rfp-preview-overlay.open { display: flex; }
+        .rfp-preview-card {
+            background: var(--card-bg); border-radius: 12px; width: 900px; max-width: 96vw;
+            max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+        }
+        .rfp-preview-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 1.25rem; border-bottom: none;
+        }
+        .rfp-preview-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; }
+        .rfp-preview-body { padding: 0 1.25rem 1.25rem; }
+        .rpg { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 0.75rem; }
+        .rpg-cell { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border-color); }
+        .rpg-cell:nth-last-child(-n+3) { border-bottom: none; }
+        .rpg-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); margin-bottom: 0.15rem; }
+        .rpg-value { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+        .rpg-2col { grid-template-columns: 1fr 1fr; }
+        .rpg-2col .rpg-cell:nth-last-child(-n+2) { border-bottom: none; }
+        .rpg-2col .rpg-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--border-color); }
+        .rp-line-items { margin-top: 1rem; overflow-x: auto; }
+        .rp-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin: 0 0 0.5rem 0; font-family: 'Inter', sans-serif; }
+        .rp-line-items table { width: 100%; min-width: 650px; border-collapse: collapse; font-size: 0.8rem; }
+        .rp-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border-color); position: static; background: transparent; }
+        .rp-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        .rp-total-row { display: flex; justify-content: flex-end; gap: 1.5rem; padding: 0.6rem 0.6rem 0; font-size: 0.85rem; font-weight: 600; }
+        .rfp-preview-footer { display: flex; justify-content: flex-start; padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); }
+        .rfp-preview-footer a {
+            display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem;
+            background: var(--text-primary); color: var(--card-bg); border-radius: 8px;
+            font-size: 0.8rem; font-weight: 600; font-family: 'Inter', sans-serif;
+            text-decoration: none; transition: opacity 0.15s;
+        }
+        .rfp-preview-footer a:hover { opacity: 0.85; }
         .detail-rfp-table tbody tr:hover { background: var(--row-hover-bg); }
         .detail-rfp-empty { font-size: 0.8rem; color: var(--text-secondary); padding: 1rem 0; text-align: center; }
         .rg-badge {
@@ -566,9 +607,11 @@
         </div>
 
         <!-- Restriction Groups Section -->
-        <div class="detail-section" id="detailRgSection" style="display:none;">
+        <div class="detail-section" id="detailRgSection">
             <div class="detail-section-title">Restriction Groups</div>
-            <div id="detailRgList" style="display:flex;flex-wrap:wrap;gap:0.35rem;padding:0.25rem 0;"></div>
+            <div id="detailRgToggles">
+                <div class="detail-rfp-empty">Loading...</div>
+            </div>
         </div>
 
         <!-- RFPs Section -->
@@ -576,6 +619,30 @@
             <div class="detail-section-title">Submitted Requests <span id="detailRfpCount" style="font-weight:400;color:var(--text-secondary);"></span></div>
             <div id="detailRfps">
                 <div class="detail-rfp-empty">No requests found</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ RFP PREVIEW MODAL ============ -->
+    <div class="rfp-preview-overlay" id="rfpPreviewOverlay" onclick="if(event.target===this)closeRfpPreview()">
+        <div class="rfp-preview-card">
+            <div class="rfp-preview-header">
+                <h3>Request Details</h3>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span id="rfpPreviewBadge"></span>
+                    <button onclick="closeRfpPreview()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:0.25rem;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="rfp-preview-body" id="rfpPreviewBody">
+                <div class="detail-rfp-empty">Loading...</div>
+            </div>
+            <div class="rfp-preview-footer" id="rfpPreviewFooter" style="display:none;">
+                <a id="rfpPreviewOpenLink" href="#" target="_blank">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    Open Request for Payment Form
+                </a>
             </div>
         </div>
     </div>
@@ -1067,27 +1134,8 @@
             // Roles
             renderRoleToggles(user);
 
-            // Restriction Groups
-            const rgSection = document.getElementById('detailRgSection');
-            const rgList = document.getElementById('detailRgList');
-            try {
-                const rgResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email)}`);
-                if (rgResp.ok) {
-                    const rgData = await rgResp.json();
-                    const groups = rgData.restriction_groups || [];
-                    if (groups.length > 0) {
-                        rgSection.style.display = '';
-                        rgList.innerHTML = groups.map(g => `<span class="rg-badge">${escHtml(g.name)}</span>`).join('');
-                    } else {
-                        rgSection.style.display = 'none';
-                        rgList.innerHTML = '';
-                    }
-                } else {
-                    rgSection.style.display = 'none';
-                }
-            } catch (e) {
-                rgSection.style.display = 'none';
-            }
+            // Restriction Groups — render toggles
+            renderRgToggles(user);
 
             // Load RFPs for this user
             loadUserRfps(user.email, name);
@@ -1254,7 +1302,7 @@
                         const statusColor = r.status === 'approved' ? 'var(--positive-color)' :
                                            r.status === 'rejected' ? 'var(--negative-color)' :
                                            'var(--text-secondary)';
-                        return `<tr>
+                        return `<tr onclick="openRfpPreview(${r.rfp_number})">
                             <td style="font-weight:600;">${r.rfp_number || '—'}</td>
                             <td style="color:${statusColor};font-weight:600;text-transform:capitalize;font-size:0.75rem;">${status}</td>
                             <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.vendor_name || '—')}</td>
@@ -1268,6 +1316,266 @@
                 }
             } catch (e) {
                 container.innerHTML = '<div class="detail-rfp-empty">Unable to load requests</div>';
+            }
+        }
+
+        /* ========================================
+           RFP PREVIEW MODAL
+           ======================================== */
+        function formatCurrency(val) {
+            const n = parseFloat(val) || 0;
+            return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatDate(d) {
+            if (!d) return '—';
+            try {
+                const dt = new Date(d);
+                return dt.toLocaleDateString('en-US');
+            } catch (e) { return d; }
+        }
+
+        function formatStatus(s) {
+            if (!s) return 'Draft';
+            return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function statusBadgeColor(s) {
+            if (s === 'approved') return 'background:rgba(22,163,74,0.12);color:#15803d;';
+            if (s === 'rejected') return 'background:rgba(250,5,15,0.12);color:#FA050F;';
+            if (s === 'submitted' || s === 'accounting-review' || s === 'ap-review') return 'background:rgba(59,130,246,0.12);color:#2563eb;';
+            return 'background:var(--bg-color);color:var(--text-secondary);';
+        }
+
+        async function openRfpPreview(rfpNumber) {
+            const overlay = document.getElementById('rfpPreviewOverlay');
+            const body = document.getElementById('rfpPreviewBody');
+            const badge = document.getElementById('rfpPreviewBadge');
+            const footer = document.getElementById('rfpPreviewFooter');
+            const openLink = document.getElementById('rfpPreviewOpenLink');
+
+            body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">Loading...</div>';
+            footer.style.display = 'none';
+            badge.innerHTML = '';
+            overlay.classList.add('open');
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}`);
+                if (!resp.ok) throw new Error('Failed to load');
+                const data = await resp.json();
+
+                const h = data.header || data;
+                const lineItems = data.lineItems || [];
+                const mileageTrips = data.mileageTrips || [];
+                const auditLogs = data.auditLogs || [];
+                const status = h.status || 'draft';
+
+                badge.innerHTML = `<span style="display:inline-block;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;font-family:'Inter',sans-serif;text-transform:capitalize;${statusBadgeColor(status)}">${formatStatus(status)}</span>`;
+
+                // Line items HTML
+                let total = 0;
+                let itemsHtml = lineItems.map((item, i) => {
+                    const amt = parseFloat(item.total) || 0;
+                    total += amt;
+                    return `<tr>
+                        <td>${item.line_number || i + 1}</td>
+                        <td>${escHtml(item.description || '—')}</td>
+                        <td>${escHtml(item.invoice_number || '—')}</td>
+                        <td style="text-align:center;">${item.budget_code || '—'}</td>
+                        <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
+                        <td style="text-align:right;">${formatCurrency(amt)}</td>
+                    </tr>`;
+                }).join('');
+
+                mileageTrips.forEach((trip, i) => {
+                    const amt = parseFloat(trip.amount) || 0;
+                    total += amt;
+                    itemsHtml += `<tr>
+                        <td>${lineItems.length + i + 1}</td>
+                        <td>BUSINESS MILEAGE<br><span style="font-size:0.75rem;color:var(--text-secondary);">${escHtml(trip.from_location || '')} → ${escHtml(trip.to_location || '')} (${trip.miles || 0} mi)</span></td>
+                        <td>—</td>
+                        <td style="text-align:center;">${trip.budget_code || '—'}</td>
+                        <td style="text-align:center;">${trip.account_code || '—'}</td>
+                        <td style="text-align:right;">${formatCurrency(amt)}</td>
+                    </tr>`;
+                });
+
+                if (!itemsHtml) itemsHtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>';
+
+                const displayTotal = total || h.total_amount || 0;
+                const daysOpen = h.submission_date ? Math.max(0, Math.floor((Date.now() - new Date(h.submission_date).getTime()) / 86400000)) : 0;
+                const isReimb = (h.request_type || '').toLowerCase().includes('reimb');
+
+                // Audit log
+                const auditId = 'rpAudit_' + rfpNumber;
+                let auditHtml = '';
+                if (auditLogs.length > 0) {
+                    auditHtml = `<div style="margin-top:1rem;">
+                        <button onclick="var el=document.getElementById('${auditId}');var ch=document.getElementById('${auditId}_chev');if(el.style.display==='none'){el.style.display='block';ch.style.transform='rotate(0deg)';}else{el.style.display='none';ch.style.transform='rotate(-90deg)';}" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);font-family:'Inter',sans-serif;">
+                            <svg id="${auditId}_chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                            Audit Log <span style="font-size:0.7rem;font-weight:500;color:var(--text-secondary);margin-left:0.25rem;">(${auditLogs.length})</span>
+                        </button>
+                        <div id="${auditId}" style="display:none;margin-top:0.4rem;">
+                            <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
+                                ${auditLogs.map((log, i) => `<div style="display:flex;gap:0.75rem;padding:0.6rem 0.85rem;${i < auditLogs.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}align-items:flex-start;">
+                                    <span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);min-width:18px;text-align:right;padding-top:1px;">${i + 1}.</span>
+                                    <div style="flex:1;">
+                                        <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${log.description || '—'}</div>
+                                        <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.15rem;">${log.created_at ? formatDate(log.created_at) : '—'}</div>
+                                    </div>
+                                </div>`).join('')}
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
+                // Attachments
+                let attachHtml = '';
+                try {
+                    const attResp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/attachments`);
+                    const attData = await attResp.json();
+                    const files = attData.attachments || [];
+                    if (files.length > 0) {
+                        attachHtml = `<div style="margin-top:1.25rem;">
+                            <h4 style="font-size:0.9rem;font-weight:700;margin:0 0 0.5rem 0;font-family:'Inter',sans-serif;">Attachments (${files.length})</h4>
+                            ${files.map(f => `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.65rem;background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.35rem;">
+                                <div style="width:36px;height:36px;border-radius:6px;background:#e74c3c;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <span style="color:#fff;font-size:0.5rem;font-weight:800;font-family:'Inter',sans-serif;">PDF</span>
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(f.filename || f.key || 'File')}</div>
+                                    ${f.size ? `<div style="font-size:0.68rem;color:var(--text-secondary);">${(f.size / 1024).toFixed(1)} KB</div>` : ''}
+                                </div>
+                                <a href="${API_BASE}/api/rfps/${rfpNumber}/attachments/${encodeURIComponent(f.key || f.filename)}" target="_blank" style="color:var(--text-secondary);flex-shrink:0;">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                </a>
+                            </div>`).join('')}
+                        </div>`;
+                    }
+                } catch (e) {}
+
+                body.innerHTML = `
+                    <div class="rpg">
+                        <div class="rpg-cell"><div class="rpg-label">RFP No.</div><div class="rpg-value" style="font-weight:700;">${rfpNumber}</div></div>
+                        <div class="rpg-cell"><div class="rpg-label">Submitted</div><div class="rpg-value">${formatDate(h.submission_date)}</div></div>
+                        <div class="rpg-cell"><div class="rpg-label">Days Open</div><div class="rpg-value">${daysOpen}d</div></div>
+                        <div class="rpg-cell"><div class="rpg-label">Submitter</div><div class="rpg-value">${escHtml(h.submitter_name || '—')}</div></div>
+                        <div class="rpg-cell"><div class="rpg-label">Assigned To</div><div class="rpg-value">${escHtml(h.assigned_to || '—')}</div></div>
+                        <div class="rpg-cell"><div class="rpg-label">Total</div><div class="rpg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(displayTotal)}</div></div>
+                    </div>
+                    <div class="rpg rpg-2col">
+                        <div class="rpg-cell"><div class="rpg-label">${isReimb ? 'Employee' : 'Vendor'}</div><div class="rpg-value">${escHtml(h.vendor_name || h.employee_name || '—')}</div></div>
+                        <div class="rpg-cell"><div class="rpg-label">Type</div><div class="rpg-value">${isReimb ? 'Employee Reimbursement' : 'Vendor Payment'}</div></div>
+                    </div>
+                    <div class="rp-line-items">
+                        <h4>Line Items</h4>
+                        <table>
+                            <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:100px;">Invoice #</th><th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th style="text-align:right;width:90px;">Amount</th></tr></thead>
+                            <tbody>${itemsHtml}</tbody>
+                        </table>
+                        <div class="rp-total-row">
+                            <span style="color:var(--text-secondary);">Total:</span>
+                            <span style="color:var(--text-primary);">${formatCurrency(displayTotal)}</span>
+                        </div>
+                    </div>
+                    ${attachHtml}
+                    ${auditHtml}
+                `;
+
+                openLink.href = `rfp-form.html?id=${rfpNumber}`;
+                footer.style.display = '';
+            } catch (e) {
+                body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">Failed to load request details</div>';
+            }
+        }
+
+        function closeRfpPreview() {
+            document.getElementById('rfpPreviewOverlay').classList.remove('open');
+        }
+
+        /* ========================================
+           RESTRICTION GROUP TOGGLES
+           ======================================== */
+        let allRestrictionGroups = null;
+
+        async function loadAllRestrictionGroups() {
+            if (allRestrictionGroups !== null) return allRestrictionGroups;
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    allRestrictionGroups = data.groups || data || [];
+                } else {
+                    allRestrictionGroups = [];
+                }
+            } catch (e) {
+                allRestrictionGroups = [];
+            }
+            return allRestrictionGroups;
+        }
+
+        async function renderRgToggles(user) {
+            const container = document.getElementById('detailRgToggles');
+            container.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);padding:0.25rem 0;">Loading...</div>';
+
+            const groups = await loadAllRestrictionGroups();
+
+            // Get user's current assignments
+            let assignedIds = [];
+            try {
+                const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(user.email)}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    assignedIds = (data.restriction_groups || []).map(g => g.id);
+                }
+            } catch (e) {}
+
+            // Store on user for toggle use
+            user._rgAssignedIds = assignedIds;
+
+            if (groups.length === 0) {
+                container.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);padding:0.25rem 0;">No restriction groups defined</div>';
+                return;
+            }
+
+            container.innerHTML = groups.map(g => {
+                const isOn = assignedIds.includes(g.id);
+                return `<div class="role-manage-row">
+                    <span class="role-manage-name">${escHtml(g.name)}</span>
+                    <button class="role-toggle ${isOn ? 'on' : ''}" onclick="toggleRg(${g.id}, this)" data-gid="${g.id}"></button>
+                </div>`;
+            }).join('');
+        }
+
+        async function toggleRg(groupId, btn) {
+            if (!selectedUser) return;
+            const isOn = btn.classList.contains('on');
+
+            let assignedIds = selectedUser._rgAssignedIds || [];
+            if (isOn) {
+                assignedIds = assignedIds.filter(id => id !== groupId);
+            } else {
+                assignedIds.push(groupId);
+            }
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: selectedUser.email, group_ids: assignedIds })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to update');
+                }
+
+                selectedUser._rgAssignedIds = assignedIds;
+                btn.classList.toggle('on');
+
+                const groupName = (allRestrictionGroups || []).find(g => g.id === groupId)?.name || 'Group';
+                showToast(`${groupName} ${isOn ? 'removed' : 'assigned'}`, 'success');
+            } catch (e) {
+                showToast('Failed to update restriction group: ' + e.message, 'error');
             }
         }
 
