@@ -4322,14 +4322,23 @@
                 // Access control: only the submitter or admins can view
                 const impEmail = sessionStorage.getItem('impersonateEmail');
                 const effectiveEmail = impEmail ? impEmail.toLowerCase() : currentLoggedInEmail;
-                if (effectiveEmail && data.submitter_email) {
-                    const isOwner = effectiveEmail === data.submitter_email.toLowerCase();
-                    const canAccess = isOwner || (!impEmail && currentUserIsAdmin);
-                    if (!canAccess) {
+                const rfpOwner = (data.submitter_email || '').toLowerCase();
+
+                if (effectiveEmail) {
+                    const isOwner = rfpOwner && effectiveEmail === rfpOwner;
+                    const isAdminNotImpersonating = !impEmail && currentUserIsAdmin;
+                    if (!isOwner && !isAdminNotImpersonating) {
                         showAlert('You do not have permission to view this request.', 'Access Denied');
+                        formDirty = false;
                         setTimeout(() => { window.location.href = 'index.html'; }, 2000);
                         return;
                     }
+                } else if (impEmail) {
+                    // Impersonating but couldn't determine email — deny
+                    showAlert('You do not have permission to view this request.', 'Access Denied');
+                    formDirty = false;
+                    setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+                    return;
                 }
 
                 // Cache data for audit log
