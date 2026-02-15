@@ -875,11 +875,11 @@
                 <div class="rg-section-hint">Add rules to restrict which budget codes are available. Leave empty for unrestricted access.</div>
                 <div id="rgBudgetRules"></div>
                 <div class="rg-rule-add">
-                    <input type="text" id="rgRuleFund" placeholder="Fund" maxlength="2" style="width:60px;">
-                    <input type="text" id="rgRuleOrg" placeholder="Org" maxlength="3" style="width:70px;">
-                    <input type="text" id="rgRuleProg" placeholder="Program" maxlength="3" style="width:80px;">
-                    <input type="text" id="rgRuleFin" placeholder="Finance" maxlength="3" style="width:80px;">
-                    <input type="text" id="rgRuleCourse" placeholder="Course" maxlength="3" style="width:80px;">
+                    <input type="text" id="rgRuleFund" placeholder="Fund" style="width:80px;">
+                    <input type="text" id="rgRuleOrg" placeholder="Org" style="width:90px;">
+                    <input type="text" id="rgRuleProg" placeholder="Program" style="width:100px;">
+                    <input type="text" id="rgRuleFin" placeholder="Finance" style="width:100px;">
+                    <input type="text" id="rgRuleCourse" placeholder="Course" style="width:100px;">
                     <button class="rg-add-rule-btn" onclick="addBudgetRule()">
                         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
                         Add Rule
@@ -2108,12 +2108,22 @@
         function renderBudgetRules(rules) {
             const container = document.getElementById('rgBudgetRules');
             if (!rules || !rules.length) {
-                container.innerHTML = '<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2.</div><div class="rg-no-rules">No budget code restrictions — all codes available. Add a rule below to restrict.</div>';
+                container.innerHTML = '<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2. Use <code>|</code> to separate distinct values (e.g. <code>01|04</code>). Use <code>:</code> for ranges (e.g. <code>600:699</code>).</div><div class="rg-no-rules">No budget code restrictions — all codes available. Add a rule below to restrict.</div>';
                 return;
             }
-            const cell = (v) => v ? (v.match(/[X*]/i) ? `<span class="wildcard">${escapeHTML(v)}</span>` : escapeHTML(v)) : '<span class="any">Any</span>';
+            const cell = (v) => {
+                if (!v) return '<span class="any">Any</span>';
+                // Highlight special syntax
+                const parts = v.split('|').map(part => {
+                    part = part.trim();
+                    if (part.includes(':')) return `<span class="wildcard">${escapeHTML(part)}</span>`;
+                    if (part.match(/[X*]/i)) return `<span class="wildcard">${escapeHTML(part)}</span>`;
+                    return escapeHTML(part);
+                });
+                return parts.join('<span style="color:var(--text-secondary);margin:0 1px;">|</span>');
+            };
             container.innerHTML =
-                `<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2.</div>` +
+                `<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2. Use <code>|</code> to separate distinct values (e.g. <code>01|04</code>). Use <code>:</code> for ranges (e.g. <code>600:699</code>).</div>` +
                 `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Org</th><th>Program</th><th>Finance</th><th>Course</th></tr></thead><tbody>` +
                 rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}<button class="row-del" onclick="deleteBudgetRule(${r.id})" title="Delete rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></td></tr>`).join('') +
                 `</tbody></table>`;

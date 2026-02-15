@@ -1437,16 +1437,29 @@
 
         function rFieldMatch(codeVal, ruleVal) {
             if (!ruleVal) return true;
-            const rv = ruleVal.toUpperCase().trim();
             const cv = codeVal.toUpperCase();
-            if (rv.includes('*')) return cv.startsWith(rv.replace(/\*/g, ''));
-            if (rv.includes('X')) {
-                for (let i = 0; i < rv.length; i++) {
-                    if (rv[i] !== 'X' && (i >= cv.length || rv[i] !== cv[i])) return false;
+            const terms = ruleVal.split('|').map(t => t.trim().toUpperCase()).filter(t => t);
+            return terms.some(term => {
+                if (term.includes(':')) {
+                    const [lo, hi] = term.split(':').map(s => s.trim());
+                    const numCv = parseInt(cv, 10);
+                    const numLo = parseInt(lo, 10);
+                    const numHi = parseInt(hi, 10);
+                    if (!isNaN(numCv) && !isNaN(numLo) && !isNaN(numHi)) {
+                        return numCv >= numLo && numCv <= numHi;
+                    }
+                    return false;
                 }
-                return true;
-            }
-            return cv === rv;
+                if (term.includes('*')) return cv.startsWith(term.replace(/\*/g, ''));
+                if (term.includes('X')) {
+                    if (cv.length !== term.length) return false;
+                    for (let i = 0; i < term.length; i++) {
+                        if (term[i] !== 'X' && term[i] !== cv[i]) return false;
+                    }
+                    return true;
+                }
+                return cv === term;
+            });
         }
 
         function filterRgDropdown() {
