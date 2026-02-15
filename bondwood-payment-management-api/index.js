@@ -896,22 +896,24 @@ async function handleListRFPs(env, url) {
     let isAdmin = false;
     let canViewAll = false;
     let submitterId = null;
+    let submitterName = null;
     try {
       const { results: userRows } = await env.DB.prepare(
-        'SELECT user_id, user_roles FROM user_data WHERE LOWER(user_email) = ?'
+        'SELECT user_id, user_roles, first_name, last_name FROM user_data WHERE LOWER(user_email) = ?'
       ).bind(email).all();
       if (userRows.length) {
         const roles = JSON.parse(userRows[0].user_roles || '["user"]');
         isAdmin = roles.includes('super_user') || roles.includes('admin');
         canViewAll = isAdmin || roles.includes('accountant') || roles.includes('accounts_payable');
         submitterId = 'E' + userRows[0].user_id;
+        submitterName = ((userRows[0].first_name || '') + ' ' + (userRows[0].last_name || '')).trim().toUpperCase();
       }
     } catch (e) {}
 
     if (!canViewAll && submitterId) {
-      // User can see: forms they submitted OR forms assigned to them OR forms they acted on
-      where.push('(d.submitter_id = ? OR LOWER(d.assigned_to_email) = ? OR d.rfp_number IN (SELECT DISTINCT rfp_number FROM audit_logs WHERE LOWER(performed_by_email) = ?))');
-      params.push(submitterId, email, email);
+      // User can see: forms they submitted (by ID or name) OR forms assigned to them OR forms they acted on
+      where.push('(UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?) OR (? != \'\' AND UPPER(d.submitter_name) = ?) OR LOWER(d.assigned_to_email) = ? OR d.rfp_number IN (SELECT DISTINCT rfp_number FROM audit_logs WHERE LOWER(performed_by_email) = ?))');
+      params.push(submitterId, submitterId.replace(/^E/i, ''), submitterName || '', submitterName || '', email, email);
     } else if (!canViewAll && !submitterId) {
       // User not found in DB — return nothing
       return json({ rfps: [], total: 0, page, limit });
