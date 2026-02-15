@@ -2180,7 +2180,7 @@
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.assigned_users.length}</span></td>
-                    <td><button onclick="event.stopPropagation();deleteRg(${g.id},'${escapeHTML(g.name)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
+                    <td><button onclick="event.stopPropagation();deleteRg(${g.id},this)" data-name="${escAttr(g.name)}" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                     </button></td>
                 </tr>
@@ -2211,8 +2211,23 @@
             } catch (e) { showToast('Failed to Create Group', 'error'); }
         }
 
-        async function deleteRg(id, name) {
-            if (!confirm(`Delete restriction group "${name}"? This will remove it from all assigned users.`)) return;
+        let _pendingDeleteRgId = null;
+        function deleteRg(id, btn) {
+            const name = btn.getAttribute('data-name') || 'this group';
+            _pendingDeleteRgId = id;
+            const overlay = document.getElementById('deleteRgOverlay');
+            document.getElementById('deleteRgName').textContent = name;
+            overlay.style.display = 'flex';
+        }
+        function cancelDeleteRg() {
+            _pendingDeleteRgId = null;
+            document.getElementById('deleteRgOverlay').style.display = 'none';
+        }
+        async function confirmDeleteRg() {
+            const id = _pendingDeleteRgId;
+            if (!id) return;
+            document.getElementById('deleteRgOverlay').style.display = 'none';
+            _pendingDeleteRgId = null;
             try {
                 await fetch(`${API_BASE}/api/restriction-groups/${id}`, { method: 'DELETE' });
                 showToast('Group Deleted', 'success');
@@ -3089,5 +3104,24 @@
         function toggleHamburgerMenu() { const m=document.getElementById('hamburgerMenu');if(m.classList.contains('open'))closeHamburgerMenu();else{m.style.display='block';document.getElementById('hamburgerOverlay').style.display='block';m.offsetHeight;m.classList.add('open');m.style.transform='translateX(0)';} }
         function closeHamburgerMenu() { const m=document.getElementById('hamburgerMenu');m.style.transform='translateX(-100%)';m.classList.remove('open');setTimeout(()=>{m.style.display='none';document.getElementById('hamburgerOverlay').style.display='none';},200); }
     </script>
+
+    <!-- Delete Restriction Group Confirmation Modal -->
+    <div id="deleteRgOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;font-family:'Inter',sans-serif;" onclick="if(event.target===this)cancelDeleteRg()">
+        <div style="background:var(--card-bg);border-radius:12px;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+                <div style="width:36px;height:36px;border-radius:8px;background:#fee2e2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </div>
+                <h3 style="margin:0;font-size:1rem;font-weight:700;color:var(--text-primary);">Delete Restriction Group</h3>
+            </div>
+            <p style="margin:0 0 1.5rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.6;">
+                Are you sure you want to delete <strong id="deleteRgName" style="color:var(--text-primary);"></strong>? This will remove it from all assigned users and cannot be undone.
+            </p>
+            <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button onclick="cancelDeleteRg()" style="padding:0.5rem 1rem;border:1px solid var(--border-color);border-radius:8px;background:var(--card-bg);color:var(--text-primary);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">Cancel</button>
+                <button onclick="confirmDeleteRg()" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#ef4444;color:#fff;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">Delete Group</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
