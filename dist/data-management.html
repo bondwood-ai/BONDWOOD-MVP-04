@@ -672,7 +672,7 @@
                     <div class="form-group"><label>Budget Code</label><input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode(); checkBudgetFormValid()"></div>
                     <div class="form-group"><label>Account Code</label><input type="text" id="addAccountCode" placeholder="e.g. 401" oninput="checkBudgetFormValid()"></div>
                     <div class="form-group"><label>Fund</label><input type="text" id="addFund" placeholder="01" readonly></div>
-                    <div class="form-group"><label>Org</label><input type="text" id="addOrganization" placeholder="005" readonly></div>
+                    <div class="form-group"><label>Organization</label><input type="text" id="addOrganization" placeholder="005" readonly></div>
                     <div class="form-group"><label>Program</label><input type="text" id="addProgram" placeholder="203" readonly></div>
                     <div class="form-group"><label>Finance</label><input type="text" id="addFinance" placeholder="000" readonly></div>
                     <div class="form-group"><label>Course</label><input type="text" id="addCourse" placeholder="000" readonly></div>
@@ -707,7 +707,7 @@
                             <th onclick="sortBudgetCodes('budget_code')">Budget Code</th>
                             <th onclick="sortBudgetCodes('account_code')">Account</th>
                             <th onclick="sortBudgetCodes('fund')">Fund</th>
-                            <th>Org</th><th>Program</th><th>Finance</th><th>Course</th>
+                            <th>Organization</th><th>Program</th><th>Finance</th><th>Course</th>
                         </tr></thead>
                         <tbody id="budgetBody"><tr><td colspan="8" class="empty-state">Loading budget codes...</td></tr></tbody>
                     </table>
@@ -909,7 +909,7 @@
                 <div id="rgBudgetRules"></div>
                 <div class="rg-rule-add">
                     <input type="text" id="rgRuleFund" placeholder="Fund" style="width:80px;">
-                    <input type="text" id="rgRuleOrg" placeholder="Org" style="width:90px;">
+                    <input type="text" id="rgRuleOrg" placeholder="Organization" style="width:90px;">
                     <input type="text" id="rgRuleProg" placeholder="Program" style="width:100px;">
                     <input type="text" id="rgRuleFin" placeholder="Finance" style="width:100px;">
                     <input type="text" id="rgRuleCourse" placeholder="Course" style="width:100px;">
@@ -1904,7 +1904,7 @@
                     <div style="display:flex;align-items:flex-start;gap:0.6rem;">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-hex)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
                         <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">
-                            Columns in order: <strong>Name</strong> · <strong>Fund</strong> · <strong>Org</strong> · <strong>Program</strong> · <strong>Finance</strong> · <strong>Course</strong> · <span style="color:var(--text-secondary);">Primary Approver · Secondary 1 · Secondary 2 · Secondary 3</span> · <strong>Vendor</strong>
+                            Columns in order: <strong>Name</strong> · <strong>Fund</strong> · <strong>Organization</strong> · <strong>Program</strong> · <strong>Finance</strong> · <strong>Course</strong> · <span style="color:var(--text-secondary);">Primary Approver · Secondary 1 · Secondary 2 · Secondary 3</span> · <strong>Vendor</strong>
                             <div style="margin-top:0.35rem;font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">Multiple rows with the same Name create one group with multiple rules/vendors. Leave B–F blank to add only a vendor restriction.</div>
                         </div>
                     </div>
@@ -2444,7 +2444,7 @@
             };
             container.innerHTML =
                 `<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2. Use <code>|</code> to separate distinct values (e.g. <code>01|04</code>). Use <code>:</code> for ranges (e.g. <code>600:699</code>).</div>` +
-                `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Org</th><th>Program</th><th>Finance</th><th>Course</th></tr></thead><tbody>` +
+                `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Organization</th><th>Program</th><th>Finance</th><th>Course</th></tr></thead><tbody>` +
                 rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}<button class="row-edit" onclick="editBudgetRule(${r.id})" title="Edit rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="row-del" onclick="deleteBudgetRule(${r.id})" title="Delete rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></td></tr>`).join('') +
                 `</tbody></table>`;
         }
