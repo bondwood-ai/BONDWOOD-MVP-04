@@ -408,7 +408,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles, status FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -450,6 +450,11 @@ async function handleMe(request, env, url) {
   }
 
   const u = results[0];
+
+  // Block deactivated users
+  if (u.status === 'inactive') {
+    return json({ error: 'account_deactivated', message: 'Your account has been deactivated. Please contact an administrator.' }, 403);
+  }
 
   // Parse roles from JSON column
   let roles = [];

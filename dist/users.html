@@ -844,6 +844,21 @@
                 AVAILABLE_ROLES.map(r => `<option value="${r}">${ROLE_LABELS[r] || r}</option>`).join('');
         }
 
+        function showDeactivatedScreen() {
+            document.body.innerHTML = '';
+            document.body.style.cssText = 'margin:0;padding:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0e0e12;font-family:Inter,sans-serif;';
+            const card = document.createElement('div');
+            card.style.cssText = 'text-align:center;max-width:440px;padding:3rem 2.5rem;';
+            card.innerHTML = `
+                <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1.5rem;">
+                    <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+                <h1 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 0.75rem;">Account Deactivated</h1>
+                <p style="font-size:0.92rem;color:#888;line-height:1.7;margin:0;">Your account has been deactivated. Please contact an administrator to restore access.</p>
+            `;
+            document.body.appendChild(card);
+        }
+
         async function fetchCurrentUser() {
             try {
                 let resp = await fetch('/api/me');
@@ -852,9 +867,13 @@
                     resp = await fetch(`${API_BASE}/api/me`);
                     ct = resp.headers.get('content-type') || '';
                 }
-                if (!resp.ok || !ct.includes('application/json')) return;
+                if (!ct.includes('application/json')) return;
                 const user = await resp.json();
-                if (user.error) return;
+                if (user.error === 'account_deactivated') {
+                    showDeactivatedScreen();
+                    return;
+                }
+                if (!resp.ok || user.error) return;
                 currentUserEmail = user.email || '';
                 currentUserRoles = user.roles || [];
                 currentUserPermissions = user.permissions || {};

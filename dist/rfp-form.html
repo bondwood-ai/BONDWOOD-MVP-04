@@ -1982,18 +1982,42 @@
         let currentLoggedInEmail = null;
         let currentUserIsAdmin = false;
 
+        function showDeactivatedScreen() {
+            document.body.innerHTML = '';
+            document.body.style.cssText = 'margin:0;padding:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0e0e12;font-family:Inter,sans-serif;';
+            const card = document.createElement('div');
+            card.style.cssText = 'text-align:center;max-width:440px;padding:3rem 2.5rem;';
+            card.innerHTML = `
+                <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1.5rem;">
+                    <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                </svg>
+                <h1 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 0.75rem;">Account Deactivated</h1>
+                <p style="font-size:0.92rem;color:#888;line-height:1.7;margin:0;">Your account has been deactivated. Please contact an administrator to restore access.</p>
+            `;
+            document.body.appendChild(card);
+        }
+
         async function loadMenuPermissions() {
             try {
                 const resp = await fetch('/api/me');
-                if (!resp.ok) return;
                 const ct = resp.headers.get('content-type') || '';
                 if (!ct.includes('application/json')) return;
                 const user = await resp.json();
+                if (user.error === 'account_deactivated') {
+                    showDeactivatedScreen();
+                    return;
+                }
+                if (!resp.ok) return;
                 if (!user.email) return;
                 currentLoggedInEmail = user.email.toLowerCase();
                 const permResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(user.email)}`);
+                const permData = await permResp.json();
+                if (permData.error === 'account_deactivated') {
+                    showDeactivatedScreen();
+                    return;
+                }
                 if (!permResp.ok) return;
-                const fullUser = await permResp.json();
+                const fullUser = permData;
                 const perms = fullUser.permissions || {};
                 currentUserIsAdmin = !!(perms.can_manage_users || perms.can_manage_vendors);
                 USER_RESTRICTIONS = await loadUserRestrictionRules(user.email);
