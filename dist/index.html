@@ -4118,7 +4118,6 @@
             initCustomSelect(document.getElementById("statusFilter"));
 
             // Check for impersonate query param
-            const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('impersonate') === '1' && currentUserPermissions.can_manage_users) {
                 history.replaceState(null, '', window.location.pathname); // clean URL
                 openImpersonateModal();
