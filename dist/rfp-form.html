@@ -4183,12 +4183,12 @@
             });
             if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
                 document.querySelectorAll('#mileageBody tr').forEach(r => {
-                    const amt = parseFloat(r.querySelector('.trip-amount')?.value) || 0;
+                    const amt = parseFormattedNumber(r.querySelector('.trip-amount')?.value) || 0;
                     grandTotal += amt;
                 });
             }
             if (grandTotal <= 0) {
-                showAlert('Total amount must be greater than $0.00. Please enter line item amounts before submitting.', 'Validation');
+                showAlert('Total amount must be greater than $0.00. Please enter amounts before submitting.', 'Validation');
                 return;
             }
 
