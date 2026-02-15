@@ -216,6 +216,12 @@ export default {
       if (path === '/api/users/roles' && method === 'PUT') {
         return handleUpdateUserRoles(request, env);
       }
+      if (path === '/api/users/restriction-groups' && method === 'PUT') {
+        return handleUpdateUserRestrictionGroups(request, env);
+      }
+      if (path === '/api/users/restriction-rules' && method === 'GET') {
+        return handleGetUserRestrictionRules(url, env);
+      }
       if (path === '/api/role-definitions' && method === 'GET') {
         return handleGetRoleDefinitions(env);
       }
@@ -400,7 +406,42 @@ async function handleMe(request, env, url) {
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
-    return json({ error: 'User not found' }, 404);
+    // Auto-provision new user with default "submitter" role
+    const emailLower = email.toLowerCase().trim();
+    const nameParts = emailLower.split('@')[0].split('.');
+    const firstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : '';
+    const lastName = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : '';
+
+    // Generate a unique user_id
+    let userId;
+    try {
+      const { results: seqRows } = await env.DB.prepare(
+        "SELECT seq FROM sqlite_sequence WHERE name = 'user_data'"
+      ).all();
+      userId = String((seqRows[0]?.seq || 99999) + 1);
+    } catch (e) { userId = String(Date.now()).slice(-6); }
+
+    try {
+      await env.DB.prepare(
+        'INSERT INTO user_data (user_id, user_email, user_first_name, user_last_name, user_roles, status) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(userId, emailLower, firstName, lastName, '["submitter"]', 'active').run();
+
+      return json({
+        user_id: userId,
+        first_name: firstName,
+        last_name: lastName,
+        email: emailLower,
+        phone_number: '',
+        department: '',
+        title: '',
+        profile_picture_key: null,
+        roles: ['submitter'],
+        permissions: {},
+        restrictions: {},
+      });
+    } catch (e) {
+      return json({ error: 'Failed to provision user: ' + e.message }, 500);
+    }
   }
 
   const u = results[0];
@@ -427,6 +468,30 @@ async function handleMe(request, env, url) {
     can_import: isAdmin,
   };
 
+  // Fetch user's restriction group budget rules
+  let budget_rules = [];
+  let restricted_vendors = [];
+  try {
+    const emailLower = (u.user_email || '').toLowerCase();
+    const { results: assignments } = await env.DB.prepare(
+      'SELECT group_id FROM user_restriction_assignments WHERE LOWER(user_email) = ?'
+    ).bind(emailLower).all();
+
+    if (assignments.length > 0) {
+      const groupIds = assignments.map(a => a.group_id);
+      const placeholders = groupIds.map(() => '?').join(',');
+      const { results: rules } = await env.DB.prepare(
+        `SELECT fund, organization, program, finance, course FROM restriction_group_budget_rules WHERE group_id IN (${placeholders})`
+      ).bind(...groupIds).all();
+      budget_rules = rules;
+
+      const { results: vendors } = await env.DB.prepare(
+        `SELECT vendor_number FROM restriction_group_vendors WHERE group_id IN (${placeholders})`
+      ).bind(...groupIds).all();
+      restricted_vendors = vendors.map(v => v.vendor_number);
+    }
+  } catch (e) {}
+
   return json({
     user_id: u.user_id,
     first_name: u.user_first_name,
@@ -439,6 +504,8 @@ async function handleMe(request, env, url) {
     roles,
     permissions,
     restrictions,
+    budget_rules,
+    restricted_vendors,
   });
 }
 
@@ -797,6 +864,11 @@ async function handleListRFPs(env, url) {
   const dir = (url.searchParams.get('dir') || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
   const email = (url.searchParams.get('email') || '').toLowerCase().trim();
 
+  // If no email provided, return empty — never return all RFPs unfiltered
+  if (!email) {
+    return json({ rfps: [], total: 0, page: 1, limit });
+  }
+
   const allowedSorts = ['rfp_number', 'submission_date', 'submitter_name', 'vendor_name', 'status'];
   const sortCol = allowedSorts.includes(sort) ? sort : 'rfp_number';
 
@@ -821,6 +893,9 @@ async function handleListRFPs(env, url) {
     if (!isAdmin && submitterId) {
       where.push('d.submitter_id = ?');
       params.push(submitterId);
+    } else if (!isAdmin && !submitterId) {
+      // User not found in DB — return nothing
+      return json({ rfps: [], total: 0, page, limit });
     }
   }
 
@@ -1043,6 +1118,7 @@ async function handleCreateRFP(request, env) {
 async function handleUpdateRFP(rfpNumber, request, env) {
   const body = await request.json();
   const performer = body.submitter_name || 'Unknown';
+  const performerEmail = (body.performer_email || '').toLowerCase().trim();
 
   // ── Read existing state BEFORE making changes ──
   const { results: existingHeader } = await env.DB.prepare(
@@ -1053,6 +1129,35 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     return json({ error: 'RFP not found' }, 404);
   }
   const oldHeader = existingHeader[0];
+
+  // ── APPROVAL GUARD: prevent self-approval and check approver authorization ──
+  const approvalStatuses = ['accounting-review', 'ap-review', 'approved', 'rejected'];
+  if (body.status && approvalStatuses.includes(body.status) && performerEmail) {
+    // 1. Never allow self-approval/self-advancement
+    const submitterId = (oldHeader.submitter_id || '').toUpperCase();
+
+    let performerUserId = null;
+    let isAdmin = false;
+    try {
+      const { results: pUser } = await env.DB.prepare(
+        'SELECT user_id, user_roles FROM user_data WHERE LOWER(user_email) = ?'
+      ).bind(performerEmail).all();
+      if (pUser.length) {
+        performerUserId = 'E' + pUser[0].user_id;
+        const roles = JSON.parse(pUser[0].user_roles || '["user"]');
+        isAdmin = roles.includes('super_user') || roles.includes('admin');
+      }
+    } catch (e) {}
+
+    if (performerUserId && performerUserId === submitterId) {
+      return json({ error: 'You cannot approve or reject your own submission' }, 403);
+    }
+
+    // 2. Only admins+ can approve/reject
+    if (!isAdmin) {
+      return json({ error: 'You do not have permission to approve or reject submissions' }, 403);
+    }
+  }
 
   let oldItems = [];
   try {
@@ -1935,6 +2040,19 @@ async function handleGetUsers(env) {
     'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles, restrictions FROM user_data ORDER BY user_first_name ASC'
   ).all();
 
+  // Fetch all restriction group assignments
+  let assignMap = {};
+  try {
+    const { results: assignments } = await env.DB.prepare(
+      'SELECT user_email, group_id FROM user_restriction_assignments'
+    ).all();
+    for (const a of assignments) {
+      const e = (a.user_email || '').toLowerCase();
+      if (!assignMap[e]) assignMap[e] = [];
+      assignMap[e].push(a.group_id);
+    }
+  } catch (e) {}
+
   const merged = users.map(u => {
     let roles = [];
     try { roles = JSON.parse(u.user_roles || '["user"]'); } catch (e) { roles = ['user']; }
@@ -1942,6 +2060,7 @@ async function handleGetUsers(env) {
     try { restrictions = JSON.parse(u.restrictions || '{}'); } catch (e) {}
     const isSuperUser = roles.includes('super_user');
     const isAdmin = roles.includes('admin') || isSuperUser;
+    const emailLower = (u.user_email || '').toLowerCase();
     return {
       user_id: u.user_id,
       first_name: u.user_first_name,
@@ -1954,6 +2073,7 @@ async function handleGetUsers(env) {
       status: u.status || 'active',
       roles,
       restrictions,
+      restriction_group_ids: assignMap[emailLower] || [],
       permissions: {
         can_manage_users: isSuperUser,
         can_manage_vendors: isAdmin,
@@ -2041,6 +2161,75 @@ async function handleUpdateUserRoles(request, env) {
     return json({ message: 'Roles updated', email, roles });
   } catch (e) {
     return json({ error: 'Failed to update roles: ' + e.message }, 500);
+  }
+}
+
+async function handleGetUserRestrictionRules(url, env) {
+  const email = (url.searchParams.get('email') || '').toLowerCase().trim();
+  if (!email) return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] });
+
+  try {
+    const { results: assignments } = await env.DB.prepare(
+      'SELECT group_id FROM user_restriction_assignments WHERE LOWER(user_email) = ?'
+    ).bind(email).all();
+
+    if (!assignments.length) {
+      return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] });
+    }
+
+    const groupIds = assignments.map(a => a.group_id);
+    const placeholders = groupIds.map(() => '?').join(',');
+
+    const { results: rules } = await env.DB.prepare(
+      `SELECT fund, organization, program, finance, course FROM restriction_group_budget_rules WHERE group_id IN (${placeholders})`
+    ).bind(...groupIds).all();
+
+    const { results: vendors } = await env.DB.prepare(
+      `SELECT vendor_number FROM restriction_group_vendors WHERE group_id IN (${placeholders})`
+    ).bind(...groupIds).all();
+
+    const vendorNumbers = vendors.map(v => v.vendor_number);
+
+    return json({
+      restricted_budget: rules.length > 0,
+      restricted_vendors: vendorNumbers.length > 0,
+      budget_rules: rules,
+      vendor_numbers: vendorNumbers,
+    });
+  } catch (e) {
+    return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [], error: e.message });
+  }
+}
+
+async function handleUpdateUserRestrictionGroups(request, env) {
+  const body = await request.json();
+  const { email, group_ids } = body;
+
+  if (!email || !Array.isArray(group_ids)) {
+    return json({ error: 'email and group_ids array are required' }, 400);
+  }
+
+  const emailLower = email.toLowerCase().trim();
+
+  try {
+    // Delete existing assignments for this user
+    await env.DB.prepare(
+      'DELETE FROM user_restriction_assignments WHERE LOWER(user_email) = ?'
+    ).bind(emailLower).run();
+
+    // Insert new assignments
+    if (group_ids.length > 0) {
+      const stmts = group_ids.map(gid =>
+        env.DB.prepare(
+          'INSERT INTO user_restriction_assignments (user_email, group_id) VALUES (?, ?)'
+        ).bind(emailLower, gid)
+      );
+      await env.DB.batch(stmts);
+    }
+
+    return json({ message: 'Restriction groups updated', email: emailLower, group_ids });
+  } catch (e) {
+    return json({ error: 'Failed to update restriction groups: ' + e.message }, 500);
   }
 }
 

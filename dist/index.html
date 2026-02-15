@@ -1862,7 +1862,7 @@
                         await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ status: newStatus })
+                            body: JSON.stringify({ status: newStatus, performer_email: impersonateEmail || currentUserEmail })
                         });
                         await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}/audit-log`, {
                             method: 'POST',
@@ -1914,7 +1914,7 @@
                     : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
 
                 try {
-                    const updateBody = { status: newStatus };
+                    const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail };
                     if (isFullApproval && apBatch) updateBody.ap_batch = apBatch;
 
                     await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
@@ -2296,7 +2296,9 @@
             // Show/hide approval buttons
             const approvalBtns = document.getElementById('previewApprovalBtns');
             const printRfpBtn = document.getElementById('previewPrintRfpBtn');
-            if (isInApprovalWorkflow(rfp.status)) {
+            const isOwnSubmission = rfp.submitterId && currentUserId && rfp.submitterId === currentUserId;
+            const canApprove = isInApprovalWorkflow(rfp.status) && currentUserRole === 'admin' && !isOwnSubmission;
+            if (canApprove) {
                 approvalBtns.style.display = '';
             } else {
                 approvalBtns.style.display = 'none';
@@ -2575,9 +2577,12 @@
                 const resp = await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
+                    body: JSON.stringify({ status: newStatus, performer_email: impersonateEmail || currentUserEmail })
                 });
-                if (!resp.ok) throw new Error('Failed to update status');
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Failed to update status');
+                }
 
                 // Add audit log entry
                 await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}/audit-log`, {
@@ -2648,7 +2653,7 @@
                 : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
 
             try {
-                const updateBody = { status: newStatus };
+                const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail };
                 if (apBatch) updateBody.ap_batch = apBatch;
 
                 const resp = await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}`, {
@@ -2656,7 +2661,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updateBody)
                 });
-                if (!resp.ok) throw new Error('Failed to update status');
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Failed to update status');
+                }
 
                 await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}/audit-log`, {
                     method: 'POST',
