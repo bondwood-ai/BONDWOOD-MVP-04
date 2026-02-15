@@ -1242,8 +1242,8 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     const isAssigned = (oldHeader.assigned_to_email || '').toLowerCase() === performerEmail;
     const isAccountant = performerRoles.includes('accountant');
     const isAP = performerRoles.includes('accounts_payable');
-    const atAccountingStep = oldHeader.status === 'accounting_review';
-    const atAPStep = oldHeader.status === 'ap_review';
+    const atAccountingStep = oldHeader.status === 'accounting_review' || oldHeader.status === 'accounting-review';
+    const atAPStep = oldHeader.status === 'ap_review' || oldHeader.status === 'ap-review';
 
     if (!isAdmin && !isAssigned && !(isAccountant && atAccountingStep) && !(isAP && atAPStep)) {
       return json({ error: 'You do not have permission to approve or reject this submission' }, 403);
@@ -1750,8 +1750,8 @@ async function handleWorkflowAction(rfpNumber, request, env) {
   const isAssigned = (rfp.assigned_to_email || '').toLowerCase() === performerEmail;
   const isAccountant = performerRoles.includes('accountant');
   const isAP = performerRoles.includes('accounts_payable');
-  const atAccountingStep = rfp.status === 'accounting_review';
-  const atAPStep = rfp.status === 'ap_review';
+  const atAccountingStep = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
+  const atAPStep = rfp.status === 'ap_review' || rfp.status === 'ap-review';
 
   if (!isAdmin && !isAssigned && !(isAccountant && atAccountingStep) && !(isAP && atAPStep)) {
     return json({ error: 'You do not have permission to perform this action on this form' }, 403);
@@ -1780,7 +1780,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
       at: now,
     });
 
-    if (rfp.status === 'ap_review' && !apBatchNumber) {
+    if ((rfp.status === 'ap_review' || rfp.status === 'ap-review') && !apBatchNumber) {
       return json({ error: 'Batch number is required for A/P approval' }, 400);
     }
 

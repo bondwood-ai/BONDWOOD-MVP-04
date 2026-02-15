@@ -69,12 +69,14 @@
         body.dark-mode .btn-primary.green:hover { opacity: 0.85; }
         body.dark-mode .status-badge.draft { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
         body.dark-mode .status-badge.submitted, body.dark-mode .status-badge.pending { background: rgba(91, 122, 255, 0.2); color: #5b7aff; }
-        body.dark-mode .status-badge.accounting-review { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        body.dark-mode .status-badge.accounting-review, body.dark-mode .status-badge.accounting_review { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
         body.dark-mode .filter-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
-        body.dark-mode .status-badge.ap-review { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+        body.dark-mode .status-badge.ap-review, body.dark-mode .status-badge.ap_review { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
         body.dark-mode .status-badge.approved { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
         body.dark-mode .status-badge.rejected { background: rgba(248, 113, 113, 0.2); color: #f87171; }
         body.dark-mode .status-badge.archived { background: rgba(255,255,255,0.1); color: #a0a0a0; }
+        body.dark-mode .status-badge.primary_review { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        body.dark-mode .status-badge.secondary_1_review, body.dark-mode .status-badge.secondary_2_review, body.dark-mode .status-badge.secondary_3_review { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
         body.dark-mode .form-type-badge.type-vendor { background: rgba(91, 122, 255, 0.2); color: #93b4ff; }
         body.dark-mode .form-type-badge.type-reimbursement { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
         body.dark-mode .invoice-age.overdue { color: #f87171; }
@@ -271,11 +273,13 @@
         .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; font-family: 'Google Sans Flex', sans-serif; }
         .status-badge.draft { background: rgba(107, 114, 128, 0.12); color: #4b5563; }
         .status-badge.submitted, .status-badge.pending { background: rgba(3, 70, 148, 0.12); color: #034694; }
-        .status-badge.accounting-review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
-        .status-badge.ap-review { background: rgba(14, 165, 233, 0.12); color: #0284c7; }
+        .status-badge.accounting-review, .status-badge.accounting_review { background: rgba(217, 119, 6, 0.12); color: #b45309; }
+        .status-badge.ap-review, .status-badge.ap_review { background: rgba(14, 165, 233, 0.12); color: #0284c7; }
         .status-badge.approved { background: rgba(22, 163, 74, 0.12); color: #15803d; }
         .status-badge.rejected { background: rgba(250, 5, 15, 0.12); color: #FA050F; }
         .status-badge.archived { background: rgba(0,0,0,0.06); color: #6b7280; }
+        .status-badge.primary_review { background: rgba(139, 92, 246, 0.12); color: #7c3aed; }
+        .status-badge.secondary_1_review, .status-badge.secondary_2_review, .status-badge.secondary_3_review { background: rgba(139, 92, 246, 0.08); color: #8b5cf6; }
 
         /* Form type badges */
         .form-type-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.68rem; font-weight: 600; white-space: nowrap; font-family: 'Google Sans Flex', sans-serif; }
@@ -1633,7 +1637,7 @@
                     if (!advancedSearchRfpNumbers.has(rfp.rfpNumber)) return false;
                 }
 
-                if (statusFilter !== 'all' && rfp.status !== statusFilter) return false;
+                if (statusFilter !== 'all' && rfp.status.replace(/-/g,'_') !== statusFilter.replace(/-/g,'_')) return false;
                 if (searchTerm) {
                     const searchable = [
                         String(rfp.rfpNumber), rfp.submitter, rfp.vendor,
@@ -1704,7 +1708,7 @@
             const selectedRFPs = allRFPs.filter(r => selectedRFPIds.has(r.id));
             const statuses = new Set(selectedRFPs.map(r => r.status));
             const allDraft = statuses.size > 0 && [...statuses].every(s => s === 'draft');
-            const allInWorkflow = statuses.size > 0 && [...statuses].every(s => ['submitted', 'accounting-review', 'ap-review'].includes(s));
+            const allInWorkflow = statuses.size > 0 && [...statuses].every(s => ['submitted', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review'].includes(s));
 
             document.getElementById('bulkArchiveBtn').style.display = allDraft ? '' : 'none';
             document.getElementById('bulkDeleteBtn').style.display = allDraft ? '' : 'none';
@@ -1729,7 +1733,7 @@
         function updateStats() {
             const data = filteredRFPs;
             document.getElementById('statTotal').textContent = data.length;
-            document.getElementById('statInProgress').textContent = data.filter(r => ['submitted', 'accounting-review', 'ap-review'].includes(r.status)).length;
+            document.getElementById('statInProgress').textContent = data.filter(r => ['submitted', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review'].includes(r.status)).length;
             document.getElementById('statApproved').textContent = data.filter(r => r.status === 'approved').length;
             document.getElementById('statOverdue').textContent = data.filter(r => r.invoiceAge > 35 && r.status !== 'approved').length;
             // Toggle overdue styling based on count
@@ -1741,7 +1745,7 @@
             const isFiltering = (document.getElementById('searchInput').value.trim() !== '')
                 || (document.getElementById('statusFilter').value !== 'all')
                 || advancedSearchActive;
-            const activeStatuses = ['submitted', 'accounting-review', 'ap-review', 'approved'];
+            const activeStatuses = ['submitted', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review', 'approved'];
             const amountSet = isFiltering
                 ? data
                 : data.filter(r => activeStatuses.includes(r.status));
@@ -1924,7 +1928,7 @@
             if (!confirmed) return;
 
             // Check if any are at ap-review (will become approved)
-            const apReviewItems = selected.filter(r => r.status === 'ap-review');
+            const apReviewItems = selected.filter(r => r.status === 'ap-review' || r.status === 'ap_review');
             let apBatch = null;
             if (apReviewItems.length > 0) {
                 apBatch = await showPrompt(
@@ -1996,7 +2000,10 @@
         // Status display names
         const STATUS_LABELS = {
             'draft': 'Draft', 'submitted': 'Submitted', 'accounting-review': 'Accounting Review',
-            'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected', 'archived': 'Archived'
+            'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected', 'archived': 'Archived',
+            'accounting_review': 'Accounting Review', 'ap_review': 'A/P Review',
+            'primary_review': 'Primary Review', 'secondary_1_review': 'Secondary 1 Review',
+            'secondary_2_review': 'Secondary 2 Review', 'secondary_3_review': 'Secondary 3 Review'
         };
         const TYPE_LABELS = { 'vendor': 'Vendor Payment', 'reimbursement': 'Employee Reimbursement' };
 
@@ -2285,7 +2292,13 @@
             const statusMap = {
                 'submitted': { text: `Request is pending review`, icon: '📋' },
                 'accounting-review': { text: `Request moved to <strong>Accounting Review</strong>`, icon: '📊' },
+                'accounting_review': { text: `Request moved to <strong>Accounting Review</strong>`, icon: '📊' },
                 'ap-review': { text: `Request moved to <strong>A/P Review</strong>`, icon: '💳' },
+                'ap_review': { text: `Request moved to <strong>A/P Review</strong>`, icon: '💳' },
+                'primary_review': { text: `Request moved to <strong>Primary Review</strong>`, icon: '👤' },
+                'secondary_1_review': { text: `Request moved to <strong>Secondary 1 Review</strong>`, icon: '👥' },
+                'secondary_2_review': { text: `Request moved to <strong>Secondary 2 Review</strong>`, icon: '👥' },
+                'secondary_3_review': { text: `Request moved to <strong>Secondary 3 Review</strong>`, icon: '👥' },
                 'approved': { text: `Request has been <strong style="color:var(--positive-color);">approved</strong>`, icon: '✅' },
                 'rejected': { text: `Request has been <strong style="color:var(--negative-color);">rejected</strong>`, icon: '❌' },
                 'archived': { text: `Request has been <strong>archived</strong>`, icon: '📦' },
@@ -2405,35 +2418,42 @@
 
             const displayTotal = total || rfp.amount;
 
-            // Build Notes section (collapsible, collapsed by default, only if notes exist)
+            // Build Notes section (always shown with add-note input)
             let notesHtml = '';
             const notesArr = window._previewFullData?.notes || [];
             const notesContent = notesArr.length > 0 ? notesArr : (notesText ? [{ note_text: notesText, author_name: rfp.submitter || 'Unknown', created_at: null }] : []);
-            if (notesContent.length > 0) {
-                const notesId = 'notes_' + rfp.rfpNumber;
-                const noteItems = notesContent.map(n => {
-                    const author = (n.author_name || n.author_email || 'Unknown').replace(/</g, '&lt;');
-                    const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
-                    const text = (n.note_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    return `<div style="padding:0.6rem 0.75rem;${notesContent.indexOf(n) < notesContent.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
-                            <span style="font-size:0.75rem;font-weight:600;color:var(--primary-hex);">${author}</span>
-                            <span style="font-size:0.7rem;color:var(--text-secondary);">${date}</span>
-                        </div>
-                        <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${text}</div>
-                    </div>`;
-                }).join('');
-                notesHtml = `
-                <div style="margin-top:1rem;">
-                    <button onclick="toggleAuditLog('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Google Sans Flex',sans-serif;">
-                        <svg id="${notesId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
-                        Notes <span style="font-weight:400;color:var(--text-secondary);font-size:0.8rem;margin-left:0.3rem;">(${notesContent.length})</span>
-                    </button>
-                    <div id="${notesId}" style="display:none;margin-top:0.4rem;">
-                        <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">${noteItems}</div>
+            const notesId = 'notes_' + rfp.rfpNumber;
+            const noteItems = notesContent.map(n => {
+                const author = (n.author_name || n.author_email || 'Unknown').replace(/</g, '&lt;');
+                const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                const text = (n.note_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `<div style="padding:0.6rem 0.75rem;border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                        <span style="font-size:0.75rem;font-weight:600;color:var(--primary-hex);">${author}</span>
+                        <span style="font-size:0.7rem;color:var(--text-secondary);">${date}</span>
                     </div>
+                    <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${text}</div>
                 </div>`;
-            }
+            }).join('');
+            const defaultOpen = notesContent.length > 0;
+            notesHtml = `
+            <div style="margin-top:1rem;">
+                <button onclick="toggleAuditLog('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Google Sans Flex',sans-serif;">
+                    <svg id="${notesId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(${defaultOpen ? '0' : '-90'}deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                    Notes <span style="font-weight:400;color:var(--text-secondary);font-size:0.8rem;margin-left:0.3rem;">(${notesContent.length})</span>
+                </button>
+                <div id="${notesId}" style="display:${defaultOpen ? 'block' : 'none'};margin-top:0.4rem;">
+                    <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
+                        ${noteItems}
+                        <div style="padding:0.5rem 0.75rem;">
+                            <div style="display:flex;gap:0.5rem;align-items:flex-end;">
+                                <textarea id="previewNoteInput" placeholder="Add a note..." rows="2" style="flex:1;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.82rem;font-family:'Google Sans Flex',sans-serif;background:var(--card-bg);color:var(--text-primary);resize:vertical;min-height:38px;line-height:1.4;"></textarea>
+                                <button onclick="postNoteFromPreview('${rfp.rfpNumber}')" style="padding:0.45rem 0.85rem;border:none;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);font-family:'Google Sans Flex',sans-serif;white-space:nowrap;height:38px;">Post</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
 
             // Build Audit Log (collapsible, collapsed by default)
             // Use real API audit logs if available, fall back to generated entries
@@ -2562,13 +2582,13 @@
         /* ========================================
            APPROVAL WORKFLOW
            ======================================== */
-        const WORKFLOW_NEXT = { 'submitted': 'accounting-review', 'accounting-review': 'ap-review', 'ap-review': 'approved' };
-        const WORKFLOW_PREV = { 'submitted': 'draft', 'accounting-review': 'submitted', 'ap-review': 'accounting-review' };
-        const WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected' };
+        const WORKFLOW_NEXT = { 'submitted': 'accounting_review', 'accounting_review': 'ap_review', 'ap_review': 'approved', 'accounting-review': 'ap_review', 'ap-review': 'approved' };
+        const WORKFLOW_PREV = { 'submitted': 'draft', 'accounting_review': 'submitted', 'ap_review': 'accounting_review', 'accounting-review': 'submitted', 'ap-review': 'accounting_review' };
+        const WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'accounting_review': 'Accounting Review', 'ap_review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review' };
         let previewRfp = null; // currently viewed RFP in preview modal
 
         function isInApprovalWorkflow(status) {
-            return status === 'submitted' || status === 'accounting-review' || status === 'ap-review';
+            return status === 'submitted' || status === 'accounting_review' || status === 'ap_review' || status === 'accounting-review' || status === 'ap-review';
         }
 
         function openRejectModal() {
@@ -2590,6 +2610,7 @@
 
         async function confirmReject() {
             if (!previewRfp) return;
+            await autoSavePendingNote(previewRfp.rfpNumber);
             const rejectType = document.querySelector('#rejectModal input[name="rejectType"]:checked').value;
             const reason = document.getElementById('rejectReason').value.trim();
 
@@ -2678,8 +2699,58 @@
             document.getElementById('approvalSuccessModal').classList.add('open');
         }
 
+        async function postNoteFromPreview(rfpNumber) {
+            const input = document.getElementById('previewNoteInput');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+            const btn = input.nextElementSibling;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        note_text: text,
+                        author_name: currentUserName || 'Unknown',
+                        author_email: impersonateEmail || currentUserEmail
+                    })
+                });
+                if (!resp.ok) throw new Error('Failed to post note');
+                input.value = '';
+                // Refresh the preview to show new note
+                if (previewRfp) openPreviewModal(previewRfp);
+            } catch (e) {
+                showAlert('Failed to post note: ' + e.message, 'Error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Post';
+            }
+        }
+
+        async function autoSavePendingNote(rfpNumber) {
+            const input = document.getElementById('previewNoteInput');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+            try {
+                await fetch(`${API_BASE}/api/rfps/${rfpNumber}/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        note_text: text,
+                        author_name: currentUserName || 'Unknown',
+                        author_email: impersonateEmail || currentUserEmail
+                    })
+                });
+                input.value = '';
+            } catch (e) { console.warn('Failed to auto-save note:', e); }
+        }
+
         async function approveRFP() {
             if (!previewRfp) return;
+            await autoSavePendingNote(previewRfp.rfpNumber);
             const newStatus = WORKFLOW_NEXT[previewRfp.status];
             if (!newStatus) return;
 
@@ -2687,7 +2758,7 @@
             let apBatch = null;
 
             // Prompt for A/P Batch when approving from A/P Review
-            if (isFullApproval && previewRfp.status === 'ap-review') {
+            if (isFullApproval && (previewRfp.status === 'ap-review' || previewRfp.status === 'ap_review')) {
                 apBatch = await showPrompt('Enter the A/P Batch number for this request:', 'A/P Batch', { placeholder: 'e.g. AP-2026-001', confirmText: 'Approve', required: true });
                 if (!apBatch) return; // cancelled
             }
