@@ -183,6 +183,12 @@ export default {
         if (method === 'DELETE') return handleDeleteRFP(rfpNumber, env);
       }
 
+      // ── Workflow Actions (approve/reject/return) ──
+      const wfMatch = path.match(/^\/api\/rfps\/(\d+)\/workflow-action$/);
+      if (wfMatch && method === 'POST') {
+        return handleWorkflowAction(parseInt(wfMatch[1]), request, env);
+      }
+
       // ── Attachments ──
       const attListMatch = path.match(/^\/api\/rfps\/(\d+)\/attachments$/);
       if (attListMatch) {
@@ -457,13 +463,15 @@ async function handleMe(request, env, url) {
   // Derive permissions from roles
   const isSuperUser = roles.includes('super_user');
   const isAdmin = roles.includes('admin') || isSuperUser;
+  const isAccountant = roles.includes('accountant');
+  const isAP = roles.includes('accounts_payable');
   const permissions = {
     can_manage_users: isSuperUser,
     can_manage_vendors: isAdmin,
-    can_approve: isAdmin,
-    can_reject: isAdmin,
+    can_approve: isAdmin || isAccountant || isAP,
+    can_reject: isAdmin || isAccountant || isAP,
     can_assign: isAdmin,
-    can_view_all: isAdmin,
+    can_view_all: isAdmin || isAccountant || isAP,
     can_export: isAdmin,
     can_import: isAdmin,
   };
@@ -886,6 +894,7 @@ async function handleListRFPs(env, url) {
   // Check if the requesting user is an admin — if not, filter to only their RFPs
   if (email) {
     let isAdmin = false;
+    let canViewAll = false;
     let submitterId = null;
     try {
       const { results: userRows } = await env.DB.prepare(
@@ -894,14 +903,16 @@ async function handleListRFPs(env, url) {
       if (userRows.length) {
         const roles = JSON.parse(userRows[0].user_roles || '["user"]');
         isAdmin = roles.includes('super_user') || roles.includes('admin');
+        canViewAll = isAdmin || roles.includes('accountant') || roles.includes('accounts_payable');
         submitterId = 'E' + userRows[0].user_id;
       }
     } catch (e) {}
 
-    if (!isAdmin && submitterId) {
-      where.push('d.submitter_id = ?');
-      params.push(submitterId);
-    } else if (!isAdmin && !submitterId) {
+    if (!canViewAll && submitterId) {
+      // User can see: forms they submitted OR forms assigned to them OR forms they acted on
+      where.push('(d.submitter_id = ? OR LOWER(d.assigned_to_email) = ? OR d.rfp_number IN (SELECT DISTINCT rfp_number FROM audit_logs WHERE LOWER(performed_by_email) = ?))');
+      params.push(submitterId, email, email);
+    } else if (!canViewAll && !submitterId) {
       // User not found in DB — return nothing
       return json({ rfps: [], total: 0, page, limit });
     }
@@ -1003,8 +1014,9 @@ async function handleCreateRFP(request, env) {
       rfp_number, submitter_name, submitter_id, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
-      description, status, assigned_to, ap_batch, mileage_total, creation_source
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      description, status, assigned_to, ap_batch, mileage_total, creation_source,
+      restriction_group_id, assigned_to_email, approval_history
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
@@ -1026,6 +1038,9 @@ async function handleCreateRFP(request, env) {
     body.ap_batch || null,
     body.mileage_total || 0,
     body.creation_source || null,
+    body.restriction_group_id || null,
+    null,
+    '[]',
   ];
 
   const statements = [headerStmt.bind(...headerParams)];
@@ -1110,10 +1125,29 @@ async function handleCreateRFP(request, env) {
 
     const now = new Date().toISOString();
     await env.DB.prepare(
-      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
-    ).bind(nextRfp, status === 'submitted' ? 'submitted' : 'draft-created', auditDesc, performer, now).run();
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(nextRfp, status === 'submitted' ? 'submitted' : 'draft-created', auditDesc, performer, (body.performer_email || '').toLowerCase().trim() || null, now).run();
   } catch (auditErr) {
     console.error('[AUDIT] Failed to write audit log for create:', auditErr.message);
+  }
+
+  // ── Auto-advance workflow when submitted ──
+  if (status === 'submitted' && body.restriction_group_id) {
+    try {
+      const advancement = await advanceToNextStep(env, nextRfp, 'submitted', body.restriction_group_id);
+      if (advancement) {
+        await env.DB.prepare(
+          'UPDATE dashboard_data SET status = ?, assigned_to = ?, assigned_to_email = ? WHERE rfp_number = ?'
+        ).bind(advancement.status, advancement.assignedToName, advancement.assignedToEmail, nextRfp).run();
+
+        const stepLabel = WORKFLOW_STATUS_LABELS[advancement.status] || advancement.status;
+        await env.DB.prepare(
+          'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(nextRfp, 'workflow-advanced', `Form routed to <strong>${advancement.assignedToName}</strong> for <strong>${stepLabel}</strong>`, 'System', null, new Date().toISOString()).run();
+      }
+    } catch (wfErr) {
+      console.error('[WORKFLOW] Failed to advance after submission:', wfErr.message);
+    }
   }
 
   return json({ rfp_number: nextRfp, status, message: 'RFP created' }, 201);
@@ -1139,21 +1173,22 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   const oldHeader = existingHeader[0];
 
   // ── APPROVAL GUARD: prevent self-approval and check approver authorization ──
-  const approvalStatuses = ['accounting-review', 'ap-review', 'approved', 'rejected'];
+  const approvalStatuses = ['secondary_3_review', 'secondary_2_review', 'secondary_1_review', 'primary_review', 'accounting_review', 'ap_review', 'accounting-review', 'ap-review', 'approved', 'rejected'];
   if (body.status && approvalStatuses.includes(body.status) && performerEmail) {
     // 1. Never allow self-approval/self-advancement
     const submitterId = (oldHeader.submitter_id || '').toUpperCase();
 
     let performerUserId = null;
     let isAdmin = false;
+    let performerRoles = [];
     try {
       const { results: pUser } = await env.DB.prepare(
         'SELECT user_id, user_roles FROM user_data WHERE LOWER(user_email) = ?'
       ).bind(performerEmail).all();
       if (pUser.length) {
         performerUserId = 'E' + pUser[0].user_id;
-        const roles = JSON.parse(pUser[0].user_roles || '["user"]');
-        isAdmin = roles.includes('super_user') || roles.includes('admin');
+        performerRoles = JSON.parse(pUser[0].user_roles || '["user"]');
+        isAdmin = performerRoles.includes('super_user') || performerRoles.includes('admin');
       }
     } catch (e) {}
 
@@ -1161,9 +1196,15 @@ async function handleUpdateRFP(rfpNumber, request, env) {
       return json({ error: 'You cannot approve or reject your own submission' }, 403);
     }
 
-    // 2. Only admins+ can approve/reject
-    if (!isAdmin) {
-      return json({ error: 'You do not have permission to approve or reject submissions' }, 403);
+    // 2. Check authorization: admin, assigned approver, accountant at their step, or AP at their step
+    const isAssigned = (oldHeader.assigned_to_email || '').toLowerCase() === performerEmail;
+    const isAccountant = performerRoles.includes('accountant');
+    const isAP = performerRoles.includes('accounts_payable');
+    const atAccountingStep = oldHeader.status === 'accounting_review';
+    const atAPStep = oldHeader.status === 'ap_review';
+
+    if (!isAdmin && !isAssigned && !(isAccountant && atAccountingStep) && !(isAP && atAPStep)) {
+      return json({ error: 'You do not have permission to approve or reject this submission' }, 403);
     }
   }
 
@@ -1189,6 +1230,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     'request_type', 'vendor_name', 'vendor_number', 'vendor_address',
     'invoice_number', 'employee_name', 'employee_id', 'description',
     'status', 'assigned_to', 'ap_batch', 'mileage_total',
+    'restriction_group_id', 'assigned_to_email', 'approval_history',
   ];
 
   const setClauses = [];
@@ -1304,8 +1346,8 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     const now = new Date().toISOString();
     for (const entry of auditEntries) {
       await env.DB.prepare(
-        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
-      ).bind(rfpNumber, entry.action, entry.description, performer, now).run();
+        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(rfpNumber, entry.action, entry.description, performer, performerEmail || null, now).run();
     }
     auditDebug.written = true;
   } catch (auditErr) {
@@ -1337,6 +1379,19 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
         description: `${p} submitted request for payment with <strong>${typeLabel}</strong> for <strong>${fmt(itemTotal + mTotal)}</strong>`
       });
       return entries; // Status change to submitted is the primary event
+    }
+
+    // Workflow status changes
+    const statusLabel = WORKFLOW_STATUS_LABELS[body.status] || body.status;
+    const oldStatusLabel = WORKFLOW_STATUS_LABELS[oldHeader.status] || oldHeader.status;
+
+    if (body.status === 'approved') {
+      entries.push({ action: 'approved', description: `${p} gave <strong>final approval</strong> — form is now <strong>Approved</strong>` });
+    } else if (body.status === 'rejected') {
+      const reason = body.rejection_reason ? `: ${body.rejection_reason}` : '';
+      entries.push({ action: 'rejected', description: `${p} <strong>permanently rejected</strong> the submission${reason}` });
+    } else if (WORKFLOW_STATUS_LABELS[body.status]) {
+      entries.push({ action: 'status-changed', description: `${p} changed status from <strong>${oldStatusLabel}</strong> to <strong>${statusLabel}</strong>` });
     }
   }
 
@@ -1456,6 +1511,377 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
   }
 
   return entries;
+}
+
+
+/* ========================================
+   WORKFLOW ENGINE
+   ======================================== */
+const WORKFLOW_STEPS = [
+  'secondary_3_review',
+  'secondary_2_review',
+  'secondary_1_review',
+  'primary_review',
+  'accounting_review',
+  'ap_review',
+  'approved',
+];
+
+const WORKFLOW_STATUS_LABELS = {
+  'draft': 'Draft',
+  'submitted': 'Submitted',
+  'secondary_3_review': 'Secondary Approver 3 Review',
+  'secondary_2_review': 'Secondary Approver 2 Review',
+  'secondary_1_review': 'Secondary Approver 1 Review',
+  'primary_review': 'Primary Approver Review',
+  'accounting_review': 'Accounting Review',
+  'ap_review': 'A/P Review',
+  'approved': 'Approved',
+  'rejected': 'Rejected',
+  'accounting-review': 'Accounting Review',
+  'ap-review': 'A/P Review',
+};
+
+const STEP_APPROVER_FIELD = {
+  'secondary_3_review': 'secondary_approver_3',
+  'secondary_2_review': 'secondary_approver_2',
+  'secondary_1_review': 'secondary_approver_1',
+  'primary_review': 'primary_approver',
+};
+
+async function getApprovalChain(env, restrictionGroupId) {
+  const chain = [];
+
+  if (restrictionGroupId) {
+    const { results: groups } = await env.DB.prepare(
+      'SELECT primary_approver, secondary_approver_1, secondary_approver_2, secondary_approver_3 FROM restriction_groups WHERE id = ?'
+    ).bind(restrictionGroupId).all();
+
+    if (groups.length) {
+      const g = groups[0];
+      const approverSteps = [
+        { step: 'secondary_3_review', email: g.secondary_approver_3 },
+        { step: 'secondary_2_review', email: g.secondary_approver_2 },
+        { step: 'secondary_1_review', email: g.secondary_approver_1 },
+        { step: 'primary_review', email: g.primary_approver },
+      ];
+
+      for (const s of approverSteps) {
+        if (s.email) {
+          const name = await getUserDisplayName(env, s.email);
+          chain.push({ step: s.step, email: s.email.toLowerCase().trim(), name });
+        }
+      }
+    }
+  }
+
+  chain.push({ step: 'accounting_review', email: null, name: null, role: 'accountant' });
+  chain.push({ step: 'ap_review', email: null, name: null, role: 'accounts_payable' });
+
+  return chain;
+}
+
+async function getUserDisplayName(env, email) {
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT user_first_name, user_last_name FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(email.toLowerCase().trim()).all();
+    if (results.length) {
+      return ((results[0].user_first_name || '') + ' ' + (results[0].user_last_name || '')).trim() || email;
+    }
+  } catch (e) {}
+  return email;
+}
+
+async function roundRobinAssign(env, role, stepStatus) {
+  const { results: users } = await env.DB.prepare(
+    'SELECT user_email, user_first_name, user_last_name, user_roles FROM user_data WHERE status = ? OR status IS NULL'
+  ).bind('active').all();
+
+  const eligible = users.filter(u => {
+    try {
+      const roles = JSON.parse(u.user_roles || '[]');
+      return roles.includes(role);
+    } catch (e) { return false; }
+  });
+
+  if (!eligible.length) return null;
+
+  const placeholders = eligible.map(() => '?').join(',');
+  const emails = eligible.map(u => u.user_email.toLowerCase());
+
+  let counts = {};
+  try {
+    const { results: countRows } = await env.DB.prepare(
+      `SELECT LOWER(assigned_to_email) as email, COUNT(*) as cnt FROM dashboard_data
+       WHERE status = ? AND LOWER(assigned_to_email) IN (${placeholders}) AND deleted_at IS NULL
+       GROUP BY LOWER(assigned_to_email)`
+    ).bind(stepStatus, ...emails).all();
+
+    for (const row of countRows) {
+      counts[row.email] = row.cnt;
+    }
+  } catch (e) {}
+
+  eligible.sort((a, b) => {
+    const countA = counts[a.user_email.toLowerCase()] || 0;
+    const countB = counts[b.user_email.toLowerCase()] || 0;
+    if (countA !== countB) return countA - countB;
+    return a.user_email.localeCompare(b.user_email);
+  });
+
+  const chosen = eligible[0];
+  const name = ((chosen.user_first_name || '') + ' ' + (chosen.user_last_name || '')).trim() || chosen.user_email;
+  return { email: chosen.user_email.toLowerCase(), name };
+}
+
+async function advanceToNextStep(env, rfpNumber, currentStatus, restrictionGroupId) {
+  const chain = await getApprovalChain(env, restrictionGroupId);
+
+  let startIdx = -1;
+  if (currentStatus === 'submitted') {
+    startIdx = -1;
+  } else {
+    startIdx = chain.findIndex(c => c.step === currentStatus);
+  }
+
+  for (let i = startIdx + 1; i < chain.length; i++) {
+    const step = chain[i];
+
+    if (step.step === 'approved') {
+      return { status: 'approved', assignedToEmail: null, assignedToName: null };
+    }
+
+    if (step.role) {
+      const assigned = await roundRobinAssign(env, step.role, step.step);
+      if (assigned) {
+        return { status: step.step, assignedToEmail: assigned.email, assignedToName: assigned.name };
+      }
+      continue;
+    }
+
+    if (step.email) {
+      return { status: step.step, assignedToEmail: step.email, assignedToName: step.name };
+    }
+  }
+
+  return { status: 'approved', assignedToEmail: null, assignedToName: null };
+}
+
+
+/* ========================================
+   WORKFLOW – APPROVE / REJECT / RETURN
+   ======================================== */
+async function handleWorkflowAction(rfpNumber, request, env) {
+  const body = await request.json();
+  const action = body.action;
+  const performerEmail = (body.performer_email || '').toLowerCase().trim();
+  const performerName = body.performer_name || 'Unknown';
+  const rejectionReason = body.reason || '';
+  const returnToStep = body.return_to_step || null;
+  const apBatchNumber = body.ap_batch || null;
+
+  if (!action || !performerEmail) {
+    return json({ error: 'action and performer_email are required' }, 400);
+  }
+
+  const { results: rows } = await env.DB.prepare(
+    'SELECT * FROM dashboard_data WHERE rfp_number = ? AND deleted_at IS NULL'
+  ).bind(rfpNumber).all();
+
+  if (!rows.length) return json({ error: 'RFP not found' }, 404);
+  const rfp = rows[0];
+
+  let performerRoles = [];
+  let performerUserId = null;
+  try {
+    const { results: pUser } = await env.DB.prepare(
+      'SELECT user_id, user_roles FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(performerEmail).all();
+    if (pUser.length) {
+      performerUserId = 'E' + pUser[0].user_id;
+      performerRoles = JSON.parse(pUser[0].user_roles || '["user"]');
+    }
+  } catch (e) {}
+
+  const isAdmin = performerRoles.includes('super_user') || performerRoles.includes('admin');
+  const isAssigned = (rfp.assigned_to_email || '').toLowerCase() === performerEmail;
+  const isAccountant = performerRoles.includes('accountant');
+  const isAP = performerRoles.includes('accounts_payable');
+  const atAccountingStep = rfp.status === 'accounting_review';
+  const atAPStep = rfp.status === 'ap_review';
+
+  if (!isAdmin && !isAssigned && !(isAccountant && atAccountingStep) && !(isAP && atAPStep)) {
+    return json({ error: 'You do not have permission to perform this action on this form' }, 403);
+  }
+
+  const submitterId = (rfp.submitter_id || '').toUpperCase();
+  if (performerUserId && performerUserId === submitterId && action !== 'return') {
+    return json({ error: 'You cannot approve or reject your own submission' }, 403);
+  }
+
+  const now = new Date().toISOString();
+  const restrictionGroupId = rfp.restriction_group_id;
+  let history = [];
+  try { history = JSON.parse(rfp.approval_history || '[]'); } catch (e) { history = []; }
+
+  const p = `<strong>${performerName}</strong>`;
+  const stepLabel = WORKFLOW_STATUS_LABELS[rfp.status] || rfp.status;
+
+  // ── APPROVE ──
+  if (action === 'approve') {
+    history.push({
+      step: rfp.status,
+      email: performerEmail,
+      name: performerName,
+      action: 'approved',
+      at: now,
+    });
+
+    if (rfp.status === 'ap_review' && !apBatchNumber) {
+      return json({ error: 'Batch number is required for A/P approval' }, 400);
+    }
+
+    const next = await advanceToNextStep(env, rfpNumber, rfp.status, restrictionGroupId);
+
+    const updates = {
+      status: next.status,
+      assigned_to: next.assignedToName || null,
+      assigned_to_email: next.assignedToEmail || null,
+      approval_history: JSON.stringify(history),
+    };
+
+    if (apBatchNumber) {
+      updates.ap_batch = apBatchNumber;
+    }
+
+    const setClauses = Object.keys(updates).map(k => `${k} = ?`);
+    const setValues = Object.values(updates);
+
+    await env.DB.prepare(
+      `UPDATE dashboard_data SET ${setClauses.join(', ')} WHERE rfp_number = ?`
+    ).bind(...setValues, rfpNumber).run();
+
+    const nextLabel = WORKFLOW_STATUS_LABELS[next.status] || next.status;
+    let auditDesc = `${p} <strong>approved</strong> at <strong>${stepLabel}</strong>`;
+    if (next.status === 'approved') {
+      auditDesc += ' — form is now <strong>Approved</strong>';
+      if (apBatchNumber) auditDesc += ` (Batch: ${apBatchNumber})`;
+    } else {
+      auditDesc += ` — routed to <strong>${next.assignedToName || 'Unknown'}</strong> for <strong>${nextLabel}</strong>`;
+    }
+
+    await env.DB.prepare(
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(rfpNumber, 'approved', auditDesc, performerName, performerEmail, now).run();
+
+    return json({ rfp_number: rfpNumber, new_status: next.status, assigned_to: next.assignedToName, message: 'Approved' });
+  }
+
+  // ── REJECT (permanent) ──
+  if (action === 'reject') {
+    history.push({
+      step: rfp.status,
+      email: performerEmail,
+      name: performerName,
+      action: 'rejected',
+      reason: rejectionReason,
+      at: now,
+    });
+
+    await env.DB.prepare(
+      'UPDATE dashboard_data SET status = ?, assigned_to = NULL, assigned_to_email = NULL, approval_history = ? WHERE rfp_number = ?'
+    ).bind('rejected', JSON.stringify(history), rfpNumber).run();
+
+    let auditDesc = `${p} <strong>permanently rejected</strong> the submission at <strong>${stepLabel}</strong>`;
+    if (rejectionReason) auditDesc += ` — Reason: ${rejectionReason}`;
+
+    await env.DB.prepare(
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(rfpNumber, 'rejected', auditDesc, performerName, performerEmail, now).run();
+
+    return json({ rfp_number: rfpNumber, new_status: 'rejected', message: 'Rejected' });
+  }
+
+  // ── RETURN (to a prior step) ──
+  if (action === 'return') {
+    if (!returnToStep) {
+      return json({ error: 'return_to_step is required' }, 400);
+    }
+
+    if (!isAdmin) {
+      const completedSteps = history.map(h => h.step);
+      if (!completedSteps.includes(returnToStep) && returnToStep !== 'submitted') {
+        return json({ error: 'Can only return to a step the form has already completed' }, 400);
+      }
+    }
+
+    let returnAssignee = null;
+
+    if (returnToStep === 'submitted' || returnToStep === 'draft') {
+      try {
+        const subId = (rfp.submitter_id || '').replace(/^E/, '');
+        const { results: subUser } = await env.DB.prepare(
+          'SELECT user_email, user_first_name, user_last_name FROM user_data WHERE user_id = ?'
+        ).bind(subId).all();
+        if (subUser.length) {
+          returnAssignee = {
+            email: subUser[0].user_email.toLowerCase(),
+            name: ((subUser[0].user_first_name || '') + ' ' + (subUser[0].user_last_name || '')).trim() || subUser[0].user_email,
+          };
+        }
+      } catch (e) {}
+    } else if (STEP_APPROVER_FIELD[returnToStep] && restrictionGroupId) {
+      try {
+        const field = STEP_APPROVER_FIELD[returnToStep];
+        const { results: groups } = await env.DB.prepare(
+          `SELECT ${field} FROM restriction_groups WHERE id = ?`
+        ).bind(restrictionGroupId).all();
+        if (groups.length && groups[0][field]) {
+          const email = groups[0][field].toLowerCase().trim();
+          const name = await getUserDisplayName(env, email);
+          returnAssignee = { email, name };
+        }
+      } catch (e) {}
+    } else if (returnToStep === 'accounting_review') {
+      returnAssignee = await roundRobinAssign(env, 'accountant', 'accounting_review');
+    } else if (returnToStep === 'ap_review') {
+      returnAssignee = await roundRobinAssign(env, 'accounts_payable', 'ap_review');
+    }
+
+    history.push({
+      step: rfp.status,
+      email: performerEmail,
+      name: performerName,
+      action: 'returned',
+      return_to: returnToStep,
+      reason: rejectionReason,
+      at: now,
+    });
+
+    await env.DB.prepare(
+      'UPDATE dashboard_data SET status = ?, assigned_to = ?, assigned_to_email = ?, approval_history = ? WHERE rfp_number = ?'
+    ).bind(
+      returnToStep,
+      returnAssignee ? returnAssignee.name : null,
+      returnAssignee ? returnAssignee.email : null,
+      JSON.stringify(history),
+      rfpNumber
+    ).run();
+
+    const returnLabel = WORKFLOW_STATUS_LABELS[returnToStep] || returnToStep;
+    let auditDesc = `${p} <strong>returned</strong> the form from <strong>${stepLabel}</strong> to <strong>${returnLabel}</strong>`;
+    if (returnAssignee) auditDesc += ` (assigned to ${returnAssignee.name})`;
+    if (rejectionReason) auditDesc += ` — Reason: ${rejectionReason}`;
+
+    await env.DB.prepare(
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(rfpNumber, 'returned', auditDesc, performerName, performerEmail, now).run();
+
+    return json({ rfp_number: rfpNumber, new_status: returnToStep, assigned_to: returnAssignee?.name, message: 'Returned' });
+  }
+
+  return json({ error: 'Invalid action. Use: approve, reject, return' }, 400);
 }
 
 
@@ -1731,6 +2157,10 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
     'ALTER TABLE user_data ADD COLUMN preferences TEXT',
+    'ALTER TABLE dashboard_data ADD COLUMN assigned_to_email TEXT',
+    'ALTER TABLE dashboard_data ADD COLUMN approval_history TEXT',
+    'ALTER TABLE dashboard_data ADD COLUMN restriction_group_id INTEGER',
+    'ALTER TABLE audit_logs ADD COLUMN performed_by_email TEXT',
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
@@ -1890,12 +2320,13 @@ async function handleCreateAuditLog(rfpNumber, request, env) {
   const body = await request.json();
   try {
     await env.DB.prepare(
-      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(
       rfpNumber,
       body.action || 'update',
       body.description || '',
       body.performed_by || 'Unknown',
+      body.performed_by_email || null,
       new Date().toISOString(),
     ).run();
     return json({ message: 'Audit log created' }, 201);
@@ -2124,7 +2555,7 @@ async function handleUpdateUserStatus(request, env) {
    ROLE DEFINITIONS
    ======================================== */
 async function handleGetRoleDefinitions(env) {
-  const allRoles = ['super_user', 'admin', 'submitter', 'user'];
+  const allRoles = ['super_user', 'admin', 'accountant', 'accounts_payable', 'submitter', 'user'];
 
   // Also gather any custom roles from user_data
   try {
