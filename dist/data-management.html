@@ -362,8 +362,7 @@
         .rg-section-hint { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.75rem; opacity: 0.7; }
 
         .rg-rule-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
-        .rg-rule-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-color); }
-        body.dark-mode .rg-rule-table th { color: #ffffff; }
+        .rg-rule-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff; text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-color); background: var(--primary-hex); }
         .rg-rule-table td { font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-family: 'Inter', monospace; position: relative; }
         .rg-rule-table .wildcard { color: var(--primary-hex); font-weight: 600; }
         .rg-rule-table .any { color: var(--text-secondary); font-style: italic; opacity: 0.5; }
@@ -2116,7 +2115,7 @@
             container.innerHTML =
                 `<div class="rg-wildcard-hint">Leave a field blank for "any". Use <code>8*</code> to match any value starting with 8. Use <code>2XX</code> to match any 3-digit value starting with 2.</div>` +
                 `<table class="rg-rule-table"><thead><tr><th>Fund</th><th>Org</th><th>Program</th><th>Finance</th><th>Course</th></tr></thead><tbody>` +
-                rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}<button class="row-del" onclick="deleteBudgetRule(${r.id})" title="Delete rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td></tr>`).join('') +
+                rules.map(r => `<tr><td>${cell(r.fund)}</td><td>${cell(r.organization)}</td><td>${cell(r.program)}</td><td>${cell(r.finance)}</td><td>${cell(r.course)}<button class="row-del" onclick="deleteBudgetRule(${r.id})" title="Delete rule"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></td></tr>`).join('') +
                 `</tbody></table>`;
         }
 
