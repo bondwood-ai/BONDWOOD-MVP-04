@@ -2890,14 +2890,21 @@
             const q = (filter || '').trim().toUpperCase();
             const isPrimary = containerId === 'rgApproverPrimary';
 
-            let candidates = rgUserList;
+            // Collect emails already selected in OTHER approver dropdowns
+            const allApproverIds = ['rgApproverPrimary', 'rgApproverSec1', 'rgApproverSec2', 'rgApproverSec3'];
+            const takenEmails = new Set();
+            allApproverIds.forEach(id => {
+                if (id === containerId) return; // skip self
+                const el = document.getElementById(id);
+                if (el && el._value) takenEmails.add(el._value.toLowerCase());
+            });
+
+            let candidates = rgUserList.filter(u => !takenEmails.has((u.email || '').toLowerCase()));
 
             // Submitter-only users cannot be primary approver
             if (isPrimary) {
                 candidates = candidates.filter(u => {
                     const roles = u.roles || ['user'];
-                    // Exclude if highest role is submitter (no admin/super_user)
-                    const hasApproverRole = roles.includes('admin') || roles.includes('super_user') || roles.includes('user');
                     const isSubmitterOnly = roles.length === 1 && roles[0] === 'submitter';
                     return !isSubmitterOnly;
                 });
