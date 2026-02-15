@@ -341,13 +341,26 @@
         .rfp-preview-footer a:hover { opacity: 0.85; }
         .detail-rfp-table tbody tr:hover { background: var(--row-hover-bg); }
         .detail-rfp-empty { font-size: 0.8rem; color: var(--text-secondary); padding: 1rem 0; text-align: center; }
-        .rg-badge {
-            display: inline-flex; align-items: center;
-            padding: 0.25rem 0.65rem; border-radius: 99px;
+        .rg-pill {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.25rem 0.55rem; border-radius: 99px;
             font-size: 0.72rem; font-weight: 600; font-family: 'Inter', sans-serif;
             background: color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));
             color: var(--text-primary); border: 1px solid var(--primary-hex);
         }
+        .rg-pill-x {
+            background: none; border: none; cursor: pointer; padding: 0; margin: 0;
+            color: var(--text-secondary); display: flex; align-items: center; transition: color 0.15s;
+        }
+        .rg-pill-x:hover { color: var(--negative-color); }
+        .rg-search-item {
+            padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.8rem;
+            font-family: 'Inter', sans-serif; color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color); transition: background 0.1s;
+        }
+        .rg-search-item:last-child { border-bottom: none; }
+        .rg-search-item:hover { background: color-mix(in srgb, var(--primary-hex) 8%, transparent); }
+        .rg-search-item .rg-search-sub { font-size: 0.68rem; color: var(--text-secondary); margin-top: 0.1rem; }
 
         /* ============ ROLE MODAL ============ */
         .modal-overlay {
@@ -609,8 +622,12 @@
         <!-- Restriction Groups Section -->
         <div class="detail-section" id="detailRgSection">
             <div class="detail-section-title">Restriction Groups</div>
-            <div id="detailRgToggles">
-                <div class="detail-rfp-empty">Loading...</div>
+            <div id="detailRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
+            <div style="position:relative;" id="rgSearchWrapper">
+                <input type="text" id="rgSearchInput" placeholder="Search by group name or budget code..." autocomplete="off"
+                    style="width:100%;padding:0.45rem 0.7rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.8rem;font-family:'Inter',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
+                    oninput="filterRgResults()" onfocus="filterRgResults()">
+                <div id="rgSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
             </div>
         </div>
 
@@ -1494,9 +1511,10 @@
         }
 
         /* ========================================
-           RESTRICTION GROUP TOGGLES
+           RESTRICTION GROUP SEARCH + PILLS
            ======================================== */
         let allRestrictionGroups = null;
+        let userAssignedRgIds = [];
 
         async function loadAllRestrictionGroups() {
             if (allRestrictionGroups !== null) return allRestrictionGroups;
@@ -1508,76 +1526,153 @@
                 } else {
                     allRestrictionGroups = [];
                 }
-            } catch (e) {
-                allRestrictionGroups = [];
-            }
+            } catch (e) { allRestrictionGroups = []; }
             return allRestrictionGroups;
         }
 
         async function renderRgToggles(user) {
-            const container = document.getElementById('detailRgToggles');
-            container.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);padding:0.25rem 0;">Loading...</div>';
+            const pillsEl = document.getElementById('detailRgPills');
+            const searchInput = document.getElementById('rgSearchInput');
+            pillsEl.innerHTML = '';
+            searchInput.value = '';
+            document.getElementById('rgSearchResults').style.display = 'none';
 
-            const groups = await loadAllRestrictionGroups();
+            await loadAllRestrictionGroups();
 
             // Get user's current assignments
-            let assignedIds = [];
+            userAssignedRgIds = [];
             try {
                 const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(user.email)}`);
                 if (resp.ok) {
                     const data = await resp.json();
-                    assignedIds = (data.restriction_groups || []).map(g => g.id);
+                    userAssignedRgIds = (data.restriction_groups || []).map(g => g.id);
                 }
             } catch (e) {}
 
-            // Store on user for toggle use
-            user._rgAssignedIds = assignedIds;
+            renderRgPills();
+        }
 
-            if (groups.length === 0) {
-                container.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);padding:0.25rem 0;">No restriction groups defined</div>';
+        function renderRgPills() {
+            const pillsEl = document.getElementById('detailRgPills');
+            if (userAssignedRgIds.length === 0) {
+                pillsEl.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);">None assigned</span>';
                 return;
             }
-
-            container.innerHTML = groups.map(g => {
-                const isOn = assignedIds.includes(g.id);
-                return `<div class="role-manage-row">
-                    <span class="role-manage-name">${escHtml(g.name)}</span>
-                    <button class="role-toggle ${isOn ? 'on' : ''}" onclick="toggleRg(${g.id}, this)" data-gid="${g.id}"></button>
-                </div>`;
+            const groups = allRestrictionGroups || [];
+            pillsEl.innerHTML = userAssignedRgIds.map(id => {
+                const g = groups.find(gr => gr.id === id);
+                const name = g ? escHtml(g.name) : `Group #${id}`;
+                return `<span class="rg-pill">${name}<button class="rg-pill-x" onclick="removeRgFromUser(${id})" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`;
             }).join('');
         }
 
-        async function toggleRg(groupId, btn) {
-            if (!selectedUser) return;
-            const isOn = btn.classList.contains('on');
+        function filterRgResults() {
+            const query = document.getElementById('rgSearchInput').value.toLowerCase().trim();
+            const resultsEl = document.getElementById('rgSearchResults');
+            const groups = allRestrictionGroups || [];
 
-            let assignedIds = selectedUser._rgAssignedIds || [];
-            if (isOn) {
-                assignedIds = assignedIds.filter(id => id !== groupId);
-            } else {
-                assignedIds.push(groupId);
+            if (!query) {
+                // Show all unassigned groups
+                const unassigned = groups.filter(g => !userAssignedRgIds.includes(g.id));
+                if (unassigned.length === 0) {
+                    resultsEl.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.78rem;color:var(--text-secondary);">All groups assigned</div>';
+                } else {
+                    resultsEl.innerHTML = unassigned.map(g => rgResultItem(g)).join('');
+                }
+                resultsEl.style.display = '';
+                return;
             }
+
+            // Search by name or budget rule codes
+            const matches = groups.filter(g => {
+                if (userAssignedRgIds.includes(g.id)) return false;
+                if ((g.name || '').toLowerCase().includes(query)) return true;
+                // Search budget rules
+                const rules = g.budget_rules || [];
+                return rules.some(r =>
+                    (r.fund || '').toLowerCase().includes(query) ||
+                    (r.organization || '').toLowerCase().includes(query) ||
+                    (r.program || '').toLowerCase().includes(query) ||
+                    (r.finance || '').toLowerCase().includes(query) ||
+                    (r.course || '').toLowerCase().includes(query)
+                );
+            });
+
+            if (matches.length === 0) {
+                resultsEl.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.78rem;color:var(--text-secondary);">No matching groups</div>';
+            } else {
+                resultsEl.innerHTML = matches.map(g => rgResultItem(g)).join('');
+            }
+            resultsEl.style.display = '';
+        }
+
+        function rgResultItem(g) {
+            const rules = g.budget_rules || [];
+            let sub = '';
+            if (rules.length > 0) {
+                const r = rules[0];
+                const parts = [r.fund, r.organization, r.program, r.finance, r.course].filter(Boolean);
+                sub = parts.join('-');
+                if (rules.length > 1) sub += ` (+${rules.length - 1} more)`;
+            }
+            return `<div class="rg-search-item" onclick="addRgToUser(${g.id})">
+                <div style="font-weight:600;">${escHtml(g.name)}</div>
+                ${sub ? `<div class="rg-search-sub">${escHtml(sub)}</div>` : ''}
+            </div>`;
+        }
+
+        async function addRgToUser(groupId) {
+            if (!selectedUser) return;
+            if (userAssignedRgIds.includes(groupId)) return;
+
+            const newIds = [...userAssignedRgIds, groupId];
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: selectedUser.email, group_ids: newIds })
+                });
+                if (!resp.ok) throw new Error('Failed');
+
+                userAssignedRgIds = newIds;
+                renderRgPills();
+                document.getElementById('rgSearchInput').value = '';
+                document.getElementById('rgSearchResults').style.display = 'none';
+                const name = (allRestrictionGroups || []).find(g => g.id === groupId)?.name || 'Group';
+                showToast(`${name} assigned`, 'success');
+            } catch (e) {
+                showToast('Failed to assign group', 'error');
+            }
+        }
+
+        async function removeRgFromUser(groupId) {
+            if (!selectedUser) return;
+            const newIds = userAssignedRgIds.filter(id => id !== groupId);
 
             try {
                 const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: selectedUser.email, group_ids: assignedIds })
+                    body: JSON.stringify({ email: selectedUser.email, group_ids: newIds })
                 });
-                if (!resp.ok) {
-                    const err = await resp.json().catch(() => ({}));
-                    throw new Error(err.error || 'Failed to update');
-                }
+                if (!resp.ok) throw new Error('Failed');
 
-                selectedUser._rgAssignedIds = assignedIds;
-                btn.classList.toggle('on');
-
-                const groupName = (allRestrictionGroups || []).find(g => g.id === groupId)?.name || 'Group';
-                showToast(`${groupName} ${isOn ? 'removed' : 'assigned'}`, 'success');
+                userAssignedRgIds = newIds;
+                renderRgPills();
+                const name = (allRestrictionGroups || []).find(g => g.id === groupId)?.name || 'Group';
+                showToast(`${name} removed`, 'success');
             } catch (e) {
-                showToast('Failed to update restriction group: ' + e.message, 'error');
+                showToast('Failed to remove group', 'error');
             }
         }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('rgSearchWrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('rgSearchResults').style.display = 'none';
+            }
+        });
 
         /* ========================================
            BRAND / DARK MODE (matches dashboard)
