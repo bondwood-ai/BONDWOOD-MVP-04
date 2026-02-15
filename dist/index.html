@@ -238,10 +238,10 @@
             content: ''; position: absolute; top: -5px; left: 0; right: 0; height: 6px;
             background: var(--primary-hex);
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8rem; }
         th {
             text-align: left; padding: 0.6rem 0.75rem; background: var(--primary-hex);
-            font-weight: 600; color: #ffffff; border-bottom: none;
+            font-weight: 600; color: #ffffff; border: none;
             cursor: pointer; user-select: none; position: sticky; top: -1px; z-index: 2;
             white-space: nowrap; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em;
             font-family: 'Inter', sans-serif;
@@ -251,18 +251,18 @@
         th.sorted .sort-arrow { opacity: 1; }
         th.no-sort { cursor: default; }
         th.no-sort:hover { background: var(--primary-hex); }
-        th input[type="checkbox"] { border-color: rgba(255,255,255,0.5); background: transparent; }
+        th input[type="checkbox"] { width: 16px; height: 16px; border-color: #ffffff; background: transparent; }
         th input[type="checkbox"]:checked {
-            background: #ffffff; border-color: #ffffff;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
-            background-size: 11px; background-position: center; background-repeat: no-repeat;
+            background: var(--primary-hex); border-color: #ffffff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: 10px; background-position: center; background-repeat: no-repeat;
         }
         th input[type="checkbox"]:hover { border-color: #ffffff; }
-        tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
-        tbody tr:last-child { border-bottom: none; }
+        tbody tr { cursor: pointer; transition: background 0.12s ease; }
         tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
         tbody tr.selected { background: var(--pale-accent); }
-        td { padding: 0.5rem 0.75rem; color: var(--text-primary); white-space: nowrap; }
+        td { padding: 0.5rem 0.75rem; color: var(--text-primary); white-space: nowrap; border-bottom: 1px solid var(--border-color); }
+        tbody tr:last-child td { border-bottom: none; }
         td.rfp-number { font-weight: 700; font-variant-numeric: tabular-nums; }
         td.amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
         td .submitter-name { font-weight: 500; }
