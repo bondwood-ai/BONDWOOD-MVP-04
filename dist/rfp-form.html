@@ -731,6 +731,10 @@
         .pdf-viewer-body { flex: 1; }
         .pdf-viewer-body iframe, .pdf-viewer-body embed { width: 100%; height: 100%; border: none; }
 
+        /* ============ UTILITY MODAL - no internal borders ============ */
+        #utility-modal > div > div { border: none !important; border-top: none !important; border-bottom: none !important; }
+        /* Vendor/budget conflict red outline */
+        .vendor-conflict { outline: 2px solid #ef4444 !important; outline-offset: -1px; }
         /* ============ SIGNATURE MODAL ============ */
         .sig-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 3000; }
         .sig-overlay.open { display: flex; }
@@ -1308,16 +1312,16 @@
 
     <!-- ============ UTILITY MODAL (alert/confirm replacement) ============ -->
     <div id="utility-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:9998;backdrop-filter:blur(2px);">
-        <div style="background:var(--card-bg);border-radius:14px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;">
-            <div style="position:relative;padding:1.5rem 1.5rem 0;">
+        <div style="background:var(--card-bg);border-radius:14px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+            <div style="position:relative;padding:1.5rem 1.5rem 0;border:none !important;">
                 <button onclick="closeUtilityModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);display:flex;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
                 <div id="utilityModalIcon" style="display:none;text-align:center;margin-bottom:0.75rem;"></div>
                 <h3 id="utilityModalTitle" style="font-size:1rem;font-weight:700;color:var(--text-primary);font-family:'Inter',sans-serif;margin:0;text-align:center;">Notice</h3>
             </div>
-            <div style="padding:1rem 1.5rem;">
+            <div style="padding:1rem 1.5rem;border:none !important;">
                 <p id="utilityModalMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.6;margin:0;"></p>
             </div>
-            <div id="utilityModalFooter" style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0 1.5rem 1.5rem;"></div>
+            <div id="utilityModalFooter" style="display:flex;justify-content:flex-end;gap:0.5rem;padding:0 1.5rem 1.5rem;border:none !important;"></div>
         </div>
     </div>
 
@@ -1705,6 +1709,7 @@
                 vendorActiveIndex = -1;
                 selectedVendor = null;
                 clearVendorError();
+                clearAllVendorConflicts();
                 const q = nameInput.value.trim().toUpperCase();
                 if (q.length < 1) {
                     nameDrop.classList.remove('open');
@@ -1924,6 +1929,7 @@
         }
 
         function checkAllBudgetCodesAgainstVendor() {
+            clearAllVendorConflicts();
             if (!USER_RESTRICTIONS.groups || !USER_RESTRICTIONS.groups.length) return;
             if (currentRequestType !== 'vendor') return;
             const vendorNum = document.getElementById('vendorNumber')?.value?.trim();
@@ -1936,6 +1942,7 @@
                 if (!bc || bc.replace(/[^0-9]/g, '').length < 5) return;
                 const pool = getVendorPoolForBudgetCode(bc);
                 if (pool !== VENDOR_DATA && !pool.some(v => v.c === vendorNum)) {
+                    setBudgetConflict(r, true);
                     const matchingGroup = USER_RESTRICTIONS.groups.find(g =>
                         g.budget_rules.length > 0 && g.vendor_numbers.length > 0 &&
                         g.budget_rules.some(rule => budgetCodeMatchesRule(bc, rule))
@@ -1945,6 +1952,7 @@
             });
 
             if (conflicts.length > 0) {
+                setVendorConflict(true);
                 const first = conflicts[0];
                 const pool = getVendorPoolForBudgetCode(first.code);
                 const allowedNames = pool.map(v => v.n).slice(0, 5).join(', ');
@@ -2409,6 +2417,10 @@
                 if (!this.value.trim()) {
                     tr.querySelector('.line-account').value = '';
                 }
+                // Clear vendor conflict on this row when budget code changes
+                setBudgetConflict(tr, false);
+                // If no more conflicts remain, clear vendor fields too
+                if (!document.querySelector('.vendor-conflict')) setVendorConflict(false);
             });
             tr.querySelector('.line-account').addEventListener('input', checkAutoGrow);
             tr.querySelector('.line-amount').addEventListener('input', checkAutoGrow);
@@ -3744,15 +3756,13 @@
 
         function closeUtilityModal(result = false) {
             document.getElementById('utility-modal').style.display = 'none';
-            // Reset modal dimensions and borders to default
+            // Reset modal dimensions to default
             const modalBox = document.querySelector('#utility-modal > div');
             if (modalBox) {
                 modalBox.style.width = '420px';
                 modalBox.style.height = '';
                 modalBox.style.display = '';
                 modalBox.style.flexDirection = '';
-                const modalHeader = modalBox.firstElementChild;
-                if (modalHeader) modalHeader.style.borderBottom = '1px solid var(--border-color)';
                 const messageContainer = modalBox.children[1];
                 if (messageContainer) {
                     messageContainer.style.flex = '';
@@ -3760,8 +3770,6 @@
                     messageContainer.style.minHeight = '';
                 }
             }
-            const modalFooter = document.getElementById('utilityModalFooter');
-            if (modalFooter) modalFooter.style.borderTop = '1px solid var(--border-color)';
             if (_utilityModalResolve) {
                 _utilityModalResolve(result);
                 _utilityModalResolve = null;
@@ -4129,21 +4137,39 @@
             console.log('[SUBMIT-CHECK] groups:', USER_RESTRICTIONS.groups?.length || 0);
             if (currentRequestType === 'vendor' && USER_RESTRICTIONS.groups && USER_RESTRICTIONS.groups.length > 0) {
                 const selectedVendorNum = document.getElementById('vendorNumber').value.trim();
+                const selectedVendorName = document.getElementById('vendorName').value.trim() || selectedVendorNum;
                 if (selectedVendorNum) {
                     let incompatibleCode = null;
+                    let incompatibleGroup = null;
+                    let incompatiblePool = null;
+                    clearAllVendorConflicts();
                     rows.forEach(r => {
-                        if (incompatibleCode) return;
                         const bc = r.querySelector('.line-budget-code')?.value?.trim();
                         console.log('[SUBMIT-CHECK] row bc:', bc, 'vendor:', selectedVendorNum);
                         if (!bc) return;
                         const pool = getVendorPoolForBudgetCode(bc);
                         console.log('[SUBMIT-CHECK] pool:', pool === VENDOR_DATA ? 'ALL' : pool.length);
                         if (pool !== VENDOR_DATA && !pool.some(v => v.c === selectedVendorNum)) {
-                            incompatibleCode = bc;
+                            setBudgetConflict(r, true);
+                            if (!incompatibleCode) {
+                                incompatibleCode = bc;
+                                incompatiblePool = pool;
+                                incompatibleGroup = USER_RESTRICTIONS.groups.find(g =>
+                                    g.budget_rules.length > 0 && g.vendor_numbers.length > 0 &&
+                                    g.budget_rules.some(rule => budgetCodeMatchesRule(bc, rule))
+                                );
+                            }
                         }
                     });
                     if (incompatibleCode) {
-                        showAlert(`The selected vendor is not authorized for budget code ${incompatibleCode}. Please choose a different vendor or budget code.`, 'Vendor Restriction');
+                        setVendorConflict(true);
+                        const groupName = incompatibleGroup ? incompatibleGroup.name : 'its restriction group';
+                        const allowedNames = incompatiblePool ? incompatiblePool.map(v => v.n).slice(0, 5).join(', ') : '';
+                        showAlert(
+                            `<strong>${_escH(selectedVendorName)}</strong> is not an authorized vendor for budget code <strong>${_escH(incompatibleCode)}</strong> under the <strong>${_escH(groupName)}</strong> restriction group.` +
+                            (allowedNames ? `<br><br>Authorized vendors: ${_escH(allowedNames)}` : ''),
+                            'Vendor Restriction Conflict'
+                        );
                         return;
                     }
                 }
@@ -5575,6 +5601,26 @@
         function _escH(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+        function setVendorConflict(on) {
+            const vn = document.getElementById('vendorName');
+            const vnum = document.getElementById('vendorNumber');
+            if (vn) vn.classList.toggle('vendor-conflict', on);
+            if (vnum) vnum.classList.toggle('vendor-conflict', on);
+        }
+
+        function setBudgetConflict(row, on) {
+            if (!row) return;
+            const bc = row.querySelector('.line-budget-code');
+            const ac = row.querySelector('.line-account');
+            if (bc) bc.classList.toggle('vendor-conflict', on);
+            if (ac) ac.classList.toggle('vendor-conflict', on);
+        }
+
+        function clearAllVendorConflicts() {
+            setVendorConflict(false);
+            document.querySelectorAll('#lineItemsBody tr').forEach(r => setBudgetConflict(r, false));
+        }
+
         function checkVendorBudgetCompatibility(budgetCode) {
             console.log('[RESTRICT] checkVendorBudgetCompatibility called:', budgetCode, 'groups:', USER_RESTRICTIONS.groups?.length || 0);
             if (!budgetCode || !USER_RESTRICTIONS.groups || !USER_RESTRICTIONS.groups.length) return;
@@ -5587,6 +5633,14 @@
             // pool === VENDOR_DATA means unrestricted — no conflict
             if (pool === VENDOR_DATA) return;
             if (pool.some(v => v.c === vendorNum)) return;
+
+            // Highlight conflicting fields
+            setVendorConflict(true);
+            // Find the row with this budget code and highlight it
+            document.querySelectorAll('#lineItemsBody tr').forEach(r => {
+                const bc = r.querySelector('.line-budget-code')?.value?.trim();
+                if (bc === budgetCode) setBudgetConflict(r, true);
+            });
 
             // Find which group restricts this code
             const matchingGroup = USER_RESTRICTIONS.groups.find(g =>
