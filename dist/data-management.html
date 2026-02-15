@@ -397,9 +397,10 @@
         .rg-wildcard-hint code { font-family: 'Inter', monospace; font-weight: 600; color: var(--text-primary); background: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.68rem; }
 
         .rg-rule-add {
-            display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;
+            display: flex; gap: 0.4rem; align-items: center;
         }
         .rg-rule-add input {
+            flex: 1; min-width: 0;
             padding: 0.35rem 0.5rem; border: 1px solid var(--border-color); border-radius: 6px;
             font-family: 'Inter', sans-serif; font-size: 0.78rem; color: var(--text-primary);
             background: var(--bg-color); text-transform: uppercase;
@@ -908,12 +909,12 @@
                 <div class="rg-section-hint">Add rules to restrict which budget codes are available. Leave empty for unrestricted access.</div>
                 <div id="rgBudgetRules"></div>
                 <div class="rg-rule-add">
-                    <input type="text" id="rgRuleFund" placeholder="Fund" style="width:80px;">
-                    <input type="text" id="rgRuleOrg" placeholder="Organization" style="width:90px;">
-                    <input type="text" id="rgRuleProg" placeholder="Program" style="width:100px;">
-                    <input type="text" id="rgRuleFin" placeholder="Finance" style="width:100px;">
-                    <input type="text" id="rgRuleCourse" placeholder="Course" style="width:100px;">
-                    <button class="rg-add-rule-btn" onclick="addBudgetRule()">
+                    <input type="text" id="rgRuleFund" placeholder="Fund">
+                    <input type="text" id="rgRuleOrg" placeholder="Organization">
+                    <input type="text" id="rgRuleProg" placeholder="Program">
+                    <input type="text" id="rgRuleFin" placeholder="Finance">
+                    <input type="text" id="rgRuleCourse" placeholder="Course">
+                    <button class="rg-add-rule-btn" onclick="addBudgetRule()" style="flex-shrink:0;">
                         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12h14"/></svg>
                         Add Rule
                     </button>
