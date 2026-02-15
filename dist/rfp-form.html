@@ -2024,6 +2024,7 @@
             // Check if editing existing form
             const params = new URLSearchParams(window.location.search);
             if (params.get('id')) {
+                document.getElementById('draftButtons').style.display = 'none';
                 loadExistingForm(params.get('id'));
             } else if (params.get('capture') === '1') {
                 window._creationSource = 'capture';
