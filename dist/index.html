@@ -193,6 +193,15 @@
             transition: background 0.1s;
         }
         .column-option:hover { background: var(--bg-color); }
+        .column-option .col-drag-handle {
+            cursor: grab; color: var(--text-secondary); opacity: 0.4; flex-shrink: 0;
+            display: flex; align-items: center; padding: 0 2px;
+            transition: opacity 0.15s;
+        }
+        .column-option:hover .col-drag-handle { opacity: 0.8; }
+        .column-option .col-drag-handle:active { cursor: grabbing; }
+        .column-option.dragging { opacity: 0.4; background: var(--bg-color); }
+        .column-option.drag-over { border-top: 2px solid var(--primary-hex); margin-top: -2px; }
         .column-option input[type="checkbox"] {
             width: 16px; height: 16px; cursor: pointer;
             -webkit-appearance: none; appearance: none;
@@ -1294,15 +1303,56 @@
         function buildColumnSelector() {
             const dropdown = document.getElementById('columnDropdown');
             dropdown.innerHTML = '';
-            COLUMNS.forEach(col => {
+            let dragSrcIdx = null;
+
+            COLUMNS.forEach((col, idx) => {
                 if (col.alwaysVisible) return;
                 if (col.adminOnly && currentUserRole !== 'admin') return;
                 const opt = document.createElement('div');
                 opt.className = 'column-option';
+                opt.draggable = true;
+                opt.dataset.colIdx = idx;
                 opt.innerHTML = `
+                    <span class="col-drag-handle"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="5" r="2"/><circle cx="16" cy="5" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="19" r="2"/><circle cx="16" cy="19" r="2"/></svg></span>
                     <input type="checkbox" id="col-${col.key}" ${col.visible ? 'checked' : ''} onchange="toggleColumn('${col.key}', this.checked)">
                     <label for="col-${col.key}">${col.label}</label>
                 `;
+
+                opt.addEventListener('dragstart', (e) => {
+                    dragSrcIdx = parseInt(opt.dataset.colIdx);
+                    opt.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', dragSrcIdx);
+                });
+                opt.addEventListener('dragend', () => {
+                    opt.classList.remove('dragging');
+                    dropdown.querySelectorAll('.column-option').forEach(o => o.classList.remove('drag-over'));
+                });
+                opt.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    dropdown.querySelectorAll('.column-option').forEach(o => o.classList.remove('drag-over'));
+                    opt.classList.add('drag-over');
+                });
+                opt.addEventListener('dragleave', () => {
+                    opt.classList.remove('drag-over');
+                });
+                opt.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    opt.classList.remove('drag-over');
+                    const targetIdx = parseInt(opt.dataset.colIdx);
+                    if (dragSrcIdx !== null && dragSrcIdx !== targetIdx) {
+                        const [moved] = COLUMNS.splice(dragSrcIdx, 1);
+                        // After removing, adjust target if source was before target
+                        const insertIdx = dragSrcIdx < targetIdx ? targetIdx - 1 : targetIdx;
+                        COLUMNS.splice(insertIdx, 0, moved);
+                        buildColumnSelector();
+                        renderTable();
+                        saveColumnPrefs();
+                    }
+                    dragSrcIdx = null;
+                });
+
                 dropdown.appendChild(opt);
             });
         }
@@ -1320,7 +1370,8 @@
             const visibleKeys = COLUMNS
                 .filter(c => !c.alwaysVisible && c.visible)
                 .map(c => c.key);
-            return { columns: visibleKeys };
+            const order = COLUMNS.map(c => c.key);
+            return { columns: visibleKeys, columnOrder: order };
         }
 
         async function saveColumnPrefs() {
@@ -1348,6 +1399,18 @@
                         if (col.alwaysVisible) return;
                         col.visible = savedCols.includes(col.key);
                     });
+                    // Restore column order if saved
+                    if (data.prefs.columnOrder && Array.isArray(data.prefs.columnOrder)) {
+                        const order = data.prefs.columnOrder;
+                        COLUMNS.sort((a, b) => {
+                            const ai = order.indexOf(a.key);
+                            const bi = order.indexOf(b.key);
+                            if (ai === -1 && bi === -1) return 0;
+                            if (ai === -1) return 1;
+                            if (bi === -1) return -1;
+                            return ai - bi;
+                        });
+                    }
                     console.log('[PREFS] Applied saved column prefs:', savedCols);
                 }
             } catch (e) {
