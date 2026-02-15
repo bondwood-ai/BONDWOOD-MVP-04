@@ -408,7 +408,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles, restrictions FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -443,7 +443,6 @@ async function handleMe(request, env, url) {
         profile_picture_key: null,
         roles: ['submitter'],
         permissions: {},
-        restrictions: {},
       });
     } catch (e) {
       return json({ error: 'Failed to provision user: ' + e.message }, 500);
@@ -455,10 +454,6 @@ async function handleMe(request, env, url) {
   // Parse roles from JSON column
   let roles = [];
   try { roles = JSON.parse(u.user_roles || '["user"]'); } catch (e) { roles = ['user']; }
-
-  // Parse restrictions
-  let restrictions = {};
-  try { restrictions = JSON.parse(u.restrictions || '{}'); } catch (e) {}
 
   // Derive permissions from roles
   const isSuperUser = roles.includes('super_user');
@@ -518,7 +513,6 @@ async function handleMe(request, env, url) {
     profile_picture_key: u.profile_picture_key || null,
     roles,
     permissions,
-    restrictions,
     budget_rules,
     restricted_vendors,
     restriction_groups,
@@ -2164,6 +2158,7 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN restriction_group_id INTEGER',
     'ALTER TABLE audit_logs ADD COLUMN performed_by_email TEXT',
     'ALTER TABLE user_restriction_assignments ADD COLUMN name TEXT',
+    'ALTER TABLE user_data DROP COLUMN restrictions',
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
@@ -2491,7 +2486,7 @@ async function handleDeleteAttachment(key, env) {
    ======================================== */
 async function handleGetUsers(env) {
   const { results: users } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles, restrictions FROM user_data ORDER BY user_first_name ASC'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles FROM user_data ORDER BY user_first_name ASC'
   ).all();
 
   // Fetch all restriction group assignments
@@ -2510,8 +2505,6 @@ async function handleGetUsers(env) {
   const merged = users.map(u => {
     let roles = [];
     try { roles = JSON.parse(u.user_roles || '["user"]'); } catch (e) { roles = ['user']; }
-    let restrictions = {};
-    try { restrictions = JSON.parse(u.restrictions || '{}'); } catch (e) {}
     const isSuperUser = roles.includes('super_user');
     const isAdmin = roles.includes('admin') || isSuperUser;
     const emailLower = (u.user_email || '').toLowerCase();
@@ -2526,7 +2519,6 @@ async function handleGetUsers(env) {
       profile_picture_key: u.profile_picture_key || null,
       status: u.status || 'active',
       roles,
-      restrictions,
       restriction_group_ids: assignMap[emailLower] || [],
       permissions: {
         can_manage_users: isSuperUser,
