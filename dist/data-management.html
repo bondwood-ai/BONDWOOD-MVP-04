@@ -1922,7 +1922,7 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-hex)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
                         <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">
                             Columns in order: <strong>Name</strong> · <strong>Fund</strong> · <strong>Organization</strong> · <strong>Program</strong> · <strong>Finance</strong> · <strong>Course</strong> · <span style="color:var(--text-secondary);">Primary Approver · Secondary 1 · Secondary 2 · Secondary 3</span> · <strong>Vendor</strong>
-                            <div style="margin-top:0.35rem;font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">Multiple rows with the same Name create one group with multiple rules/vendors. Leave B–F blank to add only a vendor restriction.</div>
+                            <div style="margin-top:0.35rem;font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">Headers are auto-detected; if absent, columns are read by position. Multiple rows with the same Name create one group with multiple rules/vendors. Leave B–F blank to add only a vendor restriction.</div>
                         </div>
                     </div>
                 </div>`;
@@ -1943,6 +1943,33 @@
 
         function closeImportModal() { document.getElementById('importModal').classList.remove('open'); importRows = []; }
 
+        // Known header keywords for each import type
+        const KNOWN_HEADERS = {
+            'vendors': ['vendor number', 'vendor name', 'vendor', 'name', 'number', 'address', 'city', 'state', 'zip'],
+            'budget-codes': ['budget code', 'budget_code', 'account code', 'account_code', 'account', 'budget'],
+            'restriction-groups': ['name', 'fund', 'organization', 'org', 'program', 'finance', 'course', 'vendor', 'primary approver', 'secondary']
+        };
+        const POSITIONAL_NAMES = {
+            'vendors': ['Vendor Number', 'Vendor Name', 'Address', 'City', 'State', 'ZIP'],
+            'budget-codes': ['Budget Code', 'Account Code'],
+            'restriction-groups': ['Name', 'Fund', 'Organization', 'Program', 'Finance', 'Course', 'Primary Approver', 'Secondary 1', 'Secondary 2', 'Secondary 3', 'Vendor']
+        };
+
+        function detectHeaders(firstRowKeys) {
+            if (!firstRowKeys || !firstRowKeys.length) return false;
+            const known = KNOWN_HEADERS[importType] || [];
+            if (!known.length) return true; // unknown type, assume headers
+            const lowerKeys = firstRowKeys.map(k => String(k).toLowerCase().trim());
+            // If at least 2 keys match known headers, treat as header row
+            const matches = lowerKeys.filter(k => known.some(h => k.includes(h) || h.includes(k)));
+            console.log('[IMPORT] Header detection:', lowerKeys, 'matches:', matches.length);
+            return matches.length >= 2;
+        }
+
+        function getPositionalColumnNames() {
+            return POSITIONAL_NAMES[importType] || [];
+        }
+
         async function handleImportFile(input) {
             const file = input.files ? input.files[0] : input;
             if (!file) return;
@@ -1954,15 +1981,28 @@
                 let rows = [];
                 if (file.name.endsWith('.csv')) {
                     const text = await file.text();
-                    const lines = text.trim().split('\n');
-                    if (lines.length < 2) { showImportError('File has no data rows.'); return; }
-                    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                    rows = lines.slice(1).map(line => {
-                        const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                        const obj = {};
-                        headers.forEach((h, i) => obj[h] = vals[i] || '');
-                        return obj;
-                    });
+                    const lines = text.trim().split('\n').filter(l => l.trim());
+                    if (lines.length < 1) { showImportError('File is empty.'); return; }
+                    const firstCols = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                    const hasHeaders = detectHeaders(firstCols);
+                    if (hasHeaders) {
+                        const headers = firstCols;
+                        rows = lines.slice(1).map(line => {
+                            const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                            const obj = {};
+                            headers.forEach((h, i) => obj[h] = vals[i] || '');
+                            return obj;
+                        });
+                    } else {
+                        console.log('[IMPORT] CSV: no recognized headers, treating row 1 as data');
+                        const colNames = getPositionalColumnNames();
+                        rows = lines.map(line => {
+                            const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                            const obj = {};
+                            colNames.forEach((name, i) => obj[name] = vals[i] || '');
+                            return obj;
+                        });
+                    }
                 } else {
                     if (!window.XLSX) {
                         try {
@@ -1979,10 +2019,30 @@
                     const ab = await file.arrayBuffer();
                     const wb = XLSX.read(ab, { type: 'array' });
                     console.log('[IMPORT] Sheets:', wb.SheetNames);
-                    rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+                    const sheet = wb.Sheets[wb.SheetNames[0]];
+                    rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
                     console.log('[IMPORT] Parsed rows:', rows.length, rows.length > 0 ? Object.keys(rows[0]) : 'no keys');
+
+                    // Detect if first row is headers or data
+                    if (rows.length >= 0) {
+                        const keys = rows.length > 0 ? Object.keys(rows[0]) : [];
+                        const hasHeaders = detectHeaders(keys);
+                        if (!hasHeaders) {
+                            // Re-parse without headers — use positional column names
+                            console.log('[IMPORT] No recognized headers, re-parsing as headerless');
+                            const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '', header: 1 });
+                            console.log('[IMPORT] Raw rows (headerless):', rawRows.length);
+                            const colNames = getPositionalColumnNames();
+                            rows = rawRows.filter(r => Array.isArray(r) && r.some(c => String(c).trim())).map(r => {
+                                const obj = {};
+                                colNames.forEach((name, i) => obj[name] = String(r[i] ?? '').trim());
+                                return obj;
+                            });
+                            console.log('[IMPORT] Remapped rows:', rows.length);
+                        }
+                    }
                 }
-                if (!rows.length) { showImportError('No data rows found in file. Check that the file has data below the header row.'); return; }
+                if (!rows.length) { showImportError('No data rows found in file. Check that the file contains data.'); return; }
                 importRows = rows;
                 const preview = document.getElementById('importPreview');
                 const cols = Object.keys(rows[0]);
