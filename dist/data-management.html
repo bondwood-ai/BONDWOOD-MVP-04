@@ -1745,23 +1745,31 @@
 
         function closeImportModal() { document.getElementById('importModal').classList.remove('open'); importRows = []; }
 
+        // Positional column names when no header row is detected
+        const POSITIONAL_COLS = {
+            'restriction-groups': ['Name','Fund','Org','Program','Finance','Course','Primary Approver','Secondary 1','Secondary 2','Secondary 3','Vendor'],
+            'vendors': ['Vendor Number','Vendor Name','Address','City','State','ZIP'],
+            'budget-codes': ['Budget Code','Account Code']
+        };
+        // Known header keywords per import type (lowercase, alphanumeric only)
+        const HEADER_KEYWORDS_MAP = {
+            'restriction-groups': ['name','fund','org','organization','program','finance','course','primaryapprover','primary','secondary','secondary1','secondary2','secondary3','vendor','vendornumber'],
+            'vendors': ['vendornumber','vendorname','vendor','name','number','address','city','state','zip'],
+            'budget-codes': ['budgetcode','budget','accountcode','account','code']
+        };
+
         async function handleImportFile(input) {
             const file = input.files[0];
             if (!file) return;
             document.getElementById('importFileName').textContent = file.name;
             try {
-                let rows = [];
+                // Step 1: Read file into array-of-arrays (preserves column order)
+                let allRows = [];
                 if (file.name.endsWith('.csv')) {
                     const text = await file.text();
-                    const lines = text.trim().split('\n');
-                    if (lines.length < 2) return;
-                    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                    rows = lines.slice(1).map(line => {
-                        const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                        const obj = {};
-                        headers.forEach((h, i) => obj[h] = vals[i] || '');
-                        return obj;
-                    });
+                    allRows = text.trim().split('\n').map(line =>
+                        line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+                    );
                 } else {
                     if (!window.XLSX) {
                         await new Promise((res, rej) => {
@@ -1770,15 +1778,46 @@
                             s.onload = res; s.onerror = rej; document.head.appendChild(s);
                         });
                     }
-                    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-                    rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+                    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', raw: false });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
                 }
+                if (!allRows.length) return;
+
+                // Step 2: Detect if first row is a header
+                const normalize = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+                const keywords = HEADER_KEYWORDS_MAP[importType] || [];
+                const firstRowNorm = allRows[0].map(c => normalize(c));
+                const headerMatches = firstRowNorm.filter(cell => keywords.includes(cell));
+                const hasHeaders = headerMatches.length >= 2;
+
+                console.log('[IMPORT] First row:', allRows[0]);
+                console.log('[IMPORT] Header matches:', headerMatches.length, '→', hasHeaders ? 'HAS HEADERS' : 'NO HEADERS');
+
+                // Step 3: Determine column names and data rows
+                let colNames, dataRows;
+                if (hasHeaders) {
+                    colNames = allRows[0].map(c => String(c).trim());
+                    dataRows = allRows.slice(1);
+                } else {
+                    colNames = POSITIONAL_COLS[importType] || allRows[0].map((_, i) => `Col ${i + 1}`);
+                    dataRows = allRows; // all rows are data
+                }
+
+                // Step 4: Convert array rows to objects using colNames (preserves order)
+                const rows = dataRows.filter(r => r.some(c => String(c).trim())).map(r => {
+                    const obj = {};
+                    colNames.forEach((name, i) => { obj[name] = (i < r.length) ? String(r[i] ?? '').trim() : ''; });
+                    return obj;
+                });
+
                 if (!rows.length) return;
                 importRows = rows;
+
+                // Step 5: Render preview
                 const preview = document.getElementById('importPreview');
-                const cols = Object.keys(rows[0]);
                 const show = rows.slice(0, 10);
-                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${colNames.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${colNames.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
                 if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
                 preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
@@ -1791,20 +1830,28 @@
             let success = 0, failed = 0;
 
             if (importType === 'restriction-groups') {
+                // Helper: get value from row by trying multiple key names
+                const getVal = (row, ...keys) => {
+                    for (const k of keys) {
+                        const v = row[k];
+                        if (v != null && String(v).trim()) return String(v).trim();
+                    }
+                    return '';
+                };
+
                 // Group rows by name
                 const groups = {};
-                const colKeys = Object.keys(importRows[0]);
                 for (const row of importRows) {
-                    const name = String(row[colKeys[0]] || row['Name'] || row['name'] || '').trim();
+                    const name = getVal(row, 'Name', 'name', 'Group Name', 'Group', 'group_name');
                     if (!name) { failed++; continue; }
                     if (!groups[name]) groups[name] = { rows: [], approvers: null };
                     groups[name].rows.push(row);
                     if (!groups[name].approvers) {
                         groups[name].approvers = {
-                            primary: String(row[colKeys[6]] || row['Primary Approver'] || '').trim(),
-                            sec1: String(row[colKeys[7]] || row['Secondary 1'] || '').trim(),
-                            sec2: String(row[colKeys[8]] || row['Secondary 2'] || '').trim(),
-                            sec3: String(row[colKeys[9]] || row['Secondary 3'] || '').trim()
+                            primary: getVal(row, 'Primary Approver', 'Primary', 'primary_approver'),
+                            sec1: getVal(row, 'Secondary 1', 'secondary_1', 'Sec 1'),
+                            sec2: getVal(row, 'Secondary 2', 'secondary_2', 'Sec 2'),
+                            sec3: getVal(row, 'Secondary 3', 'secondary_3', 'Sec 3')
                         };
                     }
                 }
@@ -1822,11 +1869,11 @@
 
                         // Add budget rules (rows where any of Fund/Org/Program/Finance/Course is non-empty)
                         for (const row of gData.rows) {
-                            const fund = String(row[colKeys[1]] || row['Fund'] || '').trim();
-                            const org = String(row[colKeys[2]] || row['Org'] || row['Organization'] || '').trim();
-                            const program = String(row[colKeys[3]] || row['Program'] || '').trim();
-                            const finance = String(row[colKeys[4]] || row['Finance'] || '').trim();
-                            const course = String(row[colKeys[5]] || row['Course'] || '').trim();
+                            const fund = getVal(row, 'Fund', 'fund');
+                            const org = getVal(row, 'Org', 'Organization', 'organization', 'org');
+                            const program = getVal(row, 'Program', 'program');
+                            const finance = getVal(row, 'Finance', 'finance');
+                            const course = getVal(row, 'Course', 'course');
                             if (fund || org || program || finance || course) {
                                 await fetch(`${API_BASE}/api/restriction-groups/${gid}/budget-rules`, {
                                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1838,7 +1885,7 @@
                         // Add vendors (collect unique vendor numbers from all rows)
                         const vendors = [];
                         for (const row of gData.rows) {
-                            const v = String(row[colKeys[10]] || row['Vendor'] || row['Vendor Number'] || '').trim();
+                            const v = getVal(row, 'Vendor', 'Vendor Number', 'vendor', 'vendor_number');
                             if (v && !vendors.includes(v)) vendors.push(v);
                         }
                         if (vendors.length) {
