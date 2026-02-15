@@ -1951,6 +1951,9 @@
             window.location.href = 'index.html';
         }
 
+        let currentLoggedInEmail = null;
+        let currentUserIsAdmin = false;
+
         async function loadMenuPermissions() {
             try {
                 const resp = await fetch('/api/me');
@@ -1959,10 +1962,12 @@
                 if (!ct.includes('application/json')) return;
                 const user = await resp.json();
                 if (!user.email) return;
+                currentLoggedInEmail = user.email.toLowerCase();
                 const permResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(user.email)}`);
                 if (!permResp.ok) return;
                 const fullUser = await permResp.json();
                 const perms = fullUser.permissions || {};
+                currentUserIsAdmin = !!(perms.can_manage_users || perms.can_manage_vendors);
                 USER_RESTRICTIONS = await loadUserRestrictionRules(user.email);
                 if (perms.can_manage_users) {
                     const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
@@ -4314,11 +4319,14 @@
                 const data = await resp.json();
                 console.log('[LOAD] Data received:', JSON.stringify(data).substring(0, 500));
 
-                // Access control: if impersonating, check submitter matches impersonated user
+                // Access control: only the submitter or admins can view
                 const impEmail = sessionStorage.getItem('impersonateEmail');
-                if (impEmail && data.submitter_email) {
-                    if (impEmail.toLowerCase() !== data.submitter_email.toLowerCase()) {
-                        showAlert('This request belongs to a different user.', 'Access Denied');
+                const effectiveEmail = impEmail ? impEmail.toLowerCase() : currentLoggedInEmail;
+                if (effectiveEmail && data.submitter_email) {
+                    const isOwner = effectiveEmail === data.submitter_email.toLowerCase();
+                    const canAccess = isOwner || (!impEmail && currentUserIsAdmin);
+                    if (!canAccess) {
+                        showAlert('You do not have permission to view this request.', 'Access Denied');
                         setTimeout(() => { window.location.href = 'index.html'; }, 2000);
                         return;
                     }
