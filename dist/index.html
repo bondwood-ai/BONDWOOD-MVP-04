@@ -533,7 +533,7 @@
         })();
     </script>
 </head>
-<body>
+<body style="visibility:hidden;">
     <!-- Hamburger Overlay -->
     <div id="hamburgerOverlay" onclick="closeHamburgerMenu()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
 
@@ -1213,13 +1213,13 @@
                     resp = await fetch(`${API_BASE}/api/me`);
                     ct = resp.headers.get('content-type') || '';
                 }
-                if (!ct.includes('application/json')) return;
+                if (!ct.includes('application/json')) { document.body.style.visibility = 'visible'; return; }
                 const user = await resp.json();
                 if (user.error === 'account_deactivated') {
                     showDeactivatedScreen();
                     return;
                 }
-                if (!resp.ok) return;
+                if (!resp.ok) { document.body.style.visibility = 'visible'; return; }
                 if (user.first_name && user.user_id) {
                     _dashboardEmployee = user;
                     currentUserName = `${(user.first_name || '').toUpperCase()} ${(user.last_name || '').toUpperCase()}`.trim();
@@ -1237,8 +1237,10 @@
 
                     console.log('[SSO] Logged in as:', currentUserName, currentUserId, 'Roles:', currentUserRoles, 'Permissions:', currentUserPermissions);
                 }
+                document.body.style.visibility = 'visible';
             } catch (e) {
                 console.warn('[SSO] Could not fetch user identity:', e);
+                document.body.style.visibility = 'visible';
             }
         }
 
