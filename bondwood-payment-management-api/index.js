@@ -2163,6 +2163,7 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN approval_history TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN restriction_group_id INTEGER',
     'ALTER TABLE audit_logs ADD COLUMN performed_by_email TEXT',
+    'ALTER TABLE user_restriction_assignments ADD COLUMN name TEXT',
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
@@ -2222,6 +2223,18 @@ async function handleMigrate(env) {
     }
   } catch (e) {
     results.push({ sql: 'SEED sequences.rfp_no', status: 'error', reason: e.message });
+  }
+
+  // Backfill name on user_restriction_assignments from restriction_groups
+  try {
+    await env.DB.prepare(`
+      UPDATE user_restriction_assignments SET name = (
+        SELECT restriction_groups.name FROM restriction_groups WHERE restriction_groups.id = user_restriction_assignments.group_id
+      ) WHERE name IS NULL
+    `).run();
+    results.push({ sql: 'BACKFILL user_restriction_assignments.name', status: 'applied' });
+  } catch (e) {
+    results.push({ sql: 'BACKFILL user_restriction_assignments.name', status: 'skipped', reason: e.message });
   }
 
   return json({ message: 'Migration complete', results });
@@ -2658,12 +2671,20 @@ async function handleUpdateUserRestrictionGroups(request, env) {
       'DELETE FROM user_restriction_assignments WHERE LOWER(user_email) = ?'
     ).bind(emailLower).run();
 
-    // Insert new assignments
+    // Insert new assignments (with group name)
     if (group_ids.length > 0) {
+      // Look up group names
+      const placeholders = group_ids.map(() => '?').join(',');
+      const { results: groups } = await env.DB.prepare(
+        `SELECT id, name FROM restriction_groups WHERE id IN (${placeholders})`
+      ).bind(...group_ids).all();
+      const nameMap = {};
+      for (const g of groups) nameMap[g.id] = g.name;
+
       const stmts = group_ids.map(gid =>
         env.DB.prepare(
-          'INSERT INTO user_restriction_assignments (user_email, group_id) VALUES (?, ?)'
-        ).bind(emailLower, gid)
+          'INSERT INTO user_restriction_assignments (user_email, group_id, name) VALUES (?, ?, ?)'
+        ).bind(emailLower, gid, nameMap[gid] || null)
       );
       await env.DB.batch(stmts);
     }
@@ -3091,6 +3112,10 @@ async function handleUpdateRestrictionGroup(id, request, env) {
     await env.DB.prepare(
       'UPDATE restriction_groups SET name = ?, description = ? WHERE id = ?'
     ).bind(name, description || '', id).run();
+    // Keep junction table name in sync
+    await env.DB.prepare(
+      'UPDATE user_restriction_assignments SET name = ? WHERE group_id = ?'
+    ).bind(name, id).run();
     return json({ message: 'Updated', id });
   } catch (e) {
     return json({ error: 'Failed to update: ' + e.message }, 500);
