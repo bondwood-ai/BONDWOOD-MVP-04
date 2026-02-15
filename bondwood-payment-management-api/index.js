@@ -12,23 +12,24 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Credentials': 'true',
 };
 
+// Parse a 14-char budget code into its 5 segments: fund(2) + org(3) + program(3) + finance(3) + course(3)
+function parseBudgetSegments(budgetCode) {
+  const c = (budgetCode || '').toString().replace(/[^0-9]/g, '');
+  if (c.length < 14) return { fund: null, organization: null, program: null, finance: null, course: null };
+  return {
+    fund: c.substring(0, 2),
+    organization: c.substring(2, 5),
+    program: c.substring(5, 8),
+    finance: c.substring(8, 11),
+    course: c.substring(11, 14),
+  };
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS },
   });
-}
-
-function getRequestEmail(request) {
-  let email = request.headers.get('Cf-Access-Authenticated-User-Email');
-  if (!email) {
-    const cookie = request.headers.get('Cookie') || '';
-    const match = cookie.match(/CF_Authorization=([^;]+)/);
-    if (match) {
-      try { email = JSON.parse(atob(match[1].split('.')[1])).email; } catch (e) {}
-    }
-  }
-  return email ? email.toLowerCase().trim() : null;
 }
 
 export default {
@@ -164,16 +165,20 @@ export default {
 
       // ── RFPs ──
       if (path === '/api/rfps' && method === 'GET') {
-        return handleListRFPs(env, url, request);
+        return handleListRFPs(env, url);
       }
       if (path === '/api/rfps' && method === 'POST') {
         return handleCreateRFP(request, env);
       }
 
+      if (path === '/api/rfps/search-options' && method === 'GET') {
+        return handleSearchOptions(env);
+      }
+
       const rfpMatch = path.match(/^\/api\/rfps\/(\d+)$/);
       if (rfpMatch) {
         const rfpNumber = parseInt(rfpMatch[1]);
-        if (method === 'GET') return handleGetRFP(rfpNumber, request, env);
+        if (method === 'GET') return handleGetRFP(rfpNumber, env);
         if (method === 'PUT') return handleUpdateRFP(rfpNumber, request, env);
         if (method === 'DELETE') return handleDeleteRFP(rfpNumber, env);
       }
@@ -207,58 +212,6 @@ export default {
       }
       if (path === '/api/users/status' && method === 'PUT') {
         return handleUpdateUserStatus(request, env);
-      }
-
-      // ── Role Definitions ──
-      if (path === '/api/role-definitions' && method === 'GET') {
-        return handleGetRoleDefinitions(env);
-      }
-      if (path === '/api/users/roles' && method === 'PUT') {
-        return handleUpdateUserRoles(request, env);
-      }
-      if (path === '/api/users/restrictions' && method === 'PUT') {
-        return handleUpdateUserRestrictions(request, env);
-      }
-
-      // ── Restriction Groups ──
-      if (path === '/api/restriction-groups' && method === 'GET') {
-        return handleGetRestrictionGroups(env);
-      }
-      if (path === '/api/restriction-groups' && method === 'POST') {
-        return handleCreateRestrictionGroup(request, env);
-      }
-      const rgMatch = path.match(/^\/api\/restriction-groups\/(\d+)$/);
-      if (rgMatch && method === 'PUT') {
-        return handleUpdateRestrictionGroup(parseInt(rgMatch[1]), request, env);
-      }
-      if (rgMatch && method === 'DELETE') {
-        return handleDeleteRestrictionGroup(parseInt(rgMatch[1]), env);
-      }
-      const rgApprMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/approvers$/);
-      if (rgApprMatch && method === 'PUT') {
-        return handleUpdateGroupApprovers(parseInt(rgApprMatch[1]), request, env);
-      }
-      const rgBrMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/budget-rules$/);
-      if (rgBrMatch && method === 'POST') {
-        return handleAddBudgetRule(parseInt(rgBrMatch[1]), request, env);
-      }
-      const rgBrDelMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/budget-rules\/(\d+)$/);
-      if (rgBrDelMatch && method === 'DELETE') {
-        return handleDeleteBudgetRule(parseInt(rgBrDelMatch[1]), parseInt(rgBrDelMatch[2]), env);
-      }
-      const rgVendorMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/vendors$/);
-      if (rgVendorMatch && method === 'POST') {
-        return handleAddGroupVendors(parseInt(rgVendorMatch[1]), request, env);
-      }
-      const rgVendorDelMatch = path.match(/^\/api\/restriction-groups\/(\d+)\/vendors\/(.+)$/);
-      if (rgVendorDelMatch && method === 'DELETE') {
-        return handleDeleteGroupVendor(parseInt(rgVendorDelMatch[1]), decodeURIComponent(rgVendorDelMatch[2]), env);
-      }
-      if (path === '/api/users/restriction-groups' && method === 'PUT') {
-        return handleAssignUserGroups(request, env);
-      }
-      if (path === '/api/users/restriction-rules' && method === 'GET') {
-        return handleGetUserRestrictionRules(env, url);
       }
 
       // ── Profile ──
@@ -296,6 +249,10 @@ export default {
 
       if (path === '/api/migrate-budget-components' && method === 'POST') {
         return handleMigrateBudgetComponents(env);
+      }
+
+      if (path === '/api/migrate-form-data-segments' && method === 'POST') {
+        return handleMigrateFormDataSegments(env);
       }
 
       // ── Extract invoice data from PDF via Gemini ──
@@ -396,7 +353,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles, restrictions FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -405,24 +362,14 @@ async function handleMe(request, env, url) {
 
   const u = results[0];
 
-  // Parse roles from JSON array on user_data
+  // Fetch roles
   let roles = [];
   try {
-    roles = JSON.parse(u.user_roles || '["user"]');
-  } catch (e) {
-    roles = ['user'];
-  }
-
-  // Resolve permissions from role_definitions
-  const permissions = await resolvePermissions(roles, env);
-
-  // Parse restrictions
-  let restrictions = {};
-  try {
-    restrictions = JSON.parse(u.restrictions || '{}');
-  } catch (e) {
-    restrictions = {};
-  }
+    const { results: roleResults } = await env.DB.prepare(
+      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
+    ).bind(email.toLowerCase().trim()).all();
+    roles = roleResults.map(r => r.role);
+  } catch (e) { /* user_roles table may not exist yet */ }
 
   return json({
     user_id: u.user_id,
@@ -434,308 +381,6 @@ async function handleMe(request, env, url) {
     title: u.title || '',
     profile_picture_key: u.profile_picture_key || null,
     roles,
-    permissions,
-    restrictions,
-  });
-}
-
-
-/* ========================================
-   ROLE / PERMISSION HELPERS
-   ======================================== */
-async function resolvePermissions(roles, env) {
-  if (!roles || roles.length === 0) roles = ['user'];
-
-  const placeholders = roles.map(() => '?').join(',');
-  const { results } = await env.DB.prepare(
-    `SELECT permissions FROM role_definitions WHERE role_name IN (${placeholders})`
-  ).bind(...roles).all();
-
-  // Merge all role permissions — any true wins
-  const merged = {};
-  for (const row of results) {
-    try {
-      const perms = JSON.parse(row.permissions);
-      Object.assign(merged, perms);
-    } catch (e) {}
-  }
-  return merged;
-}
-
-// Guard: returns 403 Response if user lacks permission, null if OK
-async function requirePermission(request, env, permissionKey) {
-  const email = getEmailFromRequest(request);
-  if (!email) return json({ error: 'Unauthorized' }, 401);
-
-  const { results } = await env.DB.prepare(
-    'SELECT user_roles FROM user_data WHERE LOWER(user_email) = ?'
-  ).bind(email).all();
-
-  if (!results.length) return json({ error: 'User not found' }, 404);
-
-  let roles = [];
-  try {
-    roles = JSON.parse(results[0].user_roles || '["user"]');
-  } catch (e) {
-    roles = ['user'];
-  }
-
-  const permissions = await resolvePermissions(roles, env);
-
-  if (!permissions[permissionKey]) {
-    return json({ error: 'Forbidden', required: permissionKey }, 403);
-  }
-
-  return null; // Permission granted
-}
-
-
-/* ========================================
-   ROLE DEFINITIONS – CRUD
-   ======================================== */
-async function handleGetRoleDefinitions(env) {
-  const { results } = await env.DB.prepare(
-    'SELECT role_name, description, permissions, created_at, updated_at FROM role_definitions ORDER BY role_name'
-  ).all();
-
-  const parsed = results.map(r => ({
-    ...r,
-    permissions: JSON.parse(r.permissions || '{}'),
-  }));
-
-  return json({ roles: parsed, count: parsed.length });
-}
-
-
-/* ========================================
-   USER ROLES – UPDATE
-   ======================================== */
-async function handleUpdateUserRoles(request, env) {
-  const body = await request.json();
-  const { email, roles } = body;
-
-  if (!email || !Array.isArray(roles)) {
-    return json({ error: 'email and roles array are required' }, 400);
-  }
-
-  // Validate all roles exist in role_definitions
-  if (roles.length > 0) {
-    const placeholders = roles.map(() => '?').join(',');
-    const { results: validRoles } = await env.DB.prepare(
-      `SELECT role_name FROM role_definitions WHERE role_name IN (${placeholders})`
-    ).bind(...roles).all();
-
-    const validNames = validRoles.map(r => r.role_name);
-    const invalid = roles.filter(r => !validNames.includes(r));
-    if (invalid.length) {
-      return json({ error: 'Invalid roles: ' + invalid.join(', ') }, 400);
-    }
-  }
-
-  const rolesJson = JSON.stringify(roles.length > 0 ? roles : ['user']);
-
-  await env.DB.prepare(
-    'UPDATE user_data SET user_roles = ? WHERE LOWER(user_email) = ?'
-  ).bind(rolesJson, email.toLowerCase().trim()).run();
-
-  return json({ message: 'Roles updated', email, roles: JSON.parse(rolesJson) });
-}
-
-
-/* ========================================
-   USER RESTRICTIONS
-   ======================================== */
-async function handleUpdateUserRestrictions(request, env) {
-  const body = await request.json();
-  const { email, restrictions } = body;
-
-  if (!email || typeof restrictions !== 'object') {
-    return json({ error: 'email and restrictions object are required' }, 400);
-  }
-
-  // Validate structure
-  const clean = {};
-  if (Array.isArray(restrictions.budget_codes)) {
-    clean.budget_codes = restrictions.budget_codes.filter(c => typeof c === 'string' && c.trim()).map(c => c.trim());
-  }
-  if (Array.isArray(restrictions.vendors)) {
-    clean.vendors = restrictions.vendors.filter(v => typeof v === 'string' && v.trim()).map(v => v.trim());
-  }
-
-  const restrictionsJson = JSON.stringify(clean);
-
-  await env.DB.prepare(
-    'UPDATE user_data SET restrictions = ? WHERE LOWER(user_email) = ?'
-  ).bind(restrictionsJson, email.toLowerCase().trim()).run();
-
-  return json({ message: 'Restrictions updated', email, restrictions: clean });
-}
-
-
-/* ========================================
-   RESTRICTION GROUPS – CRUD
-   ======================================== */
-async function handleGetRestrictionGroups(env) {
-  const { results: groups } = await env.DB.prepare('SELECT * FROM restriction_groups ORDER BY name').all();
-  const { results: rules } = await env.DB.prepare('SELECT * FROM restriction_group_budget_rules ORDER BY id').all();
-  const { results: vendors } = await env.DB.prepare('SELECT * FROM restriction_group_vendors ORDER BY vendor_number').all();
-  const { results: assignments } = await env.DB.prepare('SELECT * FROM user_restriction_assignments').all();
-
-  const enriched = groups.map(g => ({
-    ...g,
-    budget_rules: rules.filter(r => r.group_id === g.id),
-    vendors: vendors.filter(v => v.group_id === g.id).map(v => v.vendor_number),
-    assigned_users: assignments.filter(a => a.group_id === g.id).map(a => a.user_email),
-  }));
-
-  return json({ groups: enriched });
-}
-
-async function handleCreateRestrictionGroup(request, env) {
-  const { name, description } = await request.json();
-  if (!name || !name.trim()) return json({ error: 'Name is required' }, 400);
-
-  try {
-    const res = await env.DB.prepare(
-      'INSERT INTO restriction_groups (name, description) VALUES (?, ?)'
-    ).bind(name.trim(), (description || '').trim() || null).run();
-    return json({ message: 'Group created', id: res.meta.last_row_id, name: name.trim() });
-  } catch (e) {
-    if (e.message.includes('UNIQUE')) return json({ error: 'A group with that name already exists' }, 409);
-    throw e;
-  }
-}
-
-async function handleUpdateRestrictionGroup(id, request, env) {
-  const { name, description } = await request.json();
-  if (!name || !name.trim()) return json({ error: 'Name is required' }, 400);
-
-  await env.DB.prepare(
-    'UPDATE restriction_groups SET name = ?, description = ? WHERE id = ?'
-  ).bind(name.trim(), (description || '').trim() || null, id).run();
-  return json({ message: 'Group updated' });
-}
-
-async function handleDeleteRestrictionGroup(id, env) {
-  // CASCADE will clean up rules, vendors, and assignments
-  await env.DB.prepare('DELETE FROM restriction_group_budget_rules WHERE group_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM restriction_group_vendors WHERE group_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM user_restriction_assignments WHERE group_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM restriction_groups WHERE id = ?').bind(id).run();
-  return json({ message: 'Group deleted' });
-}
-
-async function handleUpdateGroupApprovers(groupId, request, env) {
-  const body = await request.json();
-  const primary = (body.primary_approver || '').trim().toLowerCase() || null;
-  const sec1 = (body.secondary_approver_1 || '').trim().toLowerCase() || null;
-  const sec2 = (body.secondary_approver_2 || '').trim().toLowerCase() || null;
-  const sec3 = (body.secondary_approver_3 || '').trim().toLowerCase() || null;
-
-  await env.DB.prepare(
-    'UPDATE restriction_groups SET primary_approver = ?, secondary_approver_1 = ?, secondary_approver_2 = ?, secondary_approver_3 = ? WHERE id = ?'
-  ).bind(primary, sec1, sec2, sec3, groupId).run();
-
-  return json({ message: 'Approvers updated', primary_approver: primary, secondary_approver_1: sec1, secondary_approver_2: sec2, secondary_approver_3: sec3 });
-}
-
-async function handleAddBudgetRule(groupId, request, env) {
-  const { fund, organization, program, finance, course } = await request.json();
-  // At least one field must be set
-  if (!fund && !organization && !program && !finance && !course) {
-    return json({ error: 'At least one component must be specified' }, 400);
-  }
-  const res = await env.DB.prepare(
-    'INSERT INTO restriction_group_budget_rules (group_id, fund, organization, program, finance, course) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(
-    groupId,
-    fund?.trim()?.toUpperCase() || null,
-    organization?.trim() || null,
-    program?.trim()?.toUpperCase() || null,
-    finance?.trim() || null,
-    course?.trim() || null
-  ).run();
-  return json({ message: 'Rule added', id: res.meta.last_row_id });
-}
-
-async function handleDeleteBudgetRule(groupId, ruleId, env) {
-  await env.DB.prepare(
-    'DELETE FROM restriction_group_budget_rules WHERE id = ? AND group_id = ?'
-  ).bind(ruleId, groupId).run();
-  return json({ message: 'Rule deleted' });
-}
-
-async function handleAddGroupVendors(groupId, request, env) {
-  const { vendor_numbers } = await request.json();
-  if (!Array.isArray(vendor_numbers) || !vendor_numbers.length) {
-    return json({ error: 'vendor_numbers array is required' }, 400);
-  }
-  let added = 0;
-  for (const vn of vendor_numbers) {
-    try {
-      await env.DB.prepare(
-        'INSERT OR IGNORE INTO restriction_group_vendors (group_id, vendor_number) VALUES (?, ?)'
-      ).bind(groupId, String(vn).trim()).run();
-      added++;
-    } catch (e) { /* skip duplicates */ }
-  }
-  return json({ message: `${added} vendor(s) added` });
-}
-
-async function handleDeleteGroupVendor(groupId, vendorNumber, env) {
-  await env.DB.prepare(
-    'DELETE FROM restriction_group_vendors WHERE group_id = ? AND vendor_number = ?'
-  ).bind(groupId, vendorNumber).run();
-  return json({ message: 'Vendor removed' });
-}
-
-async function handleAssignUserGroups(request, env) {
-  const { email, group_ids } = await request.json();
-  if (!email || !Array.isArray(group_ids)) {
-    return json({ error: 'email and group_ids array are required' }, 400);
-  }
-
-  // Clear existing assignments then insert new ones
-  await env.DB.prepare('DELETE FROM user_restriction_assignments WHERE user_email = ?')
-    .bind(email.toLowerCase().trim()).run();
-
-  for (const gid of group_ids) {
-    await env.DB.prepare(
-      'INSERT INTO user_restriction_assignments (user_email, group_id) VALUES (?, ?)'
-    ).bind(email.toLowerCase().trim(), gid).run();
-  }
-
-  return json({ message: 'Restriction groups assigned', email, group_ids });
-}
-
-async function handleGetUserRestrictionRules(env, url) {
-  const email = url.searchParams.get('email');
-  if (!email) return json({ error: 'email parameter required' }, 400);
-
-  const { results: assignments } = await env.DB.prepare(
-    'SELECT group_id FROM user_restriction_assignments WHERE user_email = ?'
-  ).bind(email.toLowerCase().trim()).all();
-
-  if (!assignments.length) {
-    return json({ restricted_budget: false, restricted_vendors: false, budget_rules: [], vendor_numbers: [] });
-  }
-
-  const groupIds = assignments.map(a => a.group_id);
-  const placeholders = groupIds.map(() => '?').join(',');
-
-  const { results: rules } = await env.DB.prepare(
-    `SELECT fund, organization, program, finance, course FROM restriction_group_budget_rules WHERE group_id IN (${placeholders})`
-  ).bind(...groupIds).all();
-
-  const { results: vendors } = await env.DB.prepare(
-    `SELECT DISTINCT vendor_number FROM restriction_group_vendors WHERE group_id IN (${placeholders})`
-  ).bind(...groupIds).all();
-
-  return json({
-    restricted_budget: rules.length > 0,
-    restricted_vendors: vendors.length > 0,
-    budget_rules: rules,
-    vendor_numbers: vendors.map(v => v.vendor_number),
   });
 }
 
@@ -1028,9 +673,63 @@ async function handleGetDistricts(env, url) {
 
 
 /* ========================================
+   RFPs – ADVANCED SEARCH OPTIONS
+   ======================================== */
+async function handleSearchOptions(env) {
+  try {
+    const [
+      statusR, typeR, submitterR, assignedR, batchR,
+      vendorNameR, vendorNumR, descR, invNumR,
+      budgetCodeR, acctCodeR, fundR, orgR, progR, finR, courseR
+    ] = await Promise.all([
+      env.DB.prepare("SELECT DISTINCT status FROM dashboard_data WHERE status IS NOT NULL AND status != '' ORDER BY status").all(),
+      env.DB.prepare("SELECT DISTINCT request_type FROM dashboard_data WHERE request_type IS NOT NULL AND request_type != '' ORDER BY request_type").all(),
+      env.DB.prepare("SELECT DISTINCT submitter_name FROM dashboard_data WHERE submitter_name IS NOT NULL AND submitter_name != '' ORDER BY submitter_name").all(),
+      env.DB.prepare("SELECT DISTINCT assigned_to FROM dashboard_data WHERE assigned_to IS NOT NULL AND assigned_to != '' ORDER BY assigned_to").all(),
+      env.DB.prepare("SELECT DISTINCT ap_batch FROM dashboard_data WHERE ap_batch IS NOT NULL AND ap_batch != '' ORDER BY ap_batch").all(),
+      env.DB.prepare("SELECT DISTINCT vendor_name FROM dashboard_data WHERE vendor_name IS NOT NULL AND vendor_name != '' ORDER BY vendor_name").all(),
+      env.DB.prepare("SELECT DISTINCT vendor_number FROM dashboard_data WHERE vendor_number IS NOT NULL AND vendor_number != '' ORDER BY vendor_number").all(),
+      env.DB.prepare("SELECT DISTINCT description FROM form_data WHERE description IS NOT NULL AND description != '' ORDER BY description").all(),
+      env.DB.prepare("SELECT DISTINCT invoice_number FROM form_data WHERE invoice_number IS NOT NULL AND invoice_number != '' ORDER BY invoice_number").all(),
+      env.DB.prepare("SELECT DISTINCT budget_code FROM form_data WHERE budget_code IS NOT NULL AND budget_code != '' ORDER BY budget_code").all(),
+      env.DB.prepare("SELECT DISTINCT COALESCE(account_code, object) AS account_code FROM form_data WHERE (account_code IS NOT NULL AND account_code != '') OR (object IS NOT NULL AND object != '') ORDER BY 1").all(),
+      env.DB.prepare("SELECT DISTINCT fund FROM form_data WHERE fund IS NOT NULL AND fund != '' ORDER BY fund").all(),
+      env.DB.prepare("SELECT DISTINCT organization FROM form_data WHERE organization IS NOT NULL AND organization != '' ORDER BY organization").all(),
+      env.DB.prepare("SELECT DISTINCT program FROM form_data WHERE program IS NOT NULL AND program != '' ORDER BY program").all(),
+      env.DB.prepare("SELECT DISTINCT finance FROM form_data WHERE finance IS NOT NULL AND finance != '' ORDER BY finance").all(),
+      env.DB.prepare("SELECT DISTINCT object FROM form_data WHERE object IS NOT NULL AND object != '' ORDER BY object").all(),
+    ]);
+
+    const pluck = (res, col) => res.results.map(r => r[col]).filter(Boolean);
+
+    return json({
+      status: pluck(statusR, 'status'),
+      request_type: pluck(typeR, 'request_type'),
+      submitter_name: pluck(submitterR, 'submitter_name'),
+      assigned_to: pluck(assignedR, 'assigned_to'),
+      ap_batch: pluck(batchR, 'ap_batch'),
+      vendor_name: pluck(vendorNameR, 'vendor_name'),
+      vendor_number: pluck(vendorNumR, 'vendor_number'),
+      description: pluck(descR, 'description'),
+      invoice_number: pluck(invNumR, 'invoice_number'),
+      budget_code: pluck(budgetCodeR, 'budget_code'),
+      account_code: pluck(acctCodeR, 'account_code'),
+      fund: pluck(fundR, 'fund'),
+      organization: pluck(orgR, 'organization'),
+      program: pluck(progR, 'program'),
+      finance: pluck(finR, 'finance'),
+      course: pluck(courseR, 'object'),
+    });
+  } catch (e) {
+    return json({ error: 'Failed to fetch search options', detail: e.message }, 500);
+  }
+}
+
+
+/* ========================================
    RFPs – LIST
    ======================================== */
-async function handleListRFPs(env, url, request) {
+async function handleListRFPs(env, url) {
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '250'), 1000);
   const offset = (page - 1) * limit;
@@ -1044,26 +743,6 @@ async function handleListRFPs(env, url, request) {
 
   let where = ['d.deleted_at IS NULL'];
   let params = [];
-
-  // Role-based filtering: if user can only view own, restrict to their submissions
-  const email = getEmailFromRequest(request);
-  if (email) {
-    const { results: userData } = await env.DB.prepare(
-      'SELECT user_roles FROM user_data WHERE LOWER(user_email) = ?'
-    ).bind(email).all();
-
-    if (userData.length) {
-      let roles = [];
-      try { roles = JSON.parse(userData[0].user_roles || '["user"]'); } catch (e) { roles = ['user']; }
-      const permissions = await resolvePermissions(roles, env);
-
-      // If user can only view own (no broader view permissions), filter by their email OR submitter_id
-      if (permissions.can_view_own && !permissions.can_approve && !permissions.can_view_history && !permissions.can_manage_users) {
-        where.push("(LOWER(d.submitter_email) = ? OR d.submitter_id = (SELECT 'E' || user_id FROM user_data WHERE LOWER(user_email) = ?))");
-        params.push(email, email);
-      }
-    }
-  }
 
   if (status && status !== 'all') {
     where.push('d.status = ?');
@@ -1103,36 +782,12 @@ async function handleListRFPs(env, url, request) {
 /* ========================================
    RFPs – GET SINGLE
    ======================================== */
-async function handleGetRFP(rfpNumber, request, env) {
+async function handleGetRFP(rfpNumber, env) {
   const { results: header } = await env.DB.prepare(
     'SELECT * FROM dashboard_data WHERE rfp_number = ? AND deleted_at IS NULL'  ).bind(rfpNumber).all();
 
   if (!header.length) {
     return json({ error: 'RFP not found' }, 404);
-  }
-
-  // Access control: only submitter or admin can view
-  const requestEmail = getRequestEmail(request);
-  if (requestEmail) {
-    const rfpOwner = (header[0].submitter_email || '').toLowerCase();
-    const isOwner = requestEmail === rfpOwner;
-
-    if (!isOwner) {
-      // Check if user is admin/super_user
-      const { results: userRow } = await env.DB.prepare(
-        'SELECT user_roles FROM user_data WHERE LOWER(user_email) = ?'
-      ).bind(requestEmail).all();
-      let isAdmin = false;
-      if (userRow.length) {
-        try {
-          const roles = JSON.parse(userRow[0].user_roles || '["user"]');
-          isAdmin = roles.includes('admin') || roles.includes('super_user');
-        } catch (e) {}
-      }
-      if (!isAdmin) {
-        return json({ error: 'Access denied' }, 403);
-      }
-    }
   }
 
   const { results: lineItems } = await env.DB.prepare(
@@ -1182,18 +837,17 @@ async function handleCreateRFP(request, env) {
 
   const headerStmt = env.DB.prepare(`
     INSERT INTO dashboard_data (
-      rfp_number, submitter_name, submitter_id, submitter_email, budget_approver,
+      rfp_number, submitter_name, submitter_id, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
       description, status, assigned_to, ap_batch, mileage_total, creation_source
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
     nextRfp,
     body.submitter_name || '',
     body.submitter_id || '',
-    body.submitter_email || '',
     body.budget_approver || null,
     submissionDate,
     body.request_type || 'vendor',
@@ -1218,6 +872,7 @@ async function handleCreateRFP(request, env) {
 
   if (newItems.length) {
     for (const item of newItems) {
+      const seg = parseBudgetSegments(item.budget_code);
       statements.push(
         env.DB.prepare(`
           INSERT INTO form_data (
@@ -1229,10 +884,10 @@ async function handleCreateRFP(request, env) {
           nextRfp,
           item.line_number || 0,
           item.description || '',
-          item.fund || null,
-          item.organization || null,
-          item.program || null,
-          item.finance || null,
+          item.fund || seg.fund,
+          item.organization || seg.organization,
+          item.program || seg.program,
+          item.finance || seg.finance,
           item.object || item.account_code || null,
           item.quantity || 1,
           item.unit_price || item.total || 0,
@@ -1337,7 +992,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
 
   // ── Build update statements ──
   const updatableFields = [
-    'submitter_name', 'submitter_id', 'submitter_email', 'budget_approver', 'submission_date',
+    'submitter_name', 'submitter_id', 'budget_approver', 'submission_date',
     'request_type', 'vendor_name', 'vendor_number', 'vendor_address',
     'invoice_number', 'employee_name', 'employee_id', 'description',
     'status', 'assigned_to', 'ap_batch', 'mileage_total',
@@ -1371,6 +1026,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     );
 
     for (const item of (body.lineItems || [])) {
+      const seg = parseBudgetSegments(item.budget_code);
       statements.push(
         env.DB.prepare(`
           INSERT INTO form_data (
@@ -1382,10 +1038,10 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           rfpNumber,
           item.line_number || 0,
           item.description || '',
-          item.fund || null,
-          item.organization || null,
-          item.program || null,
-          item.finance || null,
+          item.fund || seg.fund,
+          item.organization || seg.organization,
+          item.program || seg.program,
+          item.finance || seg.finance,
           item.object || item.account_code || null,
           item.quantity || 1,
           item.unit_price || item.total || 0,
@@ -1434,41 +1090,34 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   }
 
   // Audit log - separate from data batch so it can't break the save
-  // Skip auto-audit when this is a workflow-only status change (approve/reject)
-  // because the caller posts its own audit entry via /audit-log
-  const isWorkflowOnly = body.status && !body.submitter_name && !body.line_items && !body.mileage_trips && !body.description && !body.vendor_name && !body.assigned_to;
   let auditDebug = {};
-  if (!isWorkflowOnly) {
-    try {
-      console.log('[AUDIT] oldItems count:', oldItems.length, 'oldTrips count:', oldTrips.length);
-      console.log('[AUDIT] newItems:', newItems !== null ? newItems.length : 'null', 'newTrips:', newTrips !== null ? newTrips.length : 'null');
-      console.log('[AUDIT] body.status:', body.status, 'oldHeader.status:', oldHeader.status);
+  try {
+    console.log('[AUDIT] oldItems count:', oldItems.length, 'oldTrips count:', oldTrips.length);
+    console.log('[AUDIT] newItems:', newItems !== null ? newItems.length : 'null', 'newTrips:', newTrips !== null ? newTrips.length : 'null');
+    console.log('[AUDIT] body.status:', body.status, 'oldHeader.status:', oldHeader.status);
 
-      const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
-      console.log('[AUDIT] Generated entries:', auditEntries.length, JSON.stringify(auditEntries.map(e => e.action)));
+    const auditEntries = buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTrips, performer);
+    console.log('[AUDIT] Generated entries:', auditEntries.length, JSON.stringify(auditEntries.map(e => e.action)));
 
-      auditDebug = {
-        oldItemCount: oldItems.length,
-        oldTripCount: oldTrips.length,
-        newItemCount: newItems !== null ? newItems.length : 'null',
-        newTripCount: newTrips !== null ? newTrips.length : 'null',
-        entriesGenerated: auditEntries.length,
-        entryActions: auditEntries.map(e => e.action),
-      };
+    auditDebug = {
+      oldItemCount: oldItems.length,
+      oldTripCount: oldTrips.length,
+      newItemCount: newItems !== null ? newItems.length : 'null',
+      newTripCount: newTrips !== null ? newTrips.length : 'null',
+      entriesGenerated: auditEntries.length,
+      entryActions: auditEntries.map(e => e.action),
+    };
 
-      const now = new Date().toISOString();
-      for (const entry of auditEntries) {
-        await env.DB.prepare(
-          'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
-        ).bind(rfpNumber, entry.action, entry.description, performer, now).run();
-      }
-      auditDebug.written = true;
-    } catch (auditErr) {
-      console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
-      auditDebug.error = auditErr.message;
+    const now = new Date().toISOString();
+    for (const entry of auditEntries) {
+      await env.DB.prepare(
+        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind(rfpNumber, entry.action, entry.description, performer, now).run();
     }
-  } else {
-    auditDebug = { skipped: true, reason: 'workflow-only status change' };
+    auditDebug.written = true;
+  } catch (auditErr) {
+    console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
+    auditDebug.error = auditErr.message;
   }
 
   return json({ rfp_number: rfpNumber, message: 'RFP updated', _auditDebug: auditDebug });
@@ -1657,21 +1306,21 @@ async function handleSeedDummy(request, env) {
 
   // ── Reference data pools ──
   const submitters = [
-    { name: 'Sarah Johnson', id: 'sjohnson', email: 'sjohnson@district.org' },
-    { name: 'Michael Chen', id: 'mchen', email: 'mchen@district.org' },
-    { name: 'Emily Rodriguez', id: 'erodriguez', email: 'erodriguez@district.org' },
-    { name: 'David Kim', id: 'dkim', email: 'dkim@district.org' },
-    { name: 'Jessica Martinez', id: 'jmartinez', email: 'jmartinez@district.org' },
-    { name: 'Robert Anderson', id: 'randerson', email: 'randerson@district.org' },
-    { name: 'Amanda Thompson', id: 'athompson', email: 'athompson@district.org' },
-    { name: 'James Wilson', id: 'jwilson', email: 'jwilson@district.org' },
-    { name: 'Lisa Park', id: 'lpark', email: 'lpark@district.org' },
-    { name: 'Thomas Brown', id: 'tbrown', email: 'tbrown@district.org' },
-    { name: 'Rachel Green', id: 'rgreen', email: 'rgreen@district.org' },
-    { name: 'Kevin Nguyen', id: 'knguyen', email: 'knguyen@district.org' },
-    { name: 'Maria Garcia', id: 'mgarcia', email: 'mgarcia@district.org' },
-    { name: 'Daniel Lee', id: 'dlee', email: 'dlee@district.org' },
-    { name: 'Stephanie White', id: 'swhite', email: 'swhite@district.org' },
+    { name: 'Sarah Johnson', id: 'sjohnson' },
+    { name: 'Michael Chen', id: 'mchen' },
+    { name: 'Emily Rodriguez', id: 'erodriguez' },
+    { name: 'David Kim', id: 'dkim' },
+    { name: 'Jessica Martinez', id: 'jmartinez' },
+    { name: 'Robert Anderson', id: 'randerson' },
+    { name: 'Amanda Thompson', id: 'athompson' },
+    { name: 'James Wilson', id: 'jwilson' },
+    { name: 'Lisa Park', id: 'lpark' },
+    { name: 'Thomas Brown', id: 'tbrown' },
+    { name: 'Rachel Green', id: 'rgreen' },
+    { name: 'Kevin Nguyen', id: 'knguyen' },
+    { name: 'Maria Garcia', id: 'mgarcia' },
+    { name: 'Daniel Lee', id: 'dlee' },
+    { name: 'Stephanie White', id: 'swhite' },
   ];
 
   const approvers = [
@@ -1792,16 +1441,15 @@ async function handleSeedDummy(request, env) {
       allStmts.push(
         env.DB.prepare(`
           INSERT INTO dashboard_data (
-            rfp_number, submitter_name, submitter_id, submitter_email, budget_approver,
+            rfp_number, submitter_name, submitter_id, budget_approver,
             submission_date, request_type, vendor_name, vendor_number,
             vendor_address, invoice_number, employee_name, employee_id,
             description, status, assigned_to, ap_batch, mileage_total, creation_source, check_number
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           currentRfp,
           sub.name,
           sub.id,
-          sub.email,
           pick(approvers),
           submissionDate,
           reqType,
@@ -1890,39 +1538,6 @@ async function handleMigrate(env) {
     'ALTER TABLE dashboard_data ADD COLUMN deleted_at TEXT',
     'ALTER TABLE dashboard_data ADD COLUMN check_number TEXT',
     'ALTER TABLE user_data ADD COLUMN preferences TEXT',
-    `CREATE TABLE IF NOT EXISTS restriction_groups (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      description TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    )`,
-    `CREATE TABLE IF NOT EXISTS restriction_group_budget_rules (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      group_id INTEGER NOT NULL,
-      fund TEXT,
-      organization TEXT,
-      program TEXT,
-      finance TEXT,
-      course TEXT,
-      FOREIGN KEY (group_id) REFERENCES restriction_groups(id) ON DELETE CASCADE
-    )`,
-    `CREATE TABLE IF NOT EXISTS restriction_group_vendors (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      group_id INTEGER NOT NULL,
-      vendor_number TEXT NOT NULL,
-      UNIQUE(group_id, vendor_number),
-      FOREIGN KEY (group_id) REFERENCES restriction_groups(id) ON DELETE CASCADE
-    )`,
-    `CREATE TABLE IF NOT EXISTS user_restriction_assignments (
-      user_email TEXT NOT NULL,
-      group_id INTEGER NOT NULL,
-      PRIMARY KEY(user_email, group_id),
-      FOREIGN KEY (group_id) REFERENCES restriction_groups(id) ON DELETE CASCADE
-    )`,
-    'ALTER TABLE restriction_groups ADD COLUMN primary_approver TEXT',
-    'ALTER TABLE restriction_groups ADD COLUMN secondary_approver_1 TEXT',
-    'ALTER TABLE restriction_groups ADD COLUMN secondary_approver_2 TEXT',
-    'ALTER TABLE restriction_groups ADD COLUMN secondary_approver_3 TEXT',
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
@@ -2026,6 +1641,41 @@ async function handleMigrateBudgetComponents(env) {
   }
 
   return json({ message: `Re-parsed budget code components (2+3+3+3+3 format)`, updated, skipped, total: rows.length });
+}
+
+// Backfill form_data: parse budget_code into fund/org/program/finance/course columns
+async function handleMigrateFormDataSegments(env) {
+  const { results: rows } = await env.DB.prepare(
+    "SELECT rowid, budget_code FROM form_data WHERE budget_code IS NOT NULL AND (fund IS NULL OR fund = '')"
+  ).all();
+
+  let updated = 0, skipped = 0;
+  const batches = [];
+  let batch = [];
+
+  for (const row of rows) {
+    const seg = parseBudgetSegments(row.budget_code);
+    if (!seg.fund) { skipped++; continue; }
+
+    batch.push(
+      env.DB.prepare(
+        'UPDATE form_data SET fund = ?, organization = ?, program = ?, finance = ? WHERE rowid = ?'
+      ).bind(seg.fund, seg.organization, seg.program, seg.finance, row.rowid)
+    );
+
+    if (batch.length >= 400) {
+      batches.push(batch);
+      batch = [];
+    }
+    updated++;
+  }
+  if (batch.length) batches.push(batch);
+
+  for (const b of batches) {
+    await env.DB.batch(b);
+  }
+
+  return json({ message: `Backfilled form_data segments (2+3+3+3+3 format)`, updated, skipped, total: rows.length });
 }
 
 
@@ -2202,30 +1852,36 @@ async function handleDeleteAttachment(key, env) {
    ======================================== */
 async function handleGetUsers(env) {
   const { results: users } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles, restrictions FROM user_data ORDER BY user_first_name ASC'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status FROM user_data ORDER BY user_first_name ASC'
   ).all();
 
-  const merged = users.map(u => {
-    let roles = [];
-    try {
-      roles = JSON.parse(u.user_roles || '["user"]');
-    } catch (e) {
-      roles = ['user'];
-    }
-    return {
-      user_id: u.user_id,
-      first_name: u.user_first_name,
-      last_name: u.user_last_name,
-      email: u.user_email,
-      phone_number: u.phone_number || '',
-      department: u.department || '',
-      title: u.title || '',
-      profile_picture_key: u.profile_picture_key || null,
-      status: u.status || 'active',
-      roles,
-      restrictions: JSON.parse(u.restrictions || '{}'),
-    };
-  });
+  let allRoles = [];
+  try {
+    const { results: roleResults } = await env.DB.prepare(
+      'SELECT user_email, role FROM user_roles ORDER BY user_email, role'
+    ).all();
+    allRoles = roleResults;
+  } catch (e) { /* user_roles table may not exist yet */ }
+
+  const roleMap = {};
+  for (const r of allRoles) {
+    const email = r.user_email.toLowerCase();
+    if (!roleMap[email]) roleMap[email] = [];
+    roleMap[email].push(r.role);
+  }
+
+  const merged = users.map(u => ({
+    user_id: u.user_id,
+    first_name: u.user_first_name,
+    last_name: u.user_last_name,
+    email: u.user_email,
+    phone_number: u.phone_number || '',
+    department: u.department || '',
+    title: u.title || '',
+    profile_picture_key: u.profile_picture_key || null,
+    status: u.status || 'active',
+    roles: roleMap[u.user_email.toLowerCase()] || [],
+  }));
 
   return json({ users: merged, total: merged.length });
 }
