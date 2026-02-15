@@ -216,15 +216,22 @@
             background: var(--card-bg); z-index: 5001;
             box-shadow: -4px 0 24px rgba(0,0,0,0.15);
             transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), visibility 0s 0.25s;
-            overflow-y: auto; display: flex; flex-direction: column;
+            display: flex; flex-direction: column;
             visibility: hidden; pointer-events: none;
         }
         .user-detail-panel.open { transform: translateX(0); visibility: visible; pointer-events: auto; transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), visibility 0s 0s; }
 
+        .detail-frozen {
+            flex-shrink: 0; background: var(--card-bg); z-index: 2;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .detail-scrollable {
+            flex: 1; overflow-y: auto;
+        }
+
         .detail-header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 1.25rem 1.5rem;
-            position: sticky; top: 0; background: var(--card-bg); z-index: 2;
         }
         .detail-header h3 { font-size: 1rem; font-weight: 700; }
         .detail-close {
@@ -577,20 +584,23 @@
     <!-- ============ USER DETAIL PANEL ============ -->
     <div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
     <div class="user-detail-panel" id="detailPanel">
-        <div class="detail-header">
-            <h3 id="detailTitle">User Details</h3>
-            <button class="detail-close" onclick="closeDetail()">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="detail-profile" id="detailProfile">
-            <div class="detail-avatar" id="detailAvatar"><span>?</span></div>
-            <div class="detail-identity">
-                <h4 id="detailName">—</h4>
-                <div class="detail-email" id="detailEmail">—</div>
-                <div class="detail-eid" id="detailEid">—</div>
+        <div class="detail-frozen">
+            <div class="detail-header">
+                <h3 id="detailTitle">User Details</h3>
+                <button class="detail-close" onclick="closeDetail()">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="detail-profile" id="detailProfile">
+                <div class="detail-avatar" id="detailAvatar"><span>?</span></div>
+                <div class="detail-identity">
+                    <h4 id="detailName">—</h4>
+                    <div class="detail-email" id="detailEmail">—</div>
+                    <div class="detail-eid" id="detailEid">—</div>
+                </div>
             </div>
         </div>
+        <div class="detail-scrollable">
 
         <!-- Account Info Section -->
         <div class="detail-section">
@@ -633,7 +643,7 @@
         </div>
 
         <!-- Restriction Groups Section -->
-        <div class="detail-section" id="detailRgSection" style="padding-bottom:12rem;">
+        <div class="detail-section" id="detailRgSection" style="padding-bottom:1rem;">
             <div class="detail-section-title">Restriction Groups</div>
             <div id="detailRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
             <div style="position:relative;" id="rgSearchWrapper">
@@ -651,6 +661,7 @@
                 <div class="detail-rfp-empty">No requests found</div>
             </div>
         </div>
+        </div><!-- end detail-scrollable -->
     </div>
 
     <!-- ============ RFP PREVIEW MODAL ============ -->
