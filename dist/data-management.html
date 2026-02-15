@@ -444,10 +444,10 @@
 
         /* Approver assignment */
         .rg-approver-grid { display: flex; flex-direction: column; gap: 0.6rem; }
-        .rg-approver-row { display: flex; align-items: center; gap: 0.75rem; }
+        .rg-approver-row { display: flex; align-items: flex-start; gap: 0.75rem; }
         .rg-approver-row label {
             font-size: 0.78rem; font-weight: 500; color: var(--text-secondary);
-            min-width: 135px; flex-shrink: 0;
+            min-width: 135px; flex-shrink: 0; padding-top: 0.5rem;
         }
         .rg-approver-row.primary label { font-weight: 700; color: var(--text-primary); }
 
@@ -959,7 +959,13 @@
             <!-- Assigned Users -->
             <div class="rg-section">
                 <div class="rg-section-title">Assigned Users</div>
-                <div id="rgAssignedUsers" style="display:flex;flex-wrap:wrap;gap:0.35rem;"></div>
+                <div id="rgAssignedUsers" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
+                <div style="position:relative;" id="rgUserSearchWrapper">
+                    <input type="text" id="rgUserSearchInput" placeholder="Add user..." autocomplete="off"
+                        style="width:100%;padding:0.45rem 0.7rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.8rem;font-family:'Inter',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
+                        oninput="filterRgUserDropdown()" onfocus="filterRgUserDropdown()">
+                    <div id="rgUserDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -2272,21 +2278,117 @@
             populateApproverDropdowns(g);
             rgMetaOriginal.approvers = getCurrentApprovers();
 
-            // Show assigned users
-            const auContainer = document.getElementById('rgAssignedUsers');
-            const assignedEmails = g.assigned_users || [];
-            if (assignedEmails.length === 0) {
-                auContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);">No users assigned</span>';
-            } else {
-                auContainer.innerHTML = assignedEmails.map(email => {
-                    const u = rgUserList.find(u => u.email === email);
-                    const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
-                    return `<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;background:color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));color:var(--text-primary);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);">${escapeHTML(name)}</span>`;
-                }).join('');
-            }
+            // Show assigned users as editable pills
+            renderRgAssignedUsers();
 
             document.getElementById('rgDetailModal').classList.add('open');
         }
+
+        function renderRgAssignedUsers() {
+            const g = allRestrictionGroups.find(g => g.id === currentRgId);
+            if (!g) return;
+            const assignedEmails = g.assigned_users || [];
+            const container = document.getElementById('rgAssignedUsers');
+            document.getElementById('rgUserSearchInput').value = '';
+
+            if (assignedEmails.length === 0) {
+                container.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;">No users assigned</span>';
+            } else {
+                container.innerHTML = assignedEmails.map(email => {
+                    const u = rgUserList.find(u => u.email === email);
+                    const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+                    return `<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;background:color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));color:var(--text-primary);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);">${escapeHTML(name)}<button onclick="removeUserFromRg('${escapeHTML(email)}')" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;color:var(--text-secondary);font-size:0.85rem;" title="Remove">&times;</button></span>`;
+                }).join('');
+            }
+        }
+
+        function filterRgUserDropdown() {
+            const q = document.getElementById('rgUserSearchInput').value.toLowerCase().trim();
+            const g = allRestrictionGroups.find(g => g.id === currentRgId);
+            const assignedEmails = new Set((g?.assigned_users || []).map(e => e.toLowerCase()));
+
+            const available = rgUserList.filter(u => {
+                if (assignedEmails.has(u.email.toLowerCase())) return false;
+                if (!q) return true;
+                const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim().toLowerCase();
+                return name.includes(q) || u.email.toLowerCase().includes(q);
+            });
+
+            const drop = document.getElementById('rgUserDropdown');
+            if (!available.length) {
+                drop.innerHTML = '<div style="padding:0.5rem 0.65rem;font-size:0.75rem;color:var(--text-secondary);">No users available</div>';
+            } else {
+                drop.innerHTML = available.slice(0, 20).map(u => {
+                    const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim();
+                    return `<div style="padding:0.4rem 0.65rem;font-size:0.78rem;cursor:pointer;transition:background 0.1s;display:flex;align-items:center;gap:0.5rem;" onmouseover="this.style.background='var(--row-hover-bg)'" onmouseout="this.style.background=''" onclick="addUserToRg('${escapeHTML(u.email)}')">
+                        <span style="font-weight:600;">${escapeHTML(name)}</span>
+                        <span style="color:var(--text-secondary);font-size:0.7rem;">${escapeHTML(u.email)}</span>
+                    </div>`;
+                }).join('');
+            }
+            drop.style.display = 'block';
+        }
+
+        async function addUserToRg(email) {
+            // Get user's current group assignments from allRestrictionGroups
+            const currentGroupIds = allRestrictionGroups
+                .filter(g => (g.assigned_users || []).some(e => e.toLowerCase() === email.toLowerCase()))
+                .map(g => g.id);
+            const newGroupIds = [...currentGroupIds, currentRgId];
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, group_ids: newGroupIds })
+                });
+                if (!resp.ok) throw new Error('Failed');
+
+                // Update local data
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g) g.assigned_users = [...(g.assigned_users || []), email];
+                renderRgAssignedUsers();
+                document.getElementById('rgUserDropdown').style.display = 'none';
+                const u = rgUserList.find(u => u.email === email);
+                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+                showToast(`${name} added to group`, 'success');
+            } catch (e) {
+                showToast('Failed to add user: ' + e.message, 'error');
+            }
+        }
+
+        async function removeUserFromRg(email) {
+            // Get user's current group assignments, remove this one
+            const currentGroupIds = allRestrictionGroups
+                .filter(g => (g.assigned_users || []).some(e => e.toLowerCase() === email.toLowerCase()))
+                .map(g => g.id);
+            const newGroupIds = currentGroupIds.filter(id => id !== currentRgId);
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, group_ids: newGroupIds })
+                });
+                if (!resp.ok) throw new Error('Failed');
+
+                // Update local data
+                const g = allRestrictionGroups.find(g => g.id === currentRgId);
+                if (g) g.assigned_users = (g.assigned_users || []).filter(e => e.toLowerCase() !== email.toLowerCase());
+                renderRgAssignedUsers();
+                const u = rgUserList.find(u => u.email === email);
+                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+                showToast(`${name} removed from group`, 'success');
+            } catch (e) {
+                showToast('Failed to remove user: ' + e.message, 'error');
+            }
+        }
+
+        // Close user dropdown on click outside
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#rgUserSearchWrapper')) {
+                const d = document.getElementById('rgUserDropdown');
+                if (d) d.style.display = 'none';
+            }
+        });
 
         function markRgMetaDirty() {
             const name = document.getElementById('rgDetailName').value.trim();
