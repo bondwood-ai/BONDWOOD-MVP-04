@@ -771,7 +771,7 @@
                 <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;" id="importFileName"></p>
             </div>
             <input type="file" id="importFileInput" accept=".xlsx,.csv" style="display:none;" onchange="handleImportFile(this)">
-            <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;font-size:0.75rem;"></div>
+            <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-top-color:var(--primary-hex);border-radius:8px;font-size:0.75rem;"></div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeImportModal()">Cancel</button>
                 <button class="btn-primary" id="importConfirmBtn" onclick="confirmImport()" disabled style="background:var(--primary-hex);color:#ffffff;border-color:var(--primary-hex);">Import</button>
@@ -1824,7 +1824,7 @@
                 const preview = document.getElementById('importPreview');
                 const cols = Object.keys(rows[0]);
                 const show = rows.slice(0, 10);
-                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--primary-hex);color:#ffffff;position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--primary-hex);color:#ffffff;border:none;position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
                 if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
                 preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
