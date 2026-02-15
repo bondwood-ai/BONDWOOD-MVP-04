@@ -399,24 +399,31 @@
         }
         .items-table input:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
+        .items-table input.line-invoice-date[readonly] { background: var(--field-bg) !important; cursor: pointer; font-weight: 400; }
         .items-table .line-desc { width: 100%; resize: none; overflow: hidden; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 0.85rem; background: var(--field-bg); color: var(--text-primary); line-height: 1.2; box-sizing: border-box; height: 36px; min-height: 36px; display: block; margin: 0; }
         .items-table .line-desc:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[type="number"], .items-table input.text-right { text-align: right; }
         .items-table tr.selected { background: var(--pale-accent) !important; }
         .items-table th.checkbox-col, .items-table td.checkbox-cell { text-align: center; width: 36px; }
         .items-table th input[type="checkbox"], .mileage-table th input[type="checkbox"] { border-color: rgba(255,255,255,0.5); background: transparent; }
-        .items-table th input[type="checkbox"]:checked, .mileage-table th input[type="checkbox"]:checked { background: #ffffff; border-color: #ffffff; }
-        .items-table th input[type="checkbox"]:checked::after, .mileage-table th input[type="checkbox"]:checked::after { border-color: var(--primary-hex); }
+        .items-table th input[type="checkbox"]:checked, .mileage-table th input[type="checkbox"]:checked {
+            background: #ffffff; border-color: #ffffff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: 11px; background-position: center; background-repeat: no-repeat;
+        }
         .items-table th input[type="checkbox"]:hover, .mileage-table th input[type="checkbox"]:hover { border-color: #ffffff; }
         .items-table input[type="checkbox"] {
-            width: 16px; height: 16px; cursor: pointer;
+            width: 18px; height: 18px; cursor: pointer;
             -webkit-appearance: none; appearance: none;
             border: 2px solid var(--border-color); border-radius: 50%;
             background: var(--field-bg); position: relative; flex-shrink: 0;
             transition: background 0.15s, border-color 0.15s;
         }
-        .items-table input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
-        .items-table input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 2px; left: 4.5px; width: 3.5px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .items-table input[type="checkbox"]:checked {
+            background: var(--primary-hex); border-color: var(--primary-hex);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: 11px; background-position: center; background-repeat: no-repeat;
+        }
         .items-table input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -473,8 +480,11 @@
             background: var(--field-bg); position: relative; flex-shrink: 0;
             transition: background 0.15s, border-color 0.15s;
         }
-        .mileage-check-row input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
-        .mileage-check-row input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 2.5px; left: 5.5px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .mileage-check-row input[type="checkbox"]:checked {
+            background: var(--primary-hex); border-color: var(--primary-hex);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: 12px; background-position: center; background-repeat: no-repeat;
+        }
         .mileage-check-row input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif; }
         .mileage-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
@@ -483,14 +493,17 @@
         }
         .mileage-table th.mileage-checkbox-col, .mileage-table td.mileage-checkbox-cell { text-align: center; width: 36px; }
         .mileage-table input[type="checkbox"] {
-            width: 15px; height: 15px; cursor: pointer; margin: 0;
+            width: 16px; height: 16px; cursor: pointer; margin: 0;
             -webkit-appearance: none; appearance: none;
             border: 2px solid var(--border-color); border-radius: 50%;
             background: var(--field-bg); position: relative; flex-shrink: 0;
             transition: background 0.15s, border-color 0.15s;
         }
-        .mileage-table input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
-        .mileage-table input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 1.5px; left: 4px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+        .mileage-table input[type="checkbox"]:checked {
+            background: var(--primary-hex); border-color: var(--primary-hex);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: 10px; background-position: center; background-repeat: no-repeat;
+        }
         .mileage-table input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         .mileage-table tr.selected { background: var(--pale-accent) !important; }
         .mileage-table th {
@@ -852,9 +865,9 @@
         .split-left {
             border-right: 1px solid var(--border-color); padding: 1.5rem 1.25rem;
             display: flex; flex-direction: column; gap: 1.25rem;
-            overflow-y: auto; background: var(--card-bg);
-            max-height: calc(100vh - 60px); position: sticky; top: 60px;
+            background: var(--card-bg); overflow: visible;
         }
+        .split-left .vendor-dropdown { z-index: 9999; }
         .split-right {
             padding: 1.5rem 1.75rem; overflow-y: auto; background: var(--bg-color);
         }
@@ -867,9 +880,8 @@
         .split-kv { display: flex; flex-direction: column; gap: 0; }
         .split-kv-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0.55rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+            padding: 0.55rem 0;
         }
-        .split-kv-row:last-child { border-bottom: none; }
         .split-kv-key { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; flex-shrink: 0; margin-right: 0.75rem; }
         .split-kv-val { text-align: right; max-width: 62%; }
         .split-kv-val input, .split-kv-val select, .split-kv-val .cs-wrap {
@@ -906,7 +918,7 @@
         /* Responsive: collapse split on small screens */
         @media (max-width: 900px) {
             .split-body { grid-template-columns: 1fr; }
-            .split-left { max-height: none; position: static; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .split-left { border-right: none; border-bottom: 1px solid var(--border-color); }
         }
 
         /* Print: hide split chrome */
@@ -1024,15 +1036,13 @@
             <div>
                 <div class="split-sec-label">Payment Info</div>
                 <div class="split-kv">
-                    <div class="split-kv-row">
+                    <div class="split-kv-row" id="typeSelectorRow">
                         <span class="split-kv-key">Request Type</span>
                         <div class="split-kv-val" style="max-width:65%;">
-                            <div class="type-selector" id="typeSelectorRow">
                                 <select id="requestTypeSelect" onchange="selectType(this.value)">
                                     <option value="vendor">Vendor Payment</option>
                                     <option value="reimbursement">Employee Reimbursement</option>
                                 </select>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1085,19 +1095,14 @@
                 </div>
             </div>
 
-            <div class="split-divider"></div>
-
             <!-- Notes -->
             <div>
-                <div class="split-sec-label">Notes</div>
+                <div style="font-size:0.75rem;font-weight:500;color:var(--text-secondary);margin-bottom:0.5rem;">Notes</div>
                 <textarea id="description" placeholder="Payment notes..." oninput="autoResize(this)" style="width:100%;min-height:60px;padding:0.5rem;border:1px solid var(--border-color);border-radius:5px;font-family:inherit;font-size:0.8rem;resize:vertical;background:var(--field-bg);color:var(--text-primary);outline:none;"></textarea>
             </div>
 
-            <div class="split-divider"></div>
-
             <!-- Attachments -->
             <div>
-                <div class="split-sec-label">Attachments</div>
                 <button class="attachments-trigger-btn" onclick="openAttachmentsModal()" style="font-size:0.78rem;padding:0.6rem 0.75rem;border-radius:6px;">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                     Attachments <span class="att-badge" id="attBadge" style="display:none;">0</span>
@@ -1962,7 +1967,7 @@
                 const codeDisplay = mode === 'number'
                     ? highlightMatch(v.c, query)
                     : v.c;
-                return `<div class="vendor-dropdown-item" data-idx="${i}" onclick="selectVendor(${VENDOR_DATA.indexOf(v)})"><span class="vd-name">${highlight}</span><span class="vd-code">${codeDisplay}</span></div>`;
+                return `<div class="vendor-dropdown-item" data-idx="${i}" onclick="selectVendor(${VENDOR_DATA.indexOf(v)})" title="${v.n} — ${v.c}"><span class="vd-name">${highlight}</span><span class="vd-code">${codeDisplay}</span></div>`;
             }).join('');
             dropdown.classList.add('open');
             dropdown.classList.remove('scrolled-bottom');
@@ -1988,6 +1993,7 @@
             const v = VENDOR_DATA[idx];
             selectedVendor = v;
             document.getElementById('vendorName').value = v.n;
+            document.getElementById('vendorName').title = v.n;
             document.getElementById('vendorNumber').value = v.c;
             document.getElementById('vendorAddress').value = v.a + '\n' + v.ci + ', ' + v.st + ' ' + v.z;
             document.getElementById('vendorNameDropdown').classList.remove('open');
@@ -2359,7 +2365,7 @@
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
                 <td><textarea class="line-desc" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
                 <td class="invoice-col"><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
-                <td class="invoice-col"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;cursor:pointer;" autocomplete="off" readonly></td>
+                <td class="invoice-col"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;cursor:pointer;background:var(--field-bg);" autocomplete="off" readonly></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Enter Budget Code"></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-account" value="${data.account || ''}" maxlength="7" style="width:75px;text-align:center;" autocomplete="off" placeholder="—"></td>
                 <td><input type="text" class="line-amount text-right" value="${data.amount || ''}" style="width:110px;"></td>

@@ -156,12 +156,10 @@
             background: var(--field-bg); position: relative; flex-shrink: 0;
             transition: background 0.15s, border-color 0.15s;
         }
-        .cb-cell input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
-        .cb-cell input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 1px; left: 3.5px; width: 3px; height: 5.5px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+        .cb-cell input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 9px; background-position: center; background-repeat: no-repeat; }
         .cb-cell input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         th.cb-cell input[type="checkbox"] { border-color: rgba(255,255,255,0.5); background: transparent; }
-        th.cb-cell input[type="checkbox"]:checked { background: #ffffff; border-color: #ffffff; }
-        th.cb-cell input[type="checkbox"]:checked::after { border-color: var(--primary-hex); }
+        th.cb-cell input[type="checkbox"]:checked { background: #ffffff; border-color: #ffffff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 9px; background-position: center; background-repeat: no-repeat; }
         th.cb-cell input[type="checkbox"]:hover { border-color: #ffffff; }
 
         /* ============ ROLE BADGES ============ */
@@ -285,8 +283,7 @@
             background: var(--field-bg); position: relative; cursor: pointer;
             transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
         }
-        .role-check-label input:checked { background: var(--primary-hex); border-color: var(--primary-hex); }
-        .role-check-label input:checked::after { content: ''; position: absolute; top: 1px; left: 3.5px; width: 3px; height: 5.5px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+        .role-check-label input:checked { background: var(--primary-hex); border-color: var(--primary-hex); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 9px; background-position: center; background-repeat: no-repeat; }
         .role-check-label.checked { border-color: var(--primary-hex); background: rgba(7,40,235,0.06); }
 
         .new-component-list { margin: 0.5rem 0 1rem; padding: 0; list-style: none; }
