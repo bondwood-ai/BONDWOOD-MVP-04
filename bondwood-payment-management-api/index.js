@@ -213,6 +213,12 @@ export default {
       if (path === '/api/users/status' && method === 'PUT') {
         return handleUpdateUserStatus(request, env);
       }
+      if (path === '/api/users/roles' && method === 'PUT') {
+        return handleUpdateUserRoles(request, env);
+      }
+      if (path === '/api/role-definitions' && method === 'GET') {
+        return handleGetRoleDefinitions(env);
+      }
 
       // ── Profile ──
       if (path === '/api/profile' && method === 'PUT') {
@@ -353,7 +359,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -362,14 +368,9 @@ async function handleMe(request, env, url) {
 
   const u = results[0];
 
-  // Fetch roles
+  // Parse roles from JSON column
   let roles = [];
-  try {
-    const { results: roleResults } = await env.DB.prepare(
-      'SELECT role FROM user_roles WHERE LOWER(user_email) = ? ORDER BY role'
-    ).bind(email.toLowerCase().trim()).all();
-    roles = roleResults.map(r => r.role);
-  } catch (e) { /* user_roles table may not exist yet */ }
+  try { roles = JSON.parse(u.user_roles || '["user"]'); } catch (e) { roles = ['user']; }
 
   return json({
     user_id: u.user_id,
@@ -1852,36 +1853,25 @@ async function handleDeleteAttachment(key, env) {
    ======================================== */
 async function handleGetUsers(env) {
   const { results: users } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status FROM user_data ORDER BY user_first_name ASC'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles FROM user_data ORDER BY user_first_name ASC'
   ).all();
 
-  let allRoles = [];
-  try {
-    const { results: roleResults } = await env.DB.prepare(
-      'SELECT user_email, role FROM user_roles ORDER BY user_email, role'
-    ).all();
-    allRoles = roleResults;
-  } catch (e) { /* user_roles table may not exist yet */ }
-
-  const roleMap = {};
-  for (const r of allRoles) {
-    const email = r.user_email.toLowerCase();
-    if (!roleMap[email]) roleMap[email] = [];
-    roleMap[email].push(r.role);
-  }
-
-  const merged = users.map(u => ({
-    user_id: u.user_id,
-    first_name: u.user_first_name,
-    last_name: u.user_last_name,
-    email: u.user_email,
-    phone_number: u.phone_number || '',
-    department: u.department || '',
-    title: u.title || '',
-    profile_picture_key: u.profile_picture_key || null,
-    status: u.status || 'active',
-    roles: roleMap[u.user_email.toLowerCase()] || [],
-  }));
+  const merged = users.map(u => {
+    let roles = [];
+    try { roles = JSON.parse(u.user_roles || '["user"]'); } catch (e) { roles = ['user']; }
+    return {
+      user_id: u.user_id,
+      first_name: u.user_first_name,
+      last_name: u.user_last_name,
+      email: u.user_email,
+      phone_number: u.phone_number || '',
+      department: u.department || '',
+      title: u.title || '',
+      profile_picture_key: u.profile_picture_key || null,
+      status: u.status || 'active',
+      roles,
+    };
+  });
 
   return json({ users: merged, total: merged.length });
 }
@@ -1904,6 +1894,59 @@ async function handleUpdateUserStatus(request, env) {
     return json({ message: 'Status updated', email, status });
   } catch (e) {
     return json({ error: 'Failed to update status: ' + e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   ROLE DEFINITIONS
+   ======================================== */
+async function handleGetRoleDefinitions(env) {
+  const allRoles = ['super_user', 'admin', 'submitter', 'user'];
+
+  // Also gather any custom roles from user_data
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT DISTINCT user_roles FROM user_data WHERE user_roles IS NOT NULL'
+    ).all();
+    for (const row of results) {
+      try {
+        const parsed = JSON.parse(row.user_roles || '[]');
+        for (const r of parsed) {
+          if (!allRoles.includes(r)) allRoles.push(r);
+        }
+      } catch (e) {}
+    }
+  } catch (e) {}
+
+  return json({
+    roles: allRoles.map(r => ({
+      role_name: r,
+      label: r.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+    }))
+  });
+}
+
+
+/* ========================================
+   USER ROLES – UPDATE
+   ======================================== */
+async function handleUpdateUserRoles(request, env) {
+  const body = await request.json();
+  const { email, roles } = body;
+
+  if (!email || !Array.isArray(roles)) {
+    return json({ error: 'email and roles array are required' }, 400);
+  }
+
+  try {
+    await env.DB.prepare(
+      'UPDATE user_data SET user_roles = ? WHERE LOWER(user_email) = ?'
+    ).bind(JSON.stringify(roles), email.toLowerCase().trim()).run();
+
+    return json({ message: 'Roles updated', email, roles });
+  } catch (e) {
+    return json({ error: 'Failed to update roles: ' + e.message }, 500);
   }
 }
 
