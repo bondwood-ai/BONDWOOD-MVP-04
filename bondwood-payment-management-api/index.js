@@ -878,6 +878,7 @@ async function handleListRFPs(env, url) {
   const sort = url.searchParams.get('sort') || 'rfp_number';
   const dir = (url.searchParams.get('dir') || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
   const email = (url.searchParams.get('email') || '').toLowerCase().trim();
+  const forSubmitterId = url.searchParams.get('for_submitter_id') || '';
 
   // If no email provided, return empty — never return all RFPs unfiltered
   if (!email) {
@@ -909,7 +910,13 @@ async function handleListRFPs(env, url) {
       }
     } catch (e) {}
 
-    if (!canViewAll && submitterId) {
+    // Admin filtering for a specific submitter (e.g. user detail panel)
+    if (canViewAll && forSubmitterId) {
+      const sid = forSubmitterId.toUpperCase();
+      const sidNoE = sid.replace(/^E/i, '');
+      where.push('(UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?))');
+      params.push(sid, sidNoE);
+    } else if (!canViewAll && submitterId) {
       // User can see: forms they submitted (by ID or name) OR forms assigned to them OR forms they acted on
       where.push('(UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?) OR (? != \'\' AND UPPER(d.submitter_name) = ?) OR LOWER(d.assigned_to_email) = ? OR d.rfp_number IN (SELECT DISTINCT rfp_number FROM audit_logs WHERE LOWER(performed_by_email) = ?))');
       params.push(submitterId, submitterId.replace(/^E/i, ''), submitterName || '', submitterName || '', email, email);
