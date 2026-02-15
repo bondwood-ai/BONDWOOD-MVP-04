@@ -1232,6 +1232,9 @@
                 Print RFP
             </button>
         </div>
+        <div class="button-container" id="viewOnlyButtons" style="display:none;">
+            <button class="btn btn-audit" onclick="showAuditLog()">Audit Log</button>
+        </div>
 
         <!-- Footer -->
         </div><!-- /form-content-wrapper -->
@@ -4206,6 +4209,9 @@
             document.querySelectorAll('.add-row-btn, .remove-row-btn, .delete-row-btn, .remove-trip-btn').forEach(el => el.style.display = 'none');
             document.getElementById('draftButtons').style.display = 'none';
             document.getElementById('approvalButtons').style.display = 'none';
+
+            // Show view-only buttons (Audit Log only)
+            document.getElementById('viewOnlyButtons').style.display = '';
 
             // Hide attachment upload
             const attachDrop = document.getElementById('attachmentDropZone');
