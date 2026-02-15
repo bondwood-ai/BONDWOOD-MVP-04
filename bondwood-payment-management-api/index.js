@@ -212,6 +212,14 @@ export default {
         if (method === 'POST') return handleCreateAuditLog(rfpNumber, request, env);
       }
 
+      // ── Notes ──
+      const notesMatch = path.match(/^\/api\/rfps\/(\d+)\/notes$/);
+      if (notesMatch) {
+        const rfpNumber = parseInt(notesMatch[1]);
+        if (method === 'GET') return handleGetNotes(rfpNumber, env);
+        if (method === 'POST') return handleCreateNote(rfpNumber, request, env);
+      }
+
       // ── Users ──
       if (path === '/api/users' && method === 'GET') {
         return handleGetUsers(env);
@@ -1000,7 +1008,15 @@ async function handleGetRFP(rfpNumber, env) {
     auditLogs = logs;
   } catch (e) { /* table may not exist yet */ }
 
-  return json({ ...header[0], lineItems, mileageTrips, auditLogs });
+  let notes = [];
+  try {
+    const { results: noteRows } = await env.DB.prepare(
+      'SELECT * FROM rfp_notes WHERE rfp_number = ? ORDER BY created_at ASC'
+    ).bind(rfpNumber).all();
+    notes = noteRows;
+  } catch (e) { /* table may not exist yet */ }
+
+  return json({ ...header[0], lineItems, mileageTrips, auditLogs, notes });
 }
 
 
@@ -1146,6 +1162,15 @@ async function handleCreateRFP(request, env) {
     ).bind(nextRfp, status === 'submitted' ? 'submitted' : 'draft-created', auditDesc, performer, (body.performer_email || '').toLowerCase().trim() || null, now).run();
   } catch (auditErr) {
     console.error('[AUDIT] Failed to write audit log for create:', auditErr.message);
+  }
+
+  // Save description as a note if provided
+  if (body.description && body.description.trim()) {
+    try {
+      await env.DB.prepare(
+        'INSERT INTO rfp_notes (rfp_number, note_text, author_name, author_email, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind(nextRfp, body.description.trim(), performer, (body.user_email || '').toLowerCase().trim(), new Date().toISOString()).run();
+    } catch (e) { console.error('[NOTES] Failed to save note:', e.message); }
   }
 
   // ── Auto-advance workflow when submitted ──
@@ -2182,6 +2207,15 @@ async function handleMigrate(env) {
     'ALTER TABLE user_restriction_assignments ADD COLUMN name TEXT',
     'ALTER TABLE user_data DROP COLUMN restrictions',
     'ALTER TABLE dashboard_data ADD COLUMN user_email TEXT',
+    `CREATE TABLE IF NOT EXISTS rfp_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rfp_number INTEGER NOT NULL,
+      note_text TEXT NOT NULL,
+      author_name TEXT,
+      author_email TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (rfp_number) REFERENCES dashboard_data(rfp_number)
+    )`,
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
@@ -2267,6 +2301,21 @@ async function handleMigrate(env) {
     results.push({ sql: 'BACKFILL dashboard_data.user_email', status: 'applied' });
   } catch (e) {
     results.push({ sql: 'BACKFILL dashboard_data.user_email', status: 'skipped', reason: e.message });
+  }
+
+  // Backfill dashboard_data.description → rfp_notes for existing RFPs
+  try {
+    await env.DB.prepare(`
+      INSERT INTO rfp_notes (rfp_number, note_text, author_name, author_email, created_at)
+      SELECT d.rfp_number, d.description, d.submitter_name, d.user_email,
+        COALESCE(d.submission_date, datetime('now'))
+      FROM dashboard_data d
+      WHERE d.description IS NOT NULL AND d.description != ''
+        AND d.rfp_number NOT IN (SELECT DISTINCT rfp_number FROM rfp_notes)
+    `).run();
+    results.push({ sql: 'BACKFILL rfp_notes from description', status: 'applied' });
+  } catch (e) {
+    results.push({ sql: 'BACKFILL rfp_notes from description', status: 'skipped', reason: e.message });
   }
 
   return json({ message: 'Migration complete', results });
@@ -2379,6 +2428,42 @@ async function handleCreateAuditLog(rfpNumber, request, env) {
     return json({ message: 'Audit log created' }, 201);
   } catch (e) {
     return json({ error: 'Failed to create audit log', detail: e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   NOTES – LIST & CREATE
+   ======================================== */
+async function handleGetNotes(rfpNumber, env) {
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM rfp_notes WHERE rfp_number = ? ORDER BY created_at ASC'
+    ).bind(rfpNumber).all();
+    return json({ notes: results });
+  } catch (e) {
+    return json({ notes: [], error: e.message });
+  }
+}
+
+async function handleCreateNote(rfpNumber, request, env) {
+  const body = await request.json();
+  if (!body.note_text || !body.note_text.trim()) {
+    return json({ error: 'note_text is required' }, 400);
+  }
+  try {
+    const { results } = await env.DB.prepare(
+      'INSERT INTO rfp_notes (rfp_number, note_text, author_name, author_email, created_at) VALUES (?, ?, ?, ?, ?) RETURNING *'
+    ).bind(
+      rfpNumber,
+      body.note_text.trim(),
+      body.author_name || 'Unknown',
+      (body.author_email || '').toLowerCase().trim(),
+      new Date().toISOString()
+    ).all();
+    return json({ note: results[0] }, 201);
+  } catch (e) {
+    return json({ error: 'Failed to create note', detail: e.message }, 500);
   }
 }
 

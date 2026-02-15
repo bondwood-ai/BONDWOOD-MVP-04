@@ -2407,16 +2407,30 @@
 
             // Build Notes section (collapsible, collapsed by default, only if notes exist)
             let notesHtml = '';
-            if (notesText) {
+            const notesArr = window._previewFullData?.notes || [];
+            const notesContent = notesArr.length > 0 ? notesArr : (notesText ? [{ note_text: notesText, author_name: rfp.submitter || 'Unknown', created_at: null }] : []);
+            if (notesContent.length > 0) {
                 const notesId = 'notes_' + rfp.rfpNumber;
+                const noteItems = notesContent.map(n => {
+                    const author = (n.author_name || n.author_email || 'Unknown').replace(/</g, '&lt;');
+                    const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                    const text = (n.note_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<div style="padding:0.6rem 0.75rem;${notesContent.indexOf(n) < notesContent.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                            <span style="font-size:0.75rem;font-weight:600;color:var(--primary-hex);">${author}</span>
+                            <span style="font-size:0.7rem;color:var(--text-secondary);">${date}</span>
+                        </div>
+                        <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${text}</div>
+                    </div>`;
+                }).join('');
                 notesHtml = `
                 <div style="margin-top:1rem;">
                     <button onclick="toggleAuditLog('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Inter',sans-serif;">
                         <svg id="${notesId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
-                        Notes
+                        Notes <span style="font-weight:400;color:var(--text-secondary);font-size:0.8rem;margin-left:0.3rem;">(${notesContent.length})</span>
                     </button>
                     <div id="${notesId}" style="display:none;margin-top:0.4rem;">
-                        <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;padding:0.75rem 1rem;font-size:0.85rem;color:var(--text-primary);line-height:1.6;white-space:pre-wrap;">${notesText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                        <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">${noteItems}</div>
                     </div>
                 </div>`;
             }

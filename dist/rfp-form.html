@@ -1098,9 +1098,10 @@
         <!-- Notes -->
         <div class="form-container">
             <div class="section-header">
-                <span>Notes</span>
+                <span>Notes <span id="notesCount" style="font-weight:400;color:var(--text-secondary);font-size:0.8rem;"></span></span>
             </div>
-            <textarea id="description" placeholder="Enter any notes about this payment..." oninput="autoResize(this)" style="width:100%;min-height:80px;padding:1.25rem;border:none;border-radius:0;font-family:inherit;font-size:0.9rem;resize:vertical;background:transparent;color:var(--text-primary);outline:none;display:block;box-sizing:border-box;"></textarea>
+            <div id="existingNotes" style="display:none;"></div>
+            <textarea id="description" placeholder="Add a note..." oninput="autoResize(this)" style="width:100%;min-height:80px;padding:1.25rem;border:none;border-radius:0;font-family:inherit;font-size:0.9rem;resize:vertical;background:transparent;color:var(--text-primary);outline:none;display:block;box-sizing:border-box;"></textarea>
         </div>
 
         <!-- Attachments -->
@@ -3823,6 +3824,23 @@
                     if (result._auditDebug) console.log('[AUDIT DEBUG]', JSON.stringify(result._auditDebug, null, 2));
                     // Upload any pending attachments
                     await uploadPendingAttachments(rfpNum);
+                    // Save new note if description has text (for updates; creates handled server-side)
+                    if (method === 'PUT') {
+                        const noteText = document.getElementById('description').value.trim();
+                        if (noteText) {
+                            try {
+                                await fetch(`${API_BASE}/api/rfps/${rfpNum}/notes`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        note_text: noteText,
+                                        author_name: submitterName,
+                                        author_email: (sessionStorage.getItem('impersonateEmail') || currentLoggedInEmail || '').toLowerCase().trim()
+                                    })
+                                });
+                            } catch (e) { console.warn('Failed to save note:', e); }
+                        }
+                    }
                     // Audit logging handled server-side in handleCreateRFP / handleUpdateRFP
                     // Update URL so subsequent saves are PUTs
                     window.history.replaceState(null, '', 'rfp-form.html?id=' + rfpNum);
@@ -4236,6 +4254,23 @@
                     };
                     // Upload any pending attachments to R2
                     await uploadPendingAttachments(rfpNum);
+                    // Save new note if description has text (for updates; creates handled server-side)
+                    if (method === 'PUT') {
+                        const noteText = document.getElementById('description').value.trim();
+                        if (noteText) {
+                            try {
+                                await fetch(`${API_BASE}/api/rfps/${rfpNum}/notes`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        note_text: noteText,
+                                        author_name: submitterName,
+                                        author_email: (sessionStorage.getItem('impersonateEmail') || currentLoggedInEmail || '').toLowerCase().trim()
+                                    })
+                                });
+                            } catch (e) { console.warn('Failed to save note:', e); }
+                        }
+                    }
                     // Audit logging handled server-side in handleUpdateRFP (detects draft→submitted)
                     showSuccessModal(rfpNum);
                 } else {
@@ -4518,8 +4553,13 @@
                     if (data.employee_id) document.getElementById('employeeId').value = data.employee_id;
                 }, 100);
 
-                // Description
-                if (data.description) {
+                // Notes — show existing notes from API, clear description textarea for new input
+                if (data.notes && data.notes.length > 0) {
+                    renderExistingNotes(data.notes);
+                    document.getElementById('description').value = '';
+                    document.getElementById('description').placeholder = 'Add a new note...';
+                } else if (data.description) {
+                    // Fallback for old data without notes table
                     document.getElementById('description').value = data.description;
                     autoResize(document.getElementById('description'));
                 }
@@ -4799,6 +4839,26 @@
         function formatCurrency(num) { return '$' + formatNumber(num); }
         function parseFormattedNumber(str) { return parseFloat(String(str).replace(/[$,]/g, '')) || 0; }
         function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+
+        function renderExistingNotes(notes) {
+            const container = document.getElementById('existingNotes');
+            const countEl = document.getElementById('notesCount');
+            if (!notes || !notes.length) { container.style.display = 'none'; countEl.textContent = ''; return; }
+            countEl.textContent = `(${notes.length})`;
+            container.style.display = 'block';
+            container.innerHTML = notes.map(n => {
+                const author = n.author_name || n.author_email || 'Unknown';
+                const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                const text = (n.note_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `<div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                        <span style="font-size:0.75rem;font-weight:600;color:var(--primary-hex);">${author.replace(/</g,'&lt;')}</span>
+                        <span style="font-size:0.7rem;color:var(--text-secondary);">${date}</span>
+                    </div>
+                    <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${text}</div>
+                </div>`;
+            }).join('');
+        }
 
         /* ========================================
            THEME
@@ -5569,6 +5629,7 @@
                 checkVendorBudgetCompatibility(val);
             } else {
                 // Partial code — check if it matches anything in the relevant pool
+                const cleanLen = val.replace(/[^0-9]/g, '').length;
                 const pool = USER_RESTRICTIONS.restricted_budget ? getBudgetCodePool() : UNIQUE_BUDGET_CODES;
                 const hasMatches = pool.some(c => c.includes(val));
                 if (hasMatches) {
@@ -5580,6 +5641,10 @@
                     input.classList.remove('bc-valid');
                     input.classList.add('bc-error');
                     removeBcTooltip(input);
+                }
+                // For complete codes (14+ digits), still check vendor compatibility even if code not in database
+                if (cleanLen >= 14) {
+                    checkVendorBudgetCompatibility(val);
                 }
             }
         }
