@@ -1520,21 +1520,11 @@
             container.innerHTML = '<div class="loading-spinner" style="padding:1rem;"><div class="spinner-icon"></div> Loading requests...</div>';
 
             try {
-                const resp = await fetch(`${API_BASE}/api/rfps?email=${encodeURIComponent(currentUserEmail)}`);
+                // Query using the target user's email — API filters server-side by submitter_id
+                const resp = await fetch(`${API_BASE}/api/rfps?email=${encodeURIComponent(email)}`);
                 if (!resp.ok) throw new Error('Failed to load RFPs');
                 const data = await resp.json();
-                const allRfps = data.rfps || data || [];
-
-                // Filter by submitter name, email, or ID
-                const nameUpper = userName.toUpperCase();
-                const emailLower = email.toLowerCase();
-                const userId = selectedUser ? 'E' + (selectedUser.user_id || '') : '';
-                const userRfps = allRfps.filter(r => {
-                    const sub = (r.submitter || r.submitter_name || '').toUpperCase();
-                    const em = (r.submitter_email || '').toLowerCase();
-                    const sid = (r.submitter_id || '').toUpperCase();
-                    return sub === nameUpper || em === emailLower || sub.includes(nameUpper) || (userId && sid === userId.toUpperCase());
-                });
+                const userRfps = data.rfps || data || [];
 
                 document.getElementById('detailRfpCount').textContent = `(${userRfps.length})`;
 
