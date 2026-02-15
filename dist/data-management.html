@@ -133,7 +133,7 @@
             text-transform: uppercase; letter-spacing: 0.04em;
             text-align: left; white-space: nowrap; cursor: pointer;
             user-select: none; transition: background 0.15s;
-            position: sticky; top: 0; z-index: 2;
+            position: sticky; top: 0; z-index: 2; border: none;
         }
         th:first-child { border-radius: 8px 0 0 0; }
         th:last-child { border-radius: 0 8px 0 0; }
@@ -160,8 +160,8 @@
         }
         .cb-cell input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 9px; background-position: center; background-repeat: no-repeat; }
         .cb-cell input[type="checkbox"]:hover { border-color: var(--primary-hex); }
-        th.cb-cell input[type="checkbox"] { border-color: rgba(255,255,255,0.5); background: transparent; }
-        th.cb-cell input[type="checkbox"]:checked { background: #ffffff; border-color: #ffffff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 9px; background-position: center; background-repeat: no-repeat; }
+        th.cb-cell input[type="checkbox"] { border-color: #ffffff; background: transparent; }
+        th.cb-cell input[type="checkbox"]:checked { background: var(--primary-hex); border-color: #ffffff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 9px; background-position: center; background-repeat: no-repeat; }
         th.cb-cell input[type="checkbox"]:hover { border-color: #ffffff; }
 
         /* ============ ROLE BADGES ============ */
@@ -381,8 +381,8 @@
         .rg-section-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.25rem; }
         .rg-section-hint { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.75rem; opacity: 0.7; }
 
-        .rg-rule-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
-        .rg-rule-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff; text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-color); background: var(--primary-hex); }
+        .rg-rule-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 0.75rem; }
+        .rg-rule-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff; text-align: left; padding: 0.3rem 0.5rem; border: none; background: var(--primary-hex); }
         .rg-rule-table td { font-size: 0.8rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-family: 'Inter', monospace; position: relative; }
         .rg-rule-table .wildcard { color: var(--text-primary); font-weight: 600; }
         .rg-rule-table .any { color: var(--text-secondary); font-style: italic; opacity: 0.5; }
@@ -447,7 +447,7 @@
         .rg-approver-row { display: flex; align-items: center; gap: 0.75rem; }
         .rg-approver-row label {
             font-size: 0.78rem; font-weight: 500; color: var(--text-secondary);
-            min-width: 110px; flex-shrink: 0;
+            min-width: 135px; flex-shrink: 0;
         }
         .rg-approver-row.primary label { font-weight: 700; color: var(--text-primary); }
 
@@ -657,9 +657,8 @@
                             <th onclick="sortVendors('vendor_city')">City</th>
                             <th>State</th>
                             <th>ZIP</th>
-                            <th class="no-sort">Roles</th>
                         </tr></thead>
-                        <tbody id="vendorBody"><tr><td colspan="8" class="empty-state">Loading vendors...</td></tr></tbody>
+                        <tbody id="vendorBody"><tr><td colspan="7" class="empty-state">Loading vendors...</td></tr></tbody>
                     </table>
                 </div>
                 <div class="pagination" id="vendorPagination"></div>
@@ -709,9 +708,8 @@
                             <th onclick="sortBudgetCodes('account_code')">Account</th>
                             <th onclick="sortBudgetCodes('fund')">Fund</th>
                             <th>Org</th><th>Program</th><th>Finance</th><th>Course</th>
-                            <th class="no-sort">Roles</th>
                         </tr></thead>
-                        <tbody id="budgetBody"><tr><td colspan="9" class="empty-state">Loading budget codes...</td></tr></tbody>
+                        <tbody id="budgetBody"><tr><td colspan="8" class="empty-state">Loading budget codes...</td></tr></tbody>
                     </table>
                 </div>
                 <div class="pagination" id="budgetPagination"></div>
@@ -730,9 +728,9 @@
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                         Create Group
                     </button>
-                    <button class="btn-primary import-btn" onclick="openImportModal('restriction-groups')" style="margin-left:0.35rem;">
+                    <button class="btn-primary" onclick="openImportModal('restriction-groups')" style="margin-left:0.35rem;">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import Restriction Groups
+                        Import XLSX
                     </button>
                     <span class="form-message" id="rgFormMsg"></span>
                 </div>
@@ -771,7 +769,7 @@
                 <p style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.25rem;" id="importFileName"></p>
             </div>
             <input type="file" id="importFileInput" accept=".xlsx,.csv" style="display:none;" onchange="handleImportFile(this)">
-            <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-top-color:var(--primary-hex);border-radius:8px;font-size:0.75rem;"></div>
+            <div id="importPreview" style="display:none;margin-bottom:1rem;max-height:200px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;font-size:0.75rem;"></div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeImportModal()">Cancel</button>
                 <button class="btn-primary" id="importConfirmBtn" onclick="confirmImport()" disabled style="background:var(--primary-hex);color:#ffffff;border-color:var(--primary-hex);">Import</button>
@@ -821,8 +819,12 @@
                 <div class="edit-group"><label>ZIP</label><input type="text" id="editVendorZip" maxlength="10"></div>
             </div>
             <div class="roles-section">
-                <label>Assigned Roles</label>
-                <div class="role-checkboxes" id="editVendorRoles"></div>
+                <label>Assigned Restriction Groups</label>
+                <div id="editVendorRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
+                <div style="position:relative;" id="editVendorRgDropWrap">
+                    <input type="text" id="editVendorRgSearch" placeholder="Add to restriction group..." oninput="filterVendorRgDropdown()" onfocus="document.getElementById('editVendorRgDrop').style.display='block'" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.78rem;background:var(--field-bg);color:var(--text-primary);font-family:inherit;">
+                    <div id="editVendorRgDrop" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:160px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeEditVendor()">Cancel</button>
@@ -848,8 +850,12 @@
                 <div class="edit-group"><label>Course</label><input type="text" id="editCourse"></div>
             </div>
             <div class="roles-section">
-                <label>Assigned Roles</label>
-                <div class="role-checkboxes" id="editBudgetRoles"></div>
+                <label>Assigned Restriction Groups</label>
+                <div id="editBudgetRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
+                <div style="position:relative;" id="editBudgetRgDropWrap">
+                    <input type="text" id="editBudgetRgSearch" placeholder="Add to restriction group..." oninput="filterBudgetRgDropdown()" onfocus="document.getElementById('editBudgetRgDrop').style.display='block'" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.78rem;background:var(--field-bg);color:var(--text-primary);font-family:inherit;">
+                    <div id="editBudgetRgDrop" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:160px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeEditBudget()">Cancel</button>
@@ -953,14 +959,7 @@
             <!-- Assigned Users -->
             <div class="rg-section">
                 <div class="rg-section-title">Assigned Users</div>
-                <div class="rg-section-hint">Assign users to this restriction group. Search by name or email.</div>
-                <div id="rgAssignedUserPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
-                <div style="position:relative;" id="rgUserSearchWrapper">
-                    <input type="text" id="rgUserSearchInput" placeholder="Search users..." autocomplete="off"
-                        style="width:100%;padding:0.45rem 0.7rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.8rem;font-family:'Inter',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
-                        oninput="filterRgUserResults()" onfocus="filterRgUserResults()">
-                    <div id="rgUserSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
-                </div>
+                <div id="rgAssignedUsers" style="display:flex;flex-wrap:wrap;gap:0.35rem;"></div>
             </div>
         </div>
     </div>
@@ -1033,6 +1032,186 @@
         function getCheckedRoles(containerId) {
             return [...document.getElementById(containerId).querySelectorAll('input:checked')].map(cb => cb.value);
         }
+
+        /* ========================================
+           RESTRICTION GROUP ASSIGNMENT (Vendor/Budget Edit Modals)
+           ======================================== */
+        function getGroupsForVendor(vendorNumber) {
+            return allRestrictionGroups.filter(g => (g.vendors || []).includes(vendorNumber));
+        }
+
+        function getGroupsForBudget(budgetObj) {
+            return allRestrictionGroups.filter(g => {
+                return (g.budget_rules || []).some(r =>
+                    (r.fund || '') === (budgetObj.fund || '').toString().trim().substring(0, 2) &&
+                    (r.organization || '') === (budgetObj.organization || '').toString().trim() &&
+                    (r.program || '') === (budgetObj.program || '').toString().trim() &&
+                    (r.finance || '') === (budgetObj.finance || '').toString().trim() &&
+                    (r.course || '') === (budgetObj.course || '').toString().trim()
+                );
+            });
+        }
+
+        function renderVendorRgPills(vendorNumber) {
+            const groups = getGroupsForVendor(vendorNumber);
+            const container = document.getElementById('editVendorRgPills');
+            if (!groups.length) {
+                container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-secondary);font-style:italic;">Not assigned to any group</span>';
+            } else {
+                container.innerHTML = groups.map(g => `
+                    <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.2rem 0.5rem;background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));border:1px solid color-mix(in srgb, var(--primary-hex) 25%, var(--border-color));border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--text-primary);">
+                        ${escapeHTML(g.name)}
+                        <button onclick="removeVendorFromRg(${g.id},'${escAttr(vendorNumber)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;font-size:0.85rem;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'">&times;</button>
+                    </span>
+                `).join('');
+            }
+            document.getElementById('editVendorRgSearch').value = '';
+        }
+
+        function filterVendorRgDropdown() {
+            if (!editingVendor) return;
+            const q = document.getElementById('editVendorRgSearch').value.toLowerCase().trim();
+            const assigned = getGroupsForVendor(editingVendor.vendor_number).map(g => g.id);
+            const available = allRestrictionGroups.filter(g => !assigned.includes(g.id) && (!q || g.name.toLowerCase().includes(q)));
+            const drop = document.getElementById('editVendorRgDrop');
+            if (!available.length) {
+                drop.innerHTML = '<div style="padding:0.5rem 0.65rem;font-size:0.75rem;color:var(--text-secondary);">No groups available</div>';
+            } else {
+                drop.innerHTML = available.map(g => `
+                    <div style="padding:0.4rem 0.65rem;font-size:0.78rem;cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--row-hover-bg)'" onmouseout="this.style.background=''" onclick="addVendorToRg(${g.id},'${escAttr(editingVendor.vendor_number)}')">
+                        ${escapeHTML(g.name)}
+                    </div>
+                `).join('');
+            }
+            drop.style.display = 'block';
+        }
+
+        async function addVendorToRg(groupId, vendorNumber) {
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups/${groupId}/vendors`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vendor_numbers: [vendorNumber] })
+                });
+                if (!resp.ok) throw new Error('Failed');
+                // Update local data
+                const g = allRestrictionGroups.find(g => g.id === groupId);
+                if (g && !g.vendors.includes(vendorNumber)) g.vendors.push(vendorNumber);
+                renderVendorRgPills(vendorNumber);
+                document.getElementById('editVendorRgDrop').style.display = 'none';
+                showToast(`Added to ${g?.name || 'group'}`, 'success');
+            } catch (e) { showToast('Failed to add vendor to group', 'error'); }
+        }
+
+        async function removeVendorFromRg(groupId, vendorNumber) {
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups/${groupId}/vendors/${encodeURIComponent(vendorNumber)}`, { method: 'DELETE' });
+                if (!resp.ok) throw new Error('Failed');
+                const g = allRestrictionGroups.find(g => g.id === groupId);
+                if (g) g.vendors = g.vendors.filter(v => v !== vendorNumber);
+                renderVendorRgPills(vendorNumber);
+                showToast(`Removed from ${g?.name || 'group'}`, 'success');
+            } catch (e) { showToast('Failed to remove vendor from group', 'error'); }
+        }
+
+        function renderBudgetRgPills(budgetObj) {
+            const groups = getGroupsForBudget(budgetObj);
+            const container = document.getElementById('editBudgetRgPills');
+            if (!groups.length) {
+                container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-secondary);font-style:italic;">Not assigned to any group</span>';
+            } else {
+                container.innerHTML = groups.map(g => `
+                    <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.2rem 0.5rem;background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));border:1px solid color-mix(in srgb, var(--primary-hex) 25%, var(--border-color));border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--text-primary);">
+                        ${escapeHTML(g.name)}
+                        <button onclick="removeBudgetFromRg(${g.id})" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;font-size:0.85rem;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'">&times;</button>
+                    </span>
+                `).join('');
+            }
+            document.getElementById('editBudgetRgSearch').value = '';
+        }
+
+        function filterBudgetRgDropdown() {
+            if (!editingBudget) return;
+            const q = document.getElementById('editBudgetRgSearch').value.toLowerCase().trim();
+            const assigned = getGroupsForBudget(editingBudget).map(g => g.id);
+            const available = allRestrictionGroups.filter(g => !assigned.includes(g.id) && (!q || g.name.toLowerCase().includes(q)));
+            const drop = document.getElementById('editBudgetRgDrop');
+            if (!available.length) {
+                drop.innerHTML = '<div style="padding:0.5rem 0.65rem;font-size:0.75rem;color:var(--text-secondary);">No groups available</div>';
+            } else {
+                drop.innerHTML = available.map(g => `
+                    <div style="padding:0.4rem 0.65rem;font-size:0.78rem;cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--row-hover-bg)'" onmouseout="this.style.background=''" onclick="addBudgetToRg(${g.id})">
+                        ${escapeHTML(g.name)}
+                    </div>
+                `).join('');
+            }
+            drop.style.display = 'block';
+        }
+
+        async function addBudgetToRg(groupId) {
+            if (!editingBudget) return;
+            const b = editingBudget;
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups/${groupId}/budget-rules`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fund: (b.fund || '').toString().trim().substring(0, 2),
+                        organization: (b.organization || '').toString().trim(),
+                        program: (b.program || '').toString().trim(),
+                        finance: (b.finance || '').toString().trim(),
+                        course: (b.course || '').toString().trim(),
+                    })
+                });
+                if (!resp.ok) throw new Error('Failed');
+                const data = await resp.json();
+                const g = allRestrictionGroups.find(g => g.id === groupId);
+                if (g) g.budget_rules.push({
+                    id: data.id, group_id: groupId,
+                    fund: (b.fund || '').toString().trim().substring(0, 2),
+                    organization: (b.organization || '').toString().trim(),
+                    program: (b.program || '').toString().trim(),
+                    finance: (b.finance || '').toString().trim(),
+                    course: (b.course || '').toString().trim(),
+                });
+                renderBudgetRgPills(b);
+                document.getElementById('editBudgetRgDrop').style.display = 'none';
+                showToast(`Added to ${g?.name || 'group'}`, 'success');
+            } catch (e) { showToast('Failed to add budget code to group', 'error'); }
+        }
+
+        async function removeBudgetFromRg(groupId) {
+            if (!editingBudget) return;
+            const b = editingBudget;
+            const g = allRestrictionGroups.find(g => g.id === groupId);
+            if (!g) return;
+            // Find the matching rule
+            const rule = g.budget_rules.find(r =>
+                (r.fund || '') === (b.fund || '').toString().trim().substring(0, 2) &&
+                (r.organization || '') === (b.organization || '').toString().trim() &&
+                (r.program || '') === (b.program || '').toString().trim() &&
+                (r.finance || '') === (b.finance || '').toString().trim() &&
+                (r.course || '') === (b.course || '').toString().trim()
+            );
+            if (!rule) return;
+            try {
+                const resp = await fetch(`${API_BASE}/api/restriction-groups/${groupId}/budget-rules/${rule.id}`, { method: 'DELETE' });
+                if (!resp.ok) throw new Error('Failed');
+                g.budget_rules = g.budget_rules.filter(r => r.id !== rule.id);
+                renderBudgetRgPills(b);
+                showToast(`Removed from ${g.name}`, 'success');
+            } catch (e) { showToast('Failed to remove budget code from group', 'error'); }
+        }
+
+        // Close dropdowns on click outside
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#editVendorRgDropWrap')) {
+                const d = document.getElementById('editVendorRgDrop');
+                if (d) d.style.display = 'none';
+            }
+            if (!e.target.closest('#editBudgetRgDropWrap')) {
+                const d = document.getElementById('editBudgetRgDrop');
+                if (d) d.style.display = 'none';
+            }
+        });
 
         /* ========================================
            INIT
@@ -1135,7 +1314,7 @@
             loadBrandData();
             loadThemePref();
             await withLoadingModal(
-                () => Promise.all([loadVendors(), loadBudgetCodes(), loadBudgetComponents()]),
+                () => Promise.all([loadVendors(), loadBudgetCodes(), loadBudgetComponents(), loadRestrictionGroups()]),
                 'Loading data…'
             );
             await checkImpersonation();
@@ -1158,7 +1337,7 @@
             const idx = tabs.indexOf(tab);
             document.querySelectorAll('.tab-btn')[idx >= 0 ? idx : 0].classList.add('active');
             document.getElementById(`panel-${tab}`).classList.add('active');
-            if (tab === 'restriction-groups' && !rgDataLoaded) loadRestrictionGroups();
+            if (tab === 'restriction-groups' && !rgDataLoaded) loadRestrictionGroups(); // refresh if needed
         }
 
         /* ========================================
@@ -1207,11 +1386,10 @@
             const body = document.getElementById('vendorBody');
 
             if (!page.length) {
-                body.innerHTML = '<tr><td colspan="8" class="empty-state">No vendors found</td></tr>';
+                body.innerHTML = '<tr><td colspan="7" class="empty-state">No vendors found</td></tr>';
             } else {
                 body.innerHTML = page.map(v => {
                     const key = v.vendor_number || '';
-                    const roles = getDummyRoles(key);
                     const checked = selectedVendors.has(key);
                     return `<tr onclick="openEditVendor('${escAttr(key)}')" ${checked ? 'style="background:rgba(250,5,15,0.06);"' : ''}>
                         <td class="cb-cell" onclick="event.stopPropagation()">
@@ -1223,7 +1401,6 @@
                         <td>${esc(v.vendor_city||'')}</td>
                         <td>${esc(v.vendor_state||'')}</td>
                         <td>${esc(v.vendor_zip||'')}</td>
-                        <td><div class="role-badges">${renderRoleBadges(roles)}</div></td>
                     </tr>`;
                 }).join('');
             }
@@ -1303,7 +1480,7 @@
             document.getElementById('editVendorCity').value = v.vendor_city || '';
             document.getElementById('editVendorState').value = v.vendor_state || '';
             document.getElementById('editVendorZip').value = v.vendor_zip || '';
-            renderRoleCheckboxes('editVendorRoles', getDummyRoles(v.vendor_number));
+            renderVendorRgPills(v.vendor_number);
             // Update title based on permissions
             document.querySelector('#editVendorModal .edit-modal-panel h3').textContent = canEditData ? 'Edit Vendor' : 'View Vendor';
             document.getElementById('editVendorModal').classList.add('open');
@@ -1381,11 +1558,10 @@
             const body = document.getElementById('budgetBody');
 
             if (!page.length) {
-                body.innerHTML = '<tr><td colspan="9" class="empty-state">No budget codes found</td></tr>';
+                body.innerHTML = '<tr><td colspan="8" class="empty-state">No budget codes found</td></tr>';
             } else {
                 body.innerHTML = page.map(b => {
                     const compositeKey = (b.budget_code||'') + '|' + (b.account_code||'');
-                    const roles = getDummyRoles(compositeKey);
                     const checked = selectedBudgets.has(compositeKey);
                     // Force fund to 2 chars max
                     const fundDisplay = (b.fund || '').toString().trim().substring(0, 2);
@@ -1400,7 +1576,6 @@
                         <td>${esc((b.program||'').toString().trim())}</td>
                         <td>${esc((b.finance||'').toString().trim())}</td>
                         <td>${esc((b.course||'').toString().trim())}</td>
-                        <td><div class="role-badges">${renderRoleBadges(roles)}</div></td>
                     </tr>`;
                 }).join('');
             }
@@ -1615,8 +1790,7 @@
             document.getElementById('editProgram').value = (b.program || '').toString().trim();
             document.getElementById('editFinance').value = (b.finance || '').toString().trim();
             document.getElementById('editCourse').value = (b.course || '').toString().trim();
-            const compositeKey = (b.budget_code||'') + '|' + (b.account_code||'');
-            renderRoleCheckboxes('editBudgetRoles', getDummyRoles(compositeKey));
+            renderBudgetRgPills(b);
             document.querySelector('#editBudgetModal .edit-modal-panel h3').textContent = canEditData ? 'Edit Budget Code' : 'View Budget Code';
             document.getElementById('editBudgetModal').classList.add('open');
         }
@@ -1752,47 +1926,21 @@
 
         function closeImportModal() { document.getElementById('importModal').classList.remove('open'); importRows = []; }
 
-        // Canonical column keys for each import type (positional order when no headers)
-        const IMPORT_CANONICAL_KEYS = {
-            'vendors': ['Vendor Number', 'Vendor Name', 'Address', 'City', 'State', 'ZIP'],
-            'restriction-groups': ['Name', 'Fund', 'Org', 'Program', 'Finance', 'Course', 'Primary Approver', 'Secondary 1', 'Secondary 2', 'Secondary 3', 'Vendor'],
-            'budget-codes': ['Budget Code', 'Account Code']
-        };
-
-        // Header keyword patterns for detecting if first row is a header
-        const IMPORT_HEADER_KEYWORDS = new Set([
-            'name', 'fund', 'org', 'organization', 'program', 'finance', 'course',
-            'vendor', 'vendornumber', 'vendorname', 'address', 'city', 'state', 'zip',
-            'budgetcode', 'accountcode', 'account', 'primaryapprover', 'approver',
-            'secondary1', 'secondary2', 'secondary3', 'description', 'number'
-        ]);
-
-        function detectHeaders(firstRow) {
-            const norm = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-            const matches = firstRow.filter(cell => IMPORT_HEADER_KEYWORDS.has(norm(cell)));
-            return matches.length >= 2;
-        }
-
         async function handleImportFile(input) {
             const file = input.files[0];
             if (!file) return;
             document.getElementById('importFileName').textContent = file.name;
             try {
                 let rows = [];
-                const canonical = IMPORT_CANONICAL_KEYS[importType] || [];
-
                 if (file.name.endsWith('.csv')) {
                     const text = await file.text();
                     const lines = text.trim().split('\n');
-                    if (!lines.length) return;
-                    const firstCells = lines[0].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                    const hasHeaders = detectHeaders(firstCells);
-                    const dataStart = hasHeaders ? 1 : 0;
-                    const keys = hasHeaders ? firstCells : canonical;
-                    rows = lines.slice(dataStart).map(line => {
+                    if (lines.length < 2) return;
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                    rows = lines.slice(1).map(line => {
                         const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
                         const obj = {};
-                        keys.forEach((k, i) => obj[k] = vals[i] || '');
+                        headers.forEach((h, i) => obj[h] = vals[i] || '');
                         return obj;
                     });
                 } else {
@@ -1804,27 +1952,14 @@
                         });
                     }
                     const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-                    const ws = wb.Sheets[wb.SheetNames[0]];
-                    // Always read as raw arrays first to check for headers
-                    const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                    if (!allRows.length) return;
-                    const firstRow = allRows[0].map(c => String(c ?? '').trim());
-                    const hasHeaders = detectHeaders(firstRow);
-                    const dataStart = hasHeaders ? 1 : 0;
-                    const keys = hasHeaders ? firstRow : canonical;
-                    console.log('[IMPORT] Header detection:', hasHeaders ? 'HAS HEADERS' : 'NO HEADERS', '| Keys:', keys);
-                    rows = allRows.slice(dataStart).filter(r => r.some(c => c !== '')).map(cells => {
-                        const obj = {};
-                        keys.forEach((k, i) => obj[k] = (i < cells.length) ? String(cells[i] ?? '').trim() : '');
-                        return obj;
-                    });
+                    rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
                 }
                 if (!rows.length) return;
                 importRows = rows;
                 const preview = document.getElementById('importPreview');
                 const cols = Object.keys(rows[0]);
                 const show = rows.slice(0, 10);
-                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--primary-hex);color:#ffffff;border:none;position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+                preview.innerHTML = `<table style="width:100%;border-collapse:separate;border-spacing:0;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--primary-hex);color:#ffffff;border:none;position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
                 if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
                 preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
@@ -1837,20 +1972,20 @@
             let success = 0, failed = 0;
 
             if (importType === 'restriction-groups') {
-                // Group rows by name — keys are always canonical: Name, Fund, Org, Program, Finance, Course, Primary Approver, Secondary 1-3, Vendor
+                // Group rows by name
                 const groups = {};
-                const k = (row, ...names) => { for (const n of names) { const v = String(row[n] || '').trim(); if (v) return v; } return ''; };
+                const colKeys = Object.keys(importRows[0]);
                 for (const row of importRows) {
-                    const name = k(row, 'Name', 'name', 'Group Name', 'Group');
+                    const name = String(row[colKeys[0]] || row['Name'] || row['name'] || '').trim();
                     if (!name) { failed++; continue; }
                     if (!groups[name]) groups[name] = { rows: [], approvers: null };
                     groups[name].rows.push(row);
                     if (!groups[name].approvers) {
                         groups[name].approvers = {
-                            primary: k(row, 'Primary Approver', 'Primary', 'Approver'),
-                            sec1: k(row, 'Secondary 1', 'Sec1'),
-                            sec2: k(row, 'Secondary 2', 'Sec2'),
-                            sec3: k(row, 'Secondary 3', 'Sec3')
+                            primary: String(row[colKeys[6]] || row['Primary Approver'] || '').trim(),
+                            sec1: String(row[colKeys[7]] || row['Secondary 1'] || '').trim(),
+                            sec2: String(row[colKeys[8]] || row['Secondary 2'] || '').trim(),
+                            sec3: String(row[colKeys[9]] || row['Secondary 3'] || '').trim()
                         };
                     }
                 }
@@ -1868,11 +2003,11 @@
 
                         // Add budget rules (rows where any of Fund/Org/Program/Finance/Course is non-empty)
                         for (const row of gData.rows) {
-                            const fund = k(row, 'Fund', 'fund');
-                            const org = k(row, 'Org', 'Organization', 'org', 'organization');
-                            const program = k(row, 'Program', 'program', 'Prog');
-                            const finance = k(row, 'Finance', 'finance', 'Fin');
-                            const course = k(row, 'Course', 'course');
+                            const fund = String(row[colKeys[1]] || row['Fund'] || '').trim();
+                            const org = String(row[colKeys[2]] || row['Org'] || row['Organization'] || '').trim();
+                            const program = String(row[colKeys[3]] || row['Program'] || '').trim();
+                            const finance = String(row[colKeys[4]] || row['Finance'] || '').trim();
+                            const course = String(row[colKeys[5]] || row['Course'] || '').trim();
                             if (fund || org || program || finance || course) {
                                 await fetch(`${API_BASE}/api/restriction-groups/${gid}/budget-rules`, {
                                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1884,7 +2019,7 @@
                         // Add vendors (collect unique vendor numbers from all rows)
                         const vendors = [];
                         for (const row of gData.rows) {
-                            const v = k(row, 'Vendor', 'Vendor Number', 'vendor', 'vendor_number');
+                            const v = String(row[colKeys[10]] || row['Vendor'] || row['Vendor Number'] || '').trim();
                             if (v && !vendors.includes(v)) vendors.push(v);
                         }
                         if (vendors.length) {
@@ -2030,7 +2165,7 @@
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.assigned_users.length}</span></td>
-                    <td><button onclick="event.stopPropagation();deleteRg(${g.id})" data-name="${escapeHTML(g.name)}" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
+                    <td><button onclick="event.stopPropagation();deleteRg(${g.id},'${escapeHTML(g.name)}')" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Delete group">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                     </button></td>
                 </tr>
@@ -2061,146 +2196,13 @@
             } catch (e) { showToast('Failed to Create Group', 'error'); }
         }
 
-        async function deleteRg(id) {
-            const g = allRestrictionGroups.find(g => g.id === id);
-            const name = g ? g.name : 'this group';
-            // Show custom confirmation modal
-            const existing = document.getElementById('rgDeleteGroupModal');
-            if (existing) existing.remove();
-            const modal = document.createElement('div');
-            modal.id = 'rgDeleteGroupModal';
-            modal.style.cssText = 'position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);';
-            modal.innerHTML = `
-                <div style="background:var(--card-bg);border-radius:12px;padding:1.5rem;max-width:400px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
-                    <div style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-primary);font-family:'Inter',sans-serif;">Delete Restriction Group</div>
-                    <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1.25rem;line-height:1.5;">Delete <strong>${escapeHTML(name)}</strong>? This will remove it from all assigned users.</div>
-                    <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
-                        <button id="rgDeleteGroupCancel" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Inter',sans-serif;">Cancel</button>
-                        <button id="rgDeleteGroupConfirm" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color);color:#fff;font-family:'Inter',sans-serif;">Delete</button>
-                    </div>
-                </div>`;
-            document.body.appendChild(modal);
-            modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
-            document.getElementById('rgDeleteGroupCancel').onclick = function() { modal.remove(); };
-            document.getElementById('rgDeleteGroupConfirm').onclick = async function() {
-                this.disabled = true; this.textContent = 'Deleting...';
-                try {
-                    await fetch(`${API_BASE}/api/restriction-groups/${id}`, { method: 'DELETE' });
-                    showToast('Group Deleted', 'success');
-                    modal.remove();
-                    loadRestrictionGroups();
-                } catch (e) { showToast('Failed to Delete Group', 'error'); modal.remove(); }
-            };
-        }
-
-        // ── Assigned Users Management ──
-        let rgAssignedEmails = [];
-        let currentRgIdForUsers = null;
-
-        function renderRgUserPills() {
-            const container = document.getElementById('rgAssignedUserPills');
-            if (!rgAssignedEmails.length) {
-                container.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;">No users assigned</span>';
-                return;
-            }
-            container.innerHTML = rgAssignedEmails.map(email => {
-                const u = rgUserList.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
-                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || email : email;
-                return `<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem 0.2rem 0.6rem;border-radius:99px;font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;background:color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));color:var(--text-primary);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);">${escapeHTML(name)}<button onclick="removeUserFromRg('${escapeHTML(email.replace(/'/g, "\\'"))}')" style="background:none;border:none;cursor:pointer;padding:0;margin-left:2px;color:var(--text-secondary);display:flex;align-items:center;" onmouseover="this.style.color='var(--negative-color)'" onmouseout="this.style.color='var(--text-secondary)'" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`;
-            }).join('');
-        }
-
-        function userAvatarHtml(u, size) {
-            size = size || 24;
-            const fs = Math.round(size * 0.44);
-            if (u && u.profile_picture_key) {
-                const url = `${API_BASE}/api/profile/picture/${encodeURIComponent(u.email)}?t=${Date.now()}`;
-                return `<img src="${url}" alt="" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<span style=\\'width:${size}px;height:${size}px;border-radius:50%;background:${AVATAR_COLORS[Math.abs(hashStr(u.email || '')) % AVATAR_COLORS.length]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;flex-shrink:0;\\'>${(((u.first_name||'')[0]||'')+((u.last_name||'')[0]||'')).toUpperCase()||'?'}</span>'">`;
-            }
-            const initials = u ? (((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '')).toUpperCase() || '?' : '?';
-            const color = AVATAR_COLORS[Math.abs(hashStr((u && u.email) || '')) % AVATAR_COLORS.length];
-            return `<span style="width:${size}px;height:${size}px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;flex-shrink:0;">${initials}</span>`;
-        }
-
-        function filterRgUserResults() {
-            const query = document.getElementById('rgUserSearchInput').value.toLowerCase().trim();
-            const results = document.getElementById('rgUserSearchResults');
-            if (!query) { results.style.display = 'none'; return; }
-            const matches = rgUserList.filter(u => {
-                const email = (u.email || '').toLowerCase();
-                const fullName = ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase();
-                return !rgAssignedEmails.some(e => e.toLowerCase() === email) &&
-                    (fullName.includes(query) || email.includes(query));
-            }).slice(0, 8);
-            if (!matches.length) {
-                results.innerHTML = '<div style="padding:0.5rem 0.7rem;font-size:0.78rem;color:var(--text-secondary);">No matching users</div>';
-            } else {
-                results.innerHTML = matches.map(u => {
-                    const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim();
-                    return `<div onclick="addUserToRg('${escapeHTML((u.email || '').replace(/'/g, "\\'"))}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.8rem;font-family:'Inter',sans-serif;" onmouseover="this.style.background='var(--bg-color)'" onmouseout="this.style.background='transparent'">
-                        ${userAvatarHtml(u, 24)}
-                        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(name || u.email)}</span>
-                        <span style="font-size:0.7rem;color:var(--text-secondary);">${escapeHTML(u.email || '')}</span>
-                    </div>`;
-                }).join('');
-            }
-            results.style.display = 'block';
-        }
-
-        function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return h; }
-
-        async function addUserToRg(email) {
-            if (!currentRgIdForUsers || rgAssignedEmails.some(e => e.toLowerCase() === email.toLowerCase())) return;
-            // Find user's current group assignments, add this one
+        async function deleteRg(id, name) {
+            if (!confirm(`Delete restriction group "${name}"? This will remove it from all assigned users.`)) return;
             try {
-                // Get user's existing group IDs
-                let existingGroupIds = [];
-                try {
-                    const meResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email)}`);
-                    if (meResp.ok) {
-                        const meData = await meResp.json();
-                        existingGroupIds = (meData.restriction_groups || []).map(g => g.id);
-                    }
-                } catch (e) {}
-                const newGroupIds = [...new Set([...existingGroupIds, currentRgIdForUsers])];
-                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, group_ids: newGroupIds })
-                });
-                if (!resp.ok) throw new Error('Failed');
-                rgAssignedEmails.push(email);
-                renderRgUserPills();
-                document.getElementById('rgUserSearchInput').value = '';
-                document.getElementById('rgUserSearchResults').style.display = 'none';
-                const u = rgUserList.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
-                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
-                showToast(`${name} assigned`, 'success');
-            } catch (e) { showToast('Failed to assign user', 'error'); }
-        }
-
-        async function removeUserFromRg(email) {
-            if (!currentRgIdForUsers) return;
-            try {
-                let existingGroupIds = [];
-                try {
-                    const meResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email)}`);
-                    if (meResp.ok) {
-                        const meData = await meResp.json();
-                        existingGroupIds = (meData.restriction_groups || []).map(g => g.id);
-                    }
-                } catch (e) {}
-                const newGroupIds = existingGroupIds.filter(id => id !== currentRgIdForUsers);
-                const resp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, group_ids: newGroupIds })
-                });
-                if (!resp.ok) throw new Error('Failed');
-                rgAssignedEmails = rgAssignedEmails.filter(e => e.toLowerCase() !== email.toLowerCase());
-                renderRgUserPills();
-                const u = rgUserList.find(u => (u.email || '').toLowerCase() === email.toLowerCase());
-                const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
-                showToast(`${name} removed`, 'success');
-            } catch (e) { showToast('Failed to remove user', 'error'); }
+                await fetch(`${API_BASE}/api/restriction-groups/${id}`, { method: 'DELETE' });
+                showToast('Group Deleted', 'success');
+                loadRestrictionGroups();
+            } catch (e) { showToast('Failed to Delete Group', 'error'); }
         }
 
         let rgMetaDirty = false;
@@ -2234,7 +2236,6 @@
 
         async function openRgDetail(id) {
             currentRgId = id;
-            currentRgIdForUsers = id;
             const g = allRestrictionGroups.find(g => g.id === id);
             if (!g) return;
 
@@ -2271,12 +2272,18 @@
             populateApproverDropdowns(g);
             rgMetaOriginal.approvers = getCurrentApprovers();
 
-            // Show assigned users with interactive pills
-            rgAssignedEmails = [...(g.assigned_users || [])];
-            renderRgUserPills();
-
-            document.getElementById('rgUserSearchInput').value = '';
-            document.getElementById('rgUserSearchResults').style.display = 'none';
+            // Show assigned users
+            const auContainer = document.getElementById('rgAssignedUsers');
+            const assignedEmails = g.assigned_users || [];
+            if (assignedEmails.length === 0) {
+                auContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);">No users assigned</span>';
+            } else {
+                auContainer.innerHTML = assignedEmails.map(email => {
+                    const u = rgUserList.find(u => u.email === email);
+                    const name = u ? ((u.first_name || '') + ' ' + (u.last_name || '')).trim() : email;
+                    return `<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.72rem;font-weight:600;font-family:'Inter',sans-serif;background:color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));color:var(--text-primary);border:1px solid color-mix(in srgb, var(--primary-hex) 30%, transparent);">${escapeHTML(name)}</span>`;
+                }).join('');
+            }
 
             document.getElementById('rgDetailModal').classList.add('open');
         }
@@ -2638,9 +2645,7 @@
                 const color = getAvatarColor(email);
                 const initials = getInitials(u);
                 return `<div class="approver-drop-item${sel}" onclick="selectApprover('${containerId}','${escapeHTML(email)}')">
-                    ${u.profile_picture_key
-                        ? `<img src="${API_BASE}/api/profile/picture/${encodeURIComponent(email)}?t=1" class="adi-avatar" style="background:transparent;object-fit:cover;" onerror="this.outerHTML='<div class=\\'adi-avatar\\' style=\\'background:${color}\\'>${initials}</div>'">`
-                        : `<div class="adi-avatar" style="background:${color};">${initials}</div>`}
+                    <div class="adi-avatar" style="background:${color};">${initials}</div>
                     <div class="adi-info"><div class="adi-name">${escapeHTML(name)}</div><div class="adi-email">${escapeHTML(email)}</div></div>
                     <svg class="adi-check" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>`;
@@ -2757,10 +2762,6 @@
                     d.classList.remove('open');
                     d.previousElementSibling.classList.remove('open');
                 });
-            }
-            if (!e.target.closest('#rgUserSearchWrapper')) {
-                const dd = document.getElementById('rgUserSearchResults');
-                if (dd) dd.style.display = 'none';
             }
         });
 
