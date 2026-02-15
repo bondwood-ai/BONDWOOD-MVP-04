@@ -899,14 +899,14 @@ async function handleListRFPs(env, url) {
     let submitterName = null;
     try {
       const { results: userRows } = await env.DB.prepare(
-        'SELECT user_id, user_roles, first_name, last_name FROM user_data WHERE LOWER(user_email) = ?'
+        'SELECT user_id, user_roles, user_first_name, user_last_name FROM user_data WHERE LOWER(user_email) = ?'
       ).bind(email).all();
       if (userRows.length) {
         const roles = JSON.parse(userRows[0].user_roles || '["user"]');
         isAdmin = roles.includes('super_user') || roles.includes('admin');
         canViewAll = isAdmin || roles.includes('accountant') || roles.includes('accounts_payable');
         submitterId = 'E' + userRows[0].user_id;
-        submitterName = ((userRows[0].first_name || '') + ' ' + (userRows[0].last_name || '')).trim().toUpperCase();
+        submitterName = ((userRows[0].user_first_name || '') + ' ' + (userRows[0].user_last_name || '')).trim().toUpperCase();
       }
     } catch (e) {}
 
