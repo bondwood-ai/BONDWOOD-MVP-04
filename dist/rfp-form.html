@@ -400,7 +400,7 @@
         .items-table input:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
         .items-table input.line-invoice-date[readonly] { background: var(--field-bg) !important; cursor: pointer; font-weight: 400; }
-        .items-table .line-desc { width: 100%; resize: none; overflow: hidden; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 0.85rem; background: var(--field-bg); color: var(--text-primary); line-height: 1.2; box-sizing: border-box; height: 36px; min-height: 36px; display: block; margin: 0; }
+        .items-table .line-desc { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 0.85rem; background: var(--field-bg); color: var(--text-primary); line-height: 1.2; box-sizing: border-box; height: 36px; }
         .items-table .line-desc:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[type="number"], .items-table input.text-right { text-align: right; }
         .items-table tr.selected { background: var(--pale-accent) !important; }
@@ -867,6 +867,7 @@
             display: flex; flex-direction: column; gap: 1.25rem;
             background: var(--card-bg); overflow: visible;
         }
+        .split-left .cs-options { z-index: 9999; }
         .split-left .vendor-dropdown { z-index: 9999; }
         .split-right {
             padding: 1.5rem 1.75rem; overflow-y: auto; background: var(--bg-color);
@@ -884,11 +885,15 @@
         }
         .split-kv-key { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; flex-shrink: 0; margin-right: 0.75rem; }
         .split-kv-val { text-align: right; max-width: 62%; }
-        .split-kv-val input, .split-kv-val select, .split-kv-val .cs-wrap {
+        .split-kv-row > .cs-wrap { max-width: 65%; flex: 1; text-align: right; border: none !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; }
+        .split-kv-row > .cs-wrap .cs-display { font-size: 0.8rem !important; padding: 0.35rem 0.5rem !important; border-radius: 5px !important; min-width: unset !important; width: 100%; }
+        .split-kv-val input, .split-kv-val select {
             font-size: 0.8rem; padding: 0.35rem 0.5rem; border: 1px solid var(--border-color);
             border-radius: 5px; font-family: 'Inter', sans-serif; width: 100%;
             background: var(--field-bg); color: var(--text-primary);
         }
+        .split-kv-val .cs-wrap { width: 100%; }
+        .split-kv-val .cs-display { font-size: 0.8rem; padding: 0.35rem 0.5rem; border-radius: 5px; }
         .split-kv-val input:focus, .split-kv-val select:focus { outline: none; border-color: var(--secondary-hex); }
         .split-kv-val input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; font-size: 0.78rem; color: var(--text-secondary); }
         .split-kv-val .cs-display { padding: 0.35rem 0.5rem; font-size: 0.8rem; min-width: unset; }
@@ -1038,12 +1043,10 @@
                 <div class="split-kv">
                     <div class="split-kv-row" id="typeSelectorRow">
                         <span class="split-kv-key">Request Type</span>
-                        <div class="split-kv-val" style="max-width:65%;">
-                                <select id="requestTypeSelect" onchange="selectType(this.value)">
-                                    <option value="vendor">Vendor Payment</option>
-                                    <option value="reimbursement">Employee Reimbursement</option>
-                                </select>
-                        </div>
+                        <select id="requestTypeSelect" onchange="selectType(this.value)" style="max-width:65%;flex:1;">
+                            <option value="vendor">Vendor Payment</option>
+                            <option value="reimbursement">Employee Reimbursement</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -1796,7 +1799,10 @@
             });
 
             // Validate on blur
-            nameInput.addEventListener('blur', () => { setTimeout(validateVendorFields, 200); });
+            nameInput.addEventListener('blur', () => { 
+                nameInput.title = nameInput.value;
+                setTimeout(validateVendorFields, 200); 
+            });
 
             // Show dropdown on focus
             nameInput.addEventListener('focus', () => {
@@ -2363,7 +2369,7 @@
             tr.innerHTML = `
                 <td class="checkbox-cell"><input type="checkbox" class="line-checkbox" onchange="updateLineSelection()"></td>
                 <td><input type="text" class="text-right" value="${num}" readonly style="width:40px;"></td>
-                <td><textarea class="line-desc" oninput="autoResizeLineDesc(this)" onblur="this.value=this.value.toUpperCase()">${data.description || ''}</textarea></td>
+                <td><input type="text" class="line-desc" value="${(data.description || '').replace(/"/g, '&quot;')}" onblur="this.value=this.value.toUpperCase();this.title=this.value;"></td>
                 <td class="invoice-col"><input type="text" class="line-invoice" value="${data.invoice || ''}" style="width:120px;"></td>
                 <td class="invoice-col"><input type="text" class="line-invoice-date" value="${data.invoiceDate ? formatDateForDisplay(data.invoiceDate) : ''}" maxlength="10" placeholder="MM/DD/YYYY" style="width:115px;font-size:0.8rem;text-align:center;cursor:pointer;background:var(--field-bg);" autocomplete="off" readonly></td>
                 <td class="bc-autocomplete-wrapper"><input type="text" class="line-budget-code" value="${data.budgetCode || ''}" maxlength="14" style="width:145px;text-align:center;" autocomplete="off" placeholder="Enter Budget Code"></td>
@@ -2414,6 +2420,7 @@
                 }
             };
             tr.querySelector('.line-desc').addEventListener('input', checkAutoGrow);
+            tr.querySelector('.line-desc').addEventListener('blur', function() { this.title = this.value; });
             tr.querySelector('.line-invoice').addEventListener('input', checkAutoGrow);
             tr.querySelector('.line-invoice-date').addEventListener('input', checkAutoGrow);
             tr.querySelector('.line-invoice-date').addEventListener('change', checkAutoGrow);
@@ -4501,10 +4508,12 @@
                 setTimeout(() => {
                     if (data.vendor_name) {
                         document.getElementById('vendorName').value = data.vendor_name;
+                        document.getElementById('vendorName').title = data.vendor_name;
                         console.log('[LOAD] Set vendorName:', data.vendor_name);
                     }
                     if (data.vendor_number) {
                         document.getElementById('vendorNumber').value = data.vendor_number;
+                        document.getElementById('vendorNumber').title = data.vendor_number;
                     }
                     if (data.vendor_address) {
                         document.getElementById('vendorAddress').value = data.vendor_address;
