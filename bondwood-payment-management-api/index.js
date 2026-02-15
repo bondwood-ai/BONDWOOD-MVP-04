@@ -912,14 +912,22 @@ async function handleListRFPs(env, url) {
 
     // Admin filtering for a specific submitter (e.g. user detail panel)
     if (canViewAll && forSubmitterId) {
+      const forEmail = (url.searchParams.get('for_submitter_email') || '').toLowerCase().trim();
       const sid = forSubmitterId.toUpperCase();
       const sidNoE = sid.replace(/^E/i, '');
-      where.push('(UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?))');
-      params.push(sid, sidNoE);
+      
+      // Match by user_email (primary), or fall back to submitter_id for older records
+      if (forEmail) {
+        where.push('(LOWER(d.user_email) = ? OR UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?))');
+        params.push(forEmail, sid, sidNoE);
+      } else {
+        where.push('(UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?))');
+        params.push(sid, sidNoE);
+      }
     } else if (!canViewAll && submitterId) {
-      // User can see: forms they submitted (by ID or name) OR forms assigned to them OR forms they acted on
-      where.push('(UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?) OR (? != \'\' AND UPPER(d.submitter_name) = ?) OR LOWER(d.assigned_to_email) = ? OR d.rfp_number IN (SELECT DISTINCT rfp_number FROM audit_logs WHERE LOWER(performed_by_email) = ?))');
-      params.push(submitterId, submitterId.replace(/^E/i, ''), submitterName || '', submitterName || '', email, email);
+      // User can see: forms they submitted (by email, ID, or name) OR forms assigned to them OR forms they acted on
+      where.push('(LOWER(d.user_email) = ? OR UPPER(d.submitter_id) = UPPER(?) OR UPPER(d.submitter_id) = UPPER(?) OR (? != \'\' AND UPPER(d.submitter_name) = ?) OR LOWER(d.assigned_to_email) = ? OR d.rfp_number IN (SELECT DISTINCT rfp_number FROM audit_logs WHERE LOWER(performed_by_email) = ?))');
+      params.push(email, submitterId, submitterId.replace(/^E/i, ''), submitterName || '', submitterName || '', email, email);
     } else if (!canViewAll && !submitterId) {
       // User not found in DB — return nothing
       return json({ rfps: [], total: 0, page, limit });
@@ -1019,18 +1027,19 @@ async function handleCreateRFP(request, env) {
 
   const headerStmt = env.DB.prepare(`
     INSERT INTO dashboard_data (
-      rfp_number, submitter_name, submitter_id, budget_approver,
+      rfp_number, submitter_name, submitter_id, user_email, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
       description, status, assigned_to, ap_batch, mileage_total, creation_source,
       restriction_group_id, assigned_to_email, approval_history
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
     nextRfp,
     body.submitter_name || '',
     body.submitter_id || '',
+    (body.user_email || '').toLowerCase().trim(),
     body.budget_approver || null,
     submissionDate,
     body.request_type || 'vendor',
@@ -2068,15 +2077,16 @@ async function handleSeedDummy(request, env) {
       allStmts.push(
         env.DB.prepare(`
           INSERT INTO dashboard_data (
-            rfp_number, submitter_name, submitter_id, budget_approver,
+            rfp_number, submitter_name, submitter_id, user_email, budget_approver,
             submission_date, request_type, vendor_name, vendor_number,
             vendor_address, invoice_number, employee_name, employee_id,
             description, status, assigned_to, ap_batch, mileage_total, creation_source, check_number
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           currentRfp,
           sub.name,
           sub.id,
+          (sub.email || '').toLowerCase(),
           pick(approvers),
           submissionDate,
           reqType,
@@ -2171,6 +2181,7 @@ async function handleMigrate(env) {
     'ALTER TABLE audit_logs ADD COLUMN performed_by_email TEXT',
     'ALTER TABLE user_restriction_assignments ADD COLUMN name TEXT',
     'ALTER TABLE user_data DROP COLUMN restrictions',
+    'ALTER TABLE dashboard_data ADD COLUMN user_email TEXT',
     `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       rfp_number INTEGER NOT NULL,
@@ -2242,6 +2253,20 @@ async function handleMigrate(env) {
     results.push({ sql: 'BACKFILL user_restriction_assignments.name', status: 'applied' });
   } catch (e) {
     results.push({ sql: 'BACKFILL user_restriction_assignments.name', status: 'skipped', reason: e.message });
+  }
+
+  // Backfill user_email on dashboard_data from user_data via submitter_id
+  try {
+    await env.DB.prepare(`
+      UPDATE dashboard_data SET user_email = LOWER(u.user_email)
+      FROM user_data u
+      WHERE dashboard_data.user_email IS NULL
+        AND dashboard_data.submitter_id IS NOT NULL
+        AND (UPPER(dashboard_data.submitter_id) = 'E' || u.user_id OR dashboard_data.submitter_id = CAST(u.user_id AS TEXT))
+    `).run();
+    results.push({ sql: 'BACKFILL dashboard_data.user_email', status: 'applied' });
+  } catch (e) {
+    results.push({ sql: 'BACKFILL dashboard_data.user_email', status: 'skipped', reason: e.message });
   }
 
   return json({ message: 'Migration complete', results });

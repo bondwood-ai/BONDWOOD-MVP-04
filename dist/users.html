@@ -1522,7 +1522,8 @@
             try {
                 // Use admin email for auth (canViewAll), filter by target user's submitter_id
                 const targetId = selectedUser ? 'E' + (selectedUser.user_id || '') : '';
-                const resp = await fetch(`${API_BASE}/api/rfps?email=${encodeURIComponent(currentUserEmail)}&for_submitter_id=${encodeURIComponent(targetId)}`);
+                const targetEmail = email || '';
+                const resp = await fetch(`${API_BASE}/api/rfps?email=${encodeURIComponent(currentUserEmail)}&for_submitter_id=${encodeURIComponent(targetId)}&for_submitter_email=${encodeURIComponent(targetEmail)}`);
                 if (!resp.ok) throw new Error('Failed to load RFPs');
                 const data = await resp.json();
                 const userRfps = data.rfps || data || [];
