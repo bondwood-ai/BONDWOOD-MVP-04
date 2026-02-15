@@ -471,6 +471,7 @@ async function handleMe(request, env, url) {
   // Fetch user's restriction group budget rules
   let budget_rules = [];
   let restricted_vendors = [];
+  let restriction_groups = [];
   try {
     const emailLower = (u.user_email || '').toLowerCase();
     const { results: assignments } = await env.DB.prepare(
@@ -480,6 +481,12 @@ async function handleMe(request, env, url) {
     if (assignments.length > 0) {
       const groupIds = assignments.map(a => a.group_id);
       const placeholders = groupIds.map(() => '?').join(',');
+
+      const { results: groups } = await env.DB.prepare(
+        `SELECT id, name FROM restriction_groups WHERE id IN (${placeholders})`
+      ).bind(...groupIds).all();
+      restriction_groups = groups;
+
       const { results: rules } = await env.DB.prepare(
         `SELECT fund, organization, program, finance, course FROM restriction_group_budget_rules WHERE group_id IN (${placeholders})`
       ).bind(...groupIds).all();
@@ -506,6 +513,7 @@ async function handleMe(request, env, url) {
     restrictions,
     budget_rules,
     restricted_vendors,
+    restriction_groups,
   });
 }
 

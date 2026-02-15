@@ -161,6 +161,15 @@
         .role-badge-2 { background: #cb3694; }
         .role-badge-3 { background: #4e59a5; }
 
+        .rg-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.25rem 0.65rem; border-radius: 99px;
+            font-size: 0.72rem; font-weight: 600; font-family: 'Inter', sans-serif;
+            background: color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));
+            color: var(--text-primary); border: 1px solid color-mix(in srgb, var(--primary-hex) 25%, transparent);
+        }
+        .rg-badge svg { flex-shrink: 0; }
+
         /* ============ FORM ============ */
         .profile-form { padding: 1.25rem 1.5rem 1.5rem; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -330,11 +339,11 @@
             <div style="margin-bottom:2rem;">
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
-                    <button class="hamburger-menu-item" onclick="navigateAway('index.html')">
+                    <button class="hamburger-menu-item" onclick="window.location.href='index.html'">
                         
                         Dashboard
                     </button>
-                    <button class="hamburger-menu-item" onclick="navigateAway('rfp-form.html')">
+                    <button class="hamburger-menu-item" onclick="window.location.href='rfp-form.html'">
                         
                         New Request
                     </button>
@@ -348,11 +357,11 @@
                         
                         My Account
                     </button>
-                    <button id="userMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('users.html')" style="display:none;">
+                    <button class="hamburger-menu-item" onclick="window.location.href='users.html'">
                         
                         User Management
                     </button>
-                    <button id="dataMgmtMenuItem" class="hamburger-menu-item" onclick="navigateAway('data-management.html')" style="display:none;">
+                    <button class="hamburger-menu-item" onclick="window.location.href='data-management.html'">
                         
                         Data Management
                     </button>
@@ -449,6 +458,10 @@
                             <option value="dark">Dark</option>
                         </select>
                     </div>
+                    <div class="form-group" id="restrictionGroupsSection" style="display:none;">
+                        <label>Restriction Groups</label>
+                        <div id="restrictionGroupsList" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.15rem;"></div>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -525,47 +538,7 @@
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let profileData = null;
         let formDirty = false;
-        let formSubmitting = false;
         let selectedFile = null;
-
-        // Unsaved changes: beforeunload for tab close/refresh
-        window.addEventListener('beforeunload', function(e) {
-            if (formDirty && !formSubmitting) {
-                e.preventDefault();
-                e.returnValue = 'You have unsaved changes.';
-                return 'You have unsaved changes.';
-            }
-        });
-
-        function navigateAway(url) {
-            if (formDirty && !formSubmitting) {
-                showUnsavedWarningModal(url);
-            } else {
-                window.location.href = url;
-            }
-        }
-
-        function showUnsavedWarningModal(destinationUrl) {
-            const existing = document.getElementById('unsavedWarningModal');
-            if (existing) existing.remove();
-            const modal = document.createElement('div');
-            modal.id = 'unsavedWarningModal';
-            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
-            modal.innerHTML = `
-                <div style="background:var(--card-bg, #fff);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary, #111);margin-bottom:0.5rem;">Unsaved Changes</div>
-                    <div style="font-size:0.85rem;color:var(--text-secondary, #666);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes that will be lost if you leave this page.</div>
-                    <div style="display:flex;gap:0.5rem;justify-content:center;">
-                        <button id="unsavedStayBtn" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color, #ddd);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg, #fff);color:var(--text-primary, #111);font-family:'Inter',sans-serif;">Stay on Page</button>
-                        <button id="unsavedLeaveBtn" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--negative-color, #dc2626);color:#fff;font-family:'Inter',sans-serif;">Leave Without Saving</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            document.getElementById('unsavedStayBtn').onclick = () => modal.remove();
-            document.getElementById('unsavedLeaveBtn').onclick = () => { formDirty = false; formSubmitting = true; modal.remove(); window.location.href = destinationUrl; };
-        }
 
         function showToast(msg, duration = 4000) {
             const el = document.getElementById('toastError');
@@ -578,7 +551,6 @@
            THEME / PREFERENCES
            ======================================== */
         let currentUserEmail = '';
-        let currentUserPermissions = {};
 
         function applyTheme(pref) {
             const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -983,62 +955,23 @@
            ======================================== */
         async function loadProfile() {
             try {
-                // Always fetch real user first (for permissions)
                 const resp = await fetch('/api/me');
                 if (!resp.ok) throw new Error('Failed to load profile');
                 const ct = resp.headers.get('content-type') || '';
                 if (!ct.includes('application/json')) throw new Error('Invalid response');
-                let realUser = await resp.json();
-                if (realUser.error) throw new Error(realUser.error);
+                profileData = await resp.json();
+                if (profileData.error) throw new Error(profileData.error);
 
-                // Enrich real user from Worker
+                // Enrich with full profile from Worker (includes profile_picture_key, roles, etc.)
                 try {
-                    const enrichResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(realUser.email)}`);
+                    const enrichResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(profileData.email)}`);
                     if (enrichResp.ok) {
                         const enriched = await enrichResp.json();
-                        if (!enriched.error) realUser = { ...realUser, ...enriched };
+                        if (!enriched.error) {
+                            profileData = { ...profileData, ...enriched };
+                        }
                     }
                 } catch (e) { console.warn('[ACCOUNT] Worker enrich failed:', e); }
-
-                // Store real user permissions for menu gating
-                currentUserPermissions = realUser.permissions || {};
-                if (currentUserPermissions.can_manage_users) {
-                    const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
-                }
-                if (currentUserPermissions.can_manage_vendors) {
-                    const dm = document.getElementById('dataMgmtMenuItem'); if (dm) dm.style.display = '';
-                }
-
-                // If impersonating, load that user's profile instead
-                const impEmail = sessionStorage.getItem('impersonateEmail');
-                if (impEmail) {
-                    try {
-                        const impResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impEmail)}`);
-                        if (impResp.ok) {
-                            const impUser = await impResp.json();
-                            if (!impUser.error) {
-                                profileData = impUser;
-                                currentUserEmail = impEmail;
-                            } else {
-                                console.warn('[ACCOUNT] Impersonate user error:', impUser.error);
-                                profileData = realUser;
-                                currentUserEmail = realUser.email || '';
-                            }
-                        } else {
-                            console.warn('[ACCOUNT] Impersonate fetch not ok:', impResp.status);
-                            profileData = realUser;
-                            currentUserEmail = realUser.email || '';
-                        }
-                    } catch (e) {
-                        console.warn('[ACCOUNT] Impersonate fetch failed:', e);
-                        profileData = realUser;
-                        currentUserEmail = realUser.email || '';
-                    }
-                } else {
-                    profileData = realUser;
-                    currentUserEmail = realUser.email || '';
-                }
-                console.log('[ACCOUNT] profileData email:', profileData.email, 'impEmail:', impEmail);
 
                 // Identity
                 const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
@@ -1079,6 +1012,17 @@
 
                 // Store email for prefs
                 currentUserEmail = (profileData.email || '').toLowerCase().trim();
+
+                // Restriction Groups
+                const rgSection = document.getElementById('restrictionGroupsSection');
+                const rgList = document.getElementById('restrictionGroupsList');
+                const groups = profileData.restriction_groups || [];
+                if (groups.length > 0) {
+                    rgSection.style.display = '';
+                    rgList.innerHTML = groups.map(g => `<span class="rg-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>${g.name}</span>`).join('');
+                } else {
+                    rgSection.style.display = 'none';
+                }
 
             } catch (err) {
                 console.error('[ACCOUNT] Load failed:', err);
@@ -1256,43 +1200,6 @@
         /* ========================================
            INIT
            ======================================== */
-        /* ========================================
-           IMPERSONATION BANNER (cross-page)
-           ======================================== */
-        async function checkImpersonation() {
-            const impName = sessionStorage.getItem('impersonateName');
-            const impEmail = sessionStorage.getItem('impersonateEmail');
-            if (!impName) return;
-
-            // Show banner
-            const banner = document.createElement('div');
-            banner.id = 'impersonateBanner';
-            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(255,235,42,0.4);color:#fff;padding:0.5rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.75rem;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;pointer-events:none;';
-            banner.innerHTML = '<div style="pointer-events:auto;display:flex;align-items:center;gap:0.75rem;">' + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Impersonating: ' + impName + ' <button onclick="stopImpersonation()" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);border-radius:6px;color:#fff;padding:0.2rem 0.6rem;cursor:pointer;font-family:inherit;font-size:0.72rem;font-weight:600;">Stop</button></div>';
-            document.body.appendChild(banner);
-
-            // Re-gate menu items based on impersonated user's permissions
-            if (impEmail) {
-                try {
-                    const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(impEmail)}`);
-                    if (resp.ok) {
-                        const impUser = await resp.json();
-                        const perms = impUser.permissions || {};
-                        const um = document.getElementById('userMgmtMenuItem');
-                        const dm = document.getElementById('dataMgmtMenuItem');
-                        if (um) um.style.display = perms.can_manage_users ? '' : 'none';
-                        if (dm) dm.style.display = perms.can_manage_vendors ? '' : 'none';
-                    }
-                } catch (e) {}
-            }
-        }
-        function stopImpersonation() {
-            formDirty = false;
-            sessionStorage.removeItem('impersonateEmail');
-            sessionStorage.removeItem('impersonateName');
-            window.location.href = 'index.html';
-        }
-
         window.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
@@ -1309,9 +1216,6 @@
 
             // Load theme pref from D1 (overrides localStorage if different)
             await loadThemePref();
-
-            // Check impersonation last — overrides menu visibility
-            await checkImpersonation();
         });
     </script>
 </body>
