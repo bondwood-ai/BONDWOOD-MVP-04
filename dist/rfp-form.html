@@ -4328,16 +4328,13 @@
                     const isOwner = rfpOwner && effectiveEmail === rfpOwner;
                     const isAdminNotImpersonating = !impEmail && currentUserIsAdmin;
                     if (!isOwner && !isAdminNotImpersonating) {
-                        showAlert('You do not have permission to view this request.', 'Access Denied');
                         formDirty = false;
-                        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+                        window.location.href = 'index.html?denied=1';
                         return;
                     }
                 } else if (impEmail) {
-                    // Impersonating but couldn't determine email — deny
-                    showAlert('You do not have permission to view this request.', 'Access Denied');
                     formDirty = false;
-                    setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+                    window.location.href = 'index.html?denied=1';
                     return;
                 }
 

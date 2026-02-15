@@ -4086,6 +4086,13 @@
             // Fetch logged-in user identity from SSO
             await fetchDashboardUser();
 
+            // Check for access denied redirect
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('denied') === '1') {
+                history.replaceState(null, '', 'index.html');
+                showAlert('You do not have permission to view that request.', 'Access Denied');
+            }
+
             // Show admin menu items
             if (currentUserPermissions.can_manage_users) {
                 const um = document.getElementById('userMgmtMenuItem');
