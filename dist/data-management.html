@@ -1824,7 +1824,7 @@
                 const preview = document.getElementById('importPreview');
                 const cols = Object.keys(rows[0]);
                 const show = rows.slice(0, 10);
-                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--bg-color);border-bottom:1px solid var(--border-color);position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+                preview.innerHTML = `<table style="width:100%;border-collapse:collapse;"><thead><tr>${cols.map(c => `<th style="padding:4px 6px;font-size:0.68rem;text-align:left;background:var(--primary-hex);color:#ffffff;border-bottom:1px solid var(--border-color);position:sticky;top:0;">${esc(c)}</th>`).join('')}</tr></thead><tbody>${show.map(r => `<tr>${cols.map(c => `<td style="padding:3px 6px;font-size:0.72rem;border-bottom:1px solid var(--border-color);">${esc(String(r[c]||''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
                 if (rows.length > 10) preview.innerHTML += `<div style="text-align:center;padding:0.35rem;font-size:0.7rem;color:var(--text-secondary);">...and ${rows.length - 10} more rows</div>`;
                 preview.style.display = 'block';
                 document.getElementById('importConfirmBtn').disabled = false;
