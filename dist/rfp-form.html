@@ -389,16 +389,17 @@
         .items-table thead tr th:first-child { border-radius: 8px 0 0 0; }
         .items-table thead tr th:last-child { border-radius: 0 8px 0 0; }
         .items-table td {
-            padding: 0.35rem 0.35rem; border-bottom: 1px solid var(--border-color);
+            padding: 0.35rem 0.35rem; border-bottom: 1px solid var(--border-color); vertical-align: middle;
         }
         .items-table input {
             width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color);
             border-radius: 4px; font-family: inherit; font-size: 0.85rem;
             background: var(--field-bg); color: var(--text-primary);
+            height: 36px; box-sizing: border-box;
         }
         .items-table input:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
-        .items-table .line-desc { width: 100%; resize: none; overflow: hidden; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 0.85rem; background: var(--field-bg); color: var(--text-primary); line-height: 1.4; box-sizing: border-box; }
+        .items-table .line-desc { width: 100%; resize: none; overflow: hidden; padding: 0.4rem 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 0.85rem; background: var(--field-bg); color: var(--text-primary); line-height: 1.4; box-sizing: border-box; height: 36px; min-height: 36px; }
         .items-table .line-desc:focus { outline: none; border-color: var(--secondary-hex); }
         .items-table input[type="number"], .items-table input.text-right { text-align: right; }
         .items-table tr.selected { background: var(--pale-accent) !important; }
