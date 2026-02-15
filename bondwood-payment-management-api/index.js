@@ -272,6 +272,43 @@ export default {
         return json(results);
       }
 
+      // ── Restriction Groups ──
+      if (path === '/api/restriction-groups' && method === 'GET') {
+        return handleListRestrictionGroups(env);
+      }
+      if (path === '/api/restriction-groups' && method === 'POST') {
+        return handleCreateRestrictionGroup(request, env);
+      }
+      if (path.match(/^\/api\/restriction-groups\/\d+$/) && method === 'PUT') {
+        const id = path.split('/').pop();
+        return handleUpdateRestrictionGroup(id, request, env);
+      }
+      if (path.match(/^\/api\/restriction-groups\/\d+$/) && method === 'DELETE') {
+        const id = path.split('/').pop();
+        return handleDeleteRestrictionGroup(id, env);
+      }
+      if (path.match(/^\/api\/restriction-groups\/\d+\/approvers$/) && method === 'PUT') {
+        const id = path.split('/')[3];
+        return handleUpdateRgApprovers(id, request, env);
+      }
+      if (path.match(/^\/api\/restriction-groups\/\d+\/budget-rules$/) && method === 'POST') {
+        const id = path.split('/')[3];
+        return handleAddRgBudgetRule(id, request, env);
+      }
+      if (path.match(/^\/api\/restriction-groups\/\d+\/budget-rules\/\d+$/) && method === 'DELETE') {
+        const parts = path.split('/');
+        return handleDeleteRgBudgetRule(parts[3], parts[5], env);
+      }
+      if (path.match(/^\/api\/restriction-groups\/\d+\/vendors$/) && method === 'POST') {
+        const id = path.split('/')[3];
+        return handleAddRgVendors(id, request, env);
+      }
+      if (path.match(/^\/api\/restriction-groups\/\d+\/vendors\//) && method === 'DELETE') {
+        const parts = path.split('/');
+        const vendorNum = decodeURIComponent(parts.slice(5).join('/'));
+        return handleDeleteRgVendor(parts[3], vendorNum, env);
+      }
+
       return json({ error: 'Not found' }, 404);
     } catch (e) {
       return json({ error: 'Internal error', detail: e.message }, 500);
@@ -2340,4 +2377,174 @@ RULES:
   }
 
   return json({ error: 'Extraction failed after all retries' }, 500);
+}
+
+
+/* ========================================
+   RESTRICTION GROUPS
+   ======================================== */
+async function handleListRestrictionGroups(env) {
+  try {
+    const { results: groups } = await env.DB.prepare(
+      'SELECT * FROM restriction_groups ORDER BY name ASC'
+    ).all();
+
+    // Fetch all budget rules, vendors, and assignments in bulk
+    const { results: allRules } = await env.DB.prepare(
+      'SELECT * FROM restriction_group_budget_rules ORDER BY id'
+    ).all();
+    const { results: allVendors } = await env.DB.prepare(
+      'SELECT * FROM restriction_group_vendors'
+    ).all();
+
+    let allAssignments = [];
+    try {
+      const { results: assignments } = await env.DB.prepare(
+        'SELECT * FROM user_restriction_assignments'
+      ).all();
+      allAssignments = assignments;
+    } catch (e) {}
+
+    // Build lookup maps
+    const rulesMap = {};
+    for (const r of allRules) {
+      if (!rulesMap[r.group_id]) rulesMap[r.group_id] = [];
+      rulesMap[r.group_id].push(r);
+    }
+    const vendorsMap = {};
+    for (const v of allVendors) {
+      if (!vendorsMap[v.group_id]) vendorsMap[v.group_id] = [];
+      vendorsMap[v.group_id].push(v.vendor_number);
+    }
+    const assignMap = {};
+    for (const a of allAssignments) {
+      if (!assignMap[a.group_id]) assignMap[a.group_id] = [];
+      assignMap[a.group_id].push(a.user_email);
+    }
+
+    const enriched = groups.map(g => ({
+      ...g,
+      budget_rules: rulesMap[g.id] || [],
+      vendors: vendorsMap[g.id] || [],
+      assigned_users: assignMap[g.id] || [],
+    }));
+
+    return json({ groups: enriched });
+  } catch (e) {
+    return json({ error: 'Failed to load restriction groups: ' + e.message }, 500);
+  }
+}
+
+async function handleCreateRestrictionGroup(request, env) {
+  const body = await request.json();
+  const { name, description } = body;
+  if (!name) return json({ error: 'Name is required' }, 400);
+
+  try {
+    const result = await env.DB.prepare(
+      'INSERT INTO restriction_groups (name, description, created_at) VALUES (?, ?, datetime(\'now\'))'
+    ).bind(name, description || '').run();
+
+    const id = result.meta?.last_row_id;
+    return json({ id, name, description: description || '' }, 201);
+  } catch (e) {
+    return json({ error: 'Failed to create group: ' + e.message }, 500);
+  }
+}
+
+async function handleUpdateRestrictionGroup(id, request, env) {
+  const body = await request.json();
+  const { name, description } = body;
+  if (!name) return json({ error: 'Name is required' }, 400);
+
+  try {
+    await env.DB.prepare(
+      'UPDATE restriction_groups SET name = ?, description = ? WHERE id = ?'
+    ).bind(name, description || '', id).run();
+    return json({ message: 'Updated', id });
+  } catch (e) {
+    return json({ error: 'Failed to update: ' + e.message }, 500);
+  }
+}
+
+async function handleDeleteRestrictionGroup(id, env) {
+  try {
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM restriction_group_budget_rules WHERE group_id = ?').bind(id),
+      env.DB.prepare('DELETE FROM restriction_group_vendors WHERE group_id = ?').bind(id),
+      env.DB.prepare('DELETE FROM user_restriction_assignments WHERE group_id = ?').bind(id),
+      env.DB.prepare('DELETE FROM restriction_groups WHERE id = ?').bind(id),
+    ]);
+    return json({ message: 'Deleted' });
+  } catch (e) {
+    return json({ error: 'Failed to delete: ' + e.message }, 500);
+  }
+}
+
+async function handleUpdateRgApprovers(id, request, env) {
+  const body = await request.json();
+  try {
+    await env.DB.prepare(
+      'UPDATE restriction_groups SET primary_approver = ?, secondary_approver_1 = ?, secondary_approver_2 = ?, secondary_approver_3 = ? WHERE id = ?'
+    ).bind(
+      body.primary_approver || null,
+      body.secondary_approver_1 || null,
+      body.secondary_approver_2 || null,
+      body.secondary_approver_3 || null,
+      id
+    ).run();
+    return json({ message: 'Approvers updated' });
+  } catch (e) {
+    return json({ error: 'Failed to update approvers: ' + e.message }, 500);
+  }
+}
+
+async function handleAddRgBudgetRule(groupId, request, env) {
+  const body = await request.json();
+  try {
+    const result = await env.DB.prepare(
+      'INSERT INTO restriction_group_budget_rules (group_id, fund, organization, program, finance, course) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(groupId, body.fund || '', body.organization || '', body.program || '', body.finance || '', body.course || '').run();
+    return json({ id: result.meta?.last_row_id }, 201);
+  } catch (e) {
+    return json({ error: 'Failed to add rule: ' + e.message }, 500);
+  }
+}
+
+async function handleDeleteRgBudgetRule(groupId, ruleId, env) {
+  try {
+    await env.DB.prepare(
+      'DELETE FROM restriction_group_budget_rules WHERE id = ? AND group_id = ?'
+    ).bind(ruleId, groupId).run();
+    return json({ message: 'Rule deleted' });
+  } catch (e) {
+    return json({ error: 'Failed to delete rule: ' + e.message }, 500);
+  }
+}
+
+async function handleAddRgVendors(groupId, request, env) {
+  const body = await request.json();
+  const vendors = body.vendor_numbers || [];
+  if (!vendors.length) return json({ error: 'No vendors provided' }, 400);
+
+  try {
+    const stmts = vendors.map(v =>
+      env.DB.prepare('INSERT OR IGNORE INTO restriction_group_vendors (group_id, vendor_number) VALUES (?, ?)').bind(groupId, v)
+    );
+    await env.DB.batch(stmts);
+    return json({ message: 'Vendors added', count: vendors.length });
+  } catch (e) {
+    return json({ error: 'Failed to add vendors: ' + e.message }, 500);
+  }
+}
+
+async function handleDeleteRgVendor(groupId, vendorNumber, env) {
+  try {
+    await env.DB.prepare(
+      'DELETE FROM restriction_group_vendors WHERE group_id = ? AND vendor_number = ?'
+    ).bind(groupId, vendorNumber).run();
+    return json({ message: 'Vendor removed' });
+  } catch (e) {
+    return json({ error: 'Failed to remove vendor: ' + e.message }, 500);
+  }
 }
