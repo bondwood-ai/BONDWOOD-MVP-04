@@ -359,7 +359,7 @@ async function handleMe(request, env, url) {
   }
 
   const { results } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles FROM user_data WHERE LOWER(user_email) = ?'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, user_roles, restrictions FROM user_data WHERE LOWER(user_email) = ?'
   ).bind(email.toLowerCase().trim()).all();
 
   if (!results.length) {
@@ -372,6 +372,24 @@ async function handleMe(request, env, url) {
   let roles = [];
   try { roles = JSON.parse(u.user_roles || '["user"]'); } catch (e) { roles = ['user']; }
 
+  // Parse restrictions
+  let restrictions = {};
+  try { restrictions = JSON.parse(u.restrictions || '{}'); } catch (e) {}
+
+  // Derive permissions from roles
+  const isSuperUser = roles.includes('super_user');
+  const isAdmin = roles.includes('admin') || isSuperUser;
+  const permissions = {
+    can_manage_users: isSuperUser,
+    can_manage_vendors: isAdmin,
+    can_approve: isAdmin,
+    can_reject: isAdmin,
+    can_assign: isAdmin,
+    can_view_all: isAdmin,
+    can_export: isAdmin,
+    can_import: isAdmin,
+  };
+
   return json({
     user_id: u.user_id,
     first_name: u.user_first_name,
@@ -382,6 +400,8 @@ async function handleMe(request, env, url) {
     title: u.title || '',
     profile_picture_key: u.profile_picture_key || null,
     roles,
+    permissions,
+    restrictions,
   });
 }
 
@@ -1853,12 +1873,16 @@ async function handleDeleteAttachment(key, env) {
    ======================================== */
 async function handleGetUsers(env) {
   const { results: users } = await env.DB.prepare(
-    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles FROM user_data ORDER BY user_first_name ASC'
+    'SELECT user_id, user_first_name, user_last_name, user_email, phone_number, department, title, profile_picture_key, status, user_roles, restrictions FROM user_data ORDER BY user_first_name ASC'
   ).all();
 
   const merged = users.map(u => {
     let roles = [];
     try { roles = JSON.parse(u.user_roles || '["user"]'); } catch (e) { roles = ['user']; }
+    let restrictions = {};
+    try { restrictions = JSON.parse(u.restrictions || '{}'); } catch (e) {}
+    const isSuperUser = roles.includes('super_user');
+    const isAdmin = roles.includes('admin') || isSuperUser;
     return {
       user_id: u.user_id,
       first_name: u.user_first_name,
@@ -1870,6 +1894,17 @@ async function handleGetUsers(env) {
       profile_picture_key: u.profile_picture_key || null,
       status: u.status || 'active',
       roles,
+      restrictions,
+      permissions: {
+        can_manage_users: isSuperUser,
+        can_manage_vendors: isAdmin,
+        can_approve: isAdmin,
+        can_reject: isAdmin,
+        can_assign: isAdmin,
+        can_view_all: isAdmin,
+        can_export: isAdmin,
+        can_import: isAdmin,
+      },
     };
   });
 
