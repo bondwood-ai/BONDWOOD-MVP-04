@@ -2047,7 +2047,11 @@
                 const fullUser = permData;
                 const perms = fullUser.permissions || {};
                 currentUserIsAdmin = !!(perms.can_manage_users || perms.can_manage_vendors);
-                USER_RESTRICTIONS = await loadUserRestrictionRules(user.email);
+                // Only load restrictions for current user if NOT impersonating
+                // (impersonation already loaded the target user's restrictions)
+                if (!isImpersonating) {
+                    USER_RESTRICTIONS = await loadUserRestrictionRules(user.email);
+                }
                 if (perms.can_manage_users) {
                     const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
                 }
