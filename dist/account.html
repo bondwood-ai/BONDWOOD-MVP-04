@@ -357,11 +357,11 @@
                         
                         My Account
                     </a>
-                    <a class="hamburger-menu-item" href="users.html">
+                    <a id="userMgmtMenuItem" class="hamburger-menu-item" href="users.html" style="display:none;">
                         
                         User Management
                     </a>
-                    <a class="hamburger-menu-item" href="data-management.html">
+                    <a id="dataMgmtMenuItem" class="hamburger-menu-item" href="data-management.html" style="display:none;">
                         
                         Data Management
                     </a>
@@ -1012,6 +1012,13 @@
 
                 // Store email for prefs
                 currentUserEmail = (profileData.email || '').toLowerCase().trim();
+
+                // Gate admin menu items
+                const perms = profileData.permissions || {};
+                const umItem = document.getElementById('userMgmtMenuItem');
+                const dmItem = document.getElementById('dataMgmtMenuItem');
+                if (umItem) umItem.style.display = perms.can_manage_users ? '' : 'none';
+                if (dmItem) dmItem.style.display = perms.can_manage_vendors ? '' : 'none';
 
                 // Restriction Groups
                 const rgSection = document.getElementById('restrictionGroupsSection');

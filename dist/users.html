@@ -300,6 +300,13 @@
         .detail-rfp-table tbody tr { cursor: default; }
         .detail-rfp-table tbody tr:hover { background: var(--row-hover-bg); }
         .detail-rfp-empty { font-size: 0.8rem; color: var(--text-secondary); padding: 1rem 0; text-align: center; }
+        .rg-badge {
+            display: inline-flex; align-items: center;
+            padding: 0.25rem 0.65rem; border-radius: 99px;
+            font-size: 0.72rem; font-weight: 600; font-family: 'Inter', sans-serif;
+            background: color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));
+            color: var(--text-primary); border: 1px solid var(--primary-hex);
+        }
 
         /* ============ ROLE MODAL ============ */
         .modal-overlay {
@@ -427,11 +434,11 @@
                         
                         My Account
                     </a>
-                    <a class="hamburger-menu-item active" href="users.html">
+                    <a id="userMgmtMenuItem" class="hamburger-menu-item active" href="users.html" style="display:none;">
                         
                         User Management
                     </a>
-                    <a class="hamburger-menu-item" href="data-management.html">
+                    <a id="dataMgmtMenuItem" class="hamburger-menu-item" href="data-management.html" style="display:none;">
                         
                         Data Management
                     </a>
@@ -556,6 +563,12 @@
         <div class="detail-section">
             <div class="detail-section-title">Role Management</div>
             <div id="detailRoles"></div>
+        </div>
+
+        <!-- Restriction Groups Section -->
+        <div class="detail-section" id="detailRgSection" style="display:none;">
+            <div class="detail-section-title">Restriction Groups</div>
+            <div id="detailRgList" style="display:flex;flex-wrap:wrap;gap:0.35rem;padding:0.25rem 0;"></div>
         </div>
 
         <!-- RFPs Section -->
@@ -745,6 +758,27 @@
                 currentUserEmail = user.email || '';
                 currentUserRoles = user.roles || [];
                 currentUserPermissions = user.permissions || {};
+
+                // Enrich with Worker permissions if needed
+                if (!currentUserPermissions.can_manage_users && currentUserEmail) {
+                    try {
+                        const enrichResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(currentUserEmail)}`);
+                        if (enrichResp.ok) {
+                            const enriched = await enrichResp.json();
+                            if (!enriched.error) {
+                                currentUserRoles = enriched.roles || currentUserRoles;
+                                currentUserPermissions = enriched.permissions || currentUserPermissions;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                // Gate admin menu items
+                const um = document.getElementById('userMgmtMenuItem');
+                const dm = document.getElementById('dataMgmtMenuItem');
+                if (um) um.style.display = currentUserPermissions.can_manage_users ? '' : 'none';
+                if (dm) dm.style.display = currentUserPermissions.can_manage_vendors ? '' : 'none';
+
                 console.log('[AUTH] User:', currentUserEmail, 'Roles:', currentUserRoles);
             } catch (e) {
                 console.warn('[AUTH] Could not verify user:', e);
@@ -1033,6 +1067,28 @@
             // Roles
             renderRoleToggles(user);
 
+            // Restriction Groups
+            const rgSection = document.getElementById('detailRgSection');
+            const rgList = document.getElementById('detailRgList');
+            try {
+                const rgResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(email)}`);
+                if (rgResp.ok) {
+                    const rgData = await rgResp.json();
+                    const groups = rgData.restriction_groups || [];
+                    if (groups.length > 0) {
+                        rgSection.style.display = '';
+                        rgList.innerHTML = groups.map(g => `<span class="rg-badge">${escHtml(g.name)}</span>`).join('');
+                    } else {
+                        rgSection.style.display = 'none';
+                        rgList.innerHTML = '';
+                    }
+                } else {
+                    rgSection.style.display = 'none';
+                }
+            } catch (e) {
+                rgSection.style.display = 'none';
+            }
+
             // Load RFPs for this user
             loadUserRfps(user.email, name);
 
@@ -1159,18 +1215,20 @@
             container.innerHTML = '<div class="loading-spinner" style="padding:1rem;"><div class="spinner-icon"></div> Loading requests...</div>';
 
             try {
-                const resp = await fetch(`${API_BASE}/api/rfps`);
+                const resp = await fetch(`${API_BASE}/api/rfps?email=${encodeURIComponent(currentUserEmail)}`);
                 if (!resp.ok) throw new Error('Failed to load RFPs');
                 const data = await resp.json();
                 const allRfps = data.rfps || data || [];
 
-                // Filter by submitter name or email
+                // Filter by submitter name, email, or ID
                 const nameUpper = userName.toUpperCase();
                 const emailLower = email.toLowerCase();
+                const userId = selectedUser ? 'E' + (selectedUser.user_id || '') : '';
                 const userRfps = allRfps.filter(r => {
-                    const sub = (r.submitter || '').toUpperCase();
+                    const sub = (r.submitter || r.submitter_name || '').toUpperCase();
                     const em = (r.submitter_email || '').toLowerCase();
-                    return sub === nameUpper || em === emailLower || sub.includes(nameUpper);
+                    const sid = (r.submitter_id || '').toUpperCase();
+                    return sub === nameUpper || em === emailLower || sub.includes(nameUpper) || (userId && sid === userId.toUpperCase());
                 });
 
                 document.getElementById('detailRfpCount').textContent = `(${userRfps.length})`;

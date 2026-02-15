@@ -571,7 +571,7 @@
                         
                         User Management
                     </a>
-                    <a class="hamburger-menu-item active" href="data-management.html">
+                    <a id="dataMgmtMenuItem" class="hamburger-menu-item active" href="data-management.html" style="display:none;">
                         
                         Data Management
                     </a>
@@ -2575,6 +2575,9 @@
                         const perms = fullUser.permissions || {};
                         if (perms.can_manage_users) {
                             const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
+                        }
+                        if (perms.can_manage_vendors) {
+                            const dm = document.getElementById('dataMgmtMenuItem'); if (dm) dm.style.display = '';
                         }
                         canEditData = !!perms.can_manage_vendors;
                     }
