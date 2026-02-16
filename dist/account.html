@@ -165,12 +165,18 @@
             display: inline-block; padding: 2px 9px; border-radius: 99px;
             font-size: 0.62rem; font-weight: 700; font-family: 'Google Sans Flex', sans-serif;
             text-transform: uppercase; letter-spacing: 0.03em;
-            color: #ffffff;
         }
-        .role-badge-0 { background: #00babc; }
-        .role-badge-1 { background: #f57f2f; }
-        .role-badge-2 { background: #cb3694; }
-        .role-badge-3 { background: #4e59a5; }
+        .role-badge-submitter { background: #e8f0fe; color: #1a56db; }
+        .role-badge-accounts_payable { background: #fef3c7; color: #92400e; }
+        .role-badge-accountant { background: #d1fae5; color: #065f46; }
+        .role-badge-admin { background: #f3e8ff; color: #6b21a8; }
+        .role-badge-fallback { background: #f1f5f9; color: #475569; }
+        .role-crown {
+            display: inline-flex; align-items: flex-end; gap: 0.3rem;
+            font-size: 0.62rem; font-weight: 700; font-family: 'Google Sans Flex', sans-serif;
+            text-transform: uppercase; letter-spacing: 0.03em; color: #b8860b;
+        }
+        .role-crown svg { flex-shrink: 0; }
 
         .rg-badge {
             display: inline-flex; align-items: center;
@@ -1006,10 +1012,18 @@
                 const rolesContainer = document.getElementById('profileRoles');
                 rolesContainer.innerHTML = '';
                 (profileData.roles || []).forEach((role, i) => {
-                    const badge = document.createElement('span');
-                    badge.className = 'role-badge role-badge-' + (i % 4);
-                    badge.textContent = role.replace(/_/g, ' ');
-                    rolesContainer.appendChild(badge);
+                    if (role === 'super_user') {
+                        const crown = document.createElement('span');
+                        crown.className = 'role-crown';
+                        crown.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#daa520" stroke="none"><path d="M2.5 18.5l2-9 5.5 4 2-7 2 7 5.5-4 2 9h-19z"/><rect x="2.5" y="18.5" width="19" height="2.5" rx="1" fill="#daa520"/></svg>Super User';
+                        rolesContainer.appendChild(crown);
+                    } else {
+                        const badge = document.createElement('span');
+                        const cls = 'role-badge-' + role;
+                        badge.className = 'role-badge ' + (['submitter','accounts_payable','accountant','admin'].includes(role) ? cls : 'role-badge-fallback');
+                        badge.textContent = role.replace(/_/g, ' ');
+                        rolesContainer.appendChild(badge);
+                    }
                 });
 
                 // Form fields

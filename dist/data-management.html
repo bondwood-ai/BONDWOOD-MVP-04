@@ -2060,7 +2060,7 @@
                                 const label = ext.toUpperCase().substring(0, 4);
                                 const sizeStr = f.size ? (f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB' : (f.size / 1048576).toFixed(1) + ' MB') : '';
                                 const fileUrl = `${API_BASE}/api/attachments/${encodeURIComponent(f.key)}`;
-                                return `<a class="att-row" href="${fileUrl}" target="_blank" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.4rem;cursor:pointer;text-decoration:none;color:inherit;">
+                                return `<a class="att-row" href="${fileUrl}" data-url="${fileUrl}" data-name="${esc(fname)}" data-ext="${ext}" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.4rem;cursor:pointer;text-decoration:none;color:inherit;">
                                     <svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${color}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>
                                     <div style="flex:1;min-width:0;">
                                         <div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(fname)}</div>
@@ -2104,6 +2104,14 @@
 
                 openLink.href = `rfp-form.html?id=${rfpNumber}`;
                 footer.style.display = '';
+
+                // Attach blob popup handlers to attachment rows
+                document.querySelectorAll('#dmPreviewAttachments .att-row').forEach(function(row) {
+                    row.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        handleAttachmentClick(row.dataset.url, row.dataset.name, row.dataset.ext);
+                    });
+                });
             } catch (e) {
                 body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">Failed to load request details</div>';
             }
@@ -2111,6 +2119,36 @@
 
         function closeVendorRfpPreview() {
             document.getElementById('rfpPreviewOverlay').classList.remove('open');
+        }
+
+        async function handleAttachmentClick(url, name, ext) {
+            var isPdf = ext === 'pdf';
+            var isImage = (ext === 'png' || ext === 'jpg' || ext === 'jpeg');
+            if (isPdf || isImage) {
+                try {
+                    var resp = await fetch(url);
+                    var blob = await resp.blob();
+                    var blobUrl = URL.createObjectURL(blob);
+                    var w = 900, h = 700;
+                    var popLeft = (screen.width - w) / 2;
+                    var popTop = (screen.height - h) / 2;
+                    var features = 'width=' + w + ',height=' + h + ',left=' + popLeft + ',top=' + popTop + ',menubar=no,toolbar=no,location=no,status=no,scrollbars=yes';
+                    var popup = window.open('', '_blank', features);
+                    if (!popup) { window.open(blobUrl, '_blank'); return; }
+                    var doc = popup.document;
+                    doc.open();
+                    if (isPdf) {
+                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;overflow:hidden;}</style></head><body><iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>');
+                    } else {
+                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>');
+                    }
+                    doc.close();
+                } catch (e) { window.open(url, '_blank'); }
+            } else {
+                var a = document.createElement('a');
+                a.href = url; a.download = name;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }
         }
 
         async function postNoteFromDmPreview(rfpNumber) {
