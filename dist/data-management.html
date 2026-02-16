@@ -820,7 +820,7 @@
                 <div class="edit-group"><label>State</label><input type="text" id="editVendorState" maxlength="2" style="text-transform:uppercase;"></div>
                 <div class="edit-group"><label>ZIP</label><input type="text" id="editVendorZip" maxlength="10"></div>
             </div>
-            <div class="roles-section" style="padding-bottom:10rem;">
+            <div class="roles-section" style="padding-bottom:1rem;">
                 <label>Assigned Restriction Groups</label>
                 <div id="editVendorRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
                 <div style="position:relative;" id="editVendorRgDropWrap">
@@ -828,6 +828,28 @@
                     <div id="editVendorRgDrop" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:160px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;"></div>
                 </div>
             </div>
+
+            <!-- Notes Section -->
+            <div class="roles-section" style="padding-bottom:1rem;">
+                <label>Notes</label>
+                <div id="vendorNotesList" style="margin-bottom:0.5rem;"></div>
+                <div style="display:flex;gap:0.5rem;align-items:flex-end;">
+                    <textarea id="vendorNoteInput" placeholder="Add a note..." rows="2" style="flex:1;padding:0.45rem 0.6rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;font-family:'Google Sans Flex',sans-serif;background:var(--field-bg);color:var(--text-primary);resize:vertical;min-height:36px;line-height:1.4;"></textarea>
+                    <button onclick="addVendorNote()" style="padding:0.4rem 0.8rem;border:none;border-radius:6px;font-size:0.76rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);font-family:'Google Sans Flex',sans-serif;white-space:nowrap;height:36px;">Post</button>
+                </div>
+            </div>
+
+            <!-- Attachments Section -->
+            <div class="roles-section" style="padding-bottom:6rem;">
+                <label>Attachments</label>
+                <div id="vendorAttachmentsList" style="margin-bottom:0.5rem;"></div>
+                <div id="vendorAttDropZone" style="border:2px dashed var(--border-color);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:border-color 0.2s;" onclick="document.getElementById('vendorAttFileInput').click()">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-bottom:0.25rem;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <div style="font-size:0.78rem;color:var(--text-secondary);">Click or drag files here</div>
+                </div>
+                <input type="file" id="vendorAttFileInput" multiple style="display:none;" onchange="uploadVendorAttachments(this.files)">
+            </div>
+
             <div class="modal-footer">
                 <button class="btn-primary" onclick="closeEditVendor()">Cancel</button>
                 <button class="btn-primary accent" id="saveVendorBtn" onclick="saveVendor()">
@@ -982,6 +1004,8 @@
     <script>
         const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
         let canEditData = false; // set after permissions load
+        let dmUserName = '';
+        let dmUserEmail = '';
         const PAGE_SIZE = 250;
         const AVAILABLE_ROLES = ['admin', 'owner', 'accountant', 'form_builder', 'form_viewer'];
         const ROLE_LABELS = { admin: 'Admin', owner: 'Owner', accountant: 'Accountant', form_builder: 'Form Builder', form_viewer: 'Form Viewer' };
@@ -1499,6 +1523,10 @@
             renderVendorRgPills(v.vendor_number);
             // Update title based on permissions
             document.querySelector('#editVendorModal .edit-modal-panel h3').textContent = canEditData ? 'Edit Vendor' : 'View Vendor';
+            // Load notes & attachments
+            loadVendorNotes(v.vendor_number);
+            loadVendorAttachments(v.vendor_number);
+            document.getElementById('vendorNoteInput').value = '';
             document.getElementById('editVendorModal').classList.add('open');
         }
 
@@ -1527,6 +1555,153 @@
             } catch (e) { showToast('Failed: ' + e.message, 'error'); }
             btn.disabled = false;
         }
+
+        /* ========================================
+           VENDOR NOTES
+           ======================================== */
+        async function loadVendorNotes(vendorNumber) {
+            const list = document.getElementById('vendorNotesList');
+            list.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;">Loading notes...</div>';
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(vendorNumber)}/notes`);
+                const data = await resp.json();
+                renderVendorNotes(data.notes || []);
+            } catch (e) {
+                list.innerHTML = '';
+                console.warn('Failed to load vendor notes:', e);
+            }
+        }
+
+        function renderVendorNotes(notes) {
+            const list = document.getElementById('vendorNotesList');
+            if (!notes.length) {
+                list.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;">No notes yet</div>';
+                return;
+            }
+            list.innerHTML = notes.map(n => {
+                const author = (n.author_name || 'Unknown').replace(/</g, '&lt;');
+                const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                const text = (n.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `<div style="padding:0.5rem 0.65rem;background:var(--bg-color);border:1px solid var(--border-color);border-radius:6px;margin-bottom:0.35rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.15rem;">
+                        <span style="font-size:0.72rem;font-weight:600;color:var(--primary-hex);">${author}</span>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style="font-size:0.68rem;color:var(--text-secondary);">${date}</span>
+                            ${canEditData ? `<button onclick="deleteVendorNote('${n.id}')" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;" title="Delete note"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>` : ''}
+                        </div>
+                    </div>
+                    <div style="font-size:0.82rem;color:var(--text-primary);line-height:1.45;white-space:pre-wrap;">${text}</div>
+                </div>`;
+            }).join('');
+        }
+
+        async function addVendorNote() {
+            if (!editingVendor) return;
+            const input = document.getElementById('vendorNoteInput');
+            const text = input.value.trim();
+            if (!text) return;
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(editingVendor.vendor_number)}/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, author_name: dmUserName, author_email: dmUserEmail })
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Failed');
+                input.value = '';
+                renderVendorNotes(data.notes || []);
+            } catch (e) { showToast('Failed to add note: ' + e.message, 'error'); }
+        }
+
+        async function deleteVendorNote(noteId) {
+            if (!editingVendor) return;
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(editingVendor.vendor_number)}/notes`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note_id: noteId })
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Failed');
+                renderVendorNotes(data.notes || []);
+            } catch (e) { showToast('Failed to delete note: ' + e.message, 'error'); }
+        }
+
+        /* ========================================
+           VENDOR ATTACHMENTS
+           ======================================== */
+        async function loadVendorAttachments(vendorNumber) {
+            const list = document.getElementById('vendorAttachmentsList');
+            list.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;">Loading...</div>';
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(vendorNumber)}/attachments`);
+                const data = await resp.json();
+                renderVendorAttachments(data.attachments || []);
+            } catch (e) {
+                list.innerHTML = '';
+                console.warn('Failed to load vendor attachments:', e);
+            }
+        }
+
+        function renderVendorAttachments(attachments) {
+            const list = document.getElementById('vendorAttachmentsList');
+            if (!attachments.length) {
+                list.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);font-style:italic;">No attachments</div>';
+                return;
+            }
+            list.innerHTML = attachments.map(a => {
+                const name = (a.name || 'file').replace(/</g, '&lt;');
+                const size = a.size ? formatFileSize(a.size) : '';
+                const ext = name.split('.').pop().toLowerCase();
+                const icon = ['pdf'].includes(ext) ? '📄' : ['jpg','jpeg','png','gif','webp'].includes(ext) ? '🖼️' : ['xlsx','xls','csv'].includes(ext) ? '📊' : ['doc','docx'].includes(ext) ? '📝' : '📎';
+                return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.55rem;background:var(--bg-color);border:1px solid var(--border-color);border-radius:6px;margin-bottom:0.3rem;">
+                    <span style="font-size:0.9rem;">${icon}</span>
+                    <a href="${API_BASE}/api/attachments/${encodeURIComponent(a.key)}" target="_blank" style="flex:1;font-size:0.8rem;color:var(--primary-hex);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${name}">${name}</a>
+                    <span style="font-size:0.7rem;color:var(--text-secondary);white-space:nowrap;">${size}</span>
+                    ${canEditData ? `<button onclick="deleteVendorAttachment('${encodeURIComponent(a.key)}')" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;" title="Delete"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        async function uploadVendorAttachments(files) {
+            if (!editingVendor || !files.length) return;
+            const formData = new FormData();
+            for (const f of files) formData.append('file', f);
+            try {
+                const resp = await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(editingVendor.vendor_number)}/attachments`, {
+                    method: 'POST', body: formData
+                });
+                if (!resp.ok) throw new Error('Upload failed');
+                showToast(`${files.length} file(s) uploaded`, 'success');
+                loadVendorAttachments(editingVendor.vendor_number);
+            } catch (e) { showToast('Upload failed: ' + e.message, 'error'); }
+            document.getElementById('vendorAttFileInput').value = '';
+        }
+
+        async function deleteVendorAttachment(encodedKey) {
+            const key = decodeURIComponent(encodedKey);
+            try {
+                const resp = await fetch(`${API_BASE}/api/attachments/${encodeURIComponent(key)}`, { method: 'DELETE' });
+                if (!resp.ok) throw new Error('Delete failed');
+                if (editingVendor) loadVendorAttachments(editingVendor.vendor_number);
+            } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+        }
+
+        // Drag & drop for vendor attachments
+        document.addEventListener('DOMContentLoaded', () => {
+            const dz = document.getElementById('vendorAttDropZone');
+            if (dz) {
+                dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--primary-hex)'; dz.style.background = 'rgba(var(--primary-rgb),0.04)'; });
+                dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--border-color)'; dz.style.background = ''; });
+                dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = 'var(--border-color)'; dz.style.background = ''; if (e.dataTransfer.files.length) uploadVendorAttachments(e.dataTransfer.files); });
+            }
+        });
 
         /* ========================================
            BUDGET CODES
@@ -3172,6 +3347,8 @@
                 }
                 if (!resp.ok) return;
                 if (!user.email) return;
+                dmUserEmail = user.email;
+                dmUserName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
 
                 // Show admin menu items and set edit permissions
                 try {

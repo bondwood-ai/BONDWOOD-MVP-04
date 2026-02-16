@@ -141,6 +141,21 @@ export default {
         return handleDeleteVendor(request, env);
       }
 
+      // ── Vendor Notes & Attachments ──
+      const vendorNotesMatch = path.match(/^\/api\/vendors\/([^/]+)\/notes$/);
+      if (vendorNotesMatch) {
+        const vendorNumber = decodeURIComponent(vendorNotesMatch[1]);
+        if (method === 'GET') return handleGetVendorNotes(vendorNumber, env);
+        if (method === 'POST') return handleAddVendorNote(vendorNumber, request, env);
+        if (method === 'DELETE') return handleDeleteVendorNote(vendorNumber, request, env);
+      }
+      const vendorAttMatch = path.match(/^\/api\/vendors\/([^/]+)\/attachments$/);
+      if (vendorAttMatch) {
+        const vendorNumber = decodeURIComponent(vendorAttMatch[1]);
+        if (method === 'GET') return handleListVendorAttachments(vendorNumber, env);
+        if (method === 'POST') return handleUploadVendorAttachment(vendorNumber, request, env);
+      }
+
       // ── Budget Codes ──
       if (path === '/api/budget-codes' && method === 'GET') {
         return handleGetBudgetCodes(env, url);
@@ -761,6 +776,131 @@ async function handleUpdateVendor(request, env) {
   ).run();
 
   return json({ message: 'Vendor updated', vendor_number });
+}
+
+
+/* ========================================
+   VENDOR NOTES
+   ======================================== */
+async function handleGetVendorNotes(vendorNumber, env) {
+  const { results } = await env.DB.prepare(
+    'SELECT vendor_notes FROM vendor_data WHERE vendor_number = ?'
+  ).bind(vendorNumber).all();
+  if (!results.length) return json({ error: 'Vendor not found' }, 404);
+  let notes = [];
+  try { notes = JSON.parse(results[0].vendor_notes || '[]'); } catch (e) { /* empty */ }
+  return json({ notes });
+}
+
+async function handleAddVendorNote(vendorNumber, request, env) {
+  const body = await request.json();
+  const { text, author_name, author_email } = body;
+  if (!text?.trim()) return json({ error: 'Note text is required' }, 400);
+
+  const { results } = await env.DB.prepare(
+    'SELECT vendor_notes FROM vendor_data WHERE vendor_number = ?'
+  ).bind(vendorNumber).all();
+  if (!results.length) return json({ error: 'Vendor not found' }, 404);
+
+  let notes = [];
+  try { notes = JSON.parse(results[0].vendor_notes || '[]'); } catch (e) { /* empty */ }
+
+  const newNote = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    text: text.trim(),
+    author_name: author_name || 'Unknown',
+    author_email: author_email || '',
+    created_at: new Date().toISOString(),
+  };
+  notes.push(newNote);
+
+  await env.DB.prepare(
+    'UPDATE vendor_data SET vendor_notes = ? WHERE vendor_number = ?'
+  ).bind(JSON.stringify(notes), vendorNumber).run();
+
+  return json({ note: newNote, notes }, 201);
+}
+
+async function handleDeleteVendorNote(vendorNumber, request, env) {
+  const body = await request.json();
+  const { note_id } = body;
+  if (!note_id) return json({ error: 'note_id is required' }, 400);
+
+  const { results } = await env.DB.prepare(
+    'SELECT vendor_notes FROM vendor_data WHERE vendor_number = ?'
+  ).bind(vendorNumber).all();
+  if (!results.length) return json({ error: 'Vendor not found' }, 404);
+
+  let notes = [];
+  try { notes = JSON.parse(results[0].vendor_notes || '[]'); } catch (e) { /* empty */ }
+  notes = notes.filter(n => n.id !== note_id);
+
+  await env.DB.prepare(
+    'UPDATE vendor_data SET vendor_notes = ? WHERE vendor_number = ?'
+  ).bind(JSON.stringify(notes), vendorNumber).run();
+
+  return json({ message: 'Note deleted', notes });
+}
+
+
+/* ========================================
+   VENDOR ATTACHMENTS (R2)
+   ======================================== */
+async function handleListVendorAttachments(vendorNumber, env) {
+  if (!env.BUCKET) return json({ error: 'R2 bucket not configured', attachments: [], count: 0 }, 500);
+  const prefix = `vendor/${vendorNumber}/`;
+  const listed = await env.BUCKET.list({ prefix });
+  const files = listed.objects.map(obj => ({
+    key: obj.key,
+    name: obj.customMetadata?.originalName || obj.key.split('/').pop(),
+    size: obj.size,
+    uploaded: obj.uploaded,
+    uploadedBy: obj.customMetadata?.uploadedBy || 'unknown',
+  }));
+  return json({ attachments: files, count: files.length });
+}
+
+async function handleUploadVendorAttachment(vendorNumber, request, env) {
+  if (!env.BUCKET) return json({ error: 'R2 bucket not configured' }, 500);
+
+  const contentType = request.headers.get('Content-Type') || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    const results = [];
+    for (const [, file] of formData.entries()) {
+      if (typeof file === 'string') continue;
+      const safeName = (file.name || 'unnamed').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const key = `vendor/${vendorNumber}/${Date.now()}_${safeName}`;
+      await env.BUCKET.put(key, file.stream(), {
+        httpMetadata: { contentType: file.type || 'application/octet-stream' },
+        customMetadata: {
+          originalName: file.name || 'unnamed',
+          vendorNumber: String(vendorNumber),
+          uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
+          uploadedAt: new Date().toISOString(),
+        },
+      });
+      results.push({ key, name: file.name || 'unnamed', size: file.size, contentType: file.type });
+    }
+    return json({ uploaded: results, count: results.length }, 201);
+  }
+
+  // Single file via raw body
+  const fileName = request.headers.get('X-File-Name') || 'attachment';
+  const fileType = request.headers.get('X-Content-Type') || contentType || 'application/octet-stream';
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const key = `vendor/${vendorNumber}/${Date.now()}_${safeName}`;
+  await env.BUCKET.put(key, request.body, {
+    httpMetadata: { contentType: fileType },
+    customMetadata: {
+      originalName: fileName,
+      vendorNumber: String(vendorNumber),
+      uploadedBy: request.headers.get('Cf-Access-Authenticated-User-Email') || 'unknown',
+      uploadedAt: new Date().toISOString(),
+    },
+  });
+  return json({ key, name: fileName, contentType: fileType }, 201);
 }
 
 
@@ -2258,6 +2398,7 @@ async function handleMigrate(env) {
       ap_batch_type TEXT NOT NULL,
       ap_batch_number TEXT NOT NULL UNIQUE
     )`,
+    'ALTER TABLE vendor_data ADD COLUMN vendor_notes TEXT DEFAULT \'[]\'',
   ];
 
   const results = [];
