@@ -1316,6 +1316,7 @@
                         type: r.request_type || r.type || 'vendor',
                         formType: r.request_type === 'reimbursement' ? 'Employee Reimbursement' : 'Vendor Payment',
                         creationSource: r.creation_source || null,
+                        urlToken: r.url_token || '',
                     };
                 });
             } catch (e) {
@@ -2334,7 +2335,7 @@
 
             badge.className = `status-badge ${rfp.status}`;
             badge.textContent = formatStatus(rfp.status);
-            openBtn.onclick = () => { window.location.href = `rfp-form.html?id=${rfp.rfpNumber}`; };
+            openBtn.onclick = () => { window.location.href = rfp.urlToken ? `rfp-form.html?t=${rfp.urlToken}` : `rfp-form.html?id=${rfp.rfpNumber}`; };
 
             // Show/hide approval buttons
             const approvalBtns = document.getElementById('previewApprovalBtns');

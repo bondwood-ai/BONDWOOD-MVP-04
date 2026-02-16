@@ -32,6 +32,12 @@ function json(data, status = 200) {
   });
 }
 
+function generateUrlToken() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(36).padStart(2, '0')).join('').slice(0, 24);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -188,6 +194,17 @@ export default {
 
       if (path === '/api/rfps/search-options' && method === 'GET') {
         return handleSearchOptions(env);
+      }
+
+      // ── Token Resolution ──
+      const tokenMatch = path.match(/^\/api\/rfps\/by-token\/(.+)$/);
+      if (tokenMatch && method === 'GET') {
+        const token = decodeURIComponent(tokenMatch[1]);
+        const { results } = await env.DB.prepare(
+          'SELECT rfp_number FROM dashboard_data WHERE url_token = ?'
+        ).bind(token).all();
+        if (!results.length) return json({ error: 'Invalid token' }, 404);
+        return json({ rfp_number: results[0].rfp_number, token });
       }
 
       const rfpMatch = path.match(/^\/api\/rfps\/(\d+)$/);
@@ -1191,14 +1208,16 @@ async function handleCreateRFP(request, env) {
   const submissionDate = body.submission_date || new Date().toISOString().split('T')[0];
   const performer = body.submitter_name || 'Unknown';
 
+  const urlToken = generateUrlToken();
+
   const headerStmt = env.DB.prepare(`
     INSERT INTO dashboard_data (
       rfp_number, submitter_name, submitter_id, user_email, budget_approver,
       submission_date, request_type, vendor_name, vendor_number,
       vendor_address, invoice_number, employee_name, employee_id,
       description, status, assigned_to, ap_batch, mileage_total, creation_source,
-      restriction_group_id, assigned_to_email, approval_history
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      restriction_group_id, assigned_to_email, approval_history, url_token
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const headerParams = [
@@ -1224,6 +1243,7 @@ async function handleCreateRFP(request, env) {
     body.restriction_group_id || null,
     null,
     '[]',
+    urlToken,
   ];
 
   const statements = [headerStmt.bind(...headerParams)];
@@ -1342,7 +1362,7 @@ async function handleCreateRFP(request, env) {
     }
   }
 
-  return json({ rfp_number: nextRfp, status, message: 'RFP created' }, 201);
+  return json({ rfp_number: nextRfp, url_token: urlToken, status, message: 'RFP created' }, 201);
 }
 
 
@@ -2399,6 +2419,7 @@ async function handleMigrate(env) {
       ap_batch_number TEXT NOT NULL UNIQUE
     )`,
     'ALTER TABLE vendor_data ADD COLUMN vendor_notes TEXT DEFAULT \'[]\'',
+    'ALTER TABLE dashboard_data ADD COLUMN url_token TEXT',
   ];
 
   const results = [];
@@ -2500,6 +2521,25 @@ async function handleMigrate(env) {
     }
   } catch (e) {
     results.push({ sql: 'SEED ap_batch', status: 'error', reason: e.message });
+  }
+
+  // Backfill url_token for existing RFPs that don't have one
+  try {
+    const { results: noToken } = await env.DB.prepare(
+      'SELECT rfp_number FROM dashboard_data WHERE url_token IS NULL OR url_token = \'\''
+    ).all();
+    if (noToken.length > 0) {
+      for (const row of noToken) {
+        const token = generateUrlToken();
+        await env.DB.prepare('UPDATE dashboard_data SET url_token = ? WHERE rfp_number = ?')
+          .bind(token, row.rfp_number).run();
+      }
+      results.push({ sql: 'BACKFILL dashboard_data.url_token', status: 'applied', count: noToken.length });
+    } else {
+      results.push({ sql: 'BACKFILL dashboard_data.url_token', status: 'skipped', reason: 'all rows have tokens' });
+    }
+  } catch (e) {
+    results.push({ sql: 'BACKFILL dashboard_data.url_token', status: 'error', reason: e.message });
   }
 
   return json({ message: 'Migration complete', results });

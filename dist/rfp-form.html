@@ -2123,7 +2123,23 @@
 
             // Check if editing existing form
             const params = new URLSearchParams(window.location.search);
-            if (params.get('id')) {
+            if (params.get('t')) {
+                // Resolve token to RFP number
+                document.getElementById('draftButtons').style.display = 'none';
+                try {
+                    const resp = await fetch(API_BASE + '/api/rfps/by-token/' + encodeURIComponent(params.get('t')));
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        loadExistingForm(data.rfp_number);
+                    } else {
+                        alert('Invalid or expired link.');
+                        window.location.href = 'index.html';
+                    }
+                } catch (e) {
+                    alert('Failed to load form.');
+                    window.location.href = 'index.html';
+                }
+            } else if (params.get('id')) {
                 document.getElementById('draftButtons').style.display = 'none';
                 loadExistingForm(params.get('id'));
             } else if (params.get('capture') === '1') {
@@ -3904,7 +3920,8 @@
                     }
                     // Audit logging handled server-side in handleCreateRFP / handleUpdateRFP
                     // Update URL so subsequent saves are PUTs
-                    window.history.replaceState(null, '', 'rfp-form.html?id=' + rfpNum);
+                    const savedToken = result.url_token || '';
+                    window.history.replaceState(null, '', savedToken ? 'rfp-form.html?t=' + savedToken : 'rfp-form.html?id=' + rfpNum);
                     formDirty = false;
                     _loadedRfpData = { ...payload, rfp_number: rfpNum, status: 'draft' };
                     showDraftSavedModal(rfpNum);
@@ -4371,7 +4388,7 @@
                         }
                     }
                     // Audit logging handled server-side in handleUpdateRFP (detects draft→submitted)
-                    showSuccessModal(rfpNum);
+                    showSuccessModal(rfpNum, result.url_token || '');
                 } else {
                     formSubmitting = false;
                     showAlert('Submission failed: ' + (result.error || JSON.stringify(result)), 'Error');
@@ -4620,6 +4637,11 @@
                 _loadedRfpData = data;
                 _loadedAuditLogs = data.auditLogs || [];
 
+                // Update URL to use token if available (hide rfp_number from URL)
+                if (data.url_token) {
+                    history.replaceState(null, '', 'rfp-form.html?t=' + data.url_token);
+                }
+
                 // Set RFP number display
                 const rfpEl = document.getElementById('rfpNumber');
                 if (rfpEl) rfpEl.textContent = '#' + rfpNumber;
@@ -4781,13 +4803,13 @@
             }
         }
 
-        function showSuccessModal(rfpNumber) {
+        function showSuccessModal(rfpNumber, urlToken) {
             formDirty = false;
             formSubmitting = false;
             document.getElementById('successRfpNumber').textContent = '#' + rfpNumber;
             document.getElementById('success-modal').classList.add('open');
             // Update URL so the form is now addressable
-            history.replaceState(null, '', 'rfp-form.html?id=' + rfpNumber);
+            history.replaceState(null, '', urlToken ? 'rfp-form.html?t=' + urlToken : 'rfp-form.html?id=' + rfpNumber);
         }
 
         /* ========================================
