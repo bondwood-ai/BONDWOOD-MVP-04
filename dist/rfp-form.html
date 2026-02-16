@@ -4769,6 +4769,34 @@
                     recalcMileageTotals();
                 }
 
+                // Post-submission cleanup for submitted/approved forms
+                const isSubmitted = data.status && data.status !== 'draft';
+                if (isSubmitted) {
+                    const hasLineItems = data.lineItems && data.lineItems.some(item =>
+                        (item.description || '').trim() || (item.total && item.total > 0)
+                    );
+                    const hasMileage = data.mileageTrips && data.mileageTrips.length > 0;
+
+                    // 1) Hide Item Detail table if mileage-only reimbursement
+                    if (!hasLineItems && hasMileage) {
+                        document.getElementById('lineItemsContainer').style.display = 'none';
+                    }
+
+                    // 2) Hide mileage checkbox if mileage was submitted
+                    if (hasMileage) {
+                        const checkRow = document.querySelector('.mileage-check-row');
+                        if (checkRow) checkRow.style.display = 'none';
+                    }
+
+                    // 3) Remove blank mileage rows
+                    document.querySelectorAll('#mileageBody tr').forEach(row => {
+                        const miles = (row.querySelector('.trip-miles')?.value || '').trim();
+                        const from = (row.querySelector('.trip-from')?.value || '').trim();
+                        const to = (row.querySelector('.trip-to')?.value || '').trim();
+                        if (!miles && !from && !to) row.remove();
+                    });
+                }
+
                 // Load attachments
                 loadExistingAttachments(rfpNumber);
 
