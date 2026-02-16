@@ -681,12 +681,12 @@
             <div class="add-form-card" id="budgetAddForm">
                 <div class="form-grid-budget" id="budgetFormGrid">
                     <div class="form-group"><label>Budget Code</label><input type="text" id="addBudgetCode" placeholder="e.g. 01005203000000" oninput="autoParseBudgetCode(); checkBudgetFormValid()"></div>
-                    <div class="form-group"><label>Account Code</label><input type="text" id="addAccountCode" placeholder="e.g. 401" oninput="checkBudgetFormValid()"></div>
                     <div class="form-group"><label>Fund</label><input type="text" id="addFund" placeholder="01" readonly></div>
                     <div class="form-group"><label>Organization</label><input type="text" id="addOrganization" placeholder="005" readonly></div>
                     <div class="form-group"><label>Program</label><input type="text" id="addProgram" placeholder="203" readonly></div>
                     <div class="form-group"><label>Finance</label><input type="text" id="addFinance" placeholder="000" readonly></div>
                     <div class="form-group"><label>Course</label><input type="text" id="addCourse" placeholder="000" readonly></div>
+                    <div class="form-group"><label>Object</label><input type="text" id="addAccountCode" placeholder="e.g. 401" oninput="checkBudgetFormValid()"></div>
                 </div>
                 <div class="form-actions">
                     <button class="btn-primary accent" id="addBudgetBtn" onclick="addBudgetCode()">
@@ -877,12 +877,12 @@
             <h3>Edit Budget Code</h3>
             <div class="edit-grid">
                 <div class="edit-group"><label>Budget Code</label><input type="text" id="editBudgetCode"></div>
-                <div class="edit-group"><label>Account Code</label><input type="text" id="editAccountCode"></div>
                 <div class="edit-group"><label>Fund</label><input type="text" id="editFund"></div>
                 <div class="edit-group"><label>Organization</label><input type="text" id="editOrganization"></div>
                 <div class="edit-group"><label>Program</label><input type="text" id="editProgram"></div>
                 <div class="edit-group"><label>Finance</label><input type="text" id="editFinance"></div>
                 <div class="edit-group"><label>Course</label><input type="text" id="editCourse"></div>
+                <div class="edit-group"><label>Object</label><input type="text" id="editAccountCode"></div>
             </div>
             <div class="roles-section" style="padding-bottom:10rem;">
                 <label>Assigned Restriction Groups</label>
@@ -1446,7 +1446,7 @@
                         <td class="cb-cell" onclick="event.stopPropagation()">
                             <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleVendorSelect('${escAttr(key)}', this.checked)">
                         </td>
-                        <td style="font-weight:600;">${esc(key)}</td>
+                        <td>${esc(key)}</td>
                         <td>${esc(v.vendor_name||'')}</td>
                         <td>${esc(v.vendor_address||'')}</td>
                         <td>${esc(v.vendor_city||'')}</td>
@@ -1770,7 +1770,7 @@
                         <td class="cb-cell" onclick="event.stopPropagation()">
                             <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleBudgetSelect('${escAttr(compositeKey)}', this.checked)">
                         </td>
-                        <td style="font-weight:600;">${esc(b.budget_code||'')}</td>
+                        <td>${esc(b.budget_code||'')}</td>
                         <td style="text-align:center;">${esc(fundDisplay)}</td>
                         <td style="text-align:center;">${esc((b.organization||'').toString().trim())}</td>
                         <td style="text-align:center;">${esc((b.program||'').toString().trim())}</td>
@@ -1986,7 +1986,7 @@
             editingBudget = b;
             document.getElementById('editBudgetCode').value = b.budget_code || '';
             document.getElementById('editAccountCode').value = b.account_code || '';
-            document.getElementById('editFund').value = (b.fund || '').toString().trim().substring(0, 2);
+            document.getElementById('editFund').value = (b.fund || '').toString().trim();
             document.getElementById('editOrganization').value = (b.organization || '').toString().trim();
             document.getElementById('editProgram').value = (b.program || '').toString().trim();
             document.getElementById('editFinance').value = (b.finance || '').toString().trim();
@@ -2117,7 +2117,7 @@
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--primary-hex)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="8" x2="12.01" y2="8" stroke-linecap="round"/></svg>
                         <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">
                             Upload a spreadsheet to import budget codes. Headers are auto-detected; if absent, columns must be in this order:
-                            <div style="margin-top:0.4rem;font-weight:600;">Budget Code &nbsp;·&nbsp; Account Code</div>
+                            <div style="margin-top:0.4rem;font-weight:600;">Budget Code &nbsp;·&nbsp; Object</div>
                         </div>
                     </div>
                 </div>`;
@@ -2131,12 +2131,12 @@
         // Known header keywords for each import type
         const KNOWN_HEADERS = {
             'vendors': ['vendor number', 'vendor name', 'vendor', 'name', 'number', 'address', 'city', 'state', 'zip'],
-            'budget-codes': ['budget code', 'budget_code', 'account code', 'account_code', 'account', 'budget'],
+            'budget-codes': ['budget code', 'budget_code', 'account code', 'account_code', 'account', 'budget', 'object'],
             'restriction-groups': ['name', 'fund', 'organization', 'org', 'program', 'finance', 'course', 'vendor', 'primary approver', 'secondary']
         };
         const POSITIONAL_NAMES = {
             'vendors': ['Vendor Number', 'Vendor Name', 'Address', 'City', 'State', 'ZIP'],
-            'budget-codes': ['Budget Code', 'Account Code'],
+            'budget-codes': ['Budget Code', 'Object'],
             'restriction-groups': ['Name', 'Fund', 'Organization', 'Program', 'Finance', 'Course', 'Primary Approver', 'Secondary 1', 'Secondary 2', 'Secondary 3', 'Vendor']
         };
 
@@ -2363,7 +2363,7 @@
                         if (r.ok) success++; else failed++;
                     } else {
                         const code = row.budget_code || row['Budget Code'] || '';
-                        const acct = row.account_code || row['Account Code'] || row['Account'] || '';
+                        const acct = row.account_code || row['Account Code'] || row['Account'] || row['Object'] || row['object'] || '';
                         if (!code || !acct) { failed++; continue; }
                         const clean = String(code).replace(/[^0-9]/g, '');
                         const r = await fetch(`${API_BASE}/api/budget-codes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ budget_code: String(code), account_code: String(acct), fund: row.fund || row['Fund'] || clean.substring(0, 2), organization: row.organization || row['Organization'] || row['Org'] || clean.substring(2, 5), program: row.program || row['Program'] || clean.substring(5, 8), finance: row.finance || row['Finance'] || clean.substring(8, 11), course: row.course || row['Course'] || clean.substring(11, 14) }) });
@@ -2460,8 +2460,8 @@
             }
             body.innerHTML = allRestrictionGroups.map(g => `
                 <tr onclick="openRgDetail(${g.id})" style="cursor:pointer;">
-                    <td style="font-weight:600;">${escapeHTML(g.name)}</td>
-                    <td style="color:var(--text-secondary);font-size:0.78rem;">${escapeHTML(g.description || '—')}</td>
+                    <td style="text-transform:uppercase;">${escapeHTML(g.name)}</td>
+                    <td style="color:var(--text-secondary);font-size:0.78rem;text-transform:uppercase;">${escapeHTML(g.description || '—')}</td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.assigned_users.length}</span></td>
