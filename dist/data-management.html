@@ -1668,7 +1668,7 @@
                 if (!resp.ok) throw new Error('Save failed');
 
                 // Log the changes as an audit note
-                const auditText = '🔄 VENDOR EDIT\n' + changes.join('\n');
+                const auditText = '[VENDOR EDIT]\n' + changes.join('\n');
                 try {
                     await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(editingVendor.vendor_number)}/notes`, {
                         method: 'POST',
