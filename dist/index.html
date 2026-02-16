@@ -2761,10 +2761,11 @@
                 const iconEl = document.getElementById('utilityModalIcon');
                 iconEl.innerHTML = '';
                 iconEl.style.display = 'none';
-                document.getElementById('utilityModalTitle').textContent = 'A/P Batch';
-                document.getElementById('utilityModalTitle').style.textAlign = 'center';
-                document.getElementById('utilityModalTitle').style.marginTop = '1.25rem';
-                const subtitleHtml = subtitle ? `<div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem;text-align:center;">${subtitle}</div>` : '';
+                const titleEl = document.getElementById('utilityModalTitle');
+                titleEl.textContent = 'A/P Batch';
+                titleEl.style.textAlign = 'center';
+                titleEl.style.paddingTop = '0.75rem';
+                const subtitleHtml = subtitle ? `<div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.5rem;text-align:center;">${subtitle}</div>` : '';
                 const typeLabel = apiType === 'vendor_payment' ? 'Vendor Payment' : apiType === 'employee_reimbursement' ? 'Employee Reimbursement' : 'All Types';
                 const batchItems = batches.map((b, i) => {
                     const bn = b.ap_batch_number;
@@ -2778,81 +2779,45 @@
 
                 document.getElementById('utilityModalMessage').innerHTML = `
                     ${subtitleHtml}
-                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.35rem;text-align:center;">Select batch number (${typeLabel})</label>
+                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.4rem;text-align:center;">Select batch number (${typeLabel})</label>
                     <input type="hidden" id="apBatchSelect" value="${defaultItem.value}">
-                    <div id="apBatchDropWrap" style="position:relative;">
-                        <div id="apBatchTrigger" onclick="toggleApBatchDrop()" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.88rem;font-family:'Google Sans Flex',sans-serif;background:var(--card-bg);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
-                            <span id="apBatchTriggerLabel">${defaultItem.label}</span>
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                        </div>
-                        <div id="apBatchDropList" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:220px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,0.12);">
-                            ${batchItems.map(b => `
-                                <div class="ap-batch-opt" data-value="${b.value}" onclick="selectApBatch('${b.value}',this)" style="padding:0.5rem 0.75rem;font-size:0.84rem;cursor:pointer;transition:background 0.1s;display:flex;align-items:center;gap:0.5rem;color:var(--text-primary);${b.selected ? 'background:var(--primary-hex);color:var(--accent-text-color);border-radius:4px;margin:2px 4px;' : ''}" onmouseover="if(!this.classList.contains('ap-sel'))this.style.background='var(--row-hover-bg)'" onmouseout="if(!this.classList.contains('ap-sel'))this.style.background=''">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;${b.selected ? '' : 'visibility:hidden;'}"><path d="M20 6 9 17l-5-5"/></svg>
-                                    <span>${b.label}</span>
-                                </div>
-                            `).join('')}
-                        </div>
+                    <div id="apBatchListWrap" style="max-height:260px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px;background:var(--card-bg);">
+                        ${batchItems.map(b => `
+                            <div class="ap-batch-opt${b.selected ? ' ap-sel' : ''}" data-value="${b.value}" onclick="selectApBatch('${b.value}',this)" style="padding:0.55rem 0.75rem;font-size:0.84rem;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;gap:0.5rem;border-bottom:1px solid var(--border-color);${b.selected ? 'background:var(--primary-hex);color:var(--accent-text-color);' : 'color:var(--text-primary);'}" onmouseover="if(!this.classList.contains('ap-sel'))this.style.background='var(--row-hover-bg)'" onmouseout="if(!this.classList.contains('ap-sel'))this.style.background=''">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;${b.selected ? '' : 'visibility:hidden;'}"><path d="M20 6 9 17l-5-5"/></svg>
+                                <span>${b.label}</span>
+                            </div>
+                        `).join('')}
                     </div>`;
                 document.getElementById('utilityModalFooter').innerHTML = `
                     <button onclick="closeUtilityModal(null)" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);">Cancel</button>
                     <button onclick="closeUtilityModal(document.getElementById('apBatchSelect').value)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);min-width:80px;">Approve</button>
                 `;
 
-                // Scroll to selected item after modal opens
+                // Scroll to selected item
                 setTimeout(() => {
                     const sel = document.querySelector('.ap-batch-opt.ap-sel');
                     if (sel) sel.scrollIntoView({ block: 'center' });
                 }, 50);
-
-                // Mark default as selected
-                setTimeout(() => {
-                    const opts = document.querySelectorAll('.ap-batch-opt');
-                    opts.forEach(o => { if (o.dataset.value === defaultItem.value) o.classList.add('ap-sel'); });
-                }, 10);
 
                 _utilityModalResolve = resolve;
                 document.getElementById('utilityModal').classList.add('open');
             });
         }
 
-        function toggleApBatchDrop() {
-            const list = document.getElementById('apBatchDropList');
-            const isOpen = list.style.display !== 'none';
-            list.style.display = isOpen ? 'none' : 'block';
-            if (!isOpen) {
-                const sel = document.querySelector('.ap-batch-opt.ap-sel');
-                if (sel) sel.scrollIntoView({ block: 'center' });
-            }
-        }
-
         function selectApBatch(value, el) {
             document.getElementById('apBatchSelect').value = value;
-            document.getElementById('apBatchTriggerLabel').textContent = el.querySelector('span').textContent;
             document.querySelectorAll('.ap-batch-opt').forEach(o => {
                 o.classList.remove('ap-sel');
                 o.style.background = '';
                 o.style.color = 'var(--text-primary)';
-                o.style.borderRadius = '';
-                o.style.margin = '';
                 o.querySelector('svg').style.visibility = 'hidden';
             });
             el.classList.add('ap-sel');
             el.style.background = 'var(--primary-hex)';
             el.style.color = 'var(--accent-text-color)';
-            el.style.borderRadius = '4px';
-            el.style.margin = '2px 4px';
             el.querySelector('svg').style.visibility = '';
-            document.getElementById('apBatchDropList').style.display = 'none';
         }
-
-        document.addEventListener('click', e => {
-            const wrap = document.getElementById('apBatchDropWrap');
-            if (wrap && !wrap.contains(e.target)) {
-                const list = document.getElementById('apBatchDropList');
-                if (list) list.style.display = 'none';
-            }
-        });
 
         async function autoSavePendingNote(rfpNumber) {
             const input = document.getElementById('previewNoteInput');
