@@ -716,9 +716,9 @@
                         <thead><tr>
                             <th class="cb-cell no-sort" onclick="event.stopPropagation()"><input type="checkbox" id="budgetSelectAll" onchange="toggleAllBudgets(this.checked)"></th>
                             <th onclick="sortBudgetCodes('budget_code')">Budget Code</th>
-                            <th onclick="sortBudgetCodes('account_code')">Account</th>
-                            <th onclick="sortBudgetCodes('fund')">Fund</th>
-                            <th>Organization</th><th>Program</th><th>Finance</th><th>Course</th>
+                            <th onclick="sortBudgetCodes('fund')" style="text-align:center;">Fund</th>
+                            <th style="text-align:center;">Organization</th><th style="text-align:center;">Program</th><th style="text-align:center;">Finance</th><th style="text-align:center;">Course</th>
+                            <th onclick="sortBudgetCodes('account_code')" style="text-align:center;">Object</th>
                         </tr></thead>
                         <tbody id="budgetBody"><tr><td colspan="8" class="empty-state">Loading budget codes...</td></tr></tbody>
                     </table>
@@ -1765,19 +1765,18 @@
                 body.innerHTML = page.map(b => {
                     const compositeKey = (b.budget_code||'') + '|' + (b.account_code||'');
                     const checked = selectedBudgets.has(compositeKey);
-                    // Force fund to 2 chars max
-                    const fundDisplay = (b.fund || '').toString().trim().substring(0, 2);
+                    const fundDisplay = (b.fund || '').toString().trim();
                     return `<tr onclick="openEditBudget('${escAttr(b.budget_code)}','${escAttr(b.account_code)}')" ${checked ? 'style="background:rgba(250,5,15,0.06);"' : ''}>
                         <td class="cb-cell" onclick="event.stopPropagation()">
                             <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleBudgetSelect('${escAttr(compositeKey)}', this.checked)">
                         </td>
                         <td style="font-weight:600;">${esc(b.budget_code||'')}</td>
-                        <td>${esc(b.account_code||'')}</td>
-                        <td>${esc(fundDisplay)}</td>
-                        <td>${esc((b.organization||'').toString().trim())}</td>
-                        <td>${esc((b.program||'').toString().trim())}</td>
-                        <td>${esc((b.finance||'').toString().trim())}</td>
-                        <td>${esc((b.course||'').toString().trim())}</td>
+                        <td style="text-align:center;">${esc(fundDisplay)}</td>
+                        <td style="text-align:center;">${esc((b.organization||'').toString().trim())}</td>
+                        <td style="text-align:center;">${esc((b.program||'').toString().trim())}</td>
+                        <td style="text-align:center;">${esc((b.finance||'').toString().trim())}</td>
+                        <td style="text-align:center;">${esc((b.course||'').toString().trim())}</td>
+                        <td style="text-align:center;">${esc(b.account_code||'')}</td>
                     </tr>`;
                 }).join('');
             }
