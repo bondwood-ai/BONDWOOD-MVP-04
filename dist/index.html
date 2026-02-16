@@ -2963,29 +2963,9 @@
                     var doc = popup.document;
                     doc.open();
                     if (isPdf) {
-                        doc.write('<html><head>
-    <!-- Open Graph / Link Preview -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Bondwood — Payment Management">
-    <meta property="og:description" content="Streamlined payment processing for school districts.">
-    <meta property="og:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png">
-    <meta property="og:url" content="https://bondwood-mvp-04.pages.dev">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Bondwood — Payment Management">
-    <meta name="twitter:description" content="Streamlined payment processing for school districts.">
-    <meta name="twitter:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png"><title>' + name + '</title><style>body{margin:0;overflow:hidden;}</style></head><body><iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>');
+                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;overflow:hidden;}</style></head><body><iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>');
                     } else {
-                        doc.write('<html><head>
-    <!-- Open Graph / Link Preview -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Bondwood — Payment Management">
-    <meta property="og:description" content="Streamlined payment processing for school districts.">
-    <meta property="og:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png">
-    <meta property="og:url" content="https://bondwood-mvp-04.pages.dev">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Bondwood — Payment Management">
-    <meta name="twitter:description" content="Streamlined payment processing for school districts.">
-    <meta name="twitter:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png"><title>' + name + '</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>');
+                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>');
                     }
                     doc.close();
                 } catch (e) {
@@ -3883,17 +3863,7 @@
 
             const pDoc = iframe.contentDocument || iframe.contentWindow.document;
             pDoc.open();
-            pDoc.write(`<!DOCTYPE html><html><head>
-    <!-- Open Graph / Link Preview -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Bondwood — Payment Management">
-    <meta property="og:description" content="Streamlined payment processing for school districts.">
-    <meta property="og:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png">
-    <meta property="og:url" content="https://bondwood-mvp-04.pages.dev">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Bondwood — Payment Management">
-    <meta name="twitter:description" content="Streamlined payment processing for school districts.">
-    <meta name="twitter:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png"><title>RFP #${rfp.rfpNumber}</title>
+            pDoc.write(`<!DOCTYPE html><html><head><title>RFP #${rfp.rfpNumber}</title>
             <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
@@ -3949,17 +3919,7 @@
 
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             doc.open();
-            doc.write(`<!DOCTYPE html><html><head>
-    <!-- Open Graph / Link Preview -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Bondwood — Payment Management">
-    <meta property="og:description" content="Streamlined payment processing for school districts.">
-    <meta property="og:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png">
-    <meta property="og:url" content="https://bondwood-mvp-04.pages.dev">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Bondwood — Payment Management">
-    <meta name="twitter:description" content="Streamlined payment processing for school districts.">
-    <meta name="twitter:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png"><title>Audit Log – RFP #${rfpNumber}</title>
+            doc.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
             <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
