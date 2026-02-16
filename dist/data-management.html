@@ -843,9 +843,10 @@
             <div class="roles-section" style="padding-bottom:6rem;">
                 <label>Attachments</label>
                 <div id="vendorAttachmentsList" style="margin-bottom:0.5rem;"></div>
-                <div id="vendorAttDropZone" style="border:2px dashed var(--border-color);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:border-color 0.2s;" onclick="document.getElementById('vendorAttFileInput').click()">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-bottom:0.25rem;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <div style="font-size:0.78rem;color:var(--text-secondary);">Click or drag files here</div>
+                <div id="vendorAttDropZone" style="border:3px dashed var(--primary-hex);border-radius:12px;padding:2rem 1rem;text-align:center;cursor:pointer;transition:border-color 0.2s;background:rgba(var(--primary-rgb,3,70,148),0.03);" onclick="document.getElementById('vendorAttFileInput').click()">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:0.5rem;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">Drop files here or click to browse</div>
+                    <div style="font-size:0.75rem;color:var(--text-secondary);">.pdf, .docx, .xlsx, .png, .jpeg, .html</div>
                 </div>
                 <input type="file" id="vendorAttFileInput" multiple style="display:none;" onchange="uploadVendorAttachments(this.files)">
             </div>
