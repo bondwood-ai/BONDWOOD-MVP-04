@@ -285,11 +285,59 @@
         .roles-section label { display: block; font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
 
         .vendor-rfp-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-        .vendor-rfp-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); }
+        .vendor-rfp-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); background: transparent; }
         .vendor-rfp-table td { font-size: 0.8rem; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         .vendor-rfp-table tbody tr { cursor: pointer; transition: background 0.1s; }
         .vendor-rfp-table tbody tr:hover { background: color-mix(in srgb, var(--primary-hex) 6%, transparent); }
         .vendor-rfp-empty { font-size: 0.8rem; color: var(--text-secondary); padding: 1rem 0; text-align: center; font-style: italic; }
+
+        /* ============ RFP PREVIEW MODAL ============ */
+        .rfp-preview-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); z-index: 7000;
+            align-items: center; justify-content: center;
+        }
+        .rfp-preview-overlay.open { display: flex; }
+        .rfp-preview-card {
+            background: var(--card-bg); border-radius: 12px; width: 1050px; max-width: 96vw;
+            max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+        }
+        .rfp-preview-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 1.25rem; border-bottom: none;
+        }
+        .rfp-preview-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Google Sans Flex', sans-serif; margin: 0; }
+        .rfp-preview-body { padding: 0 1.25rem 1.25rem; }
+        .preview-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 0; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
+        }
+        .preview-grid .pg-cell { padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border-color); }
+        .preview-grid .pg-cell:nth-last-child(-n+3) { border-bottom: none; }
+        .preview-grid .pg-cell .pg-label {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--text-secondary); font-family: 'Google Sans Flex', sans-serif; font-weight: 600; margin-bottom: 0.2rem;
+        }
+        .preview-grid .pg-cell .pg-value { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+        .preview-grid-2col { grid-template-columns: 1fr 1fr; }
+        .preview-grid-2col .pg-cell:nth-last-child(-n+2) { border-bottom: none; }
+        .preview-grid-2col .pg-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--border-color); }
+        .preview-line-items { margin-top: 1rem; overflow-x: auto; }
+        .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Google Sans Flex', sans-serif; }
+        .preview-line-items table { width: 100%; min-width: 750px; border-collapse: collapse; font-size: 0.8rem; }
+        .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); font-family: 'Google Sans Flex', sans-serif; font-weight: 600; border-bottom: 1px solid var(--border-color); position: static; background: transparent; }
+        .preview-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        .preview-total-row { display: flex; justify-content: flex-end; gap: 1.5rem; padding: 0.6rem 0.6rem 0; font-size: 0.85rem; font-weight: 600; }
+        .preview-total-row .total-label { color: var(--text-secondary); }
+        .preview-total-row .total-value { color: var(--text-primary); }
+        .rfp-preview-footer { display: flex; justify-content: flex-start; padding: 1rem 1.25rem; }
+        .rfp-preview-footer a {
+            display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem;
+            background: var(--primary-hex); color: #ffffff; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 600; font-family: 'Google Sans Flex', sans-serif;
+            text-decoration: none; transition: opacity 0.15s;
+        }
+        .rfp-preview-footer a:hover { opacity: 0.85; }
         .role-checkboxes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .role-check-label {
             display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem;
@@ -1757,13 +1805,15 @@
                     <thead><tr>
                         <th>RFP #</th>
                         <th>Status</th>
+                        <th>Vendor</th>
                         <th style="text-align:right;">Amount</th>
                         <th>Date</th>
                     </tr></thead>
                     <tbody>${vendorRfps.slice(0, 50).map(r => {
-                        return `<tr onclick="window.open('/index.html','_blank')">
+                        return `<tr onclick="openVendorRfpPreview(${r.rfp_number})">
                             <td>${r.rfp_number || '—'}</td>
                             <td style="color:var(--positive-color);font-weight:600;text-transform:capitalize;font-size:0.75rem;">Approved</td>
+                            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.vendor_name || '—')}</td>
                             <td style="text-align:right;">${fmtAmt(r.total_amount || r.amount || 0)}</td>
                             <td style="font-size:0.75rem;color:var(--text-secondary);">${r.submission_date || '—'}</td>
                         </tr>`;
@@ -1775,6 +1825,285 @@
             } catch (e) {
                 container.innerHTML = '<div class="vendor-rfp-empty">Unable to load requests</div>';
                 countEl.textContent = '';
+            }
+        }
+
+        /* ========================================
+           VENDOR – RFP PREVIEW MODAL
+           ======================================== */
+        function formatCurrency(val) {
+            const n = parseFloat(val) || 0;
+            return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatDate(d) {
+            if (!d) return '—';
+            try { return new Date(d).toLocaleDateString('en-US'); } catch (e) { return d; }
+        }
+
+        function formatStatus(s) {
+            if (!s) return 'Draft';
+            return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function statusBadgeColor(s) {
+            if (s === 'approved') return 'background:rgba(22,163,74,0.12);color:#15803d;';
+            if (s === 'rejected') return 'background:rgba(250,5,15,0.12);color:#FA050F;';
+            if (s === 'submitted' || s === 'accounting-review' || s === 'ap-review') return 'background:rgba(59,130,246,0.12);color:#2563eb;';
+            return 'background:var(--bg-color);color:var(--text-secondary);';
+        }
+
+        function linkifyText(text) {
+            if (!text) return text;
+            return text.replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--primary-hex);text-decoration:underline;word-break:break-all;">$1</a>');
+        }
+
+        function formatAuditTimestamp(isoStr) {
+            if (!isoStr) return '—';
+            try {
+                const d = new Date(isoStr);
+                if (isNaN(d.getTime())) return isoStr;
+                return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() + ' ' +
+                    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            } catch (e) { return isoStr; }
+        }
+
+        function togglePreviewSection(id) {
+            const el = document.getElementById(id);
+            const chevron = document.getElementById(id + '_chevron');
+            const printBtn = document.getElementById(id + '_print');
+            if (!el) return;
+            const isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? 'block' : 'none';
+            if (chevron) chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+            if (printBtn) printBtn.style.display = isHidden ? 'inline-flex' : 'none';
+        }
+
+        async function openVendorRfpPreview(rfpNumber) {
+            const overlay = document.getElementById('rfpPreviewOverlay');
+            const body = document.getElementById('rfpPreviewBody');
+            const badge = document.getElementById('rfpPreviewBadge');
+            const footer = document.getElementById('rfpPreviewFooter');
+            const openLink = document.getElementById('rfpPreviewOpenLink');
+
+            body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">Loading...</div>';
+            footer.style.display = 'none';
+            badge.innerHTML = '';
+            overlay.classList.add('open');
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}`);
+                if (!resp.ok) throw new Error('Failed to load');
+                const data = await resp.json();
+
+                const h = data.header || data;
+                const lineItems = data.lineItems || [];
+                const mileageTrips = data.mileageTrips || [];
+                const auditLogs = data.auditLogs || [];
+                const status = h.status || 'draft';
+
+                badge.innerHTML = `<span style="display:inline-block;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;font-family:'Google Sans Flex',sans-serif;text-transform:capitalize;${statusBadgeColor(status)}">${formatStatus(status)}</span>`;
+
+                let total = 0;
+                let itemsHtml = lineItems.map((item, i) => {
+                    const amt = parseFloat(item.total) || 0;
+                    total += amt;
+                    return `<tr>
+                        <td>${item.line_number || i + 1}</td>
+                        <td>${esc(item.description || '—')}</td>
+                        <td>${esc(item.invoice_number || '—')}</td>
+                        <td style="text-align:center;">${item.budget_code || '—'}</td>
+                        <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
+                        <td style="text-align:right;">${formatCurrency(amt)}</td>
+                    </tr>`;
+                }).join('');
+
+                mileageTrips.forEach((trip, i) => {
+                    const amt = parseFloat(trip.amount) || 0;
+                    total += amt;
+                    itemsHtml += `<tr>
+                        <td>${lineItems.length + i + 1}</td>
+                        <td>BUSINESS MILEAGE<br><span style="font-size:0.75rem;color:var(--text-secondary);">${esc(trip.from_location || '')} → ${esc(trip.to_location || '')} (${trip.miles || 0} mi)</span></td>
+                        <td>—</td>
+                        <td style="text-align:center;">${trip.budget_code || '—'}</td>
+                        <td style="text-align:center;">${trip.account_code || '—'}</td>
+                        <td style="text-align:right;">${formatCurrency(amt)}</td>
+                    </tr>`;
+                });
+
+                if (!itemsHtml) itemsHtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>';
+
+                const displayTotal = total || h.total_amount || 0;
+                const daysOpen = h.submission_date ? Math.max(0, Math.floor((Date.now() - new Date(h.submission_date).getTime()) / 86400000)) : 0;
+                const isReimb = (h.request_type || '').toLowerCase().includes('reimb');
+                const reimbVendor = isReimb ? ('EE' + (h.submitter_id || '').replace(/^E/i, '') + ' EMPLOYEE REIMBURSEMENT') : '';
+
+                // Notes
+                const notesArr = data.notes || [];
+                const notesContent = notesArr.length > 0 ? notesArr : (data.description ? [{ note_text: data.description, author_name: h.submitter_name || 'Unknown', created_at: null }] : []);
+                const notesId = 'notes_' + rfpNumber;
+                const noteItems = notesContent.map(n => {
+                    const author = (n.author_name || n.author_email || 'Unknown').replace(/</g, '&lt;');
+                    const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                    const text = (n.note_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<div style="padding:0.6rem 0.75rem;border-bottom:1px solid var(--border-color);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                            <span style="font-size:0.75rem;font-weight:600;color:var(--primary-hex);">${author}</span>
+                            <span style="font-size:0.7rem;color:var(--text-secondary);">${date}</span>
+                        </div>
+                        <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${text}</div>
+                    </div>`;
+                }).join('');
+                const notesDefaultOpen = notesContent.length > 0;
+                const notesHtml = `
+                <div style="margin-top:1rem;">
+                    <button onclick="togglePreviewSection('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Google Sans Flex',sans-serif;">
+                        <svg id="${notesId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(${notesDefaultOpen ? '0' : '-90'}deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                        Notes <span style="font-weight:400;color:var(--text-secondary);font-size:0.8rem;margin-left:0.3rem;">(${notesContent.length})</span>
+                    </button>
+                    <div id="${notesId}" style="display:${notesDefaultOpen ? 'block' : 'none'};margin-top:0.4rem;">
+                        <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
+                            ${noteItems}
+                            <div style="padding:0.5rem 0.75rem;">
+                                <div style="display:flex;gap:0.5rem;align-items:flex-end;">
+                                    <textarea id="dmPreviewNoteInput" placeholder="Add a note..." rows="2" style="flex:1;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.82rem;font-family:'Google Sans Flex',sans-serif;background:var(--card-bg);color:var(--text-primary);resize:vertical;min-height:38px;line-height:1.4;"></textarea>
+                                    <button onclick="postNoteFromDmPreview('${rfpNumber}')" style="padding:0.45rem 0.85rem;border:none;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);font-family:'Google Sans Flex',sans-serif;white-space:nowrap;height:38px;">Post</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+                // Audit Log
+                const auditEntries = auditLogs.map(log => ({
+                    text: log.description,
+                    timestamp: log.created_at ? formatAuditTimestamp(log.created_at) : (log.performed_at ? formatAuditTimestamp(log.performed_at) : '—'),
+                }));
+                const auditId = 'audit_' + rfpNumber;
+                let auditHtml = '';
+                if (auditEntries.length > 0) {
+                    auditHtml = `
+                    <div style="margin-top:1rem;">
+                        <div style="display:flex;align-items:center;gap:0.4rem;">
+                            <button onclick="togglePreviewSection('${auditId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);text-align:left;font-family:'Google Sans Flex',sans-serif;">
+                                <svg id="${auditId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                                Audit Log
+                                <span style="font-size:0.7rem;font-weight:500;color:var(--text-secondary);margin-left:0.25rem;">(${auditEntries.length})</span>
+                            </button>
+                        </div>
+                        <div id="${auditId}" style="display:none;margin-top:0.4rem;">
+                            <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
+                                ${auditEntries.map((entry, i) => `
+                                    <div style="display:flex;gap:0.75rem;padding:0.6rem 0.85rem;${i < auditEntries.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}align-items:flex-start;">
+                                        <span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);min-width:18px;text-align:right;padding-top:1px;">${i + 1}.</span>
+                                        <div style="flex:1;">
+                                            <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${linkifyText(entry.text)}</div>
+                                            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.15rem;">${entry.timestamp}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
+                // Attachments
+                let attachHtml = '';
+                try {
+                    const attResp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/attachments`);
+                    const attData = await attResp.json();
+                    const files = attData.attachments || [];
+                    if (files.length > 0) {
+                        attachHtml = `<div style="margin-top:1.25rem;">
+                            <h4 style="font-size:0.9rem;font-weight:700;margin:0 0 0.5rem 0;font-family:'Google Sans Flex',sans-serif;">Attachments (${files.length})</h4>
+                            ${files.map(f => {
+                                const ext = (f.filename || f.name || f.key || '').split('.').pop().toLowerCase();
+                                const colorMap = { pdf:'#FA050F', docx:'#2563EB', doc:'#2563EB', xlsx:'#2B6D51', png:'#6B46C1', jpg:'#6B46C1', jpeg:'#6B46C1' };
+                                const color = colorMap[ext] || '#6B7280';
+                                const label = ext.toUpperCase().substring(0, 4);
+                                return `<div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.65rem;background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.35rem;">
+                                    <div style="width:36px;height:36px;border-radius:6px;background:${color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <span style="color:#fff;font-size:0.5rem;font-weight:800;font-family:'Google Sans Flex',sans-serif;">${label}</span>
+                                    </div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div style="font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(f.filename || f.name || f.key || 'File')}</div>
+                                        ${f.size ? `<div style="font-size:0.68rem;color:var(--text-secondary);">${(f.size / 1024).toFixed(1)} KB</div>` : ''}
+                                    </div>
+                                    <a href="${API_BASE}/api/rfps/${rfpNumber}/attachments/${encodeURIComponent(f.key || f.filename)}" target="_blank" style="color:var(--text-secondary);flex-shrink:0;">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    </a>
+                                </div>`;
+                            }).join('')}
+                        </div>`;
+                    }
+                } catch (e) {}
+
+                body.innerHTML = `
+                    <div class="preview-grid">
+                        <div class="pg-cell"><div class="pg-label">RFP No.</div><div class="pg-value" style="font-weight:700;">${rfpNumber}</div></div>
+                        <div class="pg-cell"><div class="pg-label">Submitted</div><div class="pg-value">${formatDate(h.submission_date)}</div></div>
+                        <div class="pg-cell"><div class="pg-label">Days Open</div><div class="pg-value">${daysOpen}d</div></div>
+                        <div class="pg-cell"><div class="pg-label">Submitter</div><div class="pg-value">${esc(h.submitter_name || '—')}</div></div>
+                        <div class="pg-cell"><div class="pg-label">Assigned To</div><div class="pg-value">${esc(h.assigned_to || '—')}</div></div>
+                        <div class="pg-cell"><div class="pg-label">Total</div><div class="pg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(displayTotal)}</div></div>
+                    </div>
+                    <div class="preview-grid preview-grid-2col">
+                        <div class="pg-cell"><div class="pg-label">${isReimb ? 'Employee' : 'Vendor'}</div><div class="pg-value">${isReimb ? esc(reimbVendor) : esc(h.vendor_name || '—')}</div></div>
+                        <div class="pg-cell"><div class="pg-label">Type</div><div class="pg-value">${isReimb ? 'Employee Reimbursement' : 'Vendor Payment'}</div></div>
+                    </div>
+                    <div class="preview-line-items">
+                        <h4>Line Items</h4>
+                        <table>
+                            <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:100px;">Invoice #</th><th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th style="text-align:right;width:90px;">Amount</th></tr></thead>
+                            <tbody>${itemsHtml}</tbody>
+                        </table>
+                        <div class="preview-total-row">
+                            <span class="total-label">Total:</span>
+                            <span class="total-value">${formatCurrency(displayTotal)}</span>
+                        </div>
+                    </div>
+                    <div id="dmPreviewAttachments">${attachHtml}</div>
+                    ${notesHtml}
+                    ${auditHtml}
+                `;
+
+                openLink.href = `rfp-form.html?id=${rfpNumber}`;
+                footer.style.display = '';
+            } catch (e) {
+                body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">Failed to load request details</div>';
+            }
+        }
+
+        function closeVendorRfpPreview() {
+            document.getElementById('rfpPreviewOverlay').classList.remove('open');
+        }
+
+        async function postNoteFromDmPreview(rfpNumber) {
+            const input = document.getElementById('dmPreviewNoteInput');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+            const btn = input.nextElementSibling;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        note_text: text,
+                        author_name: dmUserName || 'Unknown',
+                        author_email: dmUserEmail
+                    })
+                });
+                if (!resp.ok) throw new Error('Failed to post note');
+                input.value = '';
+                openVendorRfpPreview(rfpNumber);
+            } catch (e) {
+                showToast('Failed to post note: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Post';
             }
         }
 
@@ -3479,6 +3808,30 @@
         function toggleHamburgerMenu() { const m=document.getElementById('hamburgerMenu');if(m.classList.contains('open'))closeHamburgerMenu();else{m.style.display='block';document.getElementById('hamburgerOverlay').style.display='block';m.offsetHeight;m.classList.add('open');m.style.transform='translateX(0)';} }
         function closeHamburgerMenu() { const m=document.getElementById('hamburgerMenu');m.style.transform='translateX(-100%)';m.classList.remove('open');setTimeout(()=>{m.style.display='none';document.getElementById('hamburgerOverlay').style.display='none';},200); }
     </script>
+
+    <!-- RFP Preview Modal -->
+    <div class="rfp-preview-overlay" id="rfpPreviewOverlay" onclick="if(event.target===this)closeVendorRfpPreview()">
+        <div class="rfp-preview-card">
+            <div class="rfp-preview-header">
+                <h3>Request Details</h3>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span id="rfpPreviewBadge"></span>
+                    <button onclick="closeVendorRfpPreview()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:0.25rem;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="rfp-preview-body" id="rfpPreviewBody">
+                <div class="vendor-rfp-empty">Loading...</div>
+            </div>
+            <div class="rfp-preview-footer" id="rfpPreviewFooter" style="display:none;">
+                <a id="rfpPreviewOpenLink" href="#" target="_blank">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    Open Request for Payment Form
+                </a>
+            </div>
+        </div>
+    </div>
 
     <!-- Delete Restriction Group Confirmation Modal -->
     <div id="deleteRgOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;font-family:'Google Sans Flex',sans-serif;" onclick="if(event.target===this)cancelDeleteRg()">
