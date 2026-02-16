@@ -1001,9 +1001,10 @@
     <!-- ============ UTILITY MODAL (alert/confirm replacement) ============ -->
     <div class="modal-overlay" id="utilityModal" style="z-index:3500;">
         <div class="modal" style="width:420px;">
-            <div class="modal-header">
-                <h3 id="utilityModalTitle">Notice</h3>
-                <button class="btn-icon" onclick="closeUtilityModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            <div class="modal-header" style="position:relative;">
+                <div id="utilityModalIcon" style="display:none;text-align:center;width:100%;"></div>
+                <h3 id="utilityModalTitle" style="text-align:center;width:100%;">Notice</h3>
+                <button class="btn-icon" onclick="closeUtilityModal()" style="position:absolute;top:0;right:0;"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
             </div>
             <div class="modal-body">
                 <p id="utilityModalMessage" style="font-size:0.9rem;color:var(--text-primary);line-height:1.6;"></p>
@@ -1931,11 +1932,10 @@
             const apReviewItems = selected.filter(r => r.status === 'ap-review' || r.status === 'ap_review');
             let apBatch = null;
             if (apReviewItems.length > 0) {
-                apBatch = await showPrompt(
-                    `${apReviewItems.length} request(s) will be fully approved. Enter the A/P Batch number:`,
-                    'A/P Batch',
-                    { placeholder: 'e.g. AP-2026-001', confirmText: 'Continue' }
-                );
+                // Determine form type for filtering - if mixed, show all
+                const types = new Set(apReviewItems.map(r => r.type));
+                const batchType = types.size === 1 ? [...types][0] : null;
+                apBatch = await showApBatchPicker(batchType, `${apReviewItems.length} request(s) will be fully approved.`);
                 if (!apBatch) return; // cancelled
             }
 
@@ -2729,6 +2729,65 @@
             }
         }
 
+        async function showApBatchPicker(formType, subtitle) {
+            // Map form type to API type
+            let apiType = '';
+            if (formType === 'vendor' || formType === 'vendor_payment') apiType = 'vendor_payment';
+            else if (formType === 'reimbursement' || formType === 'employee_reimbursement') apiType = 'employee_reimbursement';
+
+            let batches = [];
+            try {
+                const resp = await fetch(`${API_BASE}/api/ap-batches${apiType ? '?type=' + apiType : ''}`);
+                const data = await resp.json();
+                batches = data.batches || [];
+            } catch (e) { console.error('Failed to load AP batches:', e); }
+
+            if (!batches.length) {
+                await showAlert('No A/P batch numbers available. Please contact an administrator.', 'A/P Batch');
+                return null;
+            }
+
+            // Find the next upcoming batch (batch number format: MMDDYYA1/E1)
+            const today = new Date();
+            const todayStr = String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0') + String(today.getFullYear()).slice(-2);
+            let defaultIdx = 0;
+            for (let i = 0; i < batches.length; i++) {
+                const bn = batches[i].ap_batch_number.replace(/[AE]\d$/, '');
+                if (bn >= todayStr) { defaultIdx = i; break; }
+            }
+
+            return new Promise(resolve => {
+                _utilityModalResolve = resolve;
+                const iconEl = document.getElementById('utilityModalIcon');
+                iconEl.innerHTML = '<div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:#eff6ff;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg></div>';
+                iconEl.style.display = 'block';
+                document.getElementById('utilityModalTitle').textContent = 'A/P Batch';
+                const subtitleHtml = subtitle ? `<div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem;">${subtitle}</div>` : '';
+                const typeLabel = apiType === 'vendor_payment' ? 'Vendor Payment' : apiType === 'employee_reimbursement' ? 'Employee Reimbursement' : 'All Types';
+                const options = batches.map((b, i) => {
+                    const bn = b.ap_batch_number;
+                    // Format for display: MMDDYY → MM/DD/YY
+                    const raw = bn.replace(/[AE]\d$/, '');
+                    const display = raw.length === 6 ? `${raw.slice(0,2)}/${raw.slice(2,4)}/${raw.slice(4,6)}` : bn;
+                    const suffix = bn.match(/[AE]\d$/)?.[0] || '';
+                    const label = `${bn} — ${display}${suffix.startsWith('A') ? ' (Vendor)' : suffix.startsWith('E') ? ' (Employee)' : ''}`;
+                    return `<option value="${bn}" ${i === defaultIdx ? 'selected' : ''}>${label}</option>`;
+                }).join('');
+                document.getElementById('utilityModalMessage').innerHTML = `
+                    ${subtitleHtml}
+                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.35rem;">Select batch number (${typeLabel})</label>
+                    <select id="apBatchSelect" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.88rem;font-family:'Google Sans Flex',sans-serif;background:var(--card-bg);color:var(--text-primary);cursor:pointer;">
+                        ${options}
+                    </select>`;
+                document.getElementById('utilityModalFooter').innerHTML = `
+                    <button onclick="closeUtilityModal(null)" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);">Cancel</button>
+                    <button onclick="closeUtilityModal(document.getElementById('apBatchSelect').value)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);min-width:80px;">Approve</button>
+                `;
+                _utilityModalResolve = resolve;
+                document.getElementById('utilityModal').classList.add('open');
+            });
+        }
+
         async function autoSavePendingNote(rfpNumber) {
             const input = document.getElementById('previewNoteInput');
             if (!input) return;
@@ -2759,7 +2818,7 @@
 
             // Prompt for A/P Batch when approving from A/P Review
             if (isFullApproval && (previewRfp.status === 'ap-review' || previewRfp.status === 'ap_review')) {
-                apBatch = await showPrompt('Enter the A/P Batch number for this request:', 'A/P Batch', { placeholder: 'e.g. AP-2026-001', confirmText: 'Approve', required: true });
+                apBatch = await showApBatchPicker(previewRfp.type || 'vendor');
                 if (!apBatch) return; // cancelled
             }
 
@@ -3696,6 +3755,8 @@
 
         function closeUtilityModal(result = false) {
             document.getElementById('utilityModal').classList.remove('open');
+            const iconEl = document.getElementById('utilityModalIcon');
+            if (iconEl) iconEl.style.display = 'none';
             if (_utilityModalResolve) {
                 _utilityModalResolve(result);
                 _utilityModalResolve = null;

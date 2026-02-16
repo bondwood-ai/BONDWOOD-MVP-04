@@ -293,6 +293,16 @@ export default {
       }
 
       // ── Restriction Groups ──
+      if (path === '/api/ap-batches' && method === 'GET') {
+        const type = url.searchParams.get('type') || '';
+        let query = 'SELECT * FROM ap_batch';
+        const params = [];
+        if (type) { query += ' WHERE ap_batch_type = ?'; params.push(type); }
+        query += ' ORDER BY ap_batch_number ASC';
+        const { results } = await env.DB.prepare(query).bind(...params).all();
+        return json({ batches: results });
+      }
+
       if (path === '/api/restriction-groups' && method === 'GET') {
         return handleListRestrictionGroups(env);
       }
@@ -2243,6 +2253,11 @@ async function handleMigrate(env) {
       name TEXT PRIMARY KEY,
       value INTEGER NOT NULL DEFAULT 0
     )`,
+    `CREATE TABLE IF NOT EXISTS ap_batch (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ap_batch_type TEXT NOT NULL,
+      ap_batch_number TEXT NOT NULL UNIQUE
+    )`,
   ];
 
   const results = [];
@@ -2316,6 +2331,34 @@ async function handleMigrate(env) {
     results.push({ sql: 'BACKFILL rfp_notes from description', status: 'applied' });
   } catch (e) {
     results.push({ sql: 'BACKFILL rfp_notes from description', status: 'skipped', reason: e.message });
+  }
+
+  // Seed ap_batch table with Wednesday batch numbers for 2026
+  try {
+    const { results: existing } = await env.DB.prepare('SELECT COUNT(*) as cnt FROM ap_batch').all();
+    if (existing[0].cnt === 0) {
+      // Generate all Wednesdays of 2026
+      const batches = [];
+      const d = new Date(2026, 0, 1); // Jan 1 2026
+      // Find first Wednesday
+      while (d.getDay() !== 3) d.setDate(d.getDate() + 1);
+      while (d.getFullYear() === 2026) {
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const yy = String(d.getFullYear()).slice(-2);
+        batches.push({ vendor: `${mm}${dd}${yy}A1`, employee: `${mm}${dd}${yy}E1` });
+        d.setDate(d.getDate() + 7);
+      }
+      for (const b of batches) {
+        await env.DB.prepare('INSERT OR IGNORE INTO ap_batch (ap_batch_type, ap_batch_number) VALUES (?, ?)').bind('vendor_payment', b.vendor).run();
+        await env.DB.prepare('INSERT OR IGNORE INTO ap_batch (ap_batch_type, ap_batch_number) VALUES (?, ?)').bind('employee_reimbursement', b.employee).run();
+      }
+      results.push({ sql: 'SEED ap_batch (Wednesdays 2026)', status: 'applied', count: batches.length * 2 });
+    } else {
+      results.push({ sql: 'SEED ap_batch', status: 'skipped', reason: `already has ${existing[0].cnt} rows` });
+    }
+  } catch (e) {
+    results.push({ sql: 'SEED ap_batch', status: 'error', reason: e.message });
   }
 
   return json({ message: 'Migration complete', results });
