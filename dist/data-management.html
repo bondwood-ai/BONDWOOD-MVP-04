@@ -2461,7 +2461,7 @@
             body.innerHTML = allRestrictionGroups.map(g => `
                 <tr onclick="openRgDetail(${g.id})" style="cursor:pointer;">
                     <td style="text-transform:uppercase;">${escapeHTML(g.name)}</td>
-                    <td style="color:var(--text-secondary);font-size:0.78rem;text-transform:uppercase;">${escapeHTML(g.description || '—')}</td>
+                    <td style="text-transform:uppercase;">${escapeHTML(g.description || '—')}</td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.assigned_users.length}</span></td>
