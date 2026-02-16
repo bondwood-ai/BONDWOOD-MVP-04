@@ -199,12 +199,19 @@
         .role-badge {
             display: inline-block; padding: 2px 9px; border-radius: 99px;
             font-size: 0.62rem; font-weight: 700; font-family: 'Google Sans Flex', sans-serif;
-            text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff;
+            text-transform: uppercase; letter-spacing: 0.03em;
         }
-        .role-badge-0 { background: #00babc; }
-        .role-badge-1 { background: #f57f2f; }
-        .role-badge-2 { background: #cb3694; }
-        .role-badge-3 { background: #4e59a5; }
+        .role-badge-submitter { background: #e8f0fe; color: #1a56db; }
+        .role-badge-accounts_payable { background: #fef3c7; color: #92400e; }
+        .role-badge-accountant { background: #d1fae5; color: #065f46; }
+        .role-badge-admin { background: #f3e8ff; color: #6b21a8; }
+        .role-badge-fallback { background: #f1f5f9; color: #475569; }
+        .role-crown {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            font-size: 0.62rem; font-weight: 700; font-family: 'Google Sans Flex', sans-serif;
+            text-transform: uppercase; letter-spacing: 0.03em; color: #b8860b;
+        }
+        .role-crown svg { flex-shrink: 0; }
         .roles-cell { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 
         /* ============ SECTION HEADER ============ */
@@ -291,15 +298,22 @@
         .role-pill {
             display: inline-flex; align-items: center; gap: 0.3rem;
             padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
-            background: color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));
-            border: 1px solid color-mix(in srgb, var(--primary-hex) 25%, var(--border-color));
-            color: var(--text-primary);
         }
+        .role-pill-submitter { background: #e8f0fe; color: #1a56db; }
+        .role-pill-accounts_payable { background: #fef3c7; color: #92400e; }
+        .role-pill-accountant { background: #d1fae5; color: #065f46; }
+        .role-pill-admin { background: #f3e8ff; color: #6b21a8; }
+        .role-pill-fallback { background: #f1f5f9; color: #475569; }
         .role-pill button {
             background: none; border: none; cursor: pointer; padding: 0; line-height: 1;
             font-size: 0.85rem; color: var(--text-secondary); transition: color 0.15s;
         }
         .role-pill button:hover { color: var(--negative-color); }
+        .detail-crown {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            font-size: 0.75rem; font-weight: 600; color: #b8860b;
+        }
+        .detail-crown svg { flex-shrink: 0; }
 
         /* RFP mini-table in detail panel */
         .detail-rfp-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
@@ -1094,7 +1108,11 @@
                 const emailKey = encodeURIComponent(u.email || '');
 
                 const roleBadges = roles.length > 0
-                    ? roles.map((r, i) => `<span class="role-badge role-badge-${i % 4}">${ROLE_LABELS[r] || r}</span>`).join('')
+                    ? roles.map(r => {
+                        if (r === 'super_user') return `<span class="role-crown"><svg viewBox="0 0 24 24" width="24" height="24" fill="#daa520" stroke="none"><path d="M2.5 18.5l2-9 5.5 4 2-7 2 7 5.5-4 2 9h-19z"/><rect x="2.5" y="18.5" width="19" height="2.5" rx="1" fill="#daa520"/></svg>Super User</span>`;
+                        const cls = ['submitter','accounts_payable','accountant','admin'].includes(r) ? r : 'fallback';
+                        return `<span class="role-badge role-badge-${cls}">${ROLE_LABELS[r] || r}</span>`;
+                    }).join('')
                     : '<span style="font-size:0.72rem;color:var(--text-secondary);">No roles</span>';
 
                 // Avatar: cached image → show immediately; loading → blank; no pic or failed → initials
@@ -1310,8 +1328,17 @@
                 container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-secondary);font-style:italic;">Default user role</span>';
             } else {
                 container.innerHTML = roles.filter(r => r !== 'user').map(role => {
-                    const canRemove = (role !== 'super_user' || isSuperUser);
-                    return `<span class="role-pill">
+                    if (role === 'super_user') {
+                        const canRemove = isSuperUser;
+                        return `<span class="detail-crown">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="#daa520" stroke="none"><path d="M2.5 18.5l2-9 5.5 4 2-7 2 7 5.5-4 2 9h-19z"/><rect x="2.5" y="18.5" width="19" height="2.5" rx="1" fill="#daa520"/></svg>
+                            Super User
+                            ${canRemove ? `<button onclick="removeRole('super_user')" title="Remove" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;font-size:0.85rem;color:var(--text-secondary);">&times;</button>` : ''}
+                        </span>`;
+                    }
+                    const cls = ['submitter','accounts_payable','accountant','admin'].includes(role) ? role : 'fallback';
+                    const canRemove = true;
+                    return `<span class="role-pill role-pill-${cls}">
                         ${ROLE_LABELS[role] || role}
                         ${canRemove ? `<button onclick="removeRole('${role}')" title="Remove">&times;</button>` : ''}
                     </span>`;
