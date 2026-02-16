@@ -1617,19 +1617,66 @@
             if (!editingVendor) return;
             const btn = document.getElementById('saveVendorBtn');
             btn.disabled = true;
+
+            // Collect new values
+            const newValues = {
+                vendor_name: document.getElementById('editVendorName').value.trim(),
+                vendor_address: document.getElementById('editVendorAddress').value.trim().toUpperCase(),
+                vendor_city: document.getElementById('editVendorCity').value.trim().toUpperCase(),
+                vendor_state: document.getElementById('editVendorState').value.trim().toUpperCase(),
+                vendor_zip: document.getElementById('editVendorZip').value.trim(),
+            };
+
+            // Detect changes
+            const fieldLabels = {
+                vendor_name: 'Vendor Name',
+                vendor_address: 'Address',
+                vendor_city: 'City',
+                vendor_state: 'State',
+                vendor_zip: 'ZIP',
+            };
+            const changes = [];
+            for (const [key, label] of Object.entries(fieldLabels)) {
+                const oldVal = (editingVendor[key] || '').trim();
+                const newVal = (newValues[key] || '').trim();
+                if (oldVal !== newVal) {
+                    if (!oldVal) {
+                        changes.push(`${label} set to "${newVal}"`);
+                    } else if (!newVal) {
+                        changes.push(`${label} cleared (was "${oldVal}")`);
+                    } else {
+                        changes.push(`${label} changed from "${oldVal}" to "${newVal}"`);
+                    }
+                }
+            }
+
+            if (changes.length === 0) {
+                closeEditVendor();
+                showToast('No changes to save.', 'info');
+                btn.disabled = false;
+                return;
+            }
+
             try {
                 const resp = await fetch(`${API_BASE}/api/vendors`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         vendor_number: editingVendor.vendor_number,
-                        vendor_name: document.getElementById('editVendorName').value.trim(),
-                        vendor_address: document.getElementById('editVendorAddress').value.trim().toUpperCase(),
-                        vendor_city: document.getElementById('editVendorCity').value.trim().toUpperCase(),
-                        vendor_state: document.getElementById('editVendorState').value.trim().toUpperCase(),
-                        vendor_zip: document.getElementById('editVendorZip').value.trim(),
+                        ...newValues,
                     }),
                 });
                 if (!resp.ok) throw new Error('Save failed');
+
+                // Log the changes as an audit note
+                const auditText = '🔄 VENDOR EDIT\n' + changes.join('\n');
+                try {
+                    await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(editingVendor.vendor_number)}/notes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: auditText, author_name: dmUserName || 'System', author_email: dmUserEmail })
+                    });
+                } catch (e) { console.warn('Failed to log vendor audit:', e); }
+
                 closeEditVendor();
                 showToast('Vendor updated.', 'success');
                 await loadVendors();
