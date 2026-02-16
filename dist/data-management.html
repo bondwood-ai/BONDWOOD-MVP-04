@@ -1713,10 +1713,7 @@
                 return `<div style="padding:0.5rem 0.65rem;background:var(--bg-color);border:1px solid var(--border-color);border-radius:6px;margin-bottom:0.35rem;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.15rem;">
                         <span style="font-size:0.72rem;font-weight:600;color:var(--primary-hex);">${author}</span>
-                        <div style="display:flex;align-items:center;gap:0.5rem;">
-                            <span style="font-size:0.68rem;color:var(--text-secondary);">${date}</span>
-                            ${canEditData ? `<button onclick="deleteVendorNote('${n.id}')" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;" title="Delete note"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>` : ''}
-                        </div>
+                        <span style="font-size:0.68rem;color:var(--text-secondary);">${date}</span>
                     </div>
                     <div style="font-size:0.82rem;color:var(--text-primary);line-height:1.45;white-space:pre-wrap;">${text}</div>
                 </div>`;
@@ -1739,20 +1736,6 @@
                 input.value = '';
                 renderVendorNotes(data.notes || []);
             } catch (e) { showToast('Failed to add note: ' + e.message, 'error'); }
-        }
-
-        async function deleteVendorNote(noteId) {
-            if (!editingVendor) return;
-            try {
-                const resp = await fetch(`${API_BASE}/api/vendors/${encodeURIComponent(editingVendor.vendor_number)}/notes`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ note_id: noteId })
-                });
-                const data = await resp.json();
-                if (!resp.ok) throw new Error(data.error || 'Failed');
-                renderVendorNotes(data.notes || []);
-            } catch (e) { showToast('Failed to delete note: ' + e.message, 'error'); }
         }
 
         /* ========================================
