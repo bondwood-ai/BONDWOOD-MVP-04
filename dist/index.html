@@ -2764,7 +2764,7 @@
                 const titleEl = document.getElementById('utilityModalTitle');
                 titleEl.textContent = 'A/P Batch';
                 titleEl.style.textAlign = 'center';
-                titleEl.style.paddingTop = '0.75rem';
+                titleEl.style.paddingTop = '2rem';
                 const subtitleHtml = subtitle ? `<div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.5rem;text-align:center;">${subtitle}</div>` : '';
                 const typeLabel = apiType === 'vendor_payment' ? 'Vendor Payment' : apiType === 'employee_reimbursement' ? 'Employee Reimbursement' : 'All Types';
                 const batchItems = batches.map((b, i) => {
