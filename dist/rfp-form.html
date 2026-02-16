@@ -2123,11 +2123,14 @@
 
             // Check if editing existing form
             const params = new URLSearchParams(window.location.search);
-            if (params.get('t')) {
+            // Token can come from /f/<token> path or ?t=<token> query param
+            const pathMatch = window.location.pathname.match(/^\/f\/(.+)$/);
+            const urlToken = params.get('t') || (pathMatch ? pathMatch[1] : null);
+            if (urlToken) {
                 // Resolve token to RFP number
                 document.getElementById('draftButtons').style.display = 'none';
                 try {
-                    const resp = await fetch(API_BASE + '/api/rfps/by-token/' + encodeURIComponent(params.get('t')));
+                    const resp = await fetch(API_BASE + '/api/rfps/by-token/' + encodeURIComponent(urlToken));
                     if (resp.ok) {
                         const data = await resp.json();
                         loadExistingForm(data.rfp_number);
