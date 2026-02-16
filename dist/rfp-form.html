@@ -4130,10 +4130,25 @@
 
             let hasMileage = false;
             if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
+                let missingDates = [];
                 document.querySelectorAll('#mileageBody tr').forEach(r => {
                     var miles = parseFloat(r.querySelector('.trip-miles').value) || 0;
-                    if (miles > 0) hasMileage = true;
+                    var tripDate = r.querySelector('.trip-date').value.trim();
+                    var tripNum = r.querySelector('.trip-num') ? r.querySelector('.trip-num').textContent.trim() : '';
+                    if (miles > 0) {
+                        hasMileage = true;
+                        if (!tripDate || tripDate === 'MM/DD/YYYY') {
+                            missingDates.push(tripNum || '?');
+                        }
+                    }
                 });
+                if (missingDates.length > 0) {
+                    showAlert(
+                        `Please enter a date for mileage trip${missingDates.length > 1 ? 's' : ''} ${missingDates.join(', ')}. All trips with mileage must have a date.`,
+                        'Validation'
+                    );
+                    return;
+                }
             }
 
             if (!hasItems && !hasMileage) { showAlert('Please add at least one line item or mileage trip.', 'Validation'); return; }
@@ -4936,7 +4951,7 @@
                 @media print { body { padding: 20px; } }
             </style></head><body>
             <h1>Request for Payment – #${rfpNum}</h1>
-            <div class="subtitle">Printed ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} &nbsp;|&nbsp; <span class="status-badge">${data.status ? data.status.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Approved'}</span>${data.ap_batch ? ' &nbsp;|&nbsp; A/P Batch: <strong>' + data.ap_batch + '</strong>' : ''}</div>
+            <div class="subtitle">Printed ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()} &nbsp;|&nbsp; <span class="status-badge">${data.status ? data.status.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Approved'}</span>${data.ap_batch ? ' &nbsp;|&nbsp; A/P Batch: <strong>' + data.ap_batch + '</strong>' : ''}</div>
             <div class="header-grid">
                 <div><div class="label">Submitter</div><div class="value">${data.submitter_name || '—'}</div></div>
                 <div><div class="label">Submission Date</div><div class="value">${data.submission_date || '—'}</div></div>
