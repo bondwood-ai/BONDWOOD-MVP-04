@@ -283,6 +283,13 @@
         .edit-group input:focus { outline: none; border-color: var(--secondary-hex); box-shadow: 0 0 0 2px rgba(7,40,235,0.12); }
         .roles-section { margin-bottom: 1.25rem; }
         .roles-section label { display: block; font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+
+        .vendor-rfp-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        .vendor-rfp-table th { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); }
+        .vendor-rfp-table td { font-size: 0.8rem; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .vendor-rfp-table tbody tr { cursor: pointer; transition: background 0.1s; }
+        .vendor-rfp-table tbody tr:hover { background: color-mix(in srgb, var(--primary-hex) 6%, transparent); }
+        .vendor-rfp-empty { font-size: 0.8rem; color: var(--text-secondary); padding: 1rem 0; text-align: center; font-style: italic; }
         .role-checkboxes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .role-check-label {
             display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.65rem;
@@ -846,6 +853,14 @@
                 <div style="display:flex;gap:0.5rem;align-items:flex-end;">
                     <textarea id="vendorNoteInput" placeholder="Add a note..." rows="2" style="flex:1;padding:0.45rem 0.6rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;font-family:'Google Sans Flex',sans-serif;background:var(--field-bg);color:var(--text-primary);resize:vertical;min-height:36px;line-height:1.4;"></textarea>
                     <button onclick="addVendorNote()" style="padding:0.4rem 0.8rem;border:none;border-radius:6px;font-size:0.76rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);font-family:'Google Sans Flex',sans-serif;white-space:nowrap;height:36px;">Post</button>
+                </div>
+            </div>
+
+            <!-- Approved RFPs Section -->
+            <div class="roles-section" style="padding-bottom:1rem;">
+                <label>Approved Requests <span id="vendorRfpCount" style="font-weight:400;color:var(--text-secondary);"></span></label>
+                <div id="vendorRfpsList">
+                    <div class="vendor-rfp-empty">No approved requests</div>
                 </div>
             </div>
 
@@ -1537,6 +1552,7 @@
             // Load notes & attachments
             loadVendorNotes(v.vendor_number);
             loadVendorAttachments(v.vendor_number);
+            loadVendorRfps(v.vendor_name || '');
             document.getElementById('vendorNoteInput').value = '';
             document.getElementById('editVendorModal').classList.add('open');
         }
@@ -1702,6 +1718,64 @@
                 if (!resp.ok) throw new Error('Delete failed');
                 if (editingVendor) loadVendorAttachments(editingVendor.vendor_number);
             } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+        }
+
+        /* ========================================
+           VENDOR – APPROVED RFPs
+           ======================================== */
+        async function loadVendorRfps(vendorName) {
+            const container = document.getElementById('vendorRfpsList');
+            const countEl = document.getElementById('vendorRfpCount');
+            container.innerHTML = '<div class="vendor-rfp-empty">Loading requests...</div>';
+            countEl.textContent = '';
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rfps?email=${encodeURIComponent(dmUserEmail)}&limit=5000`);
+                if (!resp.ok) throw new Error('Failed to load RFPs');
+                const data = await resp.json();
+                const allRfps = data.rfps || data || [];
+
+                // Filter to approved RFPs for this vendor
+                const vendorRfps = allRfps.filter(r =>
+                    (r.vendor_name || '').toUpperCase() === vendorName.toUpperCase() &&
+                    r.status === 'approved'
+                ).sort((a, b) => (b.rfp_number || 0) - (a.rfp_number || 0));
+
+                countEl.textContent = `(${vendorRfps.length})`;
+
+                if (vendorRfps.length === 0) {
+                    container.innerHTML = '<div class="vendor-rfp-empty">No approved requests for this vendor</div>';
+                    return;
+                }
+
+                const fmtAmt = (v) => {
+                    const n = parseFloat(v) || 0;
+                    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                };
+
+                container.innerHTML = `<table class="vendor-rfp-table">
+                    <thead><tr>
+                        <th>RFP #</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Amount</th>
+                        <th>Date</th>
+                    </tr></thead>
+                    <tbody>${vendorRfps.slice(0, 50).map(r => {
+                        return `<tr onclick="window.open('/index.html','_blank')">
+                            <td>${r.rfp_number || '—'}</td>
+                            <td style="color:var(--positive-color);font-weight:600;text-transform:capitalize;font-size:0.75rem;">Approved</td>
+                            <td style="text-align:right;">${fmtAmt(r.total_amount || r.amount || 0)}</td>
+                            <td style="font-size:0.75rem;color:var(--text-secondary);">${r.submission_date || '—'}</td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>`;
+                if (vendorRfps.length > 50) {
+                    container.innerHTML += `<div style="text-align:center;padding:0.5rem;font-size:0.75rem;color:var(--text-secondary);">Showing 50 of ${vendorRfps.length} requests</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="vendor-rfp-empty">Unable to load requests</div>';
+                countEl.textContent = '';
+            }
         }
 
         // Drag & drop for vendor attachments
