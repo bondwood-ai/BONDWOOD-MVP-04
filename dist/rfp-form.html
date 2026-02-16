@@ -4727,7 +4727,7 @@
                 // Load mileage trips
                 if (data.mileageTrips && data.mileageTrips.length > 0) {
                     document.getElementById('mileageCheck').checked = true;
-                    toggleMileageTable();
+                    await toggleMileageTable();
                     // Clear default rows
                     document.getElementById('mileageBody').innerHTML = '';
                     mileageCounter = 0;
