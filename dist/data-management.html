@@ -3348,7 +3348,7 @@
                 if (!resp.ok) return;
                 if (!user.email) return;
                 dmUserEmail = user.email;
-                dmUserName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+                dmUserName = [user.first_name || user.firstName, user.last_name || user.lastName].filter(Boolean).join(' ') || user.email;
 
                 // Show admin menu items and set edit permissions
                 try {
@@ -3361,6 +3361,9 @@
                     if (permResp.ok) {
                         const fullUser = permData;
                         const perms = fullUser.permissions || {};
+                        // Update name from Worker API (more reliable than Clerk fields)
+                        const workerName = [fullUser.first_name, fullUser.last_name].filter(Boolean).join(' ');
+                        if (workerName) dmUserName = workerName;
                         if (perms.can_manage_users) {
                             const um = document.getElementById('userMgmtMenuItem'); if (um) um.style.display = '';
                         }
