@@ -2335,7 +2335,7 @@
 
             badge.className = `status-badge ${rfp.status}`;
             badge.textContent = formatStatus(rfp.status);
-            openBtn.onclick = () => { window.location.href = rfp.urlToken ? `rfp-form.html?t=${rfp.urlToken}` : `rfp-form.html?id=${rfp.rfpNumber}`; };
+            openBtn.onclick = () => { window.location.href = rfp.urlToken ? `/f/${rfp.urlToken}` : `rfp-form.html?id=${rfp.rfpNumber}`; };
 
             // Show/hide approval buttons
             const approvalBtns = document.getElementById('previewApprovalBtns');

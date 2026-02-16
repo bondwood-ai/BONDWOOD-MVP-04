@@ -3921,7 +3921,7 @@
                     // Audit logging handled server-side in handleCreateRFP / handleUpdateRFP
                     // Update URL so subsequent saves are PUTs
                     const savedToken = result.url_token || '';
-                    window.history.replaceState(null, '', savedToken ? 'rfp-form.html?t=' + savedToken : 'rfp-form.html?id=' + rfpNum);
+                    window.history.replaceState(null, '', savedToken ? '/f/' + savedToken : 'rfp-form.html?id=' + rfpNum);
                     formDirty = false;
                     _loadedRfpData = { ...payload, rfp_number: rfpNum, status: 'draft' };
                     showDraftSavedModal(rfpNum);
@@ -4639,7 +4639,7 @@
 
                 // Update URL to use token if available (hide rfp_number from URL)
                 if (data.url_token) {
-                    history.replaceState(null, '', 'rfp-form.html?t=' + data.url_token);
+                    history.replaceState(null, '', '/f/' + data.url_token);
                 }
 
                 // Set RFP number display
@@ -4809,7 +4809,7 @@
             document.getElementById('successRfpNumber').textContent = '#' + rfpNumber;
             document.getElementById('success-modal').classList.add('open');
             // Update URL so the form is now addressable
-            history.replaceState(null, '', urlToken ? 'rfp-form.html?t=' + urlToken : 'rfp-form.html?id=' + rfpNumber);
+            history.replaceState(null, '', urlToken ? '/f/' + urlToken : 'rfp-form.html?id=' + rfpNumber);
         }
 
         /* ========================================
