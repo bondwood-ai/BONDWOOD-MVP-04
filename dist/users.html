@@ -315,13 +315,15 @@
         .detail-crown svg { flex-shrink: 0; }
 
         /* RFP mini-table in detail panel */
-        .detail-rfp-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        .detail-rfp-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 0.5rem; }
         .detail-rfp-table th {
             font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; color: var(--text-secondary); text-align: left;
-            padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color);
-            position: static; background: transparent;
+            letter-spacing: 0.04em; color: #ffffff; text-align: left;
+            padding: 0.4rem 0.5rem; border-bottom: none;
+            position: static; background: var(--primary-hex);
         }
+        .detail-rfp-table th:first-child { border-radius: 8px 0 0 0; }
+        .detail-rfp-table th:last-child { border-radius: 0 8px 0 0; }
         .detail-rfp-table td {
             font-size: 0.78rem; padding: 0.4rem 0.5rem;
             border-bottom: 1px solid var(--border-color);
