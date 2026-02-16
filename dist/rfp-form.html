@@ -1507,6 +1507,8 @@
         }
 
         function navigateAway(url) {
+            // Ensure absolute path so /f/<token> URLs don't break relative navigation
+            if (url && !url.startsWith('/') && !url.startsWith('http')) url = '/' + url;
             if (formDirty && !formSubmitting && !isImpersonating) {
                 showUnsavedWarningModal(url);
             } else {
@@ -2055,7 +2057,7 @@
             formDirty = false;
             sessionStorage.removeItem('impersonateEmail');
             sessionStorage.removeItem('impersonateName');
-            window.location.href = 'index.html';
+            window.location.href = '/index.html';
         }
 
         let currentLoggedInEmail = null;
@@ -2146,11 +2148,11 @@
                         loadExistingForm(data.rfp_number);
                     } else {
                         alert('Invalid or expired link.');
-                        window.location.href = 'index.html';
+                        window.location.href = '/index.html';
                     }
                 } catch (e) {
                     alert('Failed to load form.');
-                    window.location.href = 'index.html';
+                    window.location.href = '/index.html';
                 }
             } else if (params.get('id')) {
                 document.getElementById('draftButtons').style.display = 'none';
@@ -3185,7 +3187,7 @@
                 }
 
                 // Clean URL
-                window.history.replaceState({}, '', 'rfp-form.html');
+                window.history.replaceState({}, '', '/rfp-form.html');
 
                 // Mark form as dirty since we've populated data
                 formDirty = true;
@@ -3934,7 +3936,7 @@
                     // Audit logging handled server-side in handleCreateRFP / handleUpdateRFP
                     // Update URL so subsequent saves are PUTs
                     const savedToken = result.url_token || '';
-                    window.history.replaceState(null, '', savedToken ? '/f/' + savedToken : 'rfp-form.html?id=' + rfpNum);
+                    window.history.replaceState(null, '', savedToken ? '/f/' + savedToken : '/rfp-form.html?id=' + rfpNum);
                     formDirty = false;
                     _loadedRfpData = { ...payload, rfp_number: rfpNum, status: 'draft' };
                     showDraftSavedModal(rfpNum);
@@ -4540,7 +4542,7 @@
                 );
                 formDirty = false;
                 formSubmitting = true;
-                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                setTimeout(() => { window.location.href = '/index.html'; }, 1500);
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Reject Failed');
             }
@@ -4593,7 +4595,7 @@
                 );
                 formDirty = false;
                 formSubmitting = true;
-                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                setTimeout(() => { window.location.href = '/index.html'; }, 1500);
             } catch (err) {
                 showAlert('Error: ' + err.message, 'Approve Failed');
             }
@@ -4613,7 +4615,7 @@
                     console.error('[LOAD] Failed to load RFP:', resp.status);
                     if (resp.status === 403) {
                         showAlert('You do not have permission to view this request.', 'Access Denied');
-                        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+                        setTimeout(() => { window.location.href = '/index.html'; }, 2000);
                     }
                     return;
                 }
@@ -4642,7 +4644,7 @@
 
                 if (effectiveEmail && !isOwner && !isAdmin) {
                     formDirty = false;
-                    window.location.href = 'index.html?denied=1';
+                    window.location.href = '/index.html?denied=1';
                     return;
                 }
 
@@ -4850,7 +4852,7 @@
             document.getElementById('successRfpNumber').textContent = '#' + rfpNumber;
             document.getElementById('success-modal').classList.add('open');
             // Update URL so the form is now addressable
-            history.replaceState(null, '', urlToken ? '/f/' + urlToken : 'rfp-form.html?id=' + rfpNumber);
+            history.replaceState(null, '', urlToken ? '/f/' + urlToken : '/rfp-form.html?id=' + rfpNumber);
         }
 
         /* ========================================
