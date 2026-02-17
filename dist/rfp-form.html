@@ -3292,7 +3292,7 @@
                 banner.style.background = 'var(--negative-color)';
                 banner.innerHTML = `
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    Extraction failed: ${err.message} — try again or enter line items manually
+                    Capture Error: ${file.name}
                 `;
                 setTimeout(() => { banner.style.transform = 'translateY(-100%)'; }, 5000);
             }

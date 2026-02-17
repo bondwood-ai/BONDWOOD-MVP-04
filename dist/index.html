@@ -4301,7 +4301,7 @@
                 } catch (err) {
                     failed++;
                     results.push({ file: file.name, error: err.message });
-                    overlayLog.innerHTML += `<div style="color:var(--negative-color);">✗ ${file.name} — ${err.message}</div>`;
+                    overlayLog.innerHTML += `<div style="color:var(--negative-color);">✗ Capture Error: ${file.name}</div>`;
                     console.error(`[CAPTURE] Failed for ${file.name}:`, err);
                 }
 
@@ -4433,8 +4433,8 @@
                 overlayIcon.style.animation = 'none';
                 overlayIcon.innerHTML = '<path d="M18 6L6 18M6 6l12 12"/>';
                 overlayIcon.setAttribute('stroke', 'var(--negative-color)');
-                overlayTitle.textContent = 'Extraction Failed';
-                overlayMsg.textContent = err.message;
+                overlayTitle.textContent = 'Capture Error';
+                overlayMsg.textContent = file.name;
                 await new Promise(r => setTimeout(r, 3000));
                 overlay.style.display = 'none';
             }
