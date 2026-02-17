@@ -1540,9 +1540,11 @@
                             const typeLabel = rfp.formType || 'Vendor Payment';
                             const typeClass = rfp.type === 'reimbursement' ? 'type-reimbursement' : 'type-vendor';
                             td.innerHTML = `<span class="form-type-badge ${typeClass}">${typeLabel}</span>`;
+                            td.title = typeLabel;
                             break;
                         case 'submitter':
                             td.innerHTML = `<span class="submitter-name">${rfp.submitter}</span>`;
+                            td.title = rfp.submitter;
                             break;
                         case 'submissionDate':
                             td.textContent = formatDate(rfp.submissionDate);
@@ -1558,6 +1560,7 @@
                             break;
                         case 'assignedTo':
                             td.textContent = rfp.assignedTo;
+                            td.title = rfp.assignedTo;
                             td.style.fontSize = '0.75rem';
                             break;
                         case 'status':
@@ -1565,6 +1568,7 @@
                             break;
                         case 'vendor':
                             td.textContent = rfp.vendor;
+                            td.title = rfp.vendor;
                             td.style.maxWidth = '160px';
                             td.style.overflow = 'hidden';
                             td.style.textOverflow = 'ellipsis';
@@ -1575,11 +1579,13 @@
                             break;
                         case 'apBatch':
                             td.textContent = rfp.apBatch || '—';
+                            td.title = rfp.apBatch || '';
                             td.style.fontWeight = rfp.apBatch ? '600' : '400';
                             td.style.color = rfp.apBatch ? 'var(--text-primary)' : 'var(--text-secondary)';
                             break;
                         default:
                             td.textContent = rfp[col.key] || '';
+                            td.title = rfp[col.key] || '';
                             break;
                     }
                     tr.appendChild(td);

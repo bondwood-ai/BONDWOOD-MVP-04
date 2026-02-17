@@ -1515,10 +1515,10 @@
                         <td class="cb-cell" onclick="event.stopPropagation()">
                             <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleVendorSelect('${escAttr(key)}', this.checked)">
                         </td>
-                        <td>${esc(key)}</td>
-                        <td>${esc(v.vendor_name||'')}</td>
-                        <td>${esc(v.vendor_address||'')}</td>
-                        <td>${esc(v.vendor_city||'')}</td>
+                        <td title="${escAttr(key)}">${esc(key)}</td>
+                        <td title="${escAttr(v.vendor_name||'')}">${esc(v.vendor_name||'')}</td>
+                        <td title="${escAttr(v.vendor_address||'')}">${esc(v.vendor_address||'')}</td>
+                        <td title="${escAttr(v.vendor_city||'')}">${esc(v.vendor_city||'')}</td>
                         <td>${esc(v.vendor_state||'')}</td>
                         <td>${esc(v.vendor_zip||'')}</td>
                     </tr>`;
@@ -2253,13 +2253,13 @@
                         <td class="cb-cell" onclick="event.stopPropagation()">
                             <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleBudgetSelect('${escAttr(compositeKey)}', this.checked)">
                         </td>
-                        <td>${esc(b.budget_code||'')}</td>
-                        <td style="text-align:center;">${esc(fundDisplay)}</td>
-                        <td style="text-align:center;">${esc((b.organization||'').toString().trim())}</td>
-                        <td style="text-align:center;">${esc((b.program||'').toString().trim())}</td>
-                        <td style="text-align:center;">${esc((b.finance||'').toString().trim())}</td>
-                        <td style="text-align:center;">${esc((b.course||'').toString().trim())}</td>
-                        <td style="text-align:center;">${esc(b.account_code||'')}</td>
+                        <td title="${escAttr(b.budget_code||'')}">${esc(b.budget_code||'')}</td>
+                        <td style="text-align:center;" title="${escAttr(fundDisplay)}">${esc(fundDisplay)}</td>
+                        <td style="text-align:center;" title="${escAttr((b.organization||'').toString().trim())}">${esc((b.organization||'').toString().trim())}</td>
+                        <td style="text-align:center;" title="${escAttr((b.program||'').toString().trim())}">${esc((b.program||'').toString().trim())}</td>
+                        <td style="text-align:center;" title="${escAttr((b.finance||'').toString().trim())}">${esc((b.finance||'').toString().trim())}</td>
+                        <td style="text-align:center;" title="${escAttr((b.course||'').toString().trim())}">${esc((b.course||'').toString().trim())}</td>
+                        <td style="text-align:center;" title="${escAttr(b.account_code||'')}">${esc(b.account_code||'')}</td>
                     </tr>`;
                 }).join('');
             }
@@ -2943,8 +2943,8 @@
             }
             body.innerHTML = allRestrictionGroups.map(g => `
                 <tr onclick="openRgDetail(${g.id})" style="cursor:pointer;">
-                    <td style="text-transform:uppercase;">${escapeHTML(g.name)}</td>
-                    <td style="text-transform:uppercase;">${escapeHTML(g.description || '—')}</td>
+                    <td style="text-transform:uppercase;" title="${escAttr(g.name)}">${escapeHTML(g.name)}</td>
+                    <td style="text-transform:uppercase;" title="${escAttr(g.description || '')}">${escapeHTML(g.description || '—')}</td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.budget_rules.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.vendors.length}</span></td>
                     <td style="text-align:center;"><span style="background:color-mix(in srgb, var(--primary-hex) 12%, var(--bg-color));padding:0.15rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;">${g.assigned_users.length}</span></td>
