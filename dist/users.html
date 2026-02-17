@@ -1829,13 +1829,20 @@
                             ${files.map(f => {
                                 const fname = f.filename || f.name || f.key || 'File';
                                 const ext = fname.split('.').pop().toLowerCase();
-                                const colorMap = { pdf:'#FA050F', docx:'#2563EB', doc:'#2563EB', xlsx:'#2B6D51', png:'#6B46C1', jpg:'#6B46C1', jpeg:'#6B46C1' };
-                                const color = colorMap[ext] || '#718096';
-                                const label = ext.toUpperCase().substring(0, 4);
+                                const pngTypes = ['pdf','xlsx','xls','csv','docx','doc','html','png','jpg','jpeg','zip'];
+                                const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : (ext === 'jpg') ? 'jpeg' : ext;
+                                let iconHtml;
+                                if (pngTypes.includes(ext)) {
+                                    iconHtml = `<img src="/dist/icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">`;
+                                } else {
+                                    const bg = '#718096';
+                                    const label = ext.toUpperCase().substring(0, 4);
+                                    iconHtml = `<svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${bg}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>`;
+                                }
                                 const sizeStr = f.size ? (f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB' : (f.size / 1048576).toFixed(1) + ' MB') : '';
                                 const fileUrl = `${API_BASE}/api/attachments/${encodeURIComponent(f.key)}`;
                                 return `<a class="att-row" href="${fileUrl}" data-url="${fileUrl}" data-name="${escHtml(fname)}" data-ext="${ext}" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.4rem;cursor:pointer;text-decoration:none;color:inherit;">
-                                    <svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${color}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>
+                                    ${iconHtml}
                                     <div style="flex:1;min-width:0;">
                                         <div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(fname)}</div>
                                         ${sizeStr ? `<div style="font-size:0.7rem;color:var(--text-secondary);">${sizeStr}</div>` : ''}

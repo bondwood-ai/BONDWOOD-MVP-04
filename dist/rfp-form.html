@@ -1143,8 +1143,8 @@
                         <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     </div>
                     <p class="att-drop-main">Drop files here or click to browse</p>
-                    <p class="att-drop-hint">.pdf, .docx, .xlsx, .png, .jpeg, .html</p>
-                    <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx,.html" style="display:none;" onchange="handleAttachmentSelect(event)">
+                    <p class="att-drop-hint">.pdf, .docx, .xlsx, .png, .jpeg, .html, .zip</p>
+                    <input type="file" id="attachmentInput" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx,.html,.zip" style="display:none;" onchange="handleAttachmentSelect(event)">
                 </div>
                 <div class="att-progress" id="attProgress">
                     <div class="att-progress-track"><div class="att-progress-fill" id="attProgressBar"></div></div>
@@ -2598,7 +2598,7 @@
             preview.innerHTML = `
                 <div class="attachment-item">
                     <div class="attachment-icon">
-                        <img src="icons/xlsx.png" alt="XLSX" style="width:36px;height:36px;object-fit:contain;">
+                        <img src="/dist/icons/xlsx.png" alt="XLSX" style="width:36px;height:36px;object-fit:contain;">
                     </div>
                     <div class="attachment-info">
                         <div class="attachment-name" style="cursor:default;">${file.name}</div>
@@ -3310,13 +3310,13 @@
         }
 
         function addAttachmentFiles(files) {
-            const allowedExts = ['pdf','docx','doc','xlsx','png','jpg','jpeg','html'];
+            const allowedExts = ['pdf','docx','doc','xlsx','png','jpg','jpeg','html','zip'];
             const validFiles = Array.from(files).filter(f => {
                 const ext = f.name.split('.').pop().toLowerCase();
                 return allowedExts.includes(ext);
             });
             if (validFiles.length === 0) {
-                showAlert('No valid files. Allowed: .pdf, .docx, .xlsx, .png, .jpeg, .html', 'Invalid Files');
+                showAlert('No valid files. Allowed: .pdf, .docx, .xlsx, .png, .jpeg, .html, .zip', 'Invalid Files');
                 return;
             }
 
@@ -3560,14 +3560,13 @@
         /* Realistic file-type icons */
         function getFileTypeIconSVG(ext) {
             // Use PNG images for types that have them
-            const pngTypes = ['pdf', 'xlsx', 'xls', 'docx', 'doc', 'html'];
+            const pngTypes = ['pdf', 'xlsx', 'xls', 'csv', 'docx', 'doc', 'html', 'png', 'jpg', 'jpeg', 'zip'];
             if (pngTypes.includes(ext)) {
-                const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : ext;
-                return `<img src="icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
+                const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : (ext === 'jpg') ? 'jpeg' : ext;
+                return `<img src="/dist/icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
             }
             // Fallback SVG for other types
-            const colors = { png: '#6B46C1', jpg: '#6B46C1', jpeg: '#6B46C1' };
-            const bg = colors[ext] || '#718096';
+            const bg = '#718096';
             const label = ext.toUpperCase().substring(0, 4);
             return `<svg class="filetype-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="2" width="24" height="28" rx="2" fill="${bg}"/>
