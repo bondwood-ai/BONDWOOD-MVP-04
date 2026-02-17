@@ -2598,7 +2598,7 @@
             preview.innerHTML = `
                 <div class="attachment-item">
                     <div class="attachment-icon">
-                        <img src="/dist/icons/xlsx.png" alt="XLSX" style="width:36px;height:36px;object-fit:contain;">
+                        <img src="icons/xlsx.png" alt="XLSX" style="width:36px;height:36px;object-fit:contain;">
                     </div>
                     <div class="attachment-info">
                         <div class="attachment-name" style="cursor:default;">${file.name}</div>
@@ -3563,7 +3563,7 @@
             const pngTypes = ['pdf', 'xlsx', 'xls', 'csv', 'docx', 'doc', 'html', 'png', 'jpg', 'jpeg', 'zip'];
             if (pngTypes.includes(ext)) {
                 const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : (ext === 'jpg') ? 'jpeg' : ext;
-                return `<img src="/dist/icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
+                return `<img src="icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;">`;
             }
             // Fallback SVG for other types
             const bg = '#718096';

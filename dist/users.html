@@ -1833,7 +1833,7 @@
                                 const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : (ext === 'jpg') ? 'jpeg' : ext;
                                 let iconHtml;
                                 if (pngTypes.includes(ext)) {
-                                    iconHtml = `<img src="/dist/icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">`;
+                                    iconHtml = `<img src="icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">`;
                                 } else {
                                     const bg = '#718096';
                                     const label = ext.toUpperCase().substring(0, 4);
