@@ -387,7 +387,7 @@
         }
         .table-actions-bar .label { font-weight: 600; font-size: 0.9rem; }
 
-        .items-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
+        .items-table-scroll { overflow: auto; margin-bottom: 0.75rem; border-radius: 8px; }
         .items-table {
             width: 100%; border-collapse: collapse; min-width: 700px;
         }
@@ -487,7 +487,7 @@
         .mileage-check-row input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 11px; background-position: center; background-repeat: no-repeat; }
         .mileage-check-row input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; }
-        .mileage-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
+        .mileage-table-scroll { overflow: auto; margin-bottom: 0.75rem; border-radius: 8px; }
         .mileage-table {
             width: 100%; border-collapse: collapse; min-width: 700px;
         }
@@ -1486,7 +1486,7 @@
 
         // Native beforeunload — skip during impersonation
         window.addEventListener('beforeunload', function(e) {
-            if (formDirty && !formSubmitting && !navigatingViaModal && !isImpersonating) {
+            if (formDirty && !formSubmitting && !navigatingViaModal && !isImpersonating && !isFormBlank()) {
                 e.preventDefault();
                 e.returnValue = 'You have unsaved changes.';
                 return 'You have unsaved changes.';
@@ -1495,7 +1495,7 @@
 
         // History API guard: intercept browser back/forward with custom modal
         window.addEventListener('popstate', function(e) {
-            if (formDirty && !formSubmitting && !isImpersonating) {
+            if (formDirty && !formSubmitting && !isImpersonating && !isFormBlank()) {
                 // Don't re-push yet — let the modal decide
                 showUnsavedWarningModal('__history_back__');
             }
@@ -1511,7 +1511,7 @@
         function navigateAway(url) {
             // Ensure absolute path so /f/<token> URLs don't break relative navigation
             if (url && !url.startsWith('/') && !url.startsWith('http')) url = '/' + url;
-            if (formDirty && !formSubmitting && !isImpersonating) {
+            if (formDirty && !formSubmitting && !isImpersonating && !isFormBlank()) {
                 showUnsavedWarningModal(url);
             } else {
                 navigatingViaModal = true;
@@ -1559,8 +1559,32 @@
             };
         }
 
+        function isFormBlank() {
+            // Check if any meaningful field has content
+            const vendorInput = document.getElementById('vendorSearch');
+            const employeeInput = document.getElementById('employeeName');
+            const notesInput = document.getElementById('notesField');
+            const hasVendor = vendorInput && vendorInput.value.trim();
+            const hasEmployee = employeeInput && employeeInput.value.trim();
+            const hasNotes = notesInput && notesInput.value.trim();
+            // Check line items for any description or amount
+            const descs = document.querySelectorAll('.items-table .line-desc, .items-table input[name*="desc"]');
+            let hasLineItem = false;
+            descs.forEach(d => { if (d.value && d.value.trim()) hasLineItem = true; });
+            // Check mileage trips
+            const mileageRows = document.querySelectorAll('.mileage-table tbody tr');
+            let hasMileage = false;
+            mileageRows.forEach(r => {
+                const inputs = r.querySelectorAll('input, select');
+                inputs.forEach(i => { if (i.value && i.value.trim() && i.type !== 'checkbox') hasMileage = true; });
+            });
+            // Check attachments
+            const hasAttachments = typeof files !== 'undefined' && files.length > 0;
+            return !hasVendor && !hasEmployee && !hasNotes && !hasLineItem && !hasMileage && !hasAttachments;
+        }
+
         function markFormDirty() {
-            if (!formDirty) {
+            if (!formDirty && !isFormBlank()) {
                 formDirty = true;
                 document.title = '• ' + document.title;
                 activateHistoryGuard();
