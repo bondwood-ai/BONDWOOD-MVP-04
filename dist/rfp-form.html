@@ -387,7 +387,7 @@
         }
         .table-actions-bar .label { font-weight: 600; font-size: 0.9rem; }
 
-        .items-table-scroll { overflow: auto; margin-bottom: 0.75rem; border-radius: 8px; }
+        .items-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
         .items-table {
             width: 100%; border-collapse: collapse; min-width: 700px;
         }
@@ -488,7 +488,7 @@
         .mileage-check-row input[type="checkbox"]:checked { background: var(--primary-hex); border-color: var(--primary-hex); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-size: 11px; background-position: center; background-repeat: no-repeat; }
         .mileage-check-row input[type="checkbox"]:hover { border-color: var(--primary-hex); }
         .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; }
-        .mileage-table-scroll { overflow: auto; margin-bottom: 0.75rem; border-radius: 8px; }
+        .mileage-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
         .mileage-table {
             width: 100%; border-collapse: collapse; min-width: 700px;
         }
@@ -4168,32 +4168,29 @@
             });
 
             let hasMileage = false;
+            let missingDates = [];
+            let missingBudgetItems = [];
             if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
-                let missingDates = [];
-                document.querySelectorAll('#mileageBody tr').forEach(r => {
+                document.querySelectorAll('#mileageBody tr').forEach((r, idx) => {
                     var miles = parseFloat(r.querySelector('.trip-miles').value) || 0;
                     var tripDate = r.querySelector('.trip-date').value.trim();
-                    var tripNum = r.querySelector('.trip-num') ? r.querySelector('.trip-num').textContent.trim() : '';
+                    var bc = r.querySelector('.trip-budget-code') ? r.querySelector('.trip-budget-code').value.trim() : '';
+                    var tripLabel = 'Trip ' + (idx + 1);
                     if (miles > 0) {
                         hasMileage = true;
                         if (!tripDate || tripDate === 'MM/DD/YYYY') {
-                            missingDates.push(tripNum || '?');
+                            missingDates.push(tripLabel);
+                        }
+                        if (!bc) {
+                            missingBudgetItems.push(tripLabel);
                         }
                     }
                 });
-                if (missingDates.length > 0) {
-                    showAlert(
-                        `Please enter a date for mileage trip${missingDates.length > 1 ? 's' : ''} ${missingDates.join(', ')}. All trips with mileage must have a date.`,
-                        'Validation'
-                    );
-                    return;
-                }
             }
 
             if (!hasItems && !hasMileage) { showAlert('Please add at least one line item or mileage trip.', 'Validation'); return; }
 
-            // Budget code validation — every line item and mileage trip must have a budget code
-            let missingBudgetItems = [];
+            // Check line items for missing budget codes
             rows.forEach((r, idx) => {
                 const desc = r.querySelector('.line-desc').value.trim();
                 const bc = r.querySelector('.line-budget-code') ? r.querySelector('.line-budget-code').value.trim() : '';
@@ -4201,21 +4198,17 @@
                     missingBudgetItems.push('Line ' + (idx + 1));
                 }
             });
-            if (hasMileage) {
-                document.querySelectorAll('#mileageBody tr').forEach(r => {
-                    var miles = parseFloat(r.querySelector('.trip-miles').value) || 0;
-                    var bc = r.querySelector('.trip-budget-code') ? r.querySelector('.trip-budget-code').value.trim() : '';
-                    var tripNum = r.querySelector('.trip-num') ? r.querySelector('.trip-num').textContent.trim() : '';
-                    if (miles > 0 && !bc) {
-                        missingBudgetItems.push('Trip ' + (tripNum || '?'));
-                    }
-                });
+
+            // Show all validation errors at once
+            let validationErrors = [];
+            if (missingDates.length > 0) {
+                validationErrors.push(`Missing date: ${missingDates.join(', ')}`);
             }
             if (missingBudgetItems.length > 0) {
-                showAlert(
-                    `Budget code is required for all items. Missing on: ${missingBudgetItems.join(', ')}.`,
-                    'Validation'
-                );
+                validationErrors.push(`Missing budget code: ${missingBudgetItems.join(', ')}`);
+            }
+            if (validationErrors.length > 0) {
+                showAlert(validationErrors.join('\n\n'), 'Validation');
                 return;
             }
 
