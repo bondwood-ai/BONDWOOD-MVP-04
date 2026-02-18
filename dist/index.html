@@ -1319,6 +1319,7 @@
                         daysSinceSubmission: submittedDays,
                         invoiceAge: invoiceAgeDays,
                         assignedTo: r.assigned_to || '—',
+                        assignedToEmail: (r.assigned_to_email || '').toLowerCase().trim(),
                         apBatch: r.ap_batch || '',
                         status: r.status || 'draft',
                         vendor: (r.request_type === 'reimbursement')
@@ -2349,7 +2350,18 @@
             const approvalBtns = document.getElementById('previewApprovalBtns');
             const printRfpBtn = document.getElementById('previewPrintRfpBtn');
             const isOwnSubmission = rfp.submitterId && currentUserId && rfp.submitterId === currentUserId;
-            const canApprove = isInApprovalWorkflow(rfp.status) && currentUserRole === 'admin' && !isOwnSubmission;
+            const isAdmin = currentUserRoles.includes('super_user') || currentUserRoles.includes('admin');
+            const isAccountant = currentUserRoles.includes('accountant');
+            const isAP = currentUserRoles.includes('accounts_payable');
+            const atAccountingStep = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
+            const atAPStep = rfp.status === 'ap_review' || rfp.status === 'ap-review';
+            const isAssigned = rfp.assignedToEmail && currentUserEmail && rfp.assignedToEmail === currentUserEmail;
+            const canApprove = isInApprovalWorkflow(rfp.status) && !isOwnSubmission && (
+                isAdmin ||
+                (isAccountant && atAccountingStep) ||
+                (isAP && atAPStep) ||
+                (!atAccountingStep && !atAPStep && isAssigned)
+            );
             if (canApprove) {
                 approvalBtns.style.display = '';
             } else {
