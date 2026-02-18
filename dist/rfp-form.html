@@ -4533,19 +4533,9 @@
                 const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
+                    body: JSON.stringify({ status: newStatus, performer_name: performerName, reject_reason: reason, reject_type: rejectType })
                 });
                 if (!resp.ok) throw new Error('Failed to update status');
-
-                await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}/audit-log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: rejectType === 'permanent' ? 'rejected' : 'rejected-previous',
-                        description: auditText,
-                        performed_by: performerName
-                    })
-                });
 
                 closeFormRejectModal();
                 showAlert(
@@ -4581,7 +4571,10 @@
                 : `Reviewer advanced the request to "${FORM_WORKFLOW_LABELS[newStatus] || newStatus}"`;
 
             try {
-                const updateBody = { status: newStatus };
+                const performerName = _cachedEmployee
+                    ? `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim()
+                    : 'Reviewer';
+                const updateBody = { status: newStatus, performer_name: performerName };
                 if (apBatch) updateBody.ap_batch = apBatch;
 
                 const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}`, {
@@ -4590,16 +4583,6 @@
                     body: JSON.stringify(updateBody)
                 });
                 if (!resp.ok) throw new Error('Failed to update status');
-
-                await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}/audit-log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: isFullApproval ? 'approved' : 'advanced',
-                        description: auditText,
-                        performed_by: 'Reviewer'
-                    })
-                });
 
                 showAlert(
                     isFullApproval

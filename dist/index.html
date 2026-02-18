@@ -1916,12 +1916,7 @@
                         await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ status: newStatus, performer_email: impersonateEmail || currentUserEmail })
-                        });
-                        await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}/audit-log`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: rejectType === 'permanent' ? 'rejected' : 'rejected-previous', description: auditText, performed_by: currentUserName || 'Reviewer' })
+                            body: JSON.stringify({ status: newStatus, performer_email: impersonateEmail || currentUserEmail, performer_name: currentUserName || 'Reviewer', reject_reason: reason, reject_type: rejectType })
                         });
                     } catch (e) { console.error('Bulk reject error:', e); }
                 }
@@ -1964,21 +1959,16 @@
                 const isFullApproval = newStatus === 'approved';
                 const auditText = isFullApproval
                     ? `<strong>${currentUserName || 'Reviewer'}</strong> approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''} (bulk action)`
-                    : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}" (bulk action)`;
+                    : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "<strong>${WORKFLOW_LABELS[newStatus] || newStatus}</strong>" (bulk action)`;
 
                 try {
-                    const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail };
+                    const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail, performer_name: currentUserName || 'Reviewer' };
                     if (isFullApproval && apBatch) updateBody.ap_batch = apBatch;
 
                     await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updateBody)
-                    });
-                    await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}/audit-log`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: isFullApproval ? 'approved' : 'advanced', description: auditText, performed_by: currentUserName || 'Reviewer' })
                     });
                 } catch (e) { console.error('Bulk approve error:', e); }
             }
@@ -2661,7 +2651,7 @@
                 auditText = `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request — Reason: ${reason}`;
             } else {
                 newStatus = WORKFLOW_PREV[previewRfp.status] || 'draft';
-                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" — Reason: ${reason}`;
+                auditText = `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "<strong>${WORKFLOW_LABELS[newStatus] || newStatus}</strong>" — Reason: ${reason}`;
             }
 
             try {
@@ -2669,23 +2659,12 @@
                 const resp = await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus, performer_email: impersonateEmail || currentUserEmail })
+                    body: JSON.stringify({ status: newStatus, performer_email: impersonateEmail || currentUserEmail, performer_name: currentUserName || 'Reviewer', reject_reason: reason, reject_type: rejectType })
                 });
                 if (!resp.ok) {
                     const errData = await resp.json().catch(() => ({}));
                     throw new Error(errData.error || 'Failed to update status');
                 }
-
-                // Add audit log entry
-                await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}/audit-log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: rejectType === 'permanent' ? 'rejected' : 'rejected-previous',
-                        description: auditText,
-                        performed_by: currentUserName || 'Reviewer'
-                    })
-                });
 
                 const justRejectedRfpNumber = previewRfp.rfpNumber;
                 const isPermanent = rejectType === 'permanent';
@@ -2882,10 +2861,10 @@
 
             const auditText = isFullApproval
                 ? `<strong>${currentUserName || 'Reviewer'}</strong> approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''}`
-                : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "${WORKFLOW_LABELS[newStatus] || newStatus}"`;
+                : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "<strong>${WORKFLOW_LABELS[newStatus] || newStatus}</strong>"`;
 
             try {
-                const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail };
+                const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail, performer_name: currentUserName || 'Reviewer' };
                 if (apBatch) updateBody.ap_batch = apBatch;
 
                 const resp = await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}`, {
@@ -2897,16 +2876,6 @@
                     const errData = await resp.json().catch(() => ({}));
                     throw new Error(errData.error || 'Failed to update status');
                 }
-
-                await fetch(`${API_BASE}/api/rfps/${previewRfp.rfpNumber}/audit-log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: isFullApproval ? 'approved' : 'advanced',
-                        description: auditText,
-                        performed_by: currentUserName || 'Reviewer'
-                    })
-                });
 
                 const justApprovedRfpNumber = previewRfp.rfpNumber;
                 closePreviewModal();

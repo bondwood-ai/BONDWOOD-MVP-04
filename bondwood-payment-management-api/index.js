@@ -1371,7 +1371,7 @@ async function handleCreateRFP(request, env) {
    ======================================== */
 async function handleUpdateRFP(rfpNumber, request, env) {
   const body = await request.json();
-  const performer = body.submitter_name || 'Unknown';
+  const performer = body.performer_name || body.submitter_name || 'Unknown';
   const performerEmail = (body.performer_email || '').toLowerCase().trim();
 
   // ── Read existing state BEFORE making changes ──
@@ -1598,12 +1598,17 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
     const oldStatusLabel = WORKFLOW_STATUS_LABELS[oldHeader.status] || oldHeader.status;
 
     if (body.status === 'approved') {
-      entries.push({ action: 'approved', description: `${p} gave <strong>final approval</strong> — form is now <strong>Approved</strong>` });
+      const batchNote = body.ap_batch ? ` (A/P Batch: ${body.ap_batch})` : '';
+      entries.push({ action: 'approved', description: `${p} gave <strong>final approval</strong> — form is now <strong>Approved</strong>${batchNote}` });
     } else if (body.status === 'rejected') {
-      const reason = body.rejection_reason ? `: ${body.rejection_reason}` : '';
+      const reason = (body.reject_reason || body.rejection_reason) ? ` — Reason: ${body.reject_reason || body.rejection_reason}` : '';
       entries.push({ action: 'rejected', description: `${p} <strong>permanently rejected</strong> the submission${reason}` });
+    } else if (body.reject_reason || body.rejection_reason) {
+      // Reject-back to previous step
+      const reason = body.reject_reason || body.rejection_reason;
+      entries.push({ action: 'rejected-previous', description: `${p} rejected the request back to "<strong>${statusLabel}</strong>" — Reason: ${reason}` });
     } else if (WORKFLOW_STATUS_LABELS[body.status]) {
-      entries.push({ action: 'status-changed', description: `${p} changed status from <strong>${oldStatusLabel}</strong> to <strong>${statusLabel}</strong>` });
+      entries.push({ action: 'advanced', description: `${p} advanced the request to "<strong>${statusLabel}</strong>"` });
     }
   }
 
