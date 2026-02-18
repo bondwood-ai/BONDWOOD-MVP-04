@@ -522,6 +522,7 @@
         }
         .mileage-table input:focus, .mileage-table select:focus { outline: none; border-color: var(--secondary-hex); }
         .mileage-table input[readonly] { background: var(--readonly-bg); cursor: not-allowed; font-weight: 600; }
+        .mileage-table input.trip-date[readonly] { background: var(--field-bg); cursor: pointer; font-weight: normal; }
 
         /* ============ WORKFLOW TRACKER ============ */
         .workflow-tracker {
@@ -1485,7 +1486,17 @@
         let navigatingViaModal = false;
         let isImpersonating = !!sessionStorage.getItem('impersonateName');
 
-        // Native beforeunload — skip during impersonation
+        // Intercept refresh shortcuts (F5, Ctrl+R, Cmd+R) with custom modal
+        window.addEventListener('keydown', function(e) {
+            const isRefresh = e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r');
+            if (isRefresh && formDirty && !formSubmitting && !isImpersonating && !isFormBlank()) {
+                e.preventDefault();
+                e.stopPropagation();
+                showUnsavedWarningModal('__refresh__');
+            }
+        }, true);
+
+        // Native beforeunload — last resort for tab/window close only
         window.addEventListener('beforeunload', function(e) {
             if (formDirty && !formSubmitting && !navigatingViaModal && !isImpersonating && !isFormBlank()) {
                 e.preventDefault();
@@ -1554,6 +1565,8 @@
                 modal.remove();
                 if (destinationUrl === '__history_back__') {
                     history.back();
+                } else if (destinationUrl === '__refresh__') {
+                    window.location.reload();
                 } else {
                     window.location.href = destinationUrl;
                 }
