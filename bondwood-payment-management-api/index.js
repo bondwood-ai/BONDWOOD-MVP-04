@@ -1420,6 +1420,44 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     }
   }
 
+  // ── Workflow routing: when status advances, determine correct assignee ──
+  const workflowStatuses = ['secondary_3_review', 'secondary_2_review', 'secondary_1_review', 'primary_review', 'accounting_review', 'ap_review', 'accounting-review', 'ap-review', 'approved'];
+  if (body.status && body.status !== oldHeader.status && workflowStatuses.includes(body.status)) {
+    try {
+      const restrictionGroupId = oldHeader.restriction_group_id || null;
+      // Use the OLD status to determine where to route next
+      const next = await advanceToNextStep(env, rfpNumber, oldHeader.status, restrictionGroupId);
+      // Override with properly routed assignment
+      body.status = next.status;
+      body.assigned_to = next.assignedToName || null;
+      body.assigned_to_email = next.assignedToEmail || null;
+    } catch (routeErr) {
+      console.error('[ROUTING] Failed to determine next step:', routeErr.message);
+      // Fall through to use whatever the frontend sent
+    }
+  }
+
+  // When rejecting, clear assignment
+  if (body.status === 'rejected') {
+    body.assigned_to = null;
+    body.assigned_to_email = null;
+  }
+
+  // When rejecting back to a previous step, route to appropriate person
+  if (body.status && body.status !== oldHeader.status && body.reject_reason && body.status !== 'rejected') {
+    try {
+      const stepRole = { 'accounting_review': 'accountant', 'accounting-review': 'accountant', 'ap_review': 'accounts_payable', 'ap-review': 'accounts_payable' };
+      const role = stepRole[body.status];
+      if (role) {
+        const assigned = await roundRobinAssign(env, role, body.status);
+        if (assigned) {
+          body.assigned_to = assigned.name;
+          body.assigned_to_email = assigned.email;
+        }
+      }
+    } catch (e) {}
+  }
+
   let oldItems = [];
   try {
     const { results } = await env.DB.prepare(
@@ -1562,6 +1600,14 @@ async function handleUpdateRFP(rfpNumber, request, env) {
       ).bind(rfpNumber, entry.action, entry.description, performer, performerEmail || null, now).run();
     }
     auditDebug.written = true;
+
+    // Add routing audit entry when form is routed to a new person
+    if (body.status && body.status !== oldHeader.status && body.assigned_to && body.assigned_to_email) {
+      const routeLabel = WORKFLOW_STATUS_LABELS[body.status] || body.status;
+      await env.DB.prepare(
+        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(rfpNumber, 'workflow-routed', `Form routed to <strong>${body.assigned_to}</strong> for <strong>${routeLabel}</strong>`, 'System', null, now).run();
+    }
   } catch (auditErr) {
     console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
     auditDebug.error = auditErr.message;
