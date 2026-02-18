@@ -4192,6 +4192,33 @@
 
             if (!hasItems && !hasMileage) { showAlert('Please add at least one line item or mileage trip.', 'Validation'); return; }
 
+            // Budget code validation — every line item and mileage trip must have a budget code
+            let missingBudgetItems = [];
+            rows.forEach((r, idx) => {
+                const desc = r.querySelector('.line-desc').value.trim();
+                const bc = r.querySelector('.line-budget-code') ? r.querySelector('.line-budget-code').value.trim() : '';
+                if (desc && !bc) {
+                    missingBudgetItems.push('Line ' + (idx + 1));
+                }
+            });
+            if (hasMileage) {
+                document.querySelectorAll('#mileageBody tr').forEach(r => {
+                    var miles = parseFloat(r.querySelector('.trip-miles').value) || 0;
+                    var bc = r.querySelector('.trip-budget-code') ? r.querySelector('.trip-budget-code').value.trim() : '';
+                    var tripNum = r.querySelector('.trip-num') ? r.querySelector('.trip-num').textContent.trim() : '';
+                    if (miles > 0 && !bc) {
+                        missingBudgetItems.push('Trip ' + (tripNum || '?'));
+                    }
+                });
+            }
+            if (missingBudgetItems.length > 0) {
+                showAlert(
+                    `Budget code is required for all items. Missing on: ${missingBudgetItems.join(', ')}.`,
+                    'Validation'
+                );
+                return;
+            }
+
             // Attachment validation for vendor payments:
             // Must have at least one attachment per distinct invoice number
             if (currentRequestType === 'vendor' && hasItems) {

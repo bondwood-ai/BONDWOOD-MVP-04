@@ -1343,6 +1343,24 @@ async function handleCreateRFP(request, env) {
     } catch (e) { console.error('[NOTES] Failed to save note:', e.message); }
   }
 
+  // ── Budget code validation when submitting ──
+  if (status === 'submitted') {
+    const missingBudget = [];
+    if (body.lineItems) {
+      body.lineItems.forEach((item, idx) => {
+        if (item.description && !item.budget_code) missingBudget.push('Line ' + (idx + 1));
+      });
+    }
+    if (body.mileageTrips) {
+      body.mileageTrips.forEach((trip, idx) => {
+        if ((trip.miles || trip.amount) && !trip.budget_code) missingBudget.push('Trip ' + (idx + 1));
+      });
+    }
+    if (missingBudget.length > 0) {
+      return json({ error: `Budget code is required for all items. Missing on: ${missingBudget.join(', ')}.` }, 400);
+    }
+  }
+
   // ── Auto-advance workflow when submitted ──
   if (status === 'submitted') {
     try {
@@ -1426,6 +1444,39 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     // Named approver steps: must be admin or the assigned approver
     if (!atAccountingStep && !atAPStep && !isAdmin && !isAssigned) {
       return json({ error: 'You do not have permission to approve or reject this submission' }, 403);
+    }
+  }
+
+  // ── Budget code validation when submitting ──
+  if (body.status === 'submitted' && oldHeader.status === 'draft') {
+    const itemsToCheck = body.lineItems || [];
+    const tripsToCheck = body.mileageTrips || [];
+    const missingBudget = [];
+    itemsToCheck.forEach((item, idx) => {
+      if (item.description && !item.budget_code) missingBudget.push('Line ' + (idx + 1));
+    });
+    tripsToCheck.forEach((trip, idx) => {
+      if ((trip.miles || trip.amount) && !trip.budget_code) missingBudget.push('Trip ' + (idx + 1));
+    });
+    // Also check existing items if no new ones provided
+    if (!body.lineItems && !body.mileageTrips) {
+      try {
+        const { results: existItems } = await env.DB.prepare(
+          'SELECT description, budget_code FROM form_data WHERE rfp_number = ? ORDER BY line_number'
+        ).bind(rfpNumber).all();
+        existItems.forEach((item, idx) => {
+          if (item.description && !item.budget_code) missingBudget.push('Line ' + (idx + 1));
+        });
+        const { results: existTrips } = await env.DB.prepare(
+          'SELECT miles, amount, budget_code FROM mileage_trips WHERE rfp_number = ? ORDER BY trip_number'
+        ).bind(rfpNumber).all();
+        existTrips.forEach((trip, idx) => {
+          if ((trip.miles || trip.amount) && !trip.budget_code) missingBudget.push('Trip ' + (idx + 1));
+        });
+      } catch (e) {}
+    }
+    if (missingBudget.length > 0) {
+      return json({ error: `Budget code is required for all items. Missing on: ${missingBudget.join(', ')}.` }, 400);
     }
   }
 
