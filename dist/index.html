@@ -251,12 +251,14 @@
             background: var(--primary-hex);
         }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        thead tr { background: var(--primary-hex); }
         th {
             text-align: left; padding: 0.6rem 0.75rem; background: var(--primary-hex);
             font-weight: 600; color: #ffffff; border: none;
             cursor: pointer; user-select: none; position: sticky; top: -1px; z-index: 2;
             white-space: nowrap; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em;
             font-family: 'Google Sans Flex', sans-serif;
+            box-shadow: -1px 0 0 0 var(--primary-hex);
         }
         th:hover { background: color-mix(in srgb, var(--primary-hex) 85%, #000); }
         th .sort-arrow { display: inline-block; margin-left: 4px; font-size: 0.65rem; opacity: 0.6; }
@@ -417,7 +419,7 @@
         .preview-line-items { margin-top: 1rem; overflow-x: auto; }
         .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Google Sans Flex', sans-serif; }
         .preview-line-items table { width: 100%; min-width: 750px; border-collapse: collapse; font-size: 0.8rem; }
-        .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff; font-family: 'Google Sans Flex', sans-serif; font-weight: 600; border-bottom: none; position: static; background: var(--primary-hex); }
+        .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff; font-family: 'Google Sans Flex', sans-serif; font-weight: 600; border: none; position: static; background: var(--primary-hex); box-shadow: -1px 0 0 0 var(--primary-hex); }
         .preview-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
         .preview-line-items .text-right { text-align: right; }
         .preview-total-row { display: flex; justify-content: flex-end; gap: 1.5rem; padding: 0.6rem 0.6rem 0; font-size: 0.85rem; font-weight: 600; }
