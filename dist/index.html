@@ -1901,25 +1901,56 @@
                 closeRejectModal();
 
                 const label = rejectType === 'permanent' ? 'permanently reject' : 'reject back to previous step';
-                const confirmed = await showConfirm(
-                    `${label.charAt(0).toUpperCase() + label.slice(1)} ${selected.length} request(s)?`,
-                    'Confirm Bulk Rejection'
-                );
+
+                // Pre-filter: remove own submissions and unauthorized
+                const effectiveEmail = (impersonateEmail || currentUserEmail).toLowerCase();
+                const isAdmin = currentUserRoles.includes('super_user') || currentUserRoles.includes('admin');
+                const isAccountant = currentUserRoles.includes('accountant');
+                const isAP = currentUserRoles.includes('accounts_payable');
+                const skipped = [];
+                const eligible = selected.filter(rfp => {
+                    if (rfp.submitterId && currentUserId && rfp.submitterId === currentUserId) {
+                        skipped.push(`#${rfp.rfpNumber}: cannot reject your own submission`);
+                        return false;
+                    }
+                    const atAccounting = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
+                    const atAP = rfp.status === 'ap_review' || rfp.status === 'ap-review';
+                    const isAssignedToMe = rfp.assignedToEmail && rfp.assignedToEmail === effectiveEmail;
+                    if (atAccounting && !isAdmin && !isAccountant) { skipped.push(`#${rfp.rfpNumber}: requires Accountant role`); return false; }
+                    if (atAP && !isAdmin && !isAP) { skipped.push(`#${rfp.rfpNumber}: requires Accounts Payable role`); return false; }
+                    if (!atAccounting && !atAP && !isAdmin && !isAssignedToMe) { skipped.push(`#${rfp.rfpNumber}: not assigned to you`); return false; }
+                    return true;
+                });
+
+                if (eligible.length === 0) {
+                    confirmBtn.setAttribute('onclick', originalOnclick); confirmBtn.onclick = null;
+                    showAlert(`No eligible requests to reject.\n\n${skipped.join('\n')}`, 'Bulk Rejection');
+                    return;
+                }
+
+                let confirmMsg = `${label.charAt(0).toUpperCase() + label.slice(1)} ${eligible.length} request(s)?`;
+                if (skipped.length > 0) confirmMsg += `\n\n${skipped.length} skipped:\n${skipped.join('\n')}`;
+                const confirmed = await showConfirm(confirmMsg, 'Confirm Bulk Rejection');
                 if (!confirmed) { confirmBtn.setAttribute('onclick', originalOnclick); confirmBtn.onclick = null; return; }
 
-                for (const rfp of selected) {
+                let successCount = 0;
+                let failedItems = [];
+                for (const rfp of eligible) {
                     const newStatus = rejectType === 'permanent' ? 'rejected' : (WORKFLOW_PREV[rfp.status] || 'draft');
-                    const auditText = rejectType === 'permanent'
-                        ? `<strong>${currentUserName || 'Reviewer'}</strong> permanently rejected the request — Reason: ${reason} (bulk action)`
-                        : `<strong>${currentUserName || 'Reviewer'}</strong> rejected the request back to "${WORKFLOW_LABELS[newStatus] || newStatus}" — Reason: ${reason} (bulk action)`;
 
                     try {
-                        await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
+                        const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: newStatus, performer_email: impersonateEmail || currentUserEmail, performer_name: currentUserName || 'Reviewer', reject_reason: reason, reject_type: rejectType })
                         });
-                    } catch (e) { console.error('Bulk reject error:', e); }
+                        if (resp.ok) {
+                            successCount++;
+                        } else {
+                            const err = await resp.json().catch(() => ({}));
+                            failedItems.push(`#${rfp.rfpNumber}: ${err.error || 'Failed'}`);
+                        }
+                    } catch (e) { failedItems.push(`#${rfp.rfpNumber}: ${e.message}`); }
                 }
 
                 // Restore button
@@ -1929,7 +1960,9 @@
                 selectedRFPIds.clear();
                 allRFPs = await loadRFPData();
                 filterTable();
-                showAlert(`${selected.length} request(s) have been ${rejectType === 'permanent' ? 'permanently rejected' : 'rejected to previous step'}.`, 'Bulk Rejection Complete');
+                let msg = `${successCount} request(s) ${rejectType === 'permanent' ? 'permanently rejected' : 'rejected to previous step'}.`;
+                if (failedItems.length > 0) msg += `\n\n${failedItems.length} failed:\n${failedItems.join('\n')}`;
+                showAlert(msg, successCount > 0 ? 'Bulk Rejection Complete' : 'Bulk Rejection Failed');
             };
         }
 
@@ -1937,47 +1970,94 @@
             const selected = allRFPs.filter(r => selectedRFPIds.has(r.id) && isInApprovalWorkflow(r.status));
             if (selected.length === 0) return;
 
-            const confirmed = await showConfirm(
-                `Advance ${selected.length} request(s) to their next workflow step?`,
-                'Confirm Bulk Approval'
-            );
+            // Pre-filter: remove own submissions and forms user isn't authorized for
+            const effectiveEmail = (impersonateEmail || currentUserEmail).toLowerCase();
+            const isAdmin = currentUserRoles.includes('super_user') || currentUserRoles.includes('admin');
+            const isAccountant = currentUserRoles.includes('accountant');
+            const isAP = currentUserRoles.includes('accounts_payable');
+
+            const skipped = [];
+            const eligible = selected.filter(rfp => {
+                // Block self-approval
+                if (rfp.submitterId && currentUserId && rfp.submitterId === currentUserId) {
+                    skipped.push(`#${rfp.rfpNumber}: cannot approve your own submission`);
+                    return false;
+                }
+                // Check role/assignment authorization
+                const atAccounting = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
+                const atAP = rfp.status === 'ap_review' || rfp.status === 'ap-review';
+                const isAssignedToMe = rfp.assignedToEmail && rfp.assignedToEmail === effectiveEmail;
+                if (atAccounting && !isAdmin && !isAccountant) {
+                    skipped.push(`#${rfp.rfpNumber}: requires Accountant role`);
+                    return false;
+                }
+                if (atAP && !isAdmin && !isAP) {
+                    skipped.push(`#${rfp.rfpNumber}: requires Accounts Payable role`);
+                    return false;
+                }
+                if (!atAccounting && !atAP && !isAdmin && !isAssignedToMe) {
+                    skipped.push(`#${rfp.rfpNumber}: not assigned to you`);
+                    return false;
+                }
+                return true;
+            });
+
+            if (eligible.length === 0) {
+                showAlert(`No eligible requests to approve.\n\n${skipped.join('\n')}`, 'Bulk Approval');
+                return;
+            }
+
+            let confirmMsg = `Advance ${eligible.length} request(s) to their next workflow step?`;
+            if (skipped.length > 0) {
+                confirmMsg += `\n\n${skipped.length} skipped:\n${skipped.join('\n')}`;
+            }
+            const confirmed = await showConfirm(confirmMsg, 'Confirm Bulk Approval');
             if (!confirmed) return;
 
             // Check if any are at ap-review (will become approved)
-            const apReviewItems = selected.filter(r => r.status === 'ap-review' || r.status === 'ap_review');
+            const apReviewItems = eligible.filter(r => r.status === 'ap-review' || r.status === 'ap_review');
             let apBatch = null;
             if (apReviewItems.length > 0) {
-                // Determine form type for filtering - if mixed, show all
                 const types = new Set(apReviewItems.map(r => r.type));
                 const batchType = types.size === 1 ? [...types][0] : null;
                 apBatch = await showApBatchPicker(batchType, `${apReviewItems.length} request(s) will be fully approved.`);
-                if (!apBatch) return; // cancelled
+                if (!apBatch) return;
             }
 
-            for (const rfp of selected) {
+            let successCount = 0;
+            let failedItems = [];
+            for (const rfp of eligible) {
                 const newStatus = WORKFLOW_NEXT[rfp.status];
                 if (!newStatus) continue;
                 const isFullApproval = newStatus === 'approved';
-                const auditText = isFullApproval
-                    ? `<strong>${currentUserName || 'Reviewer'}</strong> approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''} (bulk action)`
-                    : `<strong>${currentUserName || 'Reviewer'}</strong> advanced the request to "<strong>${WORKFLOW_LABELS[newStatus] || newStatus}</strong>" (bulk action)`;
 
                 try {
                     const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail, performer_name: currentUserName || 'Reviewer' };
                     if (isFullApproval && apBatch) updateBody.ap_batch = apBatch;
 
-                    await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
+                    const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updateBody)
                     });
-                } catch (e) { console.error('Bulk approve error:', e); }
+                    if (resp.ok) {
+                        successCount++;
+                    } else {
+                        const err = await resp.json().catch(() => ({}));
+                        failedItems.push(`#${rfp.rfpNumber}: ${err.error || 'Failed'}`);
+                    }
+                } catch (e) {
+                    failedItems.push(`#${rfp.rfpNumber}: ${e.message}`);
+                }
             }
 
             selectedRFPIds.clear();
             allRFPs = await loadRFPData();
             filterTable();
-            showAlert(`${selected.length} request(s) have been advanced.`, 'Bulk Approval Complete');
+
+            let msg = `${successCount} request(s) advanced.`;
+            if (failedItems.length > 0) msg += `\n\n${failedItems.length} failed:\n${failedItems.join('\n')}`;
+            showAlert(msg, successCount > 0 ? 'Bulk Approval Complete' : 'Bulk Approval Failed');
         }
 
         /* ========================================
