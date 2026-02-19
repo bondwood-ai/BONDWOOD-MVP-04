@@ -389,7 +389,7 @@
 
         .items-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
         .items-table {
-            width: 100%; border-collapse: collapse; min-width: 700px;
+            width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px;
         }
         .items-table thead tr { background: var(--primary-hex); }
         .items-table th {
@@ -397,8 +397,10 @@
             padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
             font-size: 0.8rem; letter-spacing: 0.01em;
             white-space: nowrap; font-family: 'Google Sans Flex', sans-serif;
-            border: none; box-shadow: -1px 0 0 0 var(--primary-hex);
+            border: none;
         }
+        .items-table th:first-child { border-radius: 8px 0 0 0; }
+        .items-table th:last-child { border-radius: 0 8px 0 0; }
         .items-table td {
             padding: 0.35rem 0.35rem; border-bottom: 1px solid var(--border-color); vertical-align: middle;
         }
@@ -490,7 +492,7 @@
         .mileage-check-row label { font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; }
         .mileage-table-scroll { overflow: visible; margin-bottom: 0.75rem; }
         .mileage-table {
-            width: 100%; border-collapse: collapse; min-width: 700px;
+            width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px;
         }
         .mileage-table th.mileage-checkbox-col, .mileage-table td.mileage-checkbox-cell { text-align: center; width: 36px; }
         .mileage-table input[type="checkbox"] {
@@ -510,8 +512,10 @@
             padding: 0.6rem 0.5rem; text-align: left; font-weight: 600;
             font-size: 0.8rem; letter-spacing: 0.01em;
             font-family: 'Google Sans Flex', sans-serif;
-            border: none; box-shadow: -1px 0 0 0 var(--primary-hex);
+            border: none;
         }
+        .mileage-table th:first-child { border-radius: 8px 0 0 0; }
+        .mileage-table th:last-child { border-radius: 0 8px 0 0; }
         .mileage-table td {
             padding: 0.35rem; border-bottom: 1px solid var(--border-color); position: relative;
         }
