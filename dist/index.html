@@ -3030,26 +3030,35 @@
             var isImage = (ext === 'png' || ext === 'jpg' || ext === 'jpeg');
 
             if (isPdf || isImage) {
+                // Open window synchronously (before any await) so Safari doesn't block it
+                var w = 900, h = 700;
+                var popLeft = (screen.width - w) / 2;
+                var popTop = (screen.height - h) / 2;
+                var features = 'width=' + w + ',height=' + h + ',left=' + popLeft + ',top=' + popTop + ',menubar=no,toolbar=no,location=no,status=no,scrollbars=yes';
+                var popup = window.open('', '_blank', features);
+                if (popup) {
+                    popup.document.write('<html><head><title>' + name + '</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#f0f0f0;font-family:sans-serif;color:#666;">Loading…</body></html>');
+                }
                 try {
                     var resp = await fetch(url);
                     var blob = await resp.blob();
                     var blobUrl = URL.createObjectURL(blob);
-                    var w = 900, h = 700;
-                    var popLeft = (screen.width - w) / 2;
-                    var popTop = (screen.height - h) / 2;
-                    var features = 'width=' + w + ',height=' + h + ',left=' + popLeft + ',top=' + popTop + ',menubar=no,toolbar=no,location=no,status=no,scrollbars=yes';
-                    var popup = window.open('', '_blank', features);
-                    if (!popup) { window.open(blobUrl, '_blank'); return; }
-                    var doc = popup.document;
-                    doc.open();
-                    if (isPdf) {
-                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;overflow:hidden;}</style></head><body><iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>');
+                    if (popup && !popup.closed) {
+                        var doc = popup.document;
+                        doc.open();
+                        if (isPdf) {
+                            doc.write('<html><head><title>' + name + '</title><style>body{margin:0;overflow:hidden;}</style></head><body><iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>');
+                        } else {
+                            doc.write('<html><head><title>' + name + '</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>');
+                        }
+                        doc.close();
                     } else {
-                        doc.write('<html><head><title>' + name + '</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>');
+                        // Popup was blocked or closed — fallback to direct navigation
+                        window.location.href = blobUrl;
                     }
-                    doc.close();
                 } catch (e) {
-                    window.open(url, '_blank');
+                    if (popup && !popup.closed) popup.location.href = url;
+                    else window.open(url, '_blank');
                 }
             } else {
                 var a = document.createElement('a');
@@ -3936,14 +3945,11 @@
 
             let iframe = document.getElementById('rfpPrintFrame');
             if (iframe) iframe.remove();
-            iframe = document.createElement('iframe');
-            iframe.id = 'rfpPrintFrame';
-            iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;';
-            document.body.appendChild(iframe);
 
-            const pDoc = iframe.contentDocument || iframe.contentWindow.document;
-            pDoc.open();
-            pDoc.write(`<!DOCTYPE html><html><head><title>RFP #${rfp.rfpNumber}</title>
+            // iOS Safari doesn't support iframe.contentWindow.print()
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            const htmlContent = `<!DOCTYPE html><html><head><title>RFP #${rfp.rfpNumber}</title>
             <link href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
@@ -3980,26 +3986,39 @@
             </table>
             <div class="total-row">Total: $${fmtAmt(total)}</div>
             ${auditHtml}
-            </body></html>`);
-            pDoc.close();
-            iframe.onload = () => {
-                try { pDoc.fonts.ready.then(() => { iframe.contentWindow.print(); }); }
-                catch (e) { iframe.contentWindow.print(); }
-            };
+            </body></html>`;
+
+            if (isIOS) {
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    printWindow.document.open();
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    printWindow.onload = () => { printWindow.print(); };
+                }
+            } else {
+                iframe = document.createElement('iframe');
+                iframe.id = 'rfpPrintFrame';
+                iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;';
+                document.body.appendChild(iframe);
+                const pDoc = iframe.contentDocument || iframe.contentWindow.document;
+                pDoc.open();
+                pDoc.write(htmlContent);
+                pDoc.close();
+                iframe.onload = () => {
+                    try { pDoc.fonts.ready.then(() => { iframe.contentWindow.print(); }); }
+                    catch (e) { iframe.contentWindow.print(); }
+                };
+            }
         }
 
         function printAuditLog(rfpNumber, entries) {
-            // Use a hidden iframe so only the browser print dialog appears
             let iframe = document.getElementById('auditPrintFrame');
             if (iframe) iframe.remove();
-            iframe = document.createElement('iframe');
-            iframe.id = 'auditPrintFrame';
-            iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;';
-            document.body.appendChild(iframe);
 
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            doc.open();
-            doc.write(`<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            const htmlContent = `<!DOCTYPE html><html><head><title>Audit Log – RFP #${rfpNumber}</title>
             <link href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
@@ -4021,13 +4040,30 @@
                     ${entries.map((e, i) => `<tr><td class="num">${i + 1}</td><td>${e.text}</td><td class="ts">${e.timestamp}</td></tr>`).join('')}
                 </tbody>
             </table>
-            </body></html>`);
-            doc.close();
+            </body></html>`;
 
-            iframe.onload = () => {
-                try { doc.fonts.ready.then(() => { iframe.contentWindow.print(); }); }
-                catch (e) { iframe.contentWindow.print(); }
-            };
+            if (isIOS) {
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    printWindow.document.open();
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    printWindow.onload = () => { printWindow.print(); };
+                }
+            } else {
+                iframe = document.createElement('iframe');
+                iframe.id = 'auditPrintFrame';
+                iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;';
+                document.body.appendChild(iframe);
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                doc.open();
+                doc.write(htmlContent);
+                doc.close();
+                iframe.onload = () => {
+                    try { doc.fonts.ready.then(() => { iframe.contentWindow.print(); }); }
+                    catch (e) { iframe.contentWindow.print(); }
+                };
+            }
         }
 
         function formatCurrency(num) {
