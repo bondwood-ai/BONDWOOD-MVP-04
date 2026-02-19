@@ -1731,10 +1731,13 @@
             const allDraft = statuses.size > 0 && [...statuses].every(s => s === 'draft');
             const allInWorkflow = statuses.size > 0 && [...statuses].every(s => ['submitted', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review'].includes(s));
 
+            // Only show approve/reject if at least one selected item is actionable (not own submission)
+            const hasActionable = allInWorkflow && selectedRFPs.some(r => !(r.submitterId && currentUserId && r.submitterId === currentUserId));
+
             document.getElementById('bulkArchiveBtn').style.display = allDraft ? '' : 'none';
             document.getElementById('bulkDeleteBtn').style.display = allDraft ? '' : 'none';
-            document.getElementById('bulkRejectBtn').style.display = allInWorkflow ? '' : 'none';
-            document.getElementById('bulkApproveBtn').style.display = allInWorkflow ? '' : 'none';
+            document.getElementById('bulkRejectBtn').style.display = hasActionable ? '' : 'none';
+            document.getElementById('bulkApproveBtn').style.display = hasActionable ? '' : 'none';
 
             // Update header checkbox state
             const headerCb = document.getElementById('selectAllCheckbox');
