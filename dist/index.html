@@ -141,7 +141,7 @@
         .main-content { padding: 0; min-height: calc(100vh - 160px); }
         .module-container { max-width: 100%; margin: 0 auto; }
         .module-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
-        .module-title { font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .module-title { font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0; }
         .module-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
         /* ============ BUTTONS ============ */
@@ -166,7 +166,7 @@
         .stat-card { flex: 1; padding: 0.875rem 1.15rem; border-left: 1px solid var(--border-color); min-width: 0; }
         .stat-card:first-child { border-left: none; }
         .stat-label { font-size: 0.675rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; font-family: 'Google Sans Flex', sans-serif; }
-        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; font-variant-numeric: tabular-nums; }
+        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; font-variant-numeric: tabular-nums; }
         .stat-card.overdue .stat-value { color: var(--negative-color); }
         .stat-overdue-badge { font-size: 0.6rem; font-weight: 600; color: var(--negative-color); margin-left: 0.35rem; font-family: 'Google Sans Flex', sans-serif; vertical-align: middle; letter-spacing: 0.03em; }
 
@@ -328,7 +328,7 @@
         .modal-overlay.open { display: flex; }
         .modal { background: var(--card-bg); border-radius: 12px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; }
-        .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; }
+        .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; }
         .modal-body { padding: 1.25rem; }
         /* Loading indicator */
         .preview-loading { text-align: center; padding: 2.5rem 2rem; color: var(--text-secondary); }
@@ -399,7 +399,7 @@
 
         .preview-modal { background: var(--card-bg); border-radius: 12px; width: 1050px; max-width: 96vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25); }
         .preview-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: none; }
-        .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; }
+        .preview-modal .modal-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; }
         .preview-grid {
             display: grid; grid-template-columns: 1fr 1fr 1fr;
             gap: 0; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
@@ -519,7 +519,7 @@
         .approval-success-icon svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.5; fill: none; }
         .approval-success-icon.advanced { background: var(--primary-hex); }
         .approval-success-icon.approved { background: #2B6D51; }
-        .approval-success-title { font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; }
+        .approval-success-title { font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; }
         .approval-success-sub { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5; }
         .approval-success-rfp { font-family: 'Google Sans Flex', sans-serif; font-weight: 700; color: var(--primary-hex); }
         .approval-success-actions { display: flex; gap: 0.75rem; }
@@ -557,7 +557,7 @@
     <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
         <div style="padding:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Cal Sans','Google Sans Flex',sans-serif;">Menu</h3>
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Cal Sans','Google Sans Flex',sans-serif;letter-spacing:0.5px;">Menu</h3>
                 <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
                 </button>
@@ -615,7 +615,7 @@
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;letter-spacing:0.5px;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
         </div>
         <div id="bannerAccent" style="height:4px;background:var(--secondary-hex, #0728eb);margin:0 -2rem;"></div>
@@ -1218,7 +1218,7 @@
                         </div>
                         <span style="font-size:0.75rem;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:0.08em;">Account Deactivated</span>
                     </div>
-                    <h1 style="font-size:2rem;font-weight:900;line-height:1.2;margin:0 0 1rem;letter-spacing:-0.03em;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;">Your access has been suspended</h1>
+                    <h1 style="font-size:2rem;font-weight:900;line-height:1.2;margin:0 0 1rem;letter-spacing:0.5px;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;">Your access has been suspended</h1>
                     <p style="font-size:0.88rem;color:#666;line-height:1.8;margin:0;">An administrator has deactivated your account. You will not be able to submit or view requests until your account is restored.</p>
                 </div>
             `;
@@ -3435,7 +3435,7 @@
                 modal.innerHTML = `
                     <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;width:90%;max-width:400px;max-height:70vh;display:flex;flex-direction:column;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                            <h3 style="font-family:'Cal Sans','Google Sans Flex',sans-serif;font-size:1rem;font-weight:700;color:var(--text-primary);margin:0;">Impersonate User</h3>
+                            <h3 style="font-family:'Cal Sans','Google Sans Flex',sans-serif;letter-spacing:0.5px;font-size:1rem;font-weight:700;color:var(--text-primary);margin:0;">Impersonate User</h3>
                             <button onclick="closeImpersonateModal()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-secondary);">✕</button>
                         </div>
                         ${impersonateEmail ? `<button onclick="stopImpersonation()" style="width:100%;padding:0.6rem;margin-bottom:0.75rem;border-radius:8px;border:1px solid var(--negative-color);background:var(--negative-color);color:#fff;font-family:Inter,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;">
