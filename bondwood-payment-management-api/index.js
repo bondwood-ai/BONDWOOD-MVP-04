@@ -1660,14 +1660,6 @@ async function handleUpdateRFP(rfpNumber, request, env) {
       ).bind(rfpNumber, entry.action, entry.description, performer, performerEmail || null, now).run();
     }
     auditDebug.written = true;
-
-    // Add routing audit entry when form is routed to a new person
-    if (body.status && body.status !== oldHeader.status && body.assigned_to && body.assigned_to_email) {
-      const routeLabel = WORKFLOW_STATUS_LABELS[body.status] || body.status;
-      await env.DB.prepare(
-        'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
-      ).bind(rfpNumber, 'workflow-routed', `Form routed to <strong>${body.assigned_to}</strong> for <strong>${routeLabel}</strong>`, 'System', null, now).run();
-    }
   } catch (auditErr) {
     console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
     auditDebug.error = auditErr.message;
@@ -1684,9 +1676,10 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
   const entries = [];
   const p = `<strong>${performer}</strong>`;
   const fmt = (n) => '$' + (n || 0).toFixed(2);
+  const statusChanging = body.status && body.status !== oldHeader.status;
 
   // ── Status change ──
-  if (body.status && body.status !== oldHeader.status) {
+  if (statusChanging) {
     if (body.status === 'submitted' && oldHeader.status === 'draft') {
       const typeLabel = (body.request_type || oldHeader.request_type) === 'reimbursement'
         ? 'Employee Reimbursement' : (body.vendor_name || oldHeader.vendor_name || 'Vendor Payment');
@@ -1702,6 +1695,7 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
     // Workflow status changes
     const statusLabel = WORKFLOW_STATUS_LABELS[body.status] || body.status;
     const oldStatusLabel = WORKFLOW_STATUS_LABELS[oldHeader.status] || oldHeader.status;
+    const routedTo = body.assigned_to ? ` — routed to <strong>${body.assigned_to}</strong>` : '';
 
     if (body.status === 'approved') {
       const batchNote = body.ap_batch ? ` (A/P Batch: ${body.ap_batch})` : '';
@@ -1712,9 +1706,9 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
     } else if (body.reject_reason || body.rejection_reason) {
       // Reject-back to previous step
       const reason = body.reject_reason || body.rejection_reason;
-      entries.push({ action: 'rejected-previous', description: `${p} rejected the request back to "<strong>${statusLabel}</strong>" — Reason: ${reason}` });
+      entries.push({ action: 'rejected-previous', description: `${p} rejected the request back to "<strong>${statusLabel}</strong>"${routedTo} — Reason: ${reason}` });
     } else if (WORKFLOW_STATUS_LABELS[body.status]) {
-      entries.push({ action: 'advanced', description: `${p} advanced the request to "<strong>${statusLabel}</strong>"` });
+      entries.push({ action: 'advanced', description: `${p} advanced the request to "<strong>${statusLabel}</strong>"${routedTo}` });
     }
   }
 
@@ -1824,7 +1818,7 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
   if (body.description !== undefined && body.description !== (oldHeader.description || '')) {
     entries.push({ action: 'field-changed', description: `${p} updated the description` });
   }
-  if (body.assigned_to && body.assigned_to !== (oldHeader.assigned_to || '')) {
+  if (body.assigned_to && body.assigned_to !== (oldHeader.assigned_to || '') && !statusChanging) {
     entries.push({ action: 'field-changed', description: `${p} assigned to <strong>${body.assigned_to}</strong>` });
   }
 
