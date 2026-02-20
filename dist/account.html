@@ -95,7 +95,7 @@
         /* ============ MAIN CONTENT ============ */
         .main-content { padding: 0; }
         .account-content-wrapper { max-width: 1100px; margin: 0 auto; }
-        .page-title { font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem 0; }
+        .page-title { font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem 0; }
 
         /* ============ PROFILE CONTAINER ============ */
         .profile-container {
@@ -117,7 +117,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Cal Sans', 'Google Sans Flex', sans-serif;
+            font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px;
             border-radius: 12px 12px 0 0;
         }
 
@@ -240,6 +240,61 @@
         }
         .save-status.visible { opacity: 1; }
 
+        /* ============ NOTIFICATION PREFERENCES ============ */
+        .notif-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: visible;
+            margin: 0 auto 1.5rem;
+            max-width: 780px;
+        }
+        .notif-body { padding: 1.25rem 1.5rem 1.5rem; }
+        .notif-description {
+            font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;
+        }
+        .notif-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.85rem 0; border-bottom: 1px solid var(--border-color);
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item-text { flex: 1; margin-right: 1rem; }
+        .notif-item-label {
+            font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+            font-family: 'Google Sans Flex', sans-serif;
+        }
+        .notif-item-desc {
+            font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.15rem; line-height: 1.4;
+        }
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px; flex-shrink: 0;
+        }
+        .toggle-switch input {
+            opacity: 0; width: 0; height: 0; position: absolute;
+        }
+        .toggle-track {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--border-color); border-radius: 12px;
+            cursor: pointer; transition: background 0.25s;
+        }
+        .toggle-track::after {
+            content: ''; position: absolute; width: 18px; height: 18px;
+            left: 3px; top: 3px; background: #ffffff;
+            border-radius: 50%; transition: transform 0.25s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .toggle-switch input:checked + .toggle-track {
+            background: var(--positive-color);
+        }
+        .toggle-switch input:checked + .toggle-track::after {
+            transform: translateX(20px);
+        }
+        .notif-save-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding-top: 1.25rem; border-top: 1px solid var(--border-color); margin-top: 0.25rem;
+        }
+
         /* ============ UPLOAD MODAL ============ */
         #upload-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
         #upload-modal.open { display: flex; }
@@ -249,7 +304,7 @@
             box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4); border: 1px solid var(--border-color);
         }
         .att-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
-        .att-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; }
+        .att-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; }
         .att-close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); line-height: 1; padding: 0.25rem 0.4rem; border-radius: 6px; transition: background 0.15s, color 0.15s; }
         .att-close-btn:hover { color: var(--text-primary); background: rgba(0,0,0,0.06); }
 
@@ -342,7 +397,7 @@
     <div id="hamburgerMenu" style="display:none;position:fixed;top:0;left:0;width:280px;height:100%;background:#000;z-index:9999;box-shadow:2px 0 10px rgba(0,0,0,0.3);transform:translateX(-100%);transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);">
         <div style="padding:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Cal Sans','Google Sans Flex',sans-serif;">Menu</h3>
+                <h3 class="hamburger-menu-title" style="color:#fff;margin:0;font-size:1.25rem;font-family:'Cal Sans','Google Sans Flex',sans-serif;letter-spacing:0.5px;">Menu</h3>
                 <button onclick="closeHamburgerMenu()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0.25rem;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
                 </button>
@@ -405,7 +460,7 @@
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;letter-spacing:0.5px;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
             </div>
         </div>
         <div id="bannerAccent" style="height:4px;background:var(--secondary-hex, #0728eb);margin:0 -2rem;"></div>
@@ -486,6 +541,66 @@
                         Save Changes
                     </button>
                     <span class="save-status" id="saveStatus">&#10003; Saved</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Notifications -->
+        <div class="notif-container">
+            <div class="section-header">Email Notifications</div>
+            <div class="notif-body">
+                <div class="notif-description">Choose which email notifications you'd like to receive. Changes are saved automatically.</div>
+
+                <div class="notif-item">
+                    <div class="notif-item-text">
+                        <div class="notif-item-label">Assigned to me</div>
+                        <div class="notif-item-desc">When a form is routed to you for review</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifAssigned" checked onchange="markNotifDirty()">
+                        <span class="toggle-track"></span>
+                    </label>
+                </div>
+
+                <div class="notif-item">
+                    <div class="notif-item-text">
+                        <div class="notif-item-label">Submission approved</div>
+                        <div class="notif-item-desc">When a form you submitted receives final approval</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifApproved" checked onchange="markNotifDirty()">
+                        <span class="toggle-track"></span>
+                    </label>
+                </div>
+
+                <div class="notif-item">
+                    <div class="notif-item-text">
+                        <div class="notif-item-label">Submission rejected or returned</div>
+                        <div class="notif-item-desc">When a form you submitted is rejected or sent back for changes</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifRejected" checked onchange="markNotifDirty()">
+                        <span class="toggle-track"></span>
+                    </label>
+                </div>
+
+                <div class="notif-item">
+                    <div class="notif-item-text">
+                        <div class="notif-item-label">Overdue reminders</div>
+                        <div class="notif-item-desc">When forms assigned to you have been pending beyond the review threshold</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifOverdue" checked onchange="markNotifDirty()">
+                        <span class="toggle-track"></span>
+                    </label>
+                </div>
+
+                <div class="notif-save-row">
+                    <button class="btn-save" id="notifSaveBtn" onclick="saveNotifPrefs()" disabled>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save Preferences
+                    </button>
+                    <span class="save-status" id="notifSaveStatus">&#10003; Saved</span>
                 </div>
             </div>
         </div>
@@ -1231,6 +1346,56 @@
         /* ========================================
            INIT
            ======================================== */
+        // ============ NOTIFICATION PREFERENCES ============
+        function markNotifDirty() {
+            document.getElementById('notifSaveBtn').disabled = false;
+            const status = document.getElementById('notifSaveStatus');
+            status.classList.remove('visible');
+        }
+
+        async function saveNotifPrefs() {
+            const prefs = {
+                notif_assigned: document.getElementById('notifAssigned').checked,
+                notif_approved: document.getElementById('notifApproved').checked,
+                notif_rejected: document.getElementById('notifRejected').checked,
+                notif_overdue: document.getElementById('notifOverdue').checked,
+            };
+            const btn = document.getElementById('notifSaveBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Saving…`;
+            try {
+                const resp = await fetch(API_BASE + '/users/me/notifications', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (await window.Clerk?.session?.getToken()) },
+                    body: JSON.stringify(prefs)
+                });
+                if (!resp.ok) throw new Error('Save failed');
+                const status = document.getElementById('notifSaveStatus');
+                status.classList.add('visible');
+                setTimeout(() => status.classList.remove('visible'), 2500);
+            } catch (e) {
+                console.error('[NOTIF] Save failed:', e);
+                btn.disabled = false;
+            }
+            btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Preferences`;
+        }
+
+        async function loadNotifPrefs() {
+            try {
+                const resp = await fetch(API_BASE + '/users/me/notifications', {
+                    headers: { 'Authorization': 'Bearer ' + (await window.Clerk?.session?.getToken()) }
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (data.prefs) {
+                    document.getElementById('notifAssigned').checked = data.prefs.notif_assigned !== false;
+                    document.getElementById('notifApproved').checked = data.prefs.notif_approved !== false;
+                    document.getElementById('notifRejected').checked = data.prefs.notif_rejected !== false;
+                    document.getElementById('notifOverdue').checked = data.prefs.notif_overdue !== false;
+                }
+            } catch (e) { console.warn('[NOTIF] Failed to load prefs:', e); }
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             initTheme();
             loadBrandData();
@@ -1247,6 +1412,9 @@
 
             // Load theme pref from D1 (overrides localStorage if different)
             await loadThemePref();
+
+            // Load notification preferences
+            await loadNotifPrefs();
         });
     </script>
 </body>
