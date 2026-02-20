@@ -241,24 +241,20 @@
         .save-status.visible { opacity: 1; }
 
         /* ============ NOTIFICATION PREFERENCES ============ */
-        .notif-container {
-            background: var(--card-bg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            overflow: visible;
-            margin: 0 auto 1.5rem;
-            max-width: 780px;
+        .notif-divider {
+            margin-top: 1.5rem; padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
+            margin-bottom: 0.25rem;
         }
-        .notif-body { padding: 1.25rem 1.5rem 1.5rem; }
-        .notif-description {
-            font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;
+        .notif-divider-label {
+            font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px;
+            font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
         }
         .notif-item {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0.85rem 0; border-bottom: 1px solid var(--border-color);
         }
-        .notif-item:last-child { border-bottom: none; }
+        .notif-item:last-of-type { border-bottom: none; }
         .notif-item-text { flex: 1; margin-right: 1rem; }
         .notif-item-label {
             font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
@@ -289,10 +285,6 @@
         }
         .toggle-switch input:checked + .toggle-track::after {
             transform: translateX(20px);
-        }
-        .notif-save-row {
-            display: flex; align-items: center; gap: 0.75rem;
-            padding-top: 1.25rem; border-top: 1px solid var(--border-color); margin-top: 0.25rem;
         }
 
         /* ============ UPLOAD MODAL ============ */
@@ -535,21 +527,10 @@
                     </div>
                 </div>
 
-                <div class="form-actions">
-                    <button class="btn-save" id="saveBtn" onclick="saveProfile()" disabled>
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                        Save Changes
-                    </button>
-                    <span class="save-status" id="saveStatus">&#10003; Saved</span>
+                <!-- Email Notifications -->
+                <div class="notif-divider">
+                    <span class="notif-divider-label">Email Notifications</span>
                 </div>
-            </div>
-        </div>
-
-        <!-- Email Notifications -->
-        <div class="notif-container">
-            <div class="section-header">Email Notifications</div>
-            <div class="notif-body">
-                <div class="notif-description">Choose which email notifications you'd like to receive. Changes are saved automatically.</div>
 
                 <div class="notif-item">
                     <div class="notif-item-text">
@@ -595,12 +576,12 @@
                     </label>
                 </div>
 
-                <div class="notif-save-row">
-                    <button class="btn-save" id="notifSaveBtn" onclick="saveNotifPrefs()" disabled>
+                <div class="form-actions">
+                    <button class="btn-save" id="saveBtn" onclick="saveProfile()" disabled>
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                        Save Preferences
+                        Save Changes
                     </button>
-                    <span class="save-status" id="notifSaveStatus">&#10003; Saved</span>
+                    <span class="save-status" id="saveStatus">&#10003; Saved</span>
                 </div>
             </div>
         </div>
@@ -1320,6 +1301,10 @@
                 phone_number: document.getElementById('phoneNumber').value.replace(/\D/g, ''),
                 department: document.getElementById('department').value.trim(),
                 title: document.getElementById('titleField').value.trim(),
+                notif_assigned: document.getElementById('notifAssigned').checked,
+                notif_approved: document.getElementById('notifApproved').checked,
+                notif_rejected: document.getElementById('notifRejected').checked,
+                notif_overdue: document.getElementById('notifOverdue').checked,
             };
 
             try {
@@ -1348,36 +1333,9 @@
            ======================================== */
         // ============ NOTIFICATION PREFERENCES ============
         function markNotifDirty() {
-            document.getElementById('notifSaveBtn').disabled = false;
-            const status = document.getElementById('notifSaveStatus');
+            document.getElementById('saveBtn').disabled = false;
+            const status = document.getElementById('saveStatus');
             status.classList.remove('visible');
-        }
-
-        async function saveNotifPrefs() {
-            const prefs = {
-                notif_assigned: document.getElementById('notifAssigned').checked,
-                notif_approved: document.getElementById('notifApproved').checked,
-                notif_rejected: document.getElementById('notifRejected').checked,
-                notif_overdue: document.getElementById('notifOverdue').checked,
-            };
-            const btn = document.getElementById('notifSaveBtn');
-            btn.disabled = true;
-            btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Saving…`;
-            try {
-                const resp = await fetch(API_BASE + '/users/me/notifications', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (await window.Clerk?.session?.getToken()) },
-                    body: JSON.stringify(prefs)
-                });
-                if (!resp.ok) throw new Error('Save failed');
-                const status = document.getElementById('notifSaveStatus');
-                status.classList.add('visible');
-                setTimeout(() => status.classList.remove('visible'), 2500);
-            } catch (e) {
-                console.error('[NOTIF] Save failed:', e);
-                btn.disabled = false;
-            }
-            btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Preferences`;
         }
 
         async function loadNotifPrefs() {
