@@ -265,13 +265,6 @@
         th.sorted .sort-arrow { opacity: 1; }
         th.no-sort { cursor: default; }
         th.no-sort:hover { background: var(--primary-hex); }
-        th input[type="checkbox"] { width: 16px; height: 16px; border-color: #ffffff; background: transparent; }
-        th input[type="checkbox"]:checked {
-            background: var(--primary-hex); border-color: #ffffff;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
-            background-size: 10px; background-position: center; background-repeat: no-repeat;
-        }
-        th input[type="checkbox"]:hover { border-color: #ffffff; }
         tbody tr { cursor: pointer; transition: background 0.12s ease; }
         tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
         tbody tr.selected { background: var(--pale-accent); }
@@ -489,7 +482,15 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
             background-size: 11px; background-position: center; background-repeat: no-repeat;
         }
-        table input[type="checkbox"]:hover { border-color: var(--primary-hex); }        /* ============ CUSTOM SELECT ============ */
+        table input[type="checkbox"]:hover { border-color: var(--primary-hex); }
+        th input[type="checkbox"] { width: 16px; height: 16px; border-color: #ffffff !important; background: transparent; }
+        th input[type="checkbox"]:checked {
+            background: var(--primary-hex); border-color: #ffffff !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: 10px; background-position: center; background-repeat: no-repeat;
+        }
+        th input[type="checkbox"]:hover { border-color: #ffffff !important; }
+        /* ============ CUSTOM SELECT ============ */
         .cs-wrap { position: relative; display: inline-block; }
         .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #ffffff; color: #000000; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; white-space: nowrap; user-select: none; }
         .cs-display:hover { border-color: var(--text-secondary); }
