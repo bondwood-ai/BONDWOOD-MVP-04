@@ -1377,7 +1377,7 @@ async function handleCreateRFP(request, env) {
 
         // Email: notify assigned reviewer
         if (advancement.assignedToEmail) {
-          sendEmailNotification(env, {
+          await sendEmailNotification(env, {
             to: advancement.assignedToEmail,
             type: 'assigned',
             rfpNumber: nextRfp,
@@ -1680,7 +1680,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
       if (body.status === 'approved') {
         const subEmail = await getSubmitterEmail(env, oldHeader);
         if (subEmail) {
-          sendEmailNotification(env, {
+          await sendEmailNotification(env, {
             to: subEmail, type: 'approved', rfpNumber,
             subject: `RFP #${rfpNumber} has been approved`,
             bodyText: 'Your request for payment has received final approval.',
@@ -1691,7 +1691,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
       } else if (body.status === 'rejected') {
         const subEmail = await getSubmitterEmail(env, oldHeader);
         if (subEmail) {
-          sendEmailNotification(env, {
+          await sendEmailNotification(env, {
             to: subEmail, type: 'rejected', rfpNumber,
             subject: `RFP #${rfpNumber} has been rejected`,
             bodyText: `Your request for payment has been rejected.${body.reject_reason ? ' Reason: ' + body.reject_reason : ''}`,
@@ -1700,7 +1700,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           });
         }
       } else if (body.assigned_to_email) {
-        sendEmailNotification(env, {
+        await sendEmailNotification(env, {
           to: body.assigned_to_email, type: 'assigned', rfpNumber,
           subject: `RFP #${rfpNumber} needs your review`,
           bodyText: `A request for payment has been advanced to ${statusLabel} and is assigned to you.`,
@@ -2152,7 +2152,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
       // Final approval → notify submitter
       const subEmail = await getSubmitterEmail(env, rfp);
       if (subEmail) {
-        sendEmailNotification(env, {
+        await sendEmailNotification(env, {
           to: subEmail,
           type: 'approved',
           rfpNumber,
@@ -2164,7 +2164,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
       }
     } else if (next.assignedToEmail) {
       // Advanced to next step → notify next reviewer
-      sendEmailNotification(env, {
+      await sendEmailNotification(env, {
         to: next.assignedToEmail,
         type: 'assigned',
         rfpNumber,
@@ -2203,7 +2203,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
     // Email: notify submitter of rejection
     const subEmail = await getSubmitterEmail(env, rfp);
     if (subEmail) {
-      sendEmailNotification(env, {
+      await sendEmailNotification(env, {
         to: subEmail,
         type: 'rejected',
         rfpNumber,
@@ -2295,7 +2295,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
     // Email: notify the person it was returned to
     if (returnAssignee && returnAssignee.email) {
       const isSubmitter = returnToStep === 'submitted' || returnToStep === 'draft';
-      sendEmailNotification(env, {
+      await sendEmailNotification(env, {
         to: returnAssignee.email,
         type: isSubmitter ? 'returned' : 'assigned',
         rfpNumber,
