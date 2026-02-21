@@ -38,6 +38,50 @@ function generateUrlToken() {
   return Array.from(bytes, b => b.toString(36).padStart(2, '0')).join('').slice(0, 24);
 }
 
+// Consolidate mileage trips into form_data rows grouped by budget code
+function buildMileageFormDataRows(trips, rfpNumber, startLineNumber) {
+  if (!trips || !trips.length) return [];
+
+  // Group by budget_code + account_code
+  const groups = {};
+  for (const trip of trips) {
+    const key = `${trip.budget_code || ''}|${trip.account_code || ''}`;
+    if (!groups[key]) {
+      groups[key] = { budget_code: trip.budget_code, account_code: trip.account_code, total: 0, latestDate: null };
+    }
+    groups[key].total += (trip.amount || 0);
+    if (trip.trip_date && (!groups[key].latestDate || trip.trip_date > groups[key].latestDate)) {
+      groups[key].latestDate = trip.trip_date;
+    }
+  }
+
+  const rows = [];
+  let lineNum = startLineNumber;
+
+  for (const g of Object.values(groups)) {
+    const seg = parseBudgetSegments(g.budget_code);
+    rows.push({
+      rfpNumber,
+      lineNumber: lineNum++,
+      description: 'BUSINESS MILEAGE',
+      fund: seg.fund,
+      organization: seg.organization,
+      program: seg.program,
+      finance: seg.finance,
+      object: g.account_code || null,
+      quantity: null,
+      unitPrice: null,
+      total: Math.round(g.total * 100) / 100,
+      invoiceNumber: null,
+      invoiceDate: g.latestDate || null,
+      budgetCode: g.budget_code || null,
+      accountCode: g.account_code || null,
+    });
+  }
+
+  return rows;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -1134,7 +1178,7 @@ async function handleListRFPs(env, url) {
 
   // Get RFPs with line item totals + mileage
   const { results } = await env.DB.prepare(`
-    SELECT d.*, COALESCE(SUM(f.total), 0) + COALESCE(d.mileage_total, 0) as total_amount,
+    SELECT d.*, COALESCE(SUM(f.total), 0) as total_amount,
            MAX(f.invoice_date) as latest_invoice_date
     FROM dashboard_data d
     LEFT JOIN form_data f ON d.rfp_number = f.rfp_number
@@ -1305,6 +1349,26 @@ async function handleCreateRFP(request, env) {
           trip.amount || 0,
           trip.budget_code || null,
           trip.account_code || null,
+        )
+      );
+    }
+
+    // Consolidate mileage into form_data rows grouped by budget code
+    const mileageStartLine = (newItems.length ? Math.max(...newItems.map(i => i.line_number || 0)) + 1 : 0) + 9000;
+    const mileageRows = buildMileageFormDataRows(newTrips, nextRfp, mileageStartLine);
+    for (const row of mileageRows) {
+      statements.push(
+        env.DB.prepare(`
+          INSERT INTO form_data (
+            rfp_number, line_number, description, fund, organization,
+            program, finance, object, quantity, unit_price, total,
+            invoice_number, invoice_date, budget_code, account_code
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          row.rfpNumber, row.lineNumber, row.description,
+          row.fund, row.organization, row.program, row.finance, row.object,
+          row.quantity, row.unitPrice, row.total,
+          row.invoiceNumber, row.invoiceDate, row.budgetCode, row.accountCode
         )
       );
     }
@@ -1668,6 +1732,10 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     statements.push(
       env.DB.prepare('DELETE FROM mileage_trips WHERE rfp_number = ?').bind(rfpNumber)
     );
+    // Also delete old consolidated BUSINESS MILEAGE rows from form_data
+    statements.push(
+      env.DB.prepare("DELETE FROM form_data WHERE rfp_number = ? AND description = 'BUSINESS MILEAGE'").bind(rfpNumber)
+    );
 
     for (const trip of body.mileageTrips) {
       statements.push(
@@ -1687,6 +1755,27 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           trip.amount || 0,
           trip.budget_code || null,
           trip.account_code || null,
+        )
+      );
+    }
+
+    // Consolidate mileage into form_data rows grouped by budget code
+    const regularItems = newItems !== null ? newItems : [];
+    const mileageStartLine = (regularItems.length ? Math.max(...regularItems.map(i => i.line_number || 0)) + 1 : 0) + 9000;
+    const mileageRows = buildMileageFormDataRows(body.mileageTrips, rfpNumber, mileageStartLine);
+    for (const row of mileageRows) {
+      statements.push(
+        env.DB.prepare(`
+          INSERT INTO form_data (
+            rfp_number, line_number, description, fund, organization,
+            program, finance, object, quantity, unit_price, total,
+            invoice_number, invoice_date, budget_code, account_code
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          row.rfpNumber, row.lineNumber, row.description,
+          row.fund, row.organization, row.program, row.finance, row.object,
+          row.quantity, row.unitPrice, row.total,
+          row.invoiceNumber, row.invoiceDate, row.budgetCode, row.accountCode
         )
       );
     }
@@ -2872,15 +2961,7 @@ async function handleResetFresh(env) {
     }
   }
 
-  // 2. Drop mileage_trips table
-  try {
-    await env.DB.prepare('DROP TABLE IF EXISTS mileage_trips').run();
-    results.push({ step: 'DROP TABLE mileage_trips', status: 'done' });
-  } catch (e) {
-    results.push({ step: 'DROP TABLE mileage_trips', status: 'error', reason: e.message });
-  }
-
-  // 3. Drop mileage_from and mileage_to columns from form_data
+  // 2. Drop mileage_from and mileage_to columns from form_data
   const dropCols = ['mileage_from', 'mileage_to'];
   for (const col of dropCols) {
     try {
