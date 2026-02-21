@@ -2878,7 +2878,8 @@
             if (!_reassignUsers) {
                 try {
                     const resp = await fetch(`${API_BASE}/api/users`);
-                    _reassignUsers = await resp.json();
+                    const data = await resp.json();
+                    _reassignUsers = data.users || data || [];
                 } catch (e) {
                     showAlert('Failed to load users.', 'Error');
                     return;
@@ -2889,25 +2890,25 @@
             select.innerHTML = '<option value="">Select a user...</option>';
 
             const eligible = _reassignUsers.filter(u => {
-                const email = (u.user_email || '').toLowerCase().trim();
+                const email = (u.email || '').toLowerCase().trim();
                 if (submitterEmails.has(email)) return false;
                 if (u.status && u.status !== 'active') return false;
-                const roles = (() => { try { return JSON.parse(u.user_roles || '[]'); } catch(e) { return []; } })();
+                const roles = Array.isArray(u.roles) ? u.roles : [];
                 return eligibleFilter(roles);
             });
 
             eligible.sort((a, b) => {
-                const nameA = `${a.user_first_name || ''} ${a.user_last_name || ''}`.trim().toLowerCase();
-                const nameB = `${b.user_first_name || ''} ${b.user_last_name || ''}`.trim().toLowerCase();
+                const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+                const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
                 return nameA.localeCompare(nameB);
             });
 
             eligible.forEach(u => {
-                const name = `${u.user_first_name || ''} ${u.user_last_name || ''}`.trim() || u.user_email;
-                const roles = (() => { try { return JSON.parse(u.user_roles || '[]'); } catch(e) { return []; } })();
+                const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email;
+                const roles = Array.isArray(u.roles) ? u.roles : [];
                 const roleLabel = roles.filter(r => r !== 'user').map(r => r.replace(/_/g, ' ')).join(', ');
                 const opt = document.createElement('option');
-                opt.value = u.user_email;
+                opt.value = u.email;
                 opt.textContent = roleLabel ? `${name} (${roleLabel})` : name;
                 select.appendChild(opt);
             });
