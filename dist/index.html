@@ -1771,10 +1771,22 @@
             const workflowSteps = ['submitted', 'primary_review', 'secondary_1_review', 'secondary_2_review', 'secondary_3_review', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review'];
             const allInWorkflow = statuses.size > 0 && [...statuses].every(s => workflowSteps.includes(s));
 
-            // Only show approve/reject if at least one selected item is actionable (not own submission)
-            const hasActionable = allInWorkflow && selectedRFPs.some(r => !(r.submitterId && currentUserId && r.submitterId === currentUserId));
-
+            // Only show approve/reject if at least one selected item is actually approvable by this user
+            const effectiveEmailBulk = (impersonateEmail || currentUserEmail).toLowerCase();
             const isAdminUser = currentUserRoles.includes('super_user') || currentUserRoles.includes('admin');
+            const isAccountantUser = currentUserRoles.includes('accountant');
+            const isAPUser = currentUserRoles.includes('accounts_payable');
+
+            const hasActionable = allInWorkflow && selectedRFPs.some(rfp => {
+                if (rfp.submitterId && currentUserId && rfp.submitterId === currentUserId) return false;
+                const isAssignedToMe = rfp.assignedToEmail && rfp.assignedToEmail === effectiveEmailBulk;
+                if (isAssignedToMe) return true;
+                const atAccounting = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
+                const atAP = rfp.status === 'ap_review' || rfp.status === 'ap-review';
+                if (atAccounting) return isAccountantUser;
+                if (atAP) return isAPUser;
+                return isAdminUser;
+            });
 
             document.getElementById('bulkArchiveBtn').style.display = allDraft ? '' : 'none';
             document.getElementById('bulkDeleteBtn').style.display = allDraft ? '' : 'none';
