@@ -1364,7 +1364,7 @@ async function handleCreateRFP(request, env) {
   // ── Auto-advance workflow when submitted ──
   if (status === 'submitted') {
     try {
-      const advancement = await advanceToNextStep(env, nextRfp, 'submitted', body.restriction_group_id || null);
+      const advancement = await advanceToNextStep(env, nextRfp, 'submitted', body.restriction_group_id || null, body.user_email);
       if (advancement) {
         await env.DB.prepare(
           'UPDATE dashboard_data SET status = ?, assigned_to = ?, assigned_to_email = ? WHERE rfp_number = ?'
@@ -1499,7 +1499,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     try {
       const restrictionGroupId = oldHeader.restriction_group_id || body.restriction_group_id || null;
       // Use the OLD status to determine where to route next
-      const next = await advanceToNextStep(env, rfpNumber, oldHeader.status, restrictionGroupId);
+      const next = await advanceToNextStep(env, rfpNumber, oldHeader.status, restrictionGroupId, oldHeader.user_email);
       // Override with properly routed assignment
       body.status = next.status;
       body.assigned_to = next.assignedToName || null;
@@ -1514,7 +1514,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   if (body.status === 'submitted' && oldHeader.status === 'draft') {
     try {
       const restrictionGroupId = body.restriction_group_id || oldHeader.restriction_group_id || null;
-      const advancement = await advanceToNextStep(env, rfpNumber, 'submitted', restrictionGroupId);
+      const advancement = await advanceToNextStep(env, rfpNumber, 'submitted', restrictionGroupId, oldHeader.user_email);
       if (advancement) {
         body.status = advancement.status;
         body.assigned_to = advancement.assignedToName || null;
@@ -1551,7 +1551,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
       const stepRole = { 'accounting_review': 'accountant', 'accounting-review': 'accountant', 'ap_review': 'accounts_payable', 'ap-review': 'accounts_payable' };
       const role = stepRole[body.status];
       if (role) {
-        const assigned = await roundRobinAssign(env, role, body.status);
+        const assigned = await roundRobinAssign(env, role, body.status, oldHeader.user_email);
         if (assigned) {
           body.assigned_to = assigned.name;
           body.assigned_to_email = assigned.email;
@@ -1988,19 +1988,33 @@ async function getUserDisplayName(env, email) {
   return email;
 }
 
-async function roundRobinAssign(env, role, stepStatus) {
+async function roundRobinAssign(env, role, stepStatus, submitterEmail) {
   const { results: users } = await env.DB.prepare(
     'SELECT user_email, user_first_name, user_last_name, user_roles FROM user_data WHERE status = ? OR status IS NULL'
   ).bind('active').all();
 
-  const eligible = users.filter(u => {
+  const subEmail = (submitterEmail || '').toLowerCase().trim();
+
+  let eligible = users.filter(u => {
     try {
+      if (subEmail && u.user_email.toLowerCase().trim() === subEmail) return false;
       const roles = JSON.parse(u.user_roles || '[]');
       return roles.includes(role);
     } catch (e) { return false; }
   });
 
-  if (!eligible.length) return null;
+  // Fallback: if no eligible users with the required role (excluding submitter),
+  // assign to any admin/super_user who isn't the submitter
+  if (!eligible.length) {
+    eligible = users.filter(u => {
+      try {
+        if (subEmail && u.user_email.toLowerCase().trim() === subEmail) return false;
+        const roles = JSON.parse(u.user_roles || '[]');
+        return roles.includes('super_user') || roles.includes('admin');
+      } catch (e) { return false; }
+    });
+    if (!eligible.length) return null;
+  }
 
   const placeholders = eligible.map(() => '?').join(',');
   const emails = eligible.map(u => u.user_email.toLowerCase());
@@ -2030,8 +2044,9 @@ async function roundRobinAssign(env, role, stepStatus) {
   return { email: chosen.user_email.toLowerCase(), name };
 }
 
-async function advanceToNextStep(env, rfpNumber, currentStatus, restrictionGroupId) {
+async function advanceToNextStep(env, rfpNumber, currentStatus, restrictionGroupId, submitterEmail) {
   const chain = await getApprovalChain(env, restrictionGroupId);
+  const subEmail = (submitterEmail || '').toLowerCase().trim();
 
   let startIdx = -1;
   if (currentStatus === 'submitted') {
@@ -2048,7 +2063,7 @@ async function advanceToNextStep(env, rfpNumber, currentStatus, restrictionGroup
     }
 
     if (step.role) {
-      const assigned = await roundRobinAssign(env, step.role, step.step);
+      const assigned = await roundRobinAssign(env, step.role, step.step, subEmail);
       if (assigned) {
         return { status: step.step, assignedToEmail: assigned.email, assignedToName: assigned.name };
       }
@@ -2056,6 +2071,8 @@ async function advanceToNextStep(env, rfpNumber, currentStatus, restrictionGroup
     }
 
     if (step.email) {
+      // Skip named approver if they are the submitter
+      if (subEmail && step.email.toLowerCase().trim() === subEmail) continue;
       return { status: step.step, assignedToEmail: step.email, assignedToName: step.name };
     }
   }
@@ -2123,6 +2140,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
 
   const now = new Date().toISOString();
   const restrictionGroupId = rfp.restriction_group_id;
+  const rfpSubmitterEmail = await getSubmitterEmail(env, rfp);
   let history = [];
   try { history = JSON.parse(rfp.approval_history || '[]'); } catch (e) { history = []; }
 
@@ -2143,7 +2161,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
       return json({ error: 'Batch number is required for A/P approval' }, 400);
     }
 
-    const next = await advanceToNextStep(env, rfpNumber, rfp.status, restrictionGroupId);
+    const next = await advanceToNextStep(env, rfpNumber, rfp.status, restrictionGroupId, rfpSubmitterEmail);
 
     const updates = {
       status: next.status,
@@ -2179,7 +2197,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
     // Email notifications
     if (next.status === 'approved') {
       // Final approval → notify submitter
-      const subEmail = await getSubmitterEmail(env, rfp);
+      const subEmail = rfpSubmitterEmail;
       if (subEmail) {
         await sendEmailNotification(env, {
           to: subEmail,
@@ -2230,7 +2248,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
     ).bind(rfpNumber, 'rejected', auditDesc, performerName, performerEmail, now).run();
 
     // Email: notify submitter of rejection
-    const subEmail = await getSubmitterEmail(env, rfp);
+    const subEmail = rfpSubmitterEmail;
     if (subEmail) {
       await sendEmailNotification(env, {
         to: subEmail,
@@ -2287,9 +2305,9 @@ async function handleWorkflowAction(rfpNumber, request, env) {
         }
       } catch (e) {}
     } else if (returnToStep === 'accounting_review') {
-      returnAssignee = await roundRobinAssign(env, 'accountant', 'accounting_review');
+      returnAssignee = await roundRobinAssign(env, 'accountant', 'accounting_review', rfpSubmitterEmail);
     } else if (returnToStep === 'ap_review') {
-      returnAssignee = await roundRobinAssign(env, 'accounts_payable', 'ap_review');
+      returnAssignee = await roundRobinAssign(env, 'accounts_payable', 'ap_review', rfpSubmitterEmail);
     }
 
     history.push({
