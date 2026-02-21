@@ -4391,6 +4391,31 @@
                 creation_source: window._creationSource || null,
             };
 
+            // Determine restriction group from budget codes
+            if (USER_RESTRICTIONS.groups && USER_RESTRICTIONS.groups.length > 0) {
+                // Collect all budget codes from line items and mileage
+                const allBudgetCodes = lineItems.map(li => li.budget_code).filter(Boolean);
+                document.querySelectorAll('#mileageBody tr').forEach(r => {
+                    const bc = r.querySelector('.trip-budget-code') ? r.querySelector('.trip-budget-code').value.trim() : '';
+                    if (bc) allBudgetCodes.push(bc);
+                });
+
+                if (allBudgetCodes.length > 0) {
+                    // Find which group matches the first budget code
+                    const matchingGroup = USER_RESTRICTIONS.groups.find(g =>
+                        g.budget_rules.length > 0 && g.budget_rules.some(rule => budgetCodeMatchesRule(allBudgetCodes[0], rule))
+                    );
+                    if (matchingGroup) {
+                        payload.restriction_group_id = matchingGroup.id;
+                    }
+                }
+
+                // Fallback: if only one group, use it regardless
+                if (!payload.restriction_group_id && USER_RESTRICTIONS.groups.length === 1) {
+                    payload.restriction_group_id = USER_RESTRICTIONS.groups[0].id;
+                }
+            }
+
             // Add vendor or employee fields
             if (requestType === 'vendor') {
                 payload.vendor_name = document.getElementById('vendorName').value.trim();

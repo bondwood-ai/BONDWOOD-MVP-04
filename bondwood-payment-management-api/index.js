@@ -1447,10 +1447,10 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     const atAPStep = oldHeader.status === 'ap_review' || oldHeader.status === 'ap-review';
 
     // Role-based steps require the matching role — assignment alone is not sufficient
-    if (atAccountingStep && !isAdmin && !isAccountant) {
+    if (atAccountingStep && !isAccountant) {
       return json({ error: 'Only users with the Accountant role can approve at the Accounting Review step' }, 403);
     }
-    if (atAPStep && !isAdmin && !isAP) {
+    if (atAPStep && !isAP) {
       return json({ error: 'Only users with the Accounts Payable role can approve at the A/P Review step' }, 403);
     }
 
@@ -1497,7 +1497,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   const workflowStatuses = ['secondary_3_review', 'secondary_2_review', 'secondary_1_review', 'primary_review', 'accounting_review', 'ap_review', 'accounting-review', 'ap-review', 'approved'];
   if (body.status && body.status !== oldHeader.status && workflowStatuses.includes(body.status)) {
     try {
-      const restrictionGroupId = oldHeader.restriction_group_id || null;
+      const restrictionGroupId = oldHeader.restriction_group_id || body.restriction_group_id || null;
       // Use the OLD status to determine where to route next
       const next = await advanceToNextStep(env, rfpNumber, oldHeader.status, restrictionGroupId);
       // Override with properly routed assignment
@@ -1507,6 +1507,35 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     } catch (routeErr) {
       console.error('[ROUTING] Failed to determine next step:', routeErr.message);
       // Fall through to use whatever the frontend sent
+    }
+  }
+
+  // ── Auto-advance when draft → submitted (same as POST handler) ──
+  if (body.status === 'submitted' && oldHeader.status === 'draft') {
+    try {
+      const restrictionGroupId = body.restriction_group_id || oldHeader.restriction_group_id || null;
+      const advancement = await advanceToNextStep(env, rfpNumber, 'submitted', restrictionGroupId);
+      if (advancement) {
+        body.status = advancement.status;
+        body.assigned_to = advancement.assignedToName || null;
+        body.assigned_to_email = advancement.assignedToEmail || null;
+
+        // Email: notify assigned reviewer
+        if (advancement.assignedToEmail) {
+          const stepLabel = WORKFLOW_STATUS_LABELS[advancement.status] || advancement.status;
+          await sendEmailNotification(env, {
+            to: advancement.assignedToEmail,
+            type: 'assigned',
+            rfpNumber,
+            subject: `RFP #${rfpNumber} needs your review`,
+            bodyText: `A new request for payment has been submitted and routed to you for ${stepLabel}.`,
+            ctaLabel: 'Review Request',
+            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+          });
+        }
+      }
+    } catch (wfErr) {
+      console.error('[WORKFLOW] Failed to advance after draft→submitted:', wfErr.message);
     }
   }
 
@@ -2077,10 +2106,10 @@ async function handleWorkflowAction(rfpNumber, request, env) {
   const atAccountingStep = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
   const atAPStep = rfp.status === 'ap_review' || rfp.status === 'ap-review';
 
-  if (atAccountingStep && !isAdmin && !isAccountant) {
+  if (atAccountingStep && !isAccountant) {
     return json({ error: 'Only users with the Accountant role can approve at the Accounting Review step' }, 403);
   }
-  if (atAPStep && !isAdmin && !isAP) {
+  if (atAPStep && !isAP) {
     return json({ error: 'Only users with the Accounts Payable role can approve at the A/P Review step' }, 403);
   }
   if (!atAccountingStep && !atAPStep && !isAdmin && !isAssigned) {
