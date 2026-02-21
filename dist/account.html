@@ -1337,10 +1337,9 @@
         }
 
         async function loadNotifPrefs() {
+            if (!currentUserEmail) return;
             try {
-                const resp = await fetch(API_BASE + '/users/me/notifications', {
-                    headers: { 'Authorization': 'Bearer ' + (await window.Clerk?.session?.getToken()) }
-                });
+                const resp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`);
                 if (!resp.ok) return;
                 const data = await resp.json();
                 if (data.prefs) {

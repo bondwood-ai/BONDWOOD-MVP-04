@@ -1374,6 +1374,19 @@ async function handleCreateRFP(request, env) {
         await env.DB.prepare(
           'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
         ).bind(nextRfp, 'workflow-advanced', `Form routed to <strong>${advancement.assignedToName}</strong> for <strong>${stepLabel}</strong>`, 'System', null, new Date().toISOString()).run();
+
+        // Email: notify assigned reviewer
+        if (advancement.assignedToEmail) {
+          sendEmailNotification(env, {
+            to: advancement.assignedToEmail,
+            type: 'assigned',
+            rfpNumber: nextRfp,
+            subject: `RFP #${nextRfp} needs your review`,
+            bodyText: `A new request for payment has been submitted and routed to you for ${stepLabel}.`,
+            ctaLabel: 'Review Request',
+            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${nextRfp}`,
+          });
+        }
       }
     } catch (wfErr) {
       console.error('[WORKFLOW] Failed to advance after submission:', wfErr.message);
@@ -1660,6 +1673,42 @@ async function handleUpdateRFP(rfpNumber, request, env) {
       ).bind(rfpNumber, entry.action, entry.description, performer, performerEmail || null, now).run();
     }
     auditDebug.written = true;
+
+    // Email notification for status advances via generic update
+    if (body.status && body.status !== oldHeader.status && body.assigned_to_email) {
+      const statusLabel = WORKFLOW_STATUS_LABELS[body.status] || body.status;
+      if (body.status === 'approved') {
+        const subEmail = await getSubmitterEmail(env, oldHeader);
+        if (subEmail) {
+          sendEmailNotification(env, {
+            to: subEmail, type: 'approved', rfpNumber,
+            subject: `RFP #${rfpNumber} has been approved`,
+            bodyText: 'Your request for payment has received final approval.',
+            ctaLabel: 'View Request',
+            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+          });
+        }
+      } else if (body.status === 'rejected') {
+        const subEmail = await getSubmitterEmail(env, oldHeader);
+        if (subEmail) {
+          sendEmailNotification(env, {
+            to: subEmail, type: 'rejected', rfpNumber,
+            subject: `RFP #${rfpNumber} has been rejected`,
+            bodyText: `Your request for payment has been rejected.${body.reject_reason ? ' Reason: ' + body.reject_reason : ''}`,
+            ctaLabel: 'View Request',
+            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+          });
+        }
+      } else if (body.assigned_to_email) {
+        sendEmailNotification(env, {
+          to: body.assigned_to_email, type: 'assigned', rfpNumber,
+          subject: `RFP #${rfpNumber} needs your review`,
+          bodyText: `A request for payment has been advanced to ${statusLabel} and is assigned to you.`,
+          ctaLabel: 'Review Request',
+          ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+        });
+      }
+    }
   } catch (auditErr) {
     console.error('[AUDIT] Failed:', auditErr.message, auditErr.stack);
     auditDebug.error = auditErr.message;
@@ -2098,6 +2147,34 @@ async function handleWorkflowAction(rfpNumber, request, env) {
       'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(rfpNumber, 'approved', auditDesc, performerName, performerEmail, now).run();
 
+    // Email notifications
+    if (next.status === 'approved') {
+      // Final approval → notify submitter
+      const subEmail = await getSubmitterEmail(env, rfp);
+      if (subEmail) {
+        sendEmailNotification(env, {
+          to: subEmail,
+          type: 'approved',
+          rfpNumber,
+          subject: `RFP #${rfpNumber} has been approved`,
+          bodyText: `Your request for payment has received final approval.${apBatchNumber ? ' A/P Batch: ' + apBatchNumber : ''}`,
+          ctaLabel: 'View Request',
+          ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+        });
+      }
+    } else if (next.assignedToEmail) {
+      // Advanced to next step → notify next reviewer
+      sendEmailNotification(env, {
+        to: next.assignedToEmail,
+        type: 'assigned',
+        rfpNumber,
+        subject: `RFP #${rfpNumber} needs your review`,
+        bodyText: `A request for payment has been advanced to ${nextLabel} and is assigned to you.`,
+        ctaLabel: 'Review Request',
+        ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+      });
+    }
+
     return json({ rfp_number: rfpNumber, new_status: next.status, assigned_to: next.assignedToName, message: 'Approved' });
   }
 
@@ -2122,6 +2199,20 @@ async function handleWorkflowAction(rfpNumber, request, env) {
     await env.DB.prepare(
       'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(rfpNumber, 'rejected', auditDesc, performerName, performerEmail, now).run();
+
+    // Email: notify submitter of rejection
+    const subEmail = await getSubmitterEmail(env, rfp);
+    if (subEmail) {
+      sendEmailNotification(env, {
+        to: subEmail,
+        type: 'rejected',
+        rfpNumber,
+        subject: `RFP #${rfpNumber} has been rejected`,
+        bodyText: `Your request for payment has been permanently rejected at ${stepLabel}.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`,
+        ctaLabel: 'View Request',
+        ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+      });
+    }
 
     return json({ rfp_number: rfpNumber, new_status: 'rejected', message: 'Rejected' });
   }
@@ -2200,6 +2291,24 @@ async function handleWorkflowAction(rfpNumber, request, env) {
     await env.DB.prepare(
       'INSERT INTO audit_logs (rfp_number, action, description, performed_by, performed_by_email, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(rfpNumber, 'returned', auditDesc, performerName, performerEmail, now).run();
+
+    // Email: notify the person it was returned to
+    if (returnAssignee && returnAssignee.email) {
+      const isSubmitter = returnToStep === 'submitted' || returnToStep === 'draft';
+      sendEmailNotification(env, {
+        to: returnAssignee.email,
+        type: isSubmitter ? 'returned' : 'assigned',
+        rfpNumber,
+        subject: isSubmitter
+          ? `RFP #${rfpNumber} has been returned to you`
+          : `RFP #${rfpNumber} needs your review`,
+        bodyText: isSubmitter
+          ? `Your request for payment has been sent back for changes.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`
+          : `A request for payment has been returned to ${returnLabel} and is assigned to you.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`,
+        ctaLabel: 'View Request',
+        ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+      });
+    }
 
     return json({ rfp_number: rfpNumber, new_status: returnToStep, assigned_to: returnAssignee?.name, message: 'Returned' });
   }
@@ -3176,9 +3285,23 @@ async function handleUpdateProfile(request, env) {
   if (!email) return json({ error: 'email is required' }, 400);
 
   try {
+    // Load existing preferences to merge notification prefs
+    const { results } = await env.DB.prepare(
+      'SELECT preferences FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(email.toLowerCase().trim()).all();
+
+    let prefs = {};
+    try { prefs = JSON.parse(results[0]?.preferences || '{}') || {}; } catch (e) {}
+
+    // Merge notification preferences if provided
+    if (body.notif_assigned !== undefined) prefs.notif_assigned = body.notif_assigned;
+    if (body.notif_approved !== undefined) prefs.notif_approved = body.notif_approved;
+    if (body.notif_rejected !== undefined) prefs.notif_rejected = body.notif_rejected;
+    if (body.notif_overdue !== undefined) prefs.notif_overdue = body.notif_overdue;
+
     await env.DB.prepare(
-      'UPDATE user_data SET phone_number = ?, department = ?, title = ? WHERE LOWER(user_email) = ?'
-    ).bind(phone_number || '', department || '', title || '', email.toLowerCase().trim()).run();
+      'UPDATE user_data SET phone_number = ?, department = ?, title = ?, preferences = ? WHERE LOWER(user_email) = ?'
+    ).bind(phone_number || '', department || '', title || '', JSON.stringify(prefs), email.toLowerCase().trim()).run();
     return json({ message: 'Profile updated' });
   } catch (e) {
     return json({ error: 'Failed to update profile: ' + e.message }, 500);
@@ -3672,4 +3795,119 @@ async function handleDeleteRgVendor(groupId, vendorNumber, env) {
   } catch (e) {
     return json({ error: 'Failed to remove vendor: ' + e.message }, 500);
   }
+}
+
+
+/* ========================================
+   EMAIL NOTIFICATIONS (Resend)
+   ======================================== */
+const FRONTEND_URL = 'https://bondwood-mvp-04.pages.dev';
+
+async function getSubmitterEmail(env, rfp) {
+  try {
+    const subId = (rfp.submitter_id || '').replace(/^E/, '');
+    if (!subId) return rfp.user_email || null;
+    const { results } = await env.DB.prepare(
+      'SELECT user_email FROM user_data WHERE user_id = ?'
+    ).bind(subId).all();
+    return results.length ? results[0].user_email.toLowerCase() : (rfp.user_email || null);
+  } catch (e) {
+    return rfp.user_email || null;
+  }
+}
+
+async function getNotificationPrefs(env, email) {
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT preferences FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(email.toLowerCase().trim()).all();
+    if (!results.length) return {};
+    return JSON.parse(results[0].preferences || '{}') || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyText, ctaLabel, ctaUrl }) {
+  if (!env.RESEND_API_KEY) {
+    console.log('[EMAIL] No RESEND_API_KEY configured, skipping notification');
+    return;
+  }
+
+  try {
+    // Check user notification preference
+    const prefs = await getNotificationPrefs(env, to);
+    const prefMap = {
+      'assigned': 'notif_assigned',
+      'approved': 'notif_approved',
+      'rejected': 'notif_rejected',
+      'returned': 'notif_rejected',
+      'overdue': 'notif_overdue',
+    };
+    const prefKey = prefMap[type];
+    if (prefKey && prefs[prefKey] === false) {
+      console.log(`[EMAIL] User ${to} has ${prefKey} disabled, skipping`);
+      return;
+    }
+
+    const html = buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl });
+
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'BONDWOOD <noreply@bondwood.ai>',
+        to: [to],
+        subject: subject,
+        html: html,
+      }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error('[EMAIL] Resend error:', resp.status, err);
+    } else {
+      console.log(`[EMAIL] Sent "${type}" notification to ${to} for RFP #${rfpNumber}`);
+    }
+  } catch (e) {
+    console.error('[EMAIL] Failed to send:', e.message);
+  }
+}
+
+function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl }) {
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+        <!-- Header -->
+        <tr><td style="background:#000000;padding:20px 28px;border-radius:10px 10px 0 0;">
+          <span style="color:#ffffff;font-size:18px;font-weight:800;letter-spacing:0.5px;">BONDWOOD</span>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="background:#ffffff;padding:28px 28px 20px;">
+          <h1 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#1a1a1a;line-height:1.4;">${subject}</h1>
+          <p style="margin:0 0 8px;font-size:14px;color:#333333;line-height:1.6;">${bodyText}</p>
+          ${rfpNumber ? '<p style="margin:12px 0 0;font-size:13px;color:#666666;">RFP #<strong>' + rfpNumber + '</strong></p>' : ''}
+        </td></tr>
+
+        <!-- CTA Button -->
+        ${ctaUrl ? '<tr><td style="background:#ffffff;padding:8px 28px 28px;"><a href="' + ctaUrl + '" style="display:inline-block;padding:10px 24px;background:#000000;color:#ffffff;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;">' + (ctaLabel || 'View Request') + '</a></td></tr>' : ''}
+
+        <!-- Footer -->
+        <tr><td style="padding:16px 28px;font-size:11px;color:#999999;border-top:1px solid #eeeeee;background:#ffffff;border-radius:0 0 10px 10px;">
+          This is an automated notification from BONDWOOD Payment Management.<br>
+          <a href="${FRONTEND_URL}/account.html" style="color:#999999;">Manage notification preferences</a>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
 }
