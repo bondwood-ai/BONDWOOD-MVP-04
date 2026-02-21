@@ -1384,7 +1384,7 @@ async function handleCreateRFP(request, env) {
             subject: `RFP #${nextRfp} needs your review`,
             bodyText: `A new request for payment has been submitted and routed to you for ${stepLabel}.`,
             ctaLabel: 'Review Request',
-            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${nextRfp}`,
+            ctaUrl: buildFormUrl(nextRfp, urlToken),
           });
         }
       }
@@ -1530,7 +1530,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
             subject: `RFP #${rfpNumber} needs your review`,
             bodyText: `A new request for payment has been submitted and routed to you for ${stepLabel}.`,
             ctaLabel: 'Review Request',
-            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+            ctaUrl: buildFormUrl(rfpNumber, oldHeader.url_token),
           });
         }
       }
@@ -1714,7 +1714,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
             subject: `RFP #${rfpNumber} has been approved`,
             bodyText: 'Your request for payment has received final approval.',
             ctaLabel: 'View Request',
-            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+            ctaUrl: buildFormUrl(rfpNumber, oldHeader.url_token),
           });
         }
       } else if (body.status === 'rejected') {
@@ -1725,7 +1725,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
             subject: `RFP #${rfpNumber} has been rejected`,
             bodyText: `Your request for payment has been rejected.${body.reject_reason ? ' Reason: ' + body.reject_reason : ''}`,
             ctaLabel: 'View Request',
-            ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+            ctaUrl: buildFormUrl(rfpNumber, oldHeader.url_token),
           });
         }
       } else if (body.assigned_to_email) {
@@ -1734,7 +1734,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           subject: `RFP #${rfpNumber} needs your review`,
           bodyText: `A request for payment has been advanced to ${statusLabel} and is assigned to you.`,
           ctaLabel: 'Review Request',
-          ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+          ctaUrl: buildFormUrl(rfpNumber, oldHeader.url_token),
         });
       }
     }
@@ -2188,7 +2188,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
           subject: `RFP #${rfpNumber} has been approved`,
           bodyText: `Your request for payment has received final approval.${apBatchNumber ? ' A/P Batch: ' + apBatchNumber : ''}`,
           ctaLabel: 'View Request',
-          ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+          ctaUrl: buildFormUrl(rfpNumber, rfp.url_token),
         });
       }
     } else if (next.assignedToEmail) {
@@ -2200,7 +2200,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
         subject: `RFP #${rfpNumber} needs your review`,
         bodyText: `A request for payment has been advanced to ${nextLabel} and is assigned to you.`,
         ctaLabel: 'Review Request',
-        ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+        ctaUrl: buildFormUrl(rfpNumber, rfp.url_token),
       });
     }
 
@@ -2239,7 +2239,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
         subject: `RFP #${rfpNumber} has been rejected`,
         bodyText: `Your request for payment has been permanently rejected at ${stepLabel}.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`,
         ctaLabel: 'View Request',
-        ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+        ctaUrl: buildFormUrl(rfpNumber, rfp.url_token),
       });
     }
 
@@ -2335,7 +2335,7 @@ async function handleWorkflowAction(rfpNumber, request, env) {
           ? `Your request for payment has been sent back for changes.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`
           : `A request for payment has been returned to ${returnLabel} and is assigned to you.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`,
         ctaLabel: 'View Request',
-        ctaUrl: `${FRONTEND_URL}/rfp-form.html?rfp=${rfpNumber}`,
+        ctaUrl: buildFormUrl(rfpNumber, rfp.url_token),
       });
     }
 
@@ -3843,6 +3843,11 @@ async function getSubmitterEmail(env, rfp) {
   } catch (e) {
     return rfp.user_email || null;
   }
+}
+
+function buildFormUrl(rfpNumber, urlToken) {
+  if (urlToken) return `${FRONTEND_URL}/rfp-form.html?t=${urlToken}`;
+  return `${FRONTEND_URL}/rfp-form.html?id=${rfpNumber}`;
 }
 
 async function getNotificationPrefs(env, email) {

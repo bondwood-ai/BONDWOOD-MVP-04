@@ -1,1 +1,1 @@
-/f/:token /rfp-form.html?t=:token 200
+/f/*  /rfp-form.html  200
