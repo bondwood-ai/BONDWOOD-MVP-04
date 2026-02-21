@@ -1994,11 +1994,11 @@
                 const atAccounting = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
                 const atAP = rfp.status === 'ap_review' || rfp.status === 'ap-review';
                 const isAssignedToMe = rfp.assignedToEmail && rfp.assignedToEmail === effectiveEmail;
-                if (atAccounting && !isAdmin && !isAccountant) {
+                if (atAccounting && !isAccountant) {
                     skipped.push(`#${rfp.rfpNumber}: requires Accountant role`);
                     return false;
                 }
-                if (atAP && !isAdmin && !isAP) {
+                if (atAP && !isAP) {
                     skipped.push(`#${rfp.rfpNumber}: requires Accounts Payable role`);
                     return false;
                 }
@@ -2444,10 +2444,9 @@
             const atAPStep = rfp.status === 'ap_review' || rfp.status === 'ap-review';
             const isAssigned = rfp.assignedToEmail && currentUserEmail && rfp.assignedToEmail === currentUserEmail;
             const canApprove = isInApprovalWorkflow(rfp.status) && !isOwnSubmission && (
-                isAdmin ||
                 (isAccountant && atAccountingStep) ||
                 (isAP && atAPStep) ||
-                (!atAccountingStep && !atAPStep && isAssigned)
+                (!atAccountingStep && !atAPStep && (isAdmin || isAssigned))
             );
             if (canApprove) {
                 approvalBtns.style.display = '';
@@ -2698,13 +2697,13 @@
         /* ========================================
            APPROVAL WORKFLOW
            ======================================== */
-        const WORKFLOW_NEXT = { 'submitted': 'accounting_review', 'accounting_review': 'ap_review', 'ap_review': 'approved', 'accounting-review': 'ap_review', 'ap-review': 'approved' };
-        const WORKFLOW_PREV = { 'submitted': 'draft', 'accounting_review': 'submitted', 'ap_review': 'accounting_review', 'accounting-review': 'submitted', 'ap-review': 'accounting_review' };
-        const WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'accounting_review': 'Accounting Review', 'ap_review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review' };
+        const WORKFLOW_NEXT = { 'submitted': 'accounting_review', 'primary_review': 'accounting_review', 'secondary_1_review': 'primary_review', 'secondary_2_review': 'secondary_1_review', 'secondary_3_review': 'secondary_2_review', 'accounting_review': 'ap_review', 'ap_review': 'approved', 'accounting-review': 'ap_review', 'ap-review': 'approved' };
+        const WORKFLOW_PREV = { 'submitted': 'draft', 'primary_review': 'submitted', 'secondary_1_review': 'submitted', 'secondary_2_review': 'submitted', 'secondary_3_review': 'submitted', 'accounting_review': 'submitted', 'ap_review': 'accounting_review', 'accounting-review': 'submitted', 'ap-review': 'accounting_review' };
+        const WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'primary_review': 'Primary Review', 'secondary_1_review': 'Secondary Review 1', 'secondary_2_review': 'Secondary Review 2', 'secondary_3_review': 'Secondary Review 3', 'accounting_review': 'Accounting Review', 'ap_review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review' };
         let previewRfp = null; // currently viewed RFP in preview modal
 
         function isInApprovalWorkflow(status) {
-            return status === 'submitted' || status === 'accounting_review' || status === 'ap_review' || status === 'accounting-review' || status === 'ap-review';
+            return status === 'submitted' || status === 'primary_review' || status === 'secondary_1_review' || status === 'secondary_2_review' || status === 'secondary_3_review' || status === 'accounting_review' || status === 'ap_review' || status === 'accounting-review' || status === 'ap-review';
         }
 
         function openRejectModal() {
