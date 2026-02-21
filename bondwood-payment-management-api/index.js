@@ -1462,17 +1462,17 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     const atAccountingStep = oldHeader.status === 'accounting_review' || oldHeader.status === 'accounting-review';
     const atAPStep = oldHeader.status === 'ap_review' || oldHeader.status === 'ap-review';
 
-    // Role-based steps require the matching role — assignment alone is not sufficient
-    if (atAccountingStep && !isAccountant) {
-      return json({ error: 'Only users with the Accountant role can approve at the Accounting Review step' }, 403);
-    }
-    if (atAPStep && !isAP) {
-      return json({ error: 'Only users with the Accounts Payable role can approve at the A/P Review step' }, 403);
-    }
-
-    // Named approver steps: must be admin or the assigned approver
-    if (!atAccountingStep && !atAPStep && !isAdmin && !isAssigned) {
-      return json({ error: 'You do not have permission to approve or reject this submission' }, 403);
+    // If explicitly assigned (e.g. via reassignment), always allow — role checks only apply for auto-routed users
+    if (!isAssigned) {
+      if (atAccountingStep && !isAccountant) {
+        return json({ error: 'Only users with the Accountant role can approve at the Accounting Review step' }, 403);
+      }
+      if (atAPStep && !isAP) {
+        return json({ error: 'Only users with the Accounts Payable role can approve at the A/P Review step' }, 403);
+      }
+      if (!atAccountingStep && !atAPStep && !isAdmin) {
+        return json({ error: 'You do not have permission to approve or reject this submission' }, 403);
+      }
     }
   }
 
@@ -2162,14 +2162,16 @@ async function handleWorkflowAction(rfpNumber, request, env) {
   const atAccountingStep = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
   const atAPStep = rfp.status === 'ap_review' || rfp.status === 'ap-review';
 
-  if (atAccountingStep && !isAccountant) {
-    return json({ error: 'Only users with the Accountant role can approve at the Accounting Review step' }, 403);
-  }
-  if (atAPStep && !isAP) {
-    return json({ error: 'Only users with the Accounts Payable role can approve at the A/P Review step' }, 403);
-  }
-  if (!atAccountingStep && !atAPStep && !isAdmin && !isAssigned) {
-    return json({ error: 'You do not have permission to perform this action on this form' }, 403);
+  if (!isAssigned) {
+    if (atAccountingStep && !isAccountant) {
+      return json({ error: 'Only users with the Accountant role can approve at the Accounting Review step' }, 403);
+    }
+    if (atAPStep && !isAP) {
+      return json({ error: 'Only users with the Accounts Payable role can approve at the A/P Review step' }, 403);
+    }
+    if (!atAccountingStep && !atAPStep && !isAdmin) {
+      return json({ error: 'You do not have permission to perform this action on this form' }, 403);
+    }
   }
 
   const submitterId = (rfp.submitter_id || '').toUpperCase();

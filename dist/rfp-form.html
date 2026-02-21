@@ -4520,18 +4520,42 @@
         /* ========================================
            APPROVAL WORKFLOW (FORM)
            ======================================== */
-        const FORM_WORKFLOW_NEXT = { 'submitted': 'accounting-review', 'accounting-review': 'ap-review', 'ap-review': 'approved' };
-        const FORM_WORKFLOW_PREV = { 'submitted': 'draft', 'accounting-review': 'submitted', 'ap-review': 'accounting-review' };
-        const FORM_WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected' };
+        const FORM_WORKFLOW_NEXT = { 'submitted': 'accounting-review', 'primary_review': 'accounting_review', 'secondary_1_review': 'primary_review', 'secondary_2_review': 'secondary_1_review', 'secondary_3_review': 'secondary_2_review', 'accounting-review': 'ap-review', 'ap-review': 'approved', 'accounting_review': 'ap_review', 'ap_review': 'approved' };
+        const FORM_WORKFLOW_PREV = { 'submitted': 'draft', 'primary_review': 'submitted', 'secondary_1_review': 'submitted', 'secondary_2_review': 'submitted', 'secondary_3_review': 'submitted', 'accounting-review': 'submitted', 'ap-review': 'accounting-review', 'accounting_review': 'submitted', 'ap_review': 'accounting_review' };
+        const FORM_WORKFLOW_LABELS = { 'draft': 'Draft', 'submitted': 'Submitted', 'primary_review': 'Primary Review', 'secondary_1_review': 'Secondary Review 1', 'secondary_2_review': 'Secondary Review 2', 'secondary_3_review': 'Secondary Review 3', 'accounting-review': 'Accounting Review', 'ap-review': 'A/P Review', 'accounting_review': 'Accounting Review', 'ap_review': 'A/P Review', 'approved': 'Approved', 'rejected': 'Rejected' };
         let currentFormStatus = 'draft';
 
-        function showApprovalButtons(status) {
+        function showApprovalButtons(status, canReview) {
             currentFormStatus = status;
-            const isApproval = status === 'submitted' || status === 'accounting-review' || status === 'ap-review';
+            const workflowStatuses = ['submitted', 'primary_review', 'secondary_1_review', 'secondary_2_review', 'secondary_3_review', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review'];
+            const isInWorkflow = workflowStatuses.includes(status);
             const isApproved = status === 'approved';
-            document.getElementById('draftButtons').style.display = (!isApproval && !isApproved) ? '' : 'none';
-            document.getElementById('approvalButtons').style.display = isApproval ? '' : 'none';
-            document.getElementById('approvedButtons').style.display = isApproved ? '' : 'none';
+            const isRejected = status === 'rejected';
+
+            if (canReview && isInWorkflow) {
+                // User is the assigned reviewer — show Approve/Reject
+                document.getElementById('draftButtons').style.display = 'none';
+                document.getElementById('approvalButtons').style.display = '';
+                document.getElementById('approvedButtons').style.display = 'none';
+                document.getElementById('viewOnlyButtons').style.display = 'none';
+            } else if (isApproved) {
+                document.getElementById('draftButtons').style.display = 'none';
+                document.getElementById('approvalButtons').style.display = 'none';
+                document.getElementById('approvedButtons').style.display = '';
+                document.getElementById('viewOnlyButtons').style.display = 'none';
+            } else if (isInWorkflow || isRejected) {
+                // In workflow but not the reviewer, or rejected — view only
+                document.getElementById('draftButtons').style.display = 'none';
+                document.getElementById('approvalButtons').style.display = 'none';
+                document.getElementById('approvedButtons').style.display = 'none';
+                document.getElementById('viewOnlyButtons').style.display = '';
+            } else {
+                // Draft — show save/submit
+                document.getElementById('draftButtons').style.display = '';
+                document.getElementById('approvalButtons').style.display = 'none';
+                document.getElementById('approvedButtons').style.display = 'none';
+                document.getElementById('viewOnlyButtons').style.display = 'none';
+            }
         }
 
         function lockFormForViewing() {
@@ -4619,12 +4643,16 @@
             }
 
             try {
+                const effectiveEmail = (sessionStorage.getItem('impersonateEmail') || currentLoggedInEmail || '').toLowerCase().trim();
                 const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus, performer_name: performerName, reject_reason: reason, reject_type: rejectType })
+                    body: JSON.stringify({ status: newStatus, performer_name: performerName, performer_email: effectiveEmail, reject_reason: reason, reject_type: rejectType })
                 });
-                if (!resp.ok) throw new Error('Failed to update status');
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Failed to update status');
+                }
 
                 closeFormRejectModal();
                 showAlert(
@@ -4650,20 +4678,21 @@
             let apBatch = null;
 
             // Prompt for A/P Batch when approving from A/P Review
-            if (isFullApproval && currentFormStatus === 'ap-review') {
+            if (isFullApproval && (currentFormStatus === 'ap-review' || currentFormStatus === 'ap_review')) {
                 apBatch = await showPrompt('Enter the A/P Batch number for this request:', 'A/P Batch', { placeholder: 'e.g. AP-2026-001', confirmText: 'Approve' });
                 if (!apBatch) return; // cancelled
             }
-
-            const auditText = isFullApproval
-                ? `Reviewer approved the request${apBatch ? ' (A/P Batch: ' + apBatch + ')' : ''}`
-                : `Reviewer advanced the request to "${FORM_WORKFLOW_LABELS[newStatus] || newStatus}"`;
 
             try {
                 const performerName = _cachedEmployee
                     ? `${(_cachedEmployee.first_name || '').toUpperCase()} ${(_cachedEmployee.last_name || '').toUpperCase()}`.trim()
                     : 'Reviewer';
-                const updateBody = { status: newStatus, performer_name: performerName };
+                const effectiveEmail = (sessionStorage.getItem('impersonateEmail') || currentLoggedInEmail || '').toLowerCase().trim();
+                const updateBody = {
+                    status: newStatus,
+                    performer_name: performerName,
+                    performer_email: effectiveEmail,
+                };
                 if (apBatch) updateBody.ap_batch = apBatch;
 
                 const resp = await fetch(`${API_BASE}/api/rfps/${currentRfpNumber}`, {
@@ -4671,7 +4700,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updateBody)
                 });
-                if (!resp.ok) throw new Error('Failed to update status');
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Failed to update status');
+                }
 
                 showAlert(
                     isFullApproval
@@ -4727,8 +4759,9 @@
                 const isOwnerById = rfpOwnerId && currentEmpId && currentEmpId === rfpOwnerId;
                 const isOwner = isOwnerByEmail || isOwnerById;
                 const isAdmin = currentUserIsAdmin && !impEmail;
+                const isAssignedReviewer = effectiveEmail && (data.assigned_to_email || '').toLowerCase().trim() === effectiveEmail;
 
-                if (effectiveEmail && !isOwner && !isAdmin) {
+                if (effectiveEmail && !isOwner && !isAdmin && !isAssignedReviewer) {
                     formDirty = false;
                     window.location.href = '/index.html?denied=1';
                     return;
@@ -4888,14 +4921,15 @@
                 // Load attachments
                 loadExistingAttachments(rfpNumber);
 
-                // Swap buttons if in approval workflow
+                // Swap buttons based on workflow status and user's role
                 if (data.status) {
-                    showApprovalButtons(data.status);
+                    const canReview = isAssignedReviewer || (isAdmin && !isOwner);
+                    showApprovalButtons(data.status, canReview);
                 }
 
-                // Lock form for non-admin submitters viewing submitted/in-progress forms
-                const viewStatuses = ['submitted', 'accounting-review', 'ap-review', 'approved', 'rejected'];
-                if (isOwner && !isAdmin && viewStatuses.includes(data.status)) {
+                // Lock form for users who should only view (submitters, non-assigned users)
+                const allWorkflowStatuses = ['submitted', 'primary_review', 'secondary_1_review', 'secondary_2_review', 'secondary_3_review', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review', 'approved', 'rejected'];
+                if (allWorkflowStatuses.includes(data.status) && !isAssignedReviewer) {
                     lockFormForViewing();
                 }
 
