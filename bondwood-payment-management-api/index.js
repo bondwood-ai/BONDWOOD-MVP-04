@@ -1415,9 +1415,25 @@ async function handleUpdateRFP(rfpNumber, request, env) {
   }
   const oldHeader = existingHeader[0];
 
+  // ── REASSIGN: admin-only, skip approval guards ──
+  if (body.reassign && performerEmail) {
+    let performerRoles = [];
+    try {
+      const { results: pUser } = await env.DB.prepare(
+        'SELECT user_roles FROM user_data WHERE LOWER(user_email) = ?'
+      ).bind(performerEmail).all();
+      if (pUser.length) performerRoles = JSON.parse(pUser[0].user_roles || '[]');
+    } catch (e) {}
+    const isAdmin = performerRoles.includes('super_user') || performerRoles.includes('admin');
+    if (!isAdmin) {
+      return json({ error: 'Only admins can reassign requests' }, 403);
+    }
+    // Allow the update to proceed — only assigned_to and assigned_to_email will change
+  }
+
   // ── APPROVAL GUARD: prevent self-approval and check approver authorization ──
   const approvalStatuses = ['secondary_3_review', 'secondary_2_review', 'secondary_1_review', 'primary_review', 'accounting_review', 'ap_review', 'accounting-review', 'ap-review', 'approved', 'rejected'];
-  if (body.status && approvalStatuses.includes(body.status) && performerEmail) {
+  if (!body.reassign && body.status && approvalStatuses.includes(body.status) && performerEmail) {
     // 1. Never allow self-approval/self-advancement
     const submitterId = (oldHeader.submitter_id || '').toUpperCase();
 
@@ -1703,6 +1719,20 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     }
     auditDebug.written = true;
 
+    // Email notification for reassignment
+    if (body.reassign && body.assigned_to_email) {
+      const stepLabel = WORKFLOW_STATUS_LABELS[oldHeader.status] || oldHeader.status;
+      await sendEmailNotification(env, {
+        to: body.assigned_to_email,
+        type: 'assigned',
+        rfpNumber,
+        subject: `RFP #${rfpNumber} has been reassigned to you`,
+        bodyText: `A request for payment has been reassigned to you for ${stepLabel}.`,
+        ctaLabel: 'Review Request',
+        ctaUrl: buildFormUrl(rfpNumber, oldHeader.url_token),
+      });
+    }
+
     // Email notification for status advances via generic update
     if (body.status && body.status !== oldHeader.status && body.assigned_to_email) {
       const statusLabel = WORKFLOW_STATUS_LABELS[body.status] || body.status;
@@ -1755,6 +1785,15 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
   const p = `<strong>${performer}</strong>`;
   const fmt = (n) => '$' + (n || 0).toFixed(2);
   const statusChanging = body.status && body.status !== oldHeader.status;
+
+  // ── Reassign ──
+  if (body.reassign && body.assigned_to) {
+    entries.push({
+      action: 'reassigned',
+      description: `${p} reassigned the request to <strong>${body.assigned_to}</strong>`
+    });
+    return entries;
+  }
 
   // ── Status change ──
   if (statusChanging) {

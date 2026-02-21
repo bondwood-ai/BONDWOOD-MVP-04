@@ -713,6 +713,10 @@
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                         Export XLSX
                     </button>
+                    <button class="btn-primary" id="bulkReassignBtn" onclick="openReassignModal()" style="display:none;font-family:'Google Sans Flex',sans-serif;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                        Reassign
+                    </button>
                     <button class="btn-primary" id="bulkArchiveBtn" onclick="archiveSelected()" style="display:none;">
                         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
                         Archive
@@ -825,7 +829,27 @@
         </div>
     </div>
 
-    <!-- ============ ADVANCED SEARCH MODAL ============ -->
+    <!-- ============ REASSIGN MODAL ============ -->
+    <div id="reassignModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:3000;backdrop-filter:blur(2px);" onclick="if(event.target===this)closeReassignModal()">
+        <div class="modal" style="width:440px;">
+            <div class="modal-header">
+                <h3>Reassign Request</h3>
+                <button class="btn-icon" onclick="closeReassignModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="modal-body" style="padding:1rem 1.25rem;">
+                <p id="reassignInfo" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;"></p>
+                <label style="font-size:0.78rem;font-weight:600;color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;display:block;margin-bottom:0.35rem;">Assign To</label>
+                <select id="reassignUserSelect" style="width:100%;padding:0.6rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:'Google Sans Flex',sans-serif;font-size:0.85rem;background:var(--field-bg,var(--bg-color));color:var(--text-primary);outline:none;" onchange="document.getElementById('reassignConfirmBtn').disabled=!this.value">
+                    <option value="">Select a user...</option>
+                </select>
+                <div id="reassignNote" style="font-size:0.72rem;color:var(--text-secondary);margin-top:0.5rem;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeReassignModal()">Cancel</button>
+                <button class="btn-primary" id="reassignConfirmBtn" onclick="confirmReassign()" style="padding:0.5rem 1.25rem;" disabled>Reassign</button>
+            </div>
+        </div>
+    </div>
     <div class="modal-overlay" id="advSearchModal" onclick="if(event.target===this)closeAdvancedSearch()">
         <div class="adv-search-modal">
             <div class="modal-header">
@@ -1334,6 +1358,7 @@
                         formType: r.request_type === 'reimbursement' ? 'Employee Reimbursement' : 'Vendor Payment',
                         creationSource: r.creation_source || null,
                         urlToken: r.url_token || '',
+                        userEmail: (r.user_email || '').toLowerCase().trim(),
                     };
                 });
             } catch (e) {
@@ -1733,15 +1758,19 @@
             const selectedRFPs = allRFPs.filter(r => selectedRFPIds.has(r.id));
             const statuses = new Set(selectedRFPs.map(r => r.status));
             const allDraft = statuses.size > 0 && [...statuses].every(s => s === 'draft');
-            const allInWorkflow = statuses.size > 0 && [...statuses].every(s => ['submitted', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review'].includes(s));
+            const workflowSteps = ['submitted', 'primary_review', 'secondary_1_review', 'secondary_2_review', 'secondary_3_review', 'accounting-review', 'ap-review', 'accounting_review', 'ap_review'];
+            const allInWorkflow = statuses.size > 0 && [...statuses].every(s => workflowSteps.includes(s));
 
             // Only show approve/reject if at least one selected item is actionable (not own submission)
             const hasActionable = allInWorkflow && selectedRFPs.some(r => !(r.submitterId && currentUserId && r.submitterId === currentUserId));
+
+            const isAdminUser = currentUserRoles.includes('super_user') || currentUserRoles.includes('admin');
 
             document.getElementById('bulkArchiveBtn').style.display = allDraft ? '' : 'none';
             document.getElementById('bulkDeleteBtn').style.display = allDraft ? '' : 'none';
             document.getElementById('bulkRejectBtn').style.display = hasActionable ? '' : 'none';
             document.getElementById('bulkApproveBtn').style.display = hasActionable ? '' : 'none';
+            document.getElementById('bulkReassignBtn').style.display = (isAdminUser && allInWorkflow && count > 0) ? '' : 'none';
 
             // Update header checkbox state
             const headerCb = document.getElementById('selectAllCheckbox');
@@ -2801,6 +2830,148 @@
             }
 
             document.getElementById('approvalSuccessModal').classList.add('open');
+        }
+
+        /* ========================================
+           REASSIGN
+           ======================================== */
+        let _reassignUsers = null; // cached users list
+
+        async function openReassignModal() {
+            const selectedRFPs = allRFPs.filter(r => selectedRFPIds.has(r.id));
+            const inWorkflow = selectedRFPs.filter(r => isInApprovalWorkflow(r.status));
+            if (!inWorkflow.length) return;
+
+            const count = inWorkflow.length;
+            const statuses = [...new Set(inWorkflow.map(r => r.status))];
+
+            // Gather submitter emails to exclude
+            const submitterEmails = new Set(inWorkflow.map(r => r.userEmail).filter(Boolean));
+
+            // Determine eligible roles based on selected statuses
+            let eligibleFilter;
+            let noteText = '';
+            const reviewSteps = ['submitted', 'primary_review', 'secondary_1_review', 'secondary_2_review', 'secondary_3_review'];
+            const accountingSteps = ['accounting_review', 'accounting-review'];
+            const apSteps = ['ap_review', 'ap-review'];
+
+            const hasReview = statuses.some(s => reviewSteps.includes(s));
+            const hasAccounting = statuses.some(s => accountingSteps.includes(s));
+            const hasAP = statuses.some(s => apSteps.includes(s));
+
+            if (hasReview && !hasAccounting && !hasAP) {
+                eligibleFilter = () => true; // any user
+                noteText = 'Any active user can be assigned at review steps.';
+            } else if (hasAccounting && !hasAP && !hasReview) {
+                eligibleFilter = (roles) => roles.includes('accountant') || roles.includes('super_user') || roles.includes('admin');
+                noteText = 'Eligible: Accountants, Admins, and Super Users.';
+            } else if (hasAP && !hasAccounting && !hasReview) {
+                eligibleFilter = (roles) => roles.includes('accountant') || roles.includes('accounts_payable') || roles.includes('super_user') || roles.includes('admin');
+                noteText = 'Eligible: Accountants, A/P, Admins, and Super Users.';
+            } else {
+                // Mixed statuses — use most permissive (any user)
+                eligibleFilter = () => true;
+                noteText = 'Mixed workflow steps selected — showing all eligible users.';
+            }
+
+            // Fetch users if not cached
+            if (!_reassignUsers) {
+                try {
+                    const resp = await fetch(`${API_BASE}/api/users`);
+                    _reassignUsers = await resp.json();
+                } catch (e) {
+                    showAlert('Failed to load users.', 'Error');
+                    return;
+                }
+            }
+
+            const select = document.getElementById('reassignUserSelect');
+            select.innerHTML = '<option value="">Select a user...</option>';
+
+            const eligible = _reassignUsers.filter(u => {
+                const email = (u.user_email || '').toLowerCase().trim();
+                if (submitterEmails.has(email)) return false;
+                if (u.status && u.status !== 'active') return false;
+                const roles = (() => { try { return JSON.parse(u.user_roles || '[]'); } catch(e) { return []; } })();
+                return eligibleFilter(roles);
+            });
+
+            eligible.sort((a, b) => {
+                const nameA = `${a.user_first_name || ''} ${a.user_last_name || ''}`.trim().toLowerCase();
+                const nameB = `${b.user_first_name || ''} ${b.user_last_name || ''}`.trim().toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+
+            eligible.forEach(u => {
+                const name = `${u.user_first_name || ''} ${u.user_last_name || ''}`.trim() || u.user_email;
+                const roles = (() => { try { return JSON.parse(u.user_roles || '[]'); } catch(e) { return []; } })();
+                const roleLabel = roles.filter(r => r !== 'user').map(r => r.replace(/_/g, ' ')).join(', ');
+                const opt = document.createElement('option');
+                opt.value = u.user_email;
+                opt.textContent = roleLabel ? `${name} (${roleLabel})` : name;
+                select.appendChild(opt);
+            });
+
+            const statusLabels = statuses.map(s => WORKFLOW_LABELS[s] || s).join(', ');
+            document.getElementById('reassignInfo').textContent = `Reassign ${count} request${count > 1 ? 's' : ''} currently at: ${statusLabels}`;
+            document.getElementById('reassignNote').textContent = noteText;
+            document.getElementById('reassignConfirmBtn').disabled = true;
+            document.getElementById('reassignModal').style.display = 'flex';
+        }
+
+        function closeReassignModal() {
+            document.getElementById('reassignModal').style.display = 'none';
+        }
+
+        async function confirmReassign() {
+            const email = document.getElementById('reassignUserSelect').value;
+            if (!email) return;
+            const label = document.getElementById('reassignUserSelect').selectedOptions[0].textContent;
+            const name = label.replace(/\s*\(.*\)$/, ''); // strip role suffix
+
+            const selectedRFPs = allRFPs.filter(r => selectedRFPIds.has(r.id) && isInApprovalWorkflow(r.status));
+            if (!selectedRFPs.length) return;
+
+            const confirmed = await showConfirm(
+                `Reassign ${selectedRFPs.length} request${selectedRFPs.length > 1 ? 's' : ''} to ${name}?`,
+                'Confirm Reassign'
+            );
+            if (!confirmed) return;
+
+            closeReassignModal();
+            let successCount = 0;
+            let failures = [];
+
+            for (const rfp of selectedRFPs) {
+                try {
+                    const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            assigned_to: name,
+                            assigned_to_email: email.toLowerCase().trim(),
+                            performer_email: impersonateEmail || currentUserEmail,
+                            performer_name: currentUserName || 'Admin',
+                            reassign: true,
+                        })
+                    });
+                    if (resp.ok) successCount++;
+                    else {
+                        const err = await resp.json().catch(() => ({}));
+                        failures.push(`#${rfp.rfpNumber}: ${err.error || 'Failed'}`);
+                    }
+                } catch (e) {
+                    failures.push(`#${rfp.rfpNumber}: ${e.message}`);
+                }
+            }
+
+            allRFPs = await loadRFPData();
+            selectedRFPIds.clear();
+            filterTable();
+
+            let msg = `${successCount} request${successCount !== 1 ? 's' : ''} reassigned to ${name}.`;
+            if (failures.length) msg += `\n\n${failures.length} failed:\n${failures.join('\n')}`;
+            showAlert(msg, 'Reassign Complete');
         }
 
         async function postNoteFromPreview(rfpNumber) {
