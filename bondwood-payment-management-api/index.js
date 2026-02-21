@@ -4063,7 +4063,7 @@ async function getNotificationPrefs(env, email) {
   }
 }
 
-async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyText, ctaLabel, ctaUrl }) {
+async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyText, ctaLabel, ctaUrl, rfpData }) {
   if (!env.RESEND_API_KEY) {
     console.log('[EMAIL] No RESEND_API_KEY configured, skipping notification');
     return;
@@ -4085,7 +4085,46 @@ async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyTe
       return;
     }
 
-    const html = buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl });
+    // If rfpData not provided, try to fetch it
+    if (!rfpData && rfpNumber) {
+      try {
+        const { results: hdr } = await env.DB.prepare(
+          'SELECT * FROM dashboard_data WHERE rfp_number = ? AND deleted_at IS NULL'
+        ).bind(rfpNumber).all();
+        if (hdr.length) {
+          const h = hdr[0];
+          // Get line item count + total
+          const { results: fdRows } = await env.DB.prepare(
+            "SELECT COUNT(*) as cnt, COALESCE(SUM(total),0) as total FROM form_data WHERE rfp_number = ?"
+          ).bind(rfpNumber).all();
+          const fd = fdRows[0] || {};
+          // Get mileage trip count
+          let tripCount = 0;
+          try {
+            const { results: mt } = await env.DB.prepare(
+              "SELECT COUNT(*) as cnt FROM mileage_trips WHERE rfp_number = ?"
+            ).bind(rfpNumber).all();
+            tripCount = mt[0]?.cnt || 0;
+          } catch (e) {}
+
+          rfpData = {
+            submitter: h.submitter_name || '',
+            submitterId: h.submitter_id || '',
+            requestType: h.request_type === 'reimbursement' ? 'Employee Reimbursement' : 'Vendor Payment',
+            vendor: h.vendor_name || '',
+            status: h.status || '',
+            totalAmount: fd.total || h.mileage_total || 0,
+            lineItemCount: fd.cnt || 0,
+            tripCount,
+            hasSecondary: !!(h.restriction_group_id),
+          };
+        }
+      } catch (e) {
+        console.error('[EMAIL] Failed to fetch rfpData:', e.message);
+      }
+    }
+
+    const html = buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl, rfpData });
 
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -4112,33 +4151,163 @@ async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyTe
   }
 }
 
-function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl }) {
+const EMAIL_FONT = "Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const EMAIL_PRIMARY = '#1B3B1A';
+
+function buildEmailProgressDots(status, hasSecondary) {
+  // Define workflow steps in order
+  const steps = [
+    { key: ['submitted'], label: 'Submitted' },
+  ];
+  if (hasSecondary) {
+    steps.push({ key: ['secondary_1_review', 'secondary_2_review', 'secondary_3_review'], label: 'Secondary Approver' });
+  }
+  steps.push(
+    { key: ['primary_review'], label: 'Primary Approver' },
+    { key: ['accounting_review', 'accounting-review'], label: 'Accounting' },
+    { key: ['ap_review', 'ap-review'], label: 'Accounts Payable' },
+    { key: ['approved'], label: 'Approved' },
+  );
+
+  // Find current step index
+  let currentIdx = -1;
+  for (let i = 0; i < steps.length; i++) {
+    if (steps[i].key.includes(status)) { currentIdx = i; break; }
+  }
+
+  let html = '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;"><tr>';
+  const width = Math.floor(100 / steps.length);
+
+  steps.forEach((step, i) => {
+    let dotBg, dotContent, labelColor, labelWeight;
+    if (status === 'rejected') {
+      dotBg = '#ddd'; dotContent = ''; labelColor = '#999'; labelWeight = '400';
+    } else if (i < currentIdx) {
+      dotBg = EMAIL_PRIMARY;
+      dotContent = `<span style="color:#fff;font-size:11px;font-weight:700;line-height:24px;">&#10003;</span>`;
+      labelColor = EMAIL_PRIMARY; labelWeight = '600';
+    } else if (i === currentIdx) {
+      if (status === 'approved') {
+        dotBg = EMAIL_PRIMARY;
+        dotContent = `<span style="color:#fff;font-size:11px;font-weight:700;line-height:24px;">&#10003;</span>`;
+        labelColor = EMAIL_PRIMARY; labelWeight = '700';
+      } else {
+        dotBg = '#E65100';
+        dotContent = `<span style="color:#fff;font-size:8px;line-height:24px;">&#9679;</span>`;
+        labelColor = '#E65100'; labelWeight = '700';
+      }
+    } else {
+      dotBg = '#ddd'; dotContent = ''; labelColor = '#999'; labelWeight = '400';
+    }
+
+    html += `<td width="${width}%" style="text-align:center;vertical-align:top;">`;
+    html += `<div style="width:24px;height:24px;border-radius:50%;background:${dotBg};margin:0 auto 4px;text-align:center;line-height:24px;">${dotContent}</div>`;
+    html += `<p style="margin:0;font-size:9px;color:${labelColor};font-weight:${labelWeight};font-family:${EMAIL_FONT};">${step.label}</p>`;
+    html += `</td>`;
+  });
+
+  html += '</tr></table>';
+  return html;
+}
+
+function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl, rfpData }) {
+  const d = rfpData || {};
+  const hasData = !!(d.submitter || d.totalAmount);
+  const amount = d.totalAmount ? '$' + parseFloat(d.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+  const submitterLine = d.submitter ? `${d.submitter}${d.submitterId ? ' · ' + d.submitterId : ''}` : '';
+  const typeLine = d.requestType || '';
+
+  // Build items description
+  let itemsLine = '';
+  if (d.tripCount > 0 && d.lineItemCount > d.tripCount) {
+    // Has both line items and mileage
+    const regularItems = d.lineItemCount - (d.tripCount > 0 ? 1 : 0); // subtract consolidated mileage row(s)
+    itemsLine = `${d.tripCount} mileage trip${d.tripCount > 1 ? 's' : ''}`;
+    if (regularItems > 0) itemsLine += `, ${regularItems} line item${regularItems > 1 ? 's' : ''}`;
+  } else if (d.tripCount > 0) {
+    itemsLine = `${d.tripCount} mileage trip${d.tripCount > 1 ? 's' : ''}`;
+  } else if (d.lineItemCount > 0) {
+    itemsLine = `${d.lineItemCount} line item${d.lineItemCount > 1 ? 's' : ''}`;
+  }
+
+  const progressDots = d.status ? buildEmailProgressDots(d.status, d.hasSecondary) : '';
+
+  // Rejected banner
+  const rejectedBanner = d.status === 'rejected'
+    ? `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:12px 16px;margin-bottom:16px;text-align:center;">
+         <p style="margin:0;font-size:12px;color:#991B1B;font-weight:600;font-family:${EMAIL_FONT};">This request has been rejected</p>
+       </div>`
+    : '';
+
+  // Approved banner
+  const approvedBanner = d.status === 'approved'
+    ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:12px 16px;margin-bottom:16px;text-align:center;">
+         <p style="margin:0;font-size:12px;color:#166534;font-weight:600;font-family:${EMAIL_FONT};">This request has been approved</p>
+       </div>`
+    : '';
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:${EMAIL_FONT};">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
 
         <!-- Header -->
-        <tr><td style="background:#000000;padding:20px 28px;border-radius:10px 10px 0 0;">
-          <span style="color:#ffffff;font-size:18px;font-weight:800;letter-spacing:0.5px;">BONDWOOD</span>
+        <tr><td style="background:${EMAIL_PRIMARY};padding:20px 28px;border-radius:10px 10px 0 0;">
+          <span style="color:#ffffff;font-size:18px;font-weight:800;letter-spacing:0.5px;font-family:${EMAIL_FONT};">Payment Management</span>
         </td></tr>
 
-        <!-- Body -->
-        <tr><td style="background:#ffffff;padding:28px 28px 20px;">
-          <h1 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#1a1a1a;line-height:1.4;">${subject}</h1>
-          <p style="margin:0 0 8px;font-size:14px;color:#333333;line-height:1.6;">${bodyText}</p>
-          ${rfpNumber ? '<p style="margin:12px 0 0;font-size:13px;color:#666666;">RFP #<strong>' + rfpNumber + '</strong></p>' : ''}
+        <!-- Subject + Progress -->
+        <tr><td style="background:#ffffff;padding:24px 28px 16px;">
+          <h1 style="margin:0 0 ${progressDots ? '16px' : '8px'};font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.4;font-family:${EMAIL_FONT};">${subject}</h1>
+          ${rejectedBanner}
+          ${approvedBanner}
+          ${progressDots}
         </td></tr>
+
+        ${hasData ? `
+        <!-- Financial Details Card -->
+        <tr><td style="background:#ffffff;padding:0 28px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f8f8;border-radius:8px;overflow:hidden;margin-bottom:16px;">
+            <tr>
+              <td style="padding:12px 16px;border-bottom:1px solid #eee;">
+                <p style="margin:0 0 1px;font-size:10px;color:#888;font-weight:600;text-transform:uppercase;font-family:${EMAIL_FONT};">Submitter</p>
+                <p style="margin:0;font-size:13px;color:#1a1a1a;font-weight:600;font-family:${EMAIL_FONT};">${submitterLine || '—'}</p>
+              </td>
+              <td style="padding:12px 16px;border-bottom:1px solid #eee;text-align:right;">
+                <p style="margin:0 0 1px;font-size:10px;color:#888;font-weight:600;text-transform:uppercase;font-family:${EMAIL_FONT};">Type</p>
+                <p style="margin:0;font-size:13px;color:#1a1a1a;font-family:${EMAIL_FONT};">${typeLine || '—'}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;">
+                <p style="margin:0 0 1px;font-size:10px;color:#888;font-weight:600;text-transform:uppercase;font-family:${EMAIL_FONT};">Items</p>
+                <p style="margin:0;font-size:13px;color:#1a1a1a;font-family:${EMAIL_FONT};">${itemsLine || '—'}</p>
+              </td>
+              <td style="padding:12px 16px;text-align:right;">
+                <p style="margin:0 0 1px;font-size:10px;color:#888;font-weight:600;text-transform:uppercase;font-family:${EMAIL_FONT};">Total</p>
+                <p style="margin:0;font-size:20px;color:${EMAIL_PRIMARY};font-weight:700;font-family:${EMAIL_FONT};">${amount || '—'}</p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        ` : `
+        <!-- Body text fallback -->
+        <tr><td style="background:#ffffff;padding:0 28px 16px;">
+          <p style="margin:0;font-size:14px;color:#333333;line-height:1.6;font-family:${EMAIL_FONT};">${bodyText}</p>
+          ${rfpNumber ? '<p style="margin:12px 0 0;font-size:13px;color:#666;font-family:' + EMAIL_FONT + ';">RFP #<strong>' + rfpNumber + '</strong></p>' : ''}
+        </td></tr>
+        `}
 
         <!-- CTA Button -->
-        ${ctaUrl ? '<tr><td style="background:#ffffff;padding:8px 28px 28px;"><a href="' + ctaUrl + '" style="display:inline-block;padding:10px 24px;background:#000000;color:#ffffff;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;">' + (ctaLabel || 'View Request') + '</a></td></tr>' : ''}
+        ${ctaUrl ? `<tr><td style="background:#ffffff;padding:8px 28px 24px;text-align:center;">
+          <a href="${ctaUrl}" style="display:inline-block;padding:12px 36px;background:${EMAIL_PRIMARY};color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;font-family:${EMAIL_FONT};">${ctaLabel || 'View Request'}</a>
+        </td></tr>` : ''}
 
         <!-- Footer -->
-        <tr><td style="padding:16px 28px;font-size:11px;color:#999999;border-top:1px solid #eeeeee;background:#ffffff;border-radius:0 0 10px 10px;">
-          This is an automated notification from BONDWOOD Payment Management.<br>
-          <a href="${FRONTEND_URL}/account.html" style="color:#999999;">Manage notification preferences</a>
+        <tr><td style="padding:14px 28px;font-size:11px;color:#999999;border-top:1px solid #eeeeee;background:#ffffff;border-radius:0 0 10px 10px;font-family:${EMAIL_FONT};">
+          Automated notification from BONDWOOD &middot; <a href="${FRONTEND_URL}/account.html" style="color:#999999;">Manage preferences</a>
         </td></tr>
 
       </table>
