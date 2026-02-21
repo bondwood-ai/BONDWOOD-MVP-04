@@ -1336,8 +1336,8 @@ async function handleCreateRFP(request, env) {
         env.DB.prepare(`
           INSERT INTO mileage_trips (
             rfp_number, trip_number, trip_date, from_location, to_location,
-            miles, rate, amount, budget_code, account_code
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            miles, rate, amount, budget_code, account_code, round_trip
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           nextRfp,
           trip.trip_number || 0,
@@ -1349,6 +1349,7 @@ async function handleCreateRFP(request, env) {
           trip.amount || 0,
           trip.budget_code || null,
           trip.account_code || null,
+          trip.round_trip ? 1 : 0,
         )
       );
     }
@@ -1742,8 +1743,8 @@ async function handleUpdateRFP(rfpNumber, request, env) {
         env.DB.prepare(`
           INSERT INTO mileage_trips (
             rfp_number, trip_number, trip_date, from_location, to_location,
-            miles, rate, amount, budget_code, account_code
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            miles, rate, amount, budget_code, account_code, round_trip
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           rfpNumber,
           trip.trip_number || 0,
@@ -1755,6 +1756,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           trip.amount || 0,
           trip.budget_code || null,
           trip.account_code || null,
+          trip.round_trip ? 1 : 0,
         )
       );
     }
@@ -2821,6 +2823,7 @@ async function handleMigrate(env) {
     )`,
     'ALTER TABLE vendor_data ADD COLUMN vendor_notes TEXT DEFAULT \'[]\'',
     'ALTER TABLE dashboard_data ADD COLUMN url_token TEXT',
+    'ALTER TABLE mileage_trips ADD COLUMN round_trip INTEGER DEFAULT 0',
   ];
 
   const results = [];
@@ -2970,6 +2973,14 @@ async function handleResetFresh(env) {
     } catch (e) {
       results.push({ step: `DROP form_data.${col}`, status: 'skipped', reason: e.message });
     }
+  }
+
+  // 3. Add round_trip column to mileage_trips
+  try {
+    await env.DB.prepare('ALTER TABLE mileage_trips ADD COLUMN round_trip INTEGER DEFAULT 0').run();
+    results.push({ step: 'ADD mileage_trips.round_trip', status: 'done' });
+  } catch (e) {
+    results.push({ step: 'ADD mileage_trips.round_trip', status: 'skipped', reason: e.message });
   }
 
   // 4. Reset RFP sequence to 26000000

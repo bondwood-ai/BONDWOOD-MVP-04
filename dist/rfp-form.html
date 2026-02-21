@@ -495,6 +495,8 @@
             width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px;
         }
         .mileage-table th.mileage-checkbox-col, .mileage-table td.mileage-checkbox-cell { text-align: center; width: 36px; }
+        .trip-round-trip:checked { background: var(--primary-hex) !important; border-color: var(--primary-hex) !important; }
+        .trip-round-trip:checked::after { content: ''; display: block; width: 8px; height: 8px; border-radius: 50%; background: #fff; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .mileage-table input[type="checkbox"] {
             width: 18px; height: 18px; padding: 0; cursor: pointer; margin: 0;
             accent-color: var(--primary-hex);
@@ -1090,6 +1092,7 @@
                                     <th>From Location</th>
                                     <th>To Location</th>
                                     <th style="width:80px;">Miles</th>
+                                    <th style="width:70px;">Round Trip</th>
                                     <th style="width:155px;">Budget Code</th>
                                     <th style="width:85px;">Account</th>
                                     <th style="width:120px;border-radius:0 8px 0 0;">Amount</th>
@@ -2892,7 +2895,8 @@
                 +   '<select class="trip-to">' + opts + '</select>'
                 +   '<input type="text" class="trip-to-addr" placeholder="Enter to address" style="display:none;margin-top:4px;width:100%;font-size:0.8rem;">'
                 + '</td>'
-                + '<td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;"></td>'
+                + '<td><input type="text" class="trip-miles text-right" readonly value="" style="width:70px;" data-one-way=""></td>'
+                + '<td style="text-align:center;"><label style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"><input type="checkbox" class="trip-round-trip" onchange="toggleRoundTrip(this)" style="appearance:none;-webkit-appearance:none;width:20px;height:20px;border:2px solid var(--border-color);border-radius:50%;cursor:pointer;position:relative;flex-shrink:0;transition:all 0.15s;background:var(--field-bg,var(--bg-color));" /></label></td>'
                 + '<td class="bc-autocomplete-wrapper"><input type="text" class="trip-budget-code line-budget-code" placeholder="Enter Budget Code" maxlength="14" style="width:145px;text-align:center;" autocomplete="off"></td>'
                 + '<td class="bc-autocomplete-wrapper"><input type="text" class="trip-account line-account" placeholder="\u2014" maxlength="7" style="width:75px;text-align:center;" autocomplete="off"></td>'
                 + '<td><input type="text" class="trip-amount line-amount text-right" readonly value="" style="width:110px;"></td>';
@@ -2980,6 +2984,8 @@
             // Manual miles entry recalculates total
             milesInput.addEventListener('input', function() {
                 var m = parseFloat(this.value) || 0;
+                var isRoundTrip = tr.querySelector('.trip-round-trip')?.checked || false;
+                this.dataset.oneWay = isRoundTrip ? (m / 2).toFixed(1) : m.toFixed(1);
                 var rate = getMileageRate(tr.querySelector('.trip-date').value);
                 tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * rate) : '';
                 recalcMileageTotals();
@@ -2992,9 +2998,12 @@
             var toSel = row.querySelector('.trip-to');
             var from = fromSel.value;
             var to = toSel.value;
+            var milesInput = row.querySelector('.trip-miles');
+            var isRoundTrip = row.querySelector('.trip-round-trip')?.checked || false;
 
             if (!from || !to || from === to || from === '__other__' || to === '__other__') {
-                row.querySelector('.trip-miles').value = '';
+                milesInput.value = '';
+                milesInput.dataset.oneWay = '';
                 row.querySelector('.trip-amount').value = '';
                 recalcMileageTotals();
                 return;
@@ -3005,16 +3014,21 @@
                 var resp = await fetch(API_BASE + '/api/mileage/distance?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to));
                 var data = await resp.json();
                 if (data.distance !== undefined) {
+                    var oneWay = data.distance;
+                    var effectiveMiles = isRoundTrip ? oneWay * 2 : oneWay;
                     var rate = getMileageRate(row.querySelector('.trip-date').value);
-                    row.querySelector('.trip-miles').value = data.distance.toFixed(1);
-                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * rate);
+                    milesInput.dataset.oneWay = oneWay.toFixed(1);
+                    milesInput.value = effectiveMiles.toFixed(1);
+                    row.querySelector('.trip-amount').value = formatCurrency(effectiveMiles * rate);
                 } else {
-                    row.querySelector('.trip-miles').value = '—';
+                    milesInput.value = '—';
+                    milesInput.dataset.oneWay = '';
                     row.querySelector('.trip-amount').value = '';
                 }
             } catch (e) {
                 console.error('[MILEAGE] Lookup failed:', e);
-                row.querySelector('.trip-miles').value = '—';
+                milesInput.value = '—';
+                milesInput.dataset.oneWay = '';
                 row.querySelector('.trip-amount').value = '';
             }
             recalcMileageTotals();
@@ -3022,6 +3036,7 @@
 
         async function calcMileageGoogle(row, fromAddr, toAddr) {
             var milesInput = row.querySelector('.trip-miles');
+            var isRoundTrip = row.querySelector('.trip-round-trip')?.checked || false;
             milesInput.value = '...';
             try {
                 var resp = await fetch(API_BASE + '/api/mileage/calculate', {
@@ -3031,18 +3046,23 @@
                 });
                 var data = await resp.json();
                 if (data.distance !== undefined) {
+                    var oneWay = data.distance;
+                    var effectiveMiles = isRoundTrip ? oneWay * 2 : oneWay;
                     var rate = getMileageRate(row.querySelector('.trip-date').value);
                     milesInput.readOnly = false;
-                    milesInput.value = data.distance.toFixed(1);
-                    row.querySelector('.trip-amount').value = formatCurrency(data.distance * rate);
+                    milesInput.dataset.oneWay = oneWay.toFixed(1);
+                    milesInput.value = effectiveMiles.toFixed(1);
+                    row.querySelector('.trip-amount').value = formatCurrency(effectiveMiles * rate);
                 } else {
                     milesInput.readOnly = false;
+                    milesInput.dataset.oneWay = '';
                     milesInput.value = '';
                     row.querySelector('.trip-amount').value = '';
                 }
             } catch (e) {
                 console.error('[MILEAGE] Google calc failed:', e);
                 milesInput.readOnly = false;
+                milesInput.dataset.oneWay = '';
                 milesInput.value = '';
             }
             recalcMileageTotals();
@@ -3058,6 +3078,18 @@
             });
             document.getElementById('totalMiles').value = totalMiles.toFixed(1);
             document.getElementById('mileageTotal').value = formatCurrency(totalAmount);
+        }
+
+        function toggleRoundTrip(cb) {
+            const row = cb.closest('tr');
+            const milesInput = row.querySelector('.trip-miles');
+            const oneWay = parseFloat(milesInput.dataset.oneWay);
+            if (!oneWay || isNaN(oneWay)) return;
+            const effectiveMiles = cb.checked ? oneWay * 2 : oneWay;
+            milesInput.value = effectiveMiles.toFixed(1);
+            const rate = getMileageRate(row.querySelector('.trip-date').value);
+            row.querySelector('.trip-amount').value = effectiveMiles > 0 ? formatCurrency(effectiveMiles * rate) : '';
+            recalcMileageTotals();
         }
         /* ========================================
            ATTACHMENTS
@@ -3928,6 +3960,7 @@
                         amount: amount,
                         budget_code: row.querySelector('.trip-budget-code') ? row.querySelector('.trip-budget-code').value.trim() : '',
                         account_code: row.querySelector('.trip-account') ? row.querySelector('.trip-account').value.trim() : '',
+                        round_trip: row.querySelector('.trip-round-trip')?.checked || false,
                     });
                     mileageTotal += amount;
                 });
@@ -4450,6 +4483,7 @@
                         amount: amount,
                         budget_code: row.querySelector('.trip-budget-code') ? row.querySelector('.trip-budget-code').value.trim() : '',
                         account_code: row.querySelector('.trip-account') ? row.querySelector('.trip-account').value.trim() : '',
+                        round_trip: row.querySelector('.trip-round-trip')?.checked || false,
                     });
                     mileageTotal += amount;
                 });
@@ -4880,6 +4914,15 @@
                         }
                         row.querySelector('.trip-miles').value = trip.miles ? trip.miles.toFixed(1) : '';
                         row.querySelector('.trip-amount').value = trip.amount ? formatCurrency(trip.amount) : '';
+                        // Restore round trip state
+                        var rtCheckbox = row.querySelector('.trip-round-trip');
+                        if (rtCheckbox && trip.round_trip) {
+                            rtCheckbox.checked = true;
+                            // Store one-way miles so toggle works correctly
+                            row.querySelector('.trip-miles').dataset.oneWay = trip.miles ? (trip.miles / 2).toFixed(1) : '';
+                        } else {
+                            row.querySelector('.trip-miles').dataset.oneWay = trip.miles ? trip.miles.toFixed(1) : '';
+                        }
                         if (trip.budget_code && row.querySelector('.trip-budget-code')) {
                             row.querySelector('.trip-budget-code').value = trip.budget_code;
                         }
