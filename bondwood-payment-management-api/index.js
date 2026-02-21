@@ -313,6 +313,10 @@ export default {
         return handleMigrateFormDataSegments(env);
       }
 
+      if (path === '/api/migrate-reset-fresh' && method === 'POST') {
+        return handleResetFresh(env);
+      }
+
       // ── Extract invoice data from PDF via Gemini ──
       if (path === '/api/extract-invoice' && method === 'POST') {
         return handleExtractInvoice(request, env);
@@ -2852,6 +2856,52 @@ async function handleMigrate(env) {
 
   return json({ message: 'Migration complete', results });
 }
+
+
+async function handleResetFresh(env) {
+  const results = [];
+
+  // 1. Clear all data from tables
+  const tablesToClear = ['audit_logs', 'rfp_notes', 'form_data', 'mileage_trips', 'dashboard_data'];
+  for (const table of tablesToClear) {
+    try {
+      await env.DB.prepare(`DELETE FROM ${table}`).run();
+      results.push({ step: `DELETE FROM ${table}`, status: 'done' });
+    } catch (e) {
+      results.push({ step: `DELETE FROM ${table}`, status: 'skipped', reason: e.message });
+    }
+  }
+
+  // 2. Drop mileage_trips table
+  try {
+    await env.DB.prepare('DROP TABLE IF EXISTS mileage_trips').run();
+    results.push({ step: 'DROP TABLE mileage_trips', status: 'done' });
+  } catch (e) {
+    results.push({ step: 'DROP TABLE mileage_trips', status: 'error', reason: e.message });
+  }
+
+  // 3. Drop mileage_from and mileage_to columns from form_data
+  const dropCols = ['mileage_from', 'mileage_to'];
+  for (const col of dropCols) {
+    try {
+      await env.DB.prepare(`ALTER TABLE form_data DROP COLUMN ${col}`).run();
+      results.push({ step: `DROP form_data.${col}`, status: 'done' });
+    } catch (e) {
+      results.push({ step: `DROP form_data.${col}`, status: 'skipped', reason: e.message });
+    }
+  }
+
+  // 4. Reset RFP sequence to 26000000
+  try {
+    await env.DB.prepare("UPDATE sequences SET value = 26000000 WHERE name = 'rfp_no'").run();
+    results.push({ step: 'RESET sequence rfp_no → 26000000', status: 'done' });
+  } catch (e) {
+    results.push({ step: 'RESET sequence', status: 'error', reason: e.message });
+  }
+
+  return json({ message: 'Fresh reset complete', results });
+}
+
 
 // Re-parse all budget_code strings and update fund/org/program/finance/course columns
 async function handleMigrateBudgetComponents(env) {
