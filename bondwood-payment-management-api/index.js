@@ -1355,7 +1355,7 @@ async function handleCreateRFP(request, env) {
     }
 
     // Consolidate mileage into form_data rows grouped by budget code
-    const mileageStartLine = (newItems.length ? Math.max(...newItems.map(i => i.line_number || 0)) + 1 : 0) + 9000;
+    const mileageStartLine = newItems.length ? Math.max(...newItems.map(i => i.line_number || 0)) + 1 : 1;
     const mileageRows = buildMileageFormDataRows(newTrips, nextRfp, mileageStartLine);
     for (const row of mileageRows) {
       statements.push(
@@ -1763,7 +1763,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
 
     // Consolidate mileage into form_data rows grouped by budget code
     const regularItems = newItems !== null ? newItems : [];
-    const mileageStartLine = (regularItems.length ? Math.max(...regularItems.map(i => i.line_number || 0)) + 1 : 0) + 9000;
+    const mileageStartLine = regularItems.length ? Math.max(...regularItems.map(i => i.line_number || 0)) + 1 : 1;
     const mileageRows = buildMileageFormDataRows(body.mileageTrips, rfpNumber, mileageStartLine);
     for (const row of mileageRows) {
       statements.push(
@@ -4133,8 +4133,8 @@ async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyTe
           let lineItems = [];
           try {
             const { results: liRows } = await env.DB.prepare(
-              'SELECT description, budget_code, total FROM form_data WHERE rfp_number = ? AND line_number < 9000 ORDER BY line_number'
-            ).bind(rfpNumber).all();
+              'SELECT description, budget_code, total FROM form_data WHERE rfp_number = ? AND description != ? ORDER BY line_number'
+            ).bind(rfpNumber, 'BUSINESS MILEAGE').all();
             lineItems = liRows || [];
           } catch (e) {}
 
@@ -4293,7 +4293,7 @@ function buildEmailLineItemsTable(lineItems, mileageTrips, totalAmount) {
   }
 
   return `<tr><td style="background:#ffffff;padding:0 28px 16px;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
+    <table class="email-line-items-table" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
       <tr style="background:${EMAIL_PRIMARY};">
         <td style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;font-family:${EMAIL_FONT};">Description</td>
         <td style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;font-family:${EMAIL_FONT};text-align:center;">Budget Code</td>
@@ -4346,7 +4346,13 @@ function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl, rfpDat
     : '';
 
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @media (prefers-color-scheme: dark) {
+    .email-line-items-table { border-color: #1a1a1a !important; }
+  }
+</style>
+</head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:${EMAIL_FONT};">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
     <tr><td align="center">

@@ -4191,10 +4191,16 @@
 
         function submitForm() {
             if (isImpersonating) { showAlert('Cannot submit while impersonating a user.', 'Impersonation Mode'); return; }
+
+            let validationErrors = [];
+
             // Vendor validation
             if (currentRequestType === 'vendor') {
-                if (!document.getElementById('vendorName').value.trim()) { showAlert('Please enter vendor name.', 'Validation'); return; }
-                if (!validateVendorFields()) return;
+                if (!document.getElementById('vendorName').value.trim()) {
+                    validationErrors.push('Please enter a vendor name.');
+                } else if (!validateVendorFields()) {
+                    validationErrors.push('Vendor name and number do not match. Please select a vendor from the dropdown.');
+                }
             }
 
             // Check line items OR mileage trips
@@ -4225,7 +4231,9 @@
                 });
             }
 
-            if (!hasItems && !hasMileage) { showAlert('Please add at least one line item or mileage trip.', 'Validation'); return; }
+            if (!hasItems && !hasMileage) {
+                validationErrors.push('Please add at least one line item or mileage trip.');
+            }
 
             // Check line items for missing budget codes
             rows.forEach((r, idx) => {
@@ -4236,21 +4244,14 @@
                 }
             });
 
-            // Show all validation errors at once
-            let validationErrors = [];
             if (missingDates.length > 0) {
                 validationErrors.push(`Missing date: ${missingDates.join(', ')}`);
             }
             if (missingBudgetItems.length > 0) {
                 validationErrors.push(`Missing budget code: ${missingBudgetItems.join(', ')}`);
             }
-            if (validationErrors.length > 0) {
-                showAlert(validationErrors.join('\n\n'), 'Validation');
-                return;
-            }
 
-            // Attachment validation for vendor payments:
-            // Must have at least one attachment per distinct invoice number
+            // Attachment validation for vendor payments
             if (currentRequestType === 'vendor' && hasItems) {
                 const invoiceNumbers = new Set();
                 rows.forEach(r => {
@@ -4264,16 +4265,35 @@
 
                 if (distinctCount === 0) {
                     if (attCount === 0) {
-                        showValidationWarning('Attachment Required', 'At least one attachment is required for vendor payments. Please attach supporting documentation for your invoice(s).');
-                        return;
+                        validationErrors.push('At least one attachment is required for vendor payments. Please attach supporting documentation for your invoice(s).');
                     }
                 } else if (attCount < distinctCount) {
                     const invoiceList = Array.from(invoiceNumbers).join(', ');
-                    showValidationWarning('Attachments Required',
-                        `You have ${distinctCount} distinct invoice number${distinctCount > 1 ? 's' : ''} (${invoiceList}) but only ${attCount} attachment${attCount !== 1 ? 's' : ''}. Each distinct invoice number requires at least one supporting attachment.`
-                    );
-                    return;
+                    validationErrors.push(`You have ${distinctCount} distinct invoice number${distinctCount > 1 ? 's' : ''} (${invoiceList}) but only ${attCount} attachment${attCount !== 1 ? 's' : ''}. Each distinct invoice number requires at least one supporting attachment.`);
                 }
+            }
+
+            // Validate total is not $0.00
+            let grandTotal = 0;
+            rows.forEach(r => {
+                const amt = parseFormattedNumber(r.querySelector('.line-amount')?.value) || 0;
+                grandTotal += amt;
+            });
+            if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
+                document.querySelectorAll('#mileageBody tr').forEach(r => {
+                    const amt = parseFormattedNumber(r.querySelector('.trip-amount')?.value) || 0;
+                    grandTotal += amt;
+                });
+            }
+            if (grandTotal <= 0 && (hasItems || hasMileage)) {
+                validationErrors.push('Total amount must be greater than $0.00. Please enter amounts before submitting.');
+            }
+
+            // Show all validation errors in a single modal
+            if (validationErrors.length > 0) {
+                const errorListHtml = validationErrors.map(e => `<li style="margin-bottom:0.4rem;">${e}</li>`).join('');
+                showAlert(`<ul style="text-align:left;padding-left:1.2rem;margin:0;">${errorListHtml}</ul>`, 'Validation');
+                return;
             }
 
             // Vendor + budget code compatibility check (per-group restrictions)
@@ -4316,23 +4336,6 @@
                         return;
                     }
                 }
-            }
-
-            // Validate total is not $0.00
-            let grandTotal = 0;
-            rows.forEach(r => {
-                const amt = parseFormattedNumber(r.querySelector('.line-amount')?.value) || 0;
-                grandTotal += amt;
-            });
-            if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
-                document.querySelectorAll('#mileageBody tr').forEach(r => {
-                    const amt = parseFormattedNumber(r.querySelector('.trip-amount')?.value) || 0;
-                    grandTotal += amt;
-                });
-            }
-            if (grandTotal <= 0) {
-                showAlert('Total amount must be greater than $0.00. Please enter amounts before submitting.', 'Validation');
-                return;
             }
 
             // Submit directly (no signature needed - using SSO identity)

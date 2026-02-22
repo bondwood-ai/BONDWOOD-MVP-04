@@ -2557,13 +2557,14 @@
 
             let lineItemsHtml = '';
             let total = 0;
+            const isVendor = rfp.type === 'vendor';
             lineItems.forEach((item, i) => {
                 const amt = item.total || 0;
                 total += amt;
                 lineItemsHtml += `<tr>
                     <td>${item.line_number || i + 1}</td>
                     <td>${item.description || '—'}</td>
-                    <td>${item.invoice_number || '—'}</td>
+                    ${isVendor ? `<td>${item.invoice_number || '—'}</td>` : ''}
                     <td style="text-align:center;">${item.budget_code || '—'}</td>
                     <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
                     <td class="text-right">${formatCurrency(amt)}</td>
@@ -2577,7 +2578,7 @@
                 lineItemsHtml += `<tr>
                     <td>${lineItems.length + i + 1}</td>
                     <td>BUSINESS MILEAGE<br><span style="font-size:0.75rem;color:var(--text-secondary);">${trip.from_location || ''} → ${trip.to_location || ''} (${trip.miles || 0} mi)</span></td>
-                    <td>—</td>
+                    ${isVendor ? '<td>—</td>' : ''}
                     <td style="text-align:center;">${trip.budget_code || '—'}</td>
                     <td style="text-align:center;">${trip.account_code || '—'}</td>
                     <td class="text-right">${formatCurrency(amt)}</td>
@@ -2585,7 +2586,7 @@
             });
 
             if (lineItems.length === 0 && mileageTrips.length === 0) {
-                lineItemsHtml = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>`;
+                lineItemsHtml = `<tr><td colspan="${isVendor ? 6 : 5}" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>`;
             }
 
             const displayTotal = total || rfp.amount;
@@ -2686,7 +2687,7 @@
                 <div class="preview-line-items">
                     <h4>Line Items</h4>
                     <table>
-                        <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:100px;">Invoice #</th><th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th class="text-right" style="width:90px;">Amount</th></tr></thead>
+                        <thead><tr><th style="width:30px;">#</th><th>Description</th>${rfp.type === 'vendor' ? '<th style="width:100px;">Invoice #</th>' : ''}<th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th class="text-right" style="width:90px;">Amount</th></tr></thead>
                         <tbody>${lineItemsHtml}</tbody>
                     </table>
                     <div class="preview-total-row">
@@ -4195,13 +4196,14 @@
             if (total === 0) total = rfp.amount || 0;
 
             const fmtAmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const printIsVendor = rfp.type === 'vendor';
             let rowsHtml = '';
             lineItems.forEach((item, i) => {
                 rowsHtml += `<tr>
                     <td class="num">${item.line_number || i + 1}</td>
                     <td>${item.description || ''}</td>
-                    <td>${item.invoice_number || ''}</td>
-                    <td>${item.invoice_date || ''}</td>
+                    ${printIsVendor ? `<td>${item.invoice_number || ''}</td>
+                    <td>${item.invoice_date || ''}</td>` : ''}
                     <td>${item.budget_code || ''}</td>
                     <td>${item.account_code || item.object || ''}</td>
                     <td class="amt">${fmtAmt(item.total || 0)}</td>
@@ -4211,8 +4213,8 @@
                 rowsHtml += `<tr>
                     <td class="num">${lineItems.length + i + 1}</td>
                     <td>BUSINESS MILEAGE – ${trip.from_location || ''} → ${trip.to_location || ''} (${trip.miles || 0} mi)</td>
-                    <td></td>
-                    <td>${trip.trip_date || ''}</td>
+                    ${printIsVendor ? `<td></td>
+                    <td>${trip.trip_date || ''}</td>` : ''}
                     <td>${trip.budget_code || ''}</td>
                     <td>${trip.account_code || ''}</td>
                     <td class="amt">${fmtAmt(trip.amount || 0)}</td>
@@ -4266,7 +4268,7 @@
             </div>
             <h2>Line Items</h2>
             <table>
-                <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:80px;">Invoice #</th><th style="width:80px;">Inv. Date</th><th style="width:100px;">Budget Code</th><th style="width:65px;">Account</th><th style="width:80px;text-align:right;">Amount</th></tr></thead>
+                <thead><tr><th style="width:30px;">#</th><th>Description</th>${rfp.type === 'vendor' ? '<th style="width:80px;">Invoice #</th><th style="width:80px;">Inv. Date</th>' : ''}<th style="width:100px;">Budget Code</th><th style="width:65px;">Account</th><th style="width:80px;text-align:right;">Amount</th></tr></thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
             <div class="total-row">Total: $${fmtAmt(total)}</div>
