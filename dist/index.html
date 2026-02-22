@@ -2278,7 +2278,8 @@
             const labels = input.closest('.adv-checklist').querySelectorAll('.adv-checklist-items label');
             labels.forEach(lbl => {
                 const text = lbl.textContent.toLowerCase();
-                lbl.style.display = text.includes(term) ? '' : 'none';
+                const fullVal = (lbl.querySelector('input[type="checkbox"]')?.value || '').toLowerCase();
+                lbl.style.display = (text.includes(term) || fullVal.includes(term)) ? '' : 'none';
             });
         }
 
