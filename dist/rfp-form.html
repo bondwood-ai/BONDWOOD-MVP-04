@@ -242,6 +242,7 @@
         .bw-dp-day.selected { background: var(--primary-hex); color: #fff; font-weight: 700; }
         .bw-dp-day.focused { outline: 2px solid var(--primary-hex); outline-offset: -2px; border-radius: 6px; }
         .bw-dp-day.other-month { color: var(--text-secondary); opacity: 0.4; }
+        .bw-dp-day.dp-disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
         .bw-dp-footer {
             display: flex; justify-content: space-between; align-items: center;
             margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);
@@ -2914,6 +2915,17 @@
             tripDateInput.addEventListener('change', function() {
                 var d = this.value.trim();
                 if (d.length === 10) {
+                    // Reject future dates
+                    var parts = d.split('/');
+                    if (parts.length === 3) {
+                        var entered = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+                        var today = new Date(); today.setHours(0,0,0,0);
+                        if (entered > today) {
+                            this.value = '';
+                            showAlert('Mileage trip dates cannot be in the future.', 'Validation');
+                            return;
+                        }
+                    }
                     var rate = getMileageRate(d);
                     var m = parseFloat(tr.querySelector('.trip-miles').value) || 0;
                     tr.querySelector('.trip-amount').value = m > 0 ? formatCurrency(m * rate) : '';
@@ -4212,7 +4224,9 @@
 
             let hasMileage = false;
             let missingDates = [];
+            let futureDates = [];
             let missingBudgetItems = [];
+            const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
             if (document.getElementById('mileageCheck') && document.getElementById('mileageCheck').checked) {
                 document.querySelectorAll('#mileageBody tr').forEach((r, idx) => {
                     var miles = parseFloat(r.querySelector('.trip-miles').value) || 0;
@@ -4223,6 +4237,14 @@
                         hasMileage = true;
                         if (!tripDate || tripDate === 'MM/DD/YYYY') {
                             missingDates.push(tripLabel);
+                        } else {
+                            var parts = tripDate.split('/');
+                            if (parts.length === 3) {
+                                var entered = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+                                if (entered > todayMidnight) {
+                                    futureDates.push(tripLabel);
+                                }
+                            }
                         }
                         if (!bc) {
                             missingBudgetItems.push(tripLabel);
@@ -4246,6 +4268,9 @@
 
             if (missingDates.length > 0) {
                 validationErrors.push(`Missing date: ${missingDates.join(', ')}`);
+            }
+            if (futureDates.length > 0) {
+                validationErrors.push(`Mileage trip dates cannot be in the future: ${futureDates.join(', ')}`);
             }
             if (missingBudgetItems.length > 0) {
                 validationErrors.push(`Missing budget code: ${missingBudgetItems.join(', ')}`);
@@ -6174,6 +6199,7 @@
         let bwDpYear = 2026;
         let bwDpMonth = 1;           // 0-indexed
         let bwDpFocusedDate = null;  // Date object for keyboard focus
+        let bwDpMaxDate = null;      // max selectable date (null = no limit)
         const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
         // Keyboard accessibility: open datepicker on Enter, Space, or Arrow keys
@@ -6193,6 +6219,14 @@
         function openBwDatepicker(inputEl, evt) {
             const dp = document.getElementById('bwDatepicker');
             bwDpTarget = inputEl;
+
+            // Set max date to today if this is a mileage trip date
+            if (inputEl.classList.contains('trip-date')) {
+                const now = new Date();
+                bwDpMaxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            } else {
+                bwDpMaxDate = null;
+            }
 
             // Parse existing value
             const val = inputEl.value.trim();
@@ -6392,7 +6426,11 @@
                 const py = bwDpMonth === 0 ? bwDpYear - 1 : bwDpYear;
                 el.dataset.date = String(pm + 1).padStart(2, '0') + '/' + String(d).padStart(2, '0') + '/' + py;
                 if (el.dataset.date === focusedStr) el.classList.add('focused');
-                el.addEventListener('click', bwDpSelect);
+                if (bwDpMaxDate && new Date(py, pm, d) > bwDpMaxDate) {
+                    el.classList.add('dp-disabled');
+                } else {
+                    el.addEventListener('click', bwDpSelect);
+                }
                 container.appendChild(el);
             }
 
@@ -6408,7 +6446,11 @@
                 if ((bwDpMonth + 1) === (today.getMonth() + 1) && d === today.getDate() && bwDpYear === today.getFullYear()) {
                     el.classList.add('today');
                 }
-                el.addEventListener('click', bwDpSelect);
+                if (bwDpMaxDate && new Date(bwDpYear, bwDpMonth, d) > bwDpMaxDate) {
+                    el.classList.add('dp-disabled');
+                } else {
+                    el.addEventListener('click', bwDpSelect);
+                }
                 container.appendChild(el);
             }
 
@@ -6423,13 +6465,18 @@
                 const ny = bwDpMonth === 11 ? bwDpYear + 1 : bwDpYear;
                 el.dataset.date = String(nm + 1).padStart(2, '0') + '/' + String(d).padStart(2, '0') + '/' + ny;
                 if (el.dataset.date === focusedStr) el.classList.add('focused');
-                el.addEventListener('click', bwDpSelect);
+                if (bwDpMaxDate && new Date(ny, nm, d) > bwDpMaxDate) {
+                    el.classList.add('dp-disabled');
+                } else {
+                    el.addEventListener('click', bwDpSelect);
+                }
                 container.appendChild(el);
             }
         }
 
         function bwDpSelectDate(date, advanceDirection) {
             if (!bwDpTarget) return;
+            if (bwDpMaxDate && date > bwDpMaxDate) return;
             const formatted = String(date.getMonth() + 1).padStart(2, '0') + '/' +
                               String(date.getDate()).padStart(2, '0') + '/' +
                               date.getFullYear();

@@ -1336,6 +1336,13 @@ async function handleCreateRFP(request, env) {
   }
 
   if (newTrips.length) {
+    // Reject future mileage trip dates
+    const todayStr = new Date().toISOString().split('T')[0];
+    for (const trip of newTrips) {
+      if (trip.trip_date && trip.trip_date > todayStr) {
+        return json({ error: 'Mileage trip dates cannot be in the future.' }, 400);
+      }
+    }
     for (const trip of newTrips) {
       statements.push(
         env.DB.prepare(`
@@ -1742,6 +1749,14 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     statements.push(
       env.DB.prepare("DELETE FROM form_data WHERE rfp_number = ? AND description = 'BUSINESS MILEAGE'").bind(rfpNumber)
     );
+
+    // Reject future mileage trip dates
+    const todayStrUpd = new Date().toISOString().split('T')[0];
+    for (const trip of body.mileageTrips) {
+      if (trip.trip_date && trip.trip_date > todayStrUpd) {
+        return json({ error: 'Mileage trip dates cannot be in the future.' }, 400);
+      }
+    }
 
     for (const trip of body.mileageTrips) {
       statements.push(
