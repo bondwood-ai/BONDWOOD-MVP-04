@@ -2020,6 +2020,9 @@
 
                 badge.innerHTML = `<span style="display:inline-block;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;font-family:'Google Sans Flex',sans-serif;text-transform:capitalize;${statusBadgeColor(status)}">${formatStatus(status)}</span>`;
 
+                const isReimb = (h.request_type || '').toLowerCase().includes('reimb');
+                const reimbVendor = isReimb ? ('EE' + (h.submitter_id || '').replace(/^E/i, '') + ' EMPLOYEE REIMBURSEMENT') : '';
+
                 let total = 0;
                 let itemsHtml = lineItems.map((item, i) => {
                     const amt = parseFloat(item.total) || 0;
@@ -2054,8 +2057,6 @@
 
                 const displayTotal = total || h.total_amount || 0;
                 const daysOpen = h.submission_date ? Math.max(0, Math.floor((Date.now() - new Date(h.submission_date).getTime()) / 86400000)) : 0;
-                const isReimb = (h.request_type || '').toLowerCase().includes('reimb');
-                const reimbVendor = isReimb ? ('EE' + (h.submitter_id || '').replace(/^E/i, '') + ' EMPLOYEE REIMBURSEMENT') : '';
 
                 // Notes
                 const notesArr = data.notes || [];
