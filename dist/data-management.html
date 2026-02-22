@@ -1966,10 +1966,13 @@
                 let itemsHtml = lineItems.map((item, i) => {
                     const amt = parseFloat(item.total) || 0;
                     total += amt;
+                    const fullDesc = esc(item.description || '—');
+                    const truncDesc = fullDesc.length > 50 ? fullDesc.substring(0, 50) + '…' : fullDesc;
+                    const descTitle = fullDesc.length > 50 ? ` title="${fullDesc.replace(/"/g, '&quot;')}"` : '';
                     return `<tr>
                         <td>${item.line_number || i + 1}</td>
-                        <td>${esc(item.description || '—')}</td>
-                        <td>${esc(item.invoice_number || '—')}</td>
+                        <td${descTitle} style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:${fullDesc.length > 50 ? 'help' : 'default'};">${truncDesc}</td>
+                        ${!isReimb ? `<td>${esc(item.invoice_number || '—')}</td>` : ''}
                         <td style="text-align:center;">${item.budget_code || '—'}</td>
                         <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
                         <td style="text-align:right;">${formatCurrency(amt)}</td>
@@ -1982,14 +1985,14 @@
                     itemsHtml += `<tr>
                         <td>${lineItems.length + i + 1}</td>
                         <td>BUSINESS MILEAGE<br><span style="font-size:0.75rem;color:var(--text-secondary);">${esc(trip.from_location || '')} → ${esc(trip.to_location || '')} (${trip.miles || 0} mi)</span></td>
-                        <td>—</td>
+                        ${!isReimb ? '<td>—</td>' : ''}
                         <td style="text-align:center;">${trip.budget_code || '—'}</td>
                         <td style="text-align:center;">${trip.account_code || '—'}</td>
                         <td style="text-align:right;">${formatCurrency(amt)}</td>
                     </tr>`;
                 });
 
-                if (!itemsHtml) itemsHtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>';
+                if (!itemsHtml) itemsHtml = `<tr><td colspan="${isReimb ? 5 : 6}" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>`;
 
                 const displayTotal = total || h.total_amount || 0;
                 const daysOpen = h.submission_date ? Math.max(0, Math.floor((Date.now() - new Date(h.submission_date).getTime()) / 86400000)) : 0;
@@ -2118,7 +2121,7 @@
                     <div class="preview-line-items">
                         <h4>Line Items</h4>
                         <table>
-                            <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:100px;">Invoice #</th><th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th style="text-align:right;width:90px;">Amount</th></tr></thead>
+                            <thead><tr><th style="width:30px;">#</th><th>Description</th>${!isReimb ? '<th style="width:100px;">Invoice #</th>' : ''}<th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th style="text-align:right;width:90px;">Amount</th></tr></thead>
                             <tbody>${itemsHtml}</tbody>
                         </table>
                         <div class="preview-total-row">
