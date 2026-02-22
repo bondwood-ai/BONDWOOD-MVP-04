@@ -240,6 +240,10 @@ export default {
         return handleSearchOptions(env);
       }
 
+      if (path === '/api/rfps/search' && method === 'POST') {
+        return handleAdvancedSearch(request, env);
+      }
+
       // ── Token Resolution ──
       const tokenMatch = path.match(/^\/api\/rfps\/by-token\/(.+)$/);
       if (tokenMatch && method === 'GET') {
@@ -1090,6 +1094,106 @@ async function handleSearchOptions(env) {
     });
   } catch (e) {
     return json({ error: 'Failed to fetch search options', detail: e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   RFPs – ADVANCED SEARCH
+   ======================================== */
+async function handleAdvancedSearch(request, env) {
+  try {
+    const criteria = await request.json();
+
+    // Separate header-level vs line-item-level fields
+    const HEADER_FIELDS = {
+      status: 'd.status',
+      request_type: 'd.request_type',
+      submitter_name: 'd.submitter_name',
+      assigned_to: 'd.assigned_to',
+      vendor_name: 'd.vendor_name',
+      vendor_number: 'd.vendor_number',
+      ap_batch: 'd.ap_batch',
+    };
+    const LINE_ITEM_FIELDS = {
+      description: 'f.description',
+      invoice_number: 'f.invoice_number',
+      budget_code: 'f.budget_code',
+      account_code: "COALESCE(f.account_code, f.object)",
+      fund: 'f.fund',
+      organization: 'f.organization',
+      program: 'f.program',
+      finance: 'f.finance',
+      course: 'f.object',
+    };
+
+    let needsJoin = false;
+    let where = ['d.deleted_at IS NULL'];
+    let params = [];
+
+    // Check if any line-item fields are in the criteria
+    for (const field of Object.keys(LINE_ITEM_FIELDS)) {
+      if (Array.isArray(criteria[field]) && criteria[field].length > 0) {
+        needsJoin = true;
+        break;
+      }
+    }
+
+    // Build WHERE clauses for header fields
+    for (const [field, col] of Object.entries(HEADER_FIELDS)) {
+      if (Array.isArray(criteria[field]) && criteria[field].length > 0) {
+        const placeholders = criteria[field].map(() => '?').join(',');
+        where.push(`${col} IN (${placeholders})`);
+        params.push(...criteria[field]);
+      }
+    }
+
+    // Build WHERE clauses for line-item fields
+    for (const [field, col] of Object.entries(LINE_ITEM_FIELDS)) {
+      if (Array.isArray(criteria[field]) && criteria[field].length > 0) {
+        const placeholders = criteria[field].map(() => '?').join(',');
+        where.push(`${col} IN (${placeholders})`);
+        params.push(...criteria[field]);
+      }
+    }
+
+    // Date range filters (submission date)
+    if (criteria.date_from) {
+      where.push('d.submission_date >= ?');
+      params.push(criteria.date_from);
+    }
+    if (criteria.date_to) {
+      where.push('d.submission_date <= ?');
+      params.push(criteria.date_to);
+    }
+
+    // Invoice date range
+    if (criteria.inv_date_from) {
+      where.push('d.latest_invoice_date >= ?');
+      params.push(criteria.inv_date_from);
+    }
+    if (criteria.inv_date_to) {
+      where.push('d.latest_invoice_date <= ?');
+      params.push(criteria.inv_date_to);
+    }
+
+    // Amount range
+    if (criteria.amount_min !== undefined && criteria.amount_min !== null) {
+      where.push('d.total_amount >= ?');
+      params.push(criteria.amount_min);
+    }
+    if (criteria.amount_max !== undefined && criteria.amount_max !== null) {
+      where.push('d.total_amount <= ?');
+      params.push(criteria.amount_max);
+    }
+
+    const joinClause = needsJoin ? 'INNER JOIN form_data f ON f.rfp_number = d.rfp_number' : '';
+    const sql = `SELECT DISTINCT d.rfp_number FROM dashboard_data d ${joinClause} WHERE ${where.join(' AND ')} ORDER BY d.rfp_number DESC LIMIT 5000`;
+
+    const { results } = await env.DB.prepare(sql).bind(...params).all();
+    return json({ rfp_numbers: results.map(r => r.rfp_number) });
+  } catch (e) {
+    return json({ error: 'Search failed', detail: e.message }, 500);
   }
 }
 
