@@ -1601,6 +1601,7 @@
                         case 'assignedTo':
                             td.textContent = rfp.assignedTo;
                             td.title = rfp.assignedTo;
+                            td.style.textTransform = 'uppercase';
                             td.style.fontSize = '0.75rem';
                             break;
                         case 'status':
@@ -1620,7 +1621,7 @@
                         case 'apBatch':
                             td.textContent = rfp.apBatch || '—';
                             td.title = rfp.apBatch || '';
-                            td.style.fontWeight = rfp.apBatch ? '600' : '400';
+                            td.style.fontWeight = '400';
                             td.style.color = rfp.apBatch ? 'var(--text-primary)' : 'var(--text-secondary)';
                             break;
                         default:
