@@ -4293,7 +4293,7 @@ function buildEmailLineItemsTable(lineItems, mileageTrips, totalAmount) {
   }
 
   return `<tr><td style="background:#ffffff;padding:0 28px 16px;">
-    <table class="email-line-items-table" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;">
       <tr style="background:${EMAIL_PRIMARY};">
         <td style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;font-family:${EMAIL_FONT};">Description</td>
         <td style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;font-family:${EMAIL_FONT};text-align:center;">Budget Code</td>
@@ -4346,13 +4346,7 @@ function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl, rfpDat
     : '';
 
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  @media (prefers-color-scheme: dark) {
-    .email-line-items-table { border-color: #1a1a1a !important; }
-  }
-</style>
-</head>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:${EMAIL_FONT};">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
     <tr><td align="center">
