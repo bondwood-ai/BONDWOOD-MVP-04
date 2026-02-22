@@ -4308,13 +4308,28 @@
                 </table>`;
             }
 
+            // Build notes section for print
+            const printNotes = window._previewFullData?.notes || [];
+            let notesHtml = '';
+            if (printNotes.length > 0) {
+                notesHtml = `<h2>Notes</h2><table>
+                    <thead><tr><th style="width:30px;">#</th><th>Note</th><th style="width:120px;">Author</th><th style="width:150px;">Date</th></tr></thead>
+                    <tbody>${printNotes.map((n, i) => {
+                        const author = (n.author_name || n.author_email || 'Unknown').replace(/</g, '&lt;');
+                        const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                        const text = (n.note_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        return `<tr><td class="num">${i + 1}</td><td style="white-space:pre-wrap;">${text}</td><td style="font-size:10px;">${author}</td><td style="font-size:10px;color:#666;">${date}</td></tr>`;
+                    }).join('')}</tbody>
+                </table>`;
+            }
+
             let iframe = document.getElementById('rfpPrintFrame');
             if (iframe) iframe.remove();
 
             // iOS Safari doesn't support iframe.contentWindow.print()
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-            const htmlContent = `<!DOCTYPE html><html><head><title>RFP #${rfp.rfpNumber}</title>
+            const htmlContent = `<!DOCTYPE html><html><head><title>RFP_${rfp.rfpNumber}_${rfp.submitter.replace(/\s+/g, '_')}</title>
             <link href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
@@ -4350,6 +4365,7 @@
                 <tbody>${rowsHtml}</tbody>
             </table>
             <div class="total-row">Total: $${fmtAmt(total)}</div>
+            ${notesHtml}
             ${auditHtml}
             </body></html>`;
 
