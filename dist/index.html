@@ -537,6 +537,31 @@
         .approval-btn-primary:hover { opacity: 0.9; }
         .approval-btn-primary:disabled { opacity: 0.5; cursor: default; }
 
+        /* Custom tooltip */
+        #customTooltip {
+            position: fixed;
+            z-index: 99999;
+            max-width: 380px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-family: 'Google Sans Flex', sans-serif;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+            word-wrap: break-word;
+        }
+        body.dark-mode #customTooltip {
+            background: #1a1a1a;
+            color: #ffffff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.2);
+        }
+        #customTooltip.visible { opacity: 1; }
+
     </style>
 
     <script>
@@ -554,6 +579,7 @@
     </script>
 </head>
 <body style="visibility:hidden;">
+    <div id="customTooltip"></div>
     <!-- Hamburger Overlay -->
     <div id="hamburgerOverlay" onclick="closeHamburgerMenu()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
 
@@ -1144,6 +1170,39 @@
     </div>
 
     <script>
+        /* ============ CUSTOM TOOLTIP ============ */
+        (function() {
+            const tip = document.getElementById('customTooltip');
+            let showTimer = null;
+            document.addEventListener('mouseover', function(e) {
+                const el = e.target.closest('[data-tooltip]');
+                if (!el) return;
+                clearTimeout(showTimer);
+                showTimer = setTimeout(function() {
+                    tip.textContent = el.dataset.tooltip;
+                    tip.style.opacity = '0';
+                    tip.classList.remove('visible');
+                    tip.style.display = 'block';
+                    const rect = el.getBoundingClientRect();
+                    const tipRect = tip.getBoundingClientRect();
+                    let left = rect.left;
+                    let top = rect.bottom + 6;
+                    if (left + tipRect.width > window.innerWidth - 12) left = window.innerWidth - tipRect.width - 12;
+                    if (left < 4) left = 4;
+                    if (top + tipRect.height > window.innerHeight - 12) top = rect.top - tipRect.height - 6;
+                    tip.style.left = left + 'px';
+                    tip.style.top = top + 'px';
+                    tip.classList.add('visible');
+                }, 300);
+            });
+            document.addEventListener('mouseout', function(e) {
+                const el = e.target.closest('[data-tooltip]');
+                if (!el) return;
+                clearTimeout(showTimer);
+                tip.classList.remove('visible');
+            });
+        })();
+
         /* ============ CUSTOM SELECT COMPONENT ============ */
         function initCustomSelect(sel) {
             if (!sel || sel.dataset.csInit) return;
@@ -2564,10 +2623,10 @@
                 total += amt;
                 const fullDesc = item.description || '—';
                 const truncDesc = fullDesc.length > 50 ? fullDesc.substring(0, 50) + '…' : fullDesc;
-                const descTitle = fullDesc.length > 50 ? ` title="${fullDesc.replace(/"/g, '&quot;')}"` : '';
+                const tooltipAttr = fullDesc.length > 50 ? ` data-tooltip="${fullDesc.replace(/"/g, '&quot;').replace(/</g, '&lt;')}"` : '';
                 lineItemsHtml += `<tr>
                     <td>${item.line_number || i + 1}</td>
-                    <td${descTitle} style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:${fullDesc.length > 50 ? 'help' : 'default'};">${truncDesc}</td>
+                    <td${tooltipAttr} style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:${fullDesc.length > 50 ? 'help' : 'default'};">${truncDesc}</td>
                     ${isVendor ? `<td>${item.invoice_number || '—'}</td>` : ''}
                     <td style="text-align:center;">${item.budget_code || '—'}</td>
                     <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
