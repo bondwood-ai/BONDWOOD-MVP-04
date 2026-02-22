@@ -1180,7 +1180,6 @@
                 clearTimeout(showTimer);
                 showTimer = setTimeout(function() {
                     tip.textContent = el.dataset.tooltip;
-                    tip.style.opacity = '0';
                     tip.classList.remove('visible');
                     tip.style.display = 'block';
                     const rect = el.getBoundingClientRect();
