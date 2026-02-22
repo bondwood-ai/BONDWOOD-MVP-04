@@ -3861,74 +3861,6 @@
         }
 
         function closeUtilityModal(result = false) {
-
-        function showApBatchSelect() {
-            return new Promise(async (resolve) => {
-                _utilityModalResolve = null;
-                document.getElementById('utilityModalIcon').style.display = 'none';
-                document.getElementById('utilityModalTitle').textContent = 'A/P Batch';
-
-                // Determine batch type from request type
-                const batchType = currentRequestType === 'reimbursement' ? 'employee_reimbursement' : 'vendor_payment';
-
-                // Show loading state
-                document.getElementById('utilityModalMessage').innerHTML = `
-                    <span style="display:block;margin-bottom:0.75rem;">Select the A/P Batch for this request:</span>
-                    <p style="color:var(--text-secondary);font-size:0.85rem;">Loading batches...</p>
-                `;
-                document.getElementById('utilityModalFooter').innerHTML = `
-                    <button onclick="closeUtilityModal(null)" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);">Cancel</button>
-                    <button disabled style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:#fff;min-width:80px;opacity:0.5;">Approve</button>
-                `;
-                _utilityModalResolve = resolve;
-                document.getElementById('utility-modal').style.display = 'flex';
-
-                // Fetch batches from API
-                let batches = [];
-                try {
-                    const resp = await fetch(`${API_BASE}/api/ap-batches?type=${batchType}`);
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        batches = data.batches || [];
-                    }
-                } catch (e) {
-                    console.error('[AP-BATCH] Failed to fetch:', e);
-                }
-
-                if (!batches.length) {
-                    document.getElementById('utilityModalMessage').innerHTML = `
-                        <span style="display:block;margin-bottom:0.75rem;">No A/P Batches found for ${batchType === 'employee_reimbursement' ? 'Employee Reimbursement' : 'Vendor Payment'}.</span>
-                        <p style="color:var(--text-secondary);font-size:0.85rem;">Please add batches in the A/P Batch table first.</p>
-                    `;
-                    return;
-                }
-
-                // Build select dropdown
-                const options = batches.map(b => `<option value="${b.ap_batch_number}">${b.ap_batch_number}</option>`).join('');
-                document.getElementById('utilityModalMessage').innerHTML = `
-                    <span style="display:block;margin-bottom:0.75rem;">Select the A/P Batch for this request:</span>
-                    <select id="utilityBatchSelect" style="width:100%;padding:0.55rem 0.75rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.9rem;font-family:'Google Sans Flex',sans-serif;background:var(--bg-color);color:var(--text-primary);box-sizing:border-box;cursor:pointer;">
-                        <option value="">— Select a batch —</option>
-                        ${options}
-                    </select>
-                `;
-                document.getElementById('utilityModalFooter').innerHTML = `
-                    <button onclick="closeUtilityModal(null)" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);">Cancel</button>
-                    <button id="utilityBatchConfirm" onclick="closeUtilityModal(document.getElementById('utilityBatchSelect').value||null)" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:#fff;min-width:80px;opacity:0.5;" disabled>Approve</button>
-                `;
-
-                // Enable/disable confirm button based on selection
-                const sel = document.getElementById('utilityBatchSelect');
-                const btn = document.getElementById('utilityBatchConfirm');
-                sel.addEventListener('change', () => {
-                    btn.disabled = !sel.value;
-                    btn.style.opacity = sel.value ? '1' : '0.5';
-                });
-                setTimeout(() => sel.focus(), 100);
-            });
-        }
-
-        function closeUtilityModal(result = false) {
             document.getElementById('utility-modal').style.display = 'none';
             // Reset modal dimensions to default
             const modalBox = document.querySelector('#utility-modal > div');
@@ -4781,7 +4713,7 @@
 
             // Prompt for A/P Batch when approving from A/P Review
             if (isFullApproval && (currentFormStatus === 'ap-review' || currentFormStatus === 'ap_review')) {
-                apBatch = await showApBatchSelect();
+                apBatch = await showPrompt('Enter the A/P Batch number for this request:', 'A/P Batch', { placeholder: 'e.g. AP-2026-001', confirmText: 'Approve' });
                 if (!apBatch) return; // cancelled
             }
 
