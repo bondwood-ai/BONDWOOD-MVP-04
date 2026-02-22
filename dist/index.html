@@ -3001,11 +3001,14 @@
 
         function toggleReassignDropdown() {
             const panel = document.getElementById('reassignDropdownPanel');
+            const container = document.getElementById('reassignDropdown');
             if (panel.style.display === 'none') {
                 panel.style.display = 'block';
+                container.style.marginBottom = '270px';
                 document.getElementById('reassignSearch').focus();
             } else {
                 panel.style.display = 'none';
+                container.style.marginBottom = '0';
             }
         }
 
@@ -3024,12 +3027,14 @@
             document.getElementById('reassignTriggerText').textContent = name;
             document.getElementById('reassignTrigger').style.color = 'var(--text-primary)';
             document.getElementById('reassignDropdownPanel').style.display = 'none';
+            document.getElementById('reassignDropdown').style.marginBottom = '0';
             document.getElementById('reassignConfirmBtn').disabled = false;
         }
 
         function closeReassignModal() {
             document.getElementById('reassignModal').style.display = 'none';
             document.getElementById('reassignDropdownPanel').style.display = 'none';
+            document.getElementById('reassignDropdown').style.marginBottom = '0';
         }
 
         // Close reassign dropdown when clicking outside it
@@ -3037,6 +3042,7 @@
             const dropdown = document.getElementById('reassignDropdown');
             if (dropdown && !dropdown.contains(e.target)) {
                 document.getElementById('reassignDropdownPanel').style.display = 'none';
+                dropdown.style.marginBottom = '0';
             }
         });
 
