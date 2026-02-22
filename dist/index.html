@@ -831,7 +831,7 @@
 
     <!-- ============ REASSIGN MODAL ============ -->
     <div id="reassignModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:3000;backdrop-filter:blur(2px);" onclick="if(event.target===this)closeReassignModal()">
-        <div class="modal" style="width:440px;">
+        <div class="modal" style="width:440px;overflow:visible;max-height:none;">
             <div class="modal-header">
                 <h3>Reassign Request</h3>
                 <button class="btn-icon" onclick="closeReassignModal()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -2076,12 +2076,19 @@
 
             // Check if any are at ap-review (will become approved)
             const apReviewItems = eligible.filter(r => r.status === 'ap-review' || r.status === 'ap_review');
-            let apBatch = null;
+            let apBatchMap = {}; // keyed by type → batch number
             if (apReviewItems.length > 0) {
-                const types = new Set(apReviewItems.map(r => r.type));
-                const batchType = types.size === 1 ? [...types][0] : null;
-                apBatch = await showApBatchPicker(batchType, `${apReviewItems.length} request(s) will be fully approved.`);
-                if (!apBatch) return;
+                const types = [...new Set(apReviewItems.map(r => r.type))];
+                for (const t of types) {
+                    const itemsOfType = apReviewItems.filter(r => r.type === t);
+                    const typeLabel = t === 'reimbursement' || t === 'employee_reimbursement' ? 'Employee Reimbursement' : 'Vendor Payment';
+                    const subtitle = types.length > 1
+                        ? `${itemsOfType.length} ${typeLabel} request(s) will be fully approved.`
+                        : `${itemsOfType.length} request(s) will be fully approved.`;
+                    const batch = await showApBatchPicker(t, subtitle);
+                    if (!batch) return; // user cancelled
+                    apBatchMap[t] = batch;
+                }
             }
 
             let successCount = 0;
@@ -2093,7 +2100,10 @@
 
                 try {
                     const updateBody = { status: newStatus, performer_email: impersonateEmail || currentUserEmail, performer_name: currentUserName || 'Reviewer' };
-                    if (isFullApproval && apBatch) updateBody.ap_batch = apBatch;
+                    if (isFullApproval) {
+                        const batch = apBatchMap[rfp.type];
+                        if (batch) updateBody.ap_batch = batch;
+                    }
 
                     const resp = await fetch(`${API_BASE}/api/rfps/${rfp.rfpNumber}`, {
                         method: 'PUT',
@@ -2761,6 +2771,23 @@
             return status === 'submitted' || status === 'primary_review' || status === 'secondary_1_review' || status === 'secondary_2_review' || status === 'secondary_3_review' || status === 'accounting_review' || status === 'ap_review' || status === 'accounting-review' || status === 'ap-review';
         }
 
+        function canCurrentUserApprove(rfp) {
+            if (!isInApprovalWorkflow(rfp.status)) return false;
+            const effectiveEmail = (impersonateEmail || currentUserEmail).toLowerCase();
+            const submitterEmail = (rfp.submitterEmail || rfp.userEmail || '').toLowerCase();
+            if (effectiveEmail === submitterEmail) return false; // can't approve own
+            const isAssigned = rfp.assignedToEmail && effectiveEmail && rfp.assignedToEmail.toLowerCase() === effectiveEmail;
+            if (isAssigned) return true;
+            const isAccountant = currentUserRoles.includes('accountant');
+            const isAP = currentUserRoles.includes('accounts_payable');
+            const atAccountingStep = rfp.status === 'accounting_review' || rfp.status === 'accounting-review';
+            const atAPStep = rfp.status === 'ap_review' || rfp.status === 'ap-review';
+            if (isAccountant && atAccountingStep) return true;
+            if (isAP && atAPStep) return true;
+            if (!atAccountingStep && !atAPStep && currentUserRoles.includes('admin')) return true;
+            return false;
+        }
+
         function openRejectModal() {
             if (!previewRfp) { console.error('openRejectModal: no previewRfp'); return; }
             const prevStatus = WORKFLOW_PREV[previewRfp.status];
@@ -2846,7 +2873,7 @@
                 sub.innerHTML = `Request <span class="approval-success-rfp">#${rfpNumber}</span> has been sent back to ${WORKFLOW_LABELS[newStatus] || newStatus}.`;
             }
 
-            const queue = allRFPs.filter(r => isInApprovalWorkflow(r.status) && String(r.rfpNumber) !== String(rfpNumber));
+            const queue = allRFPs.filter(r => canCurrentUserApprove(r) && String(r.rfpNumber) !== String(rfpNumber));
             nextBtn.disabled = queue.length === 0;
             nextBtn.title = queue.length === 0 ? 'No more submissions to review' : '';
             if (queue.length === 0) {
@@ -3260,7 +3287,7 @@
             }
 
             // Check if there's a next RFP in the approval queue
-            const queue = allRFPs.filter(r => isInApprovalWorkflow(r.status) && String(r.rfpNumber) !== String(rfpNumber));
+            const queue = allRFPs.filter(r => canCurrentUserApprove(r) && String(r.rfpNumber) !== String(rfpNumber));
             nextBtn.disabled = queue.length === 0;
             nextBtn.title = queue.length === 0 ? 'No more submissions to review' : '';
             if (queue.length === 0) {
@@ -3277,7 +3304,7 @@
         }
 
         function reviewNextSubmission() {
-            const queue = allRFPs.filter(r => isInApprovalWorkflow(r.status));
+            const queue = allRFPs.filter(r => canCurrentUserApprove(r));
             if (queue.length === 0) return;
             closeApprovalSuccess();
             openPreviewModal(queue[0]);
