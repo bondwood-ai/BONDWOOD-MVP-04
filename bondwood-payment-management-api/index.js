@@ -1829,7 +1829,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
     }
 
     // Email notification for status advances via generic update
-    if (body.status && body.status !== oldHeader.status && body.assigned_to_email) {
+    if (body.status && body.status !== oldHeader.status) {
       const statusLabel = WORKFLOW_STATUS_LABELS[body.status] || body.status;
       if (body.status === 'approved') {
         const subEmail = await getSubmitterEmail(env, oldHeader);
@@ -1837,7 +1837,7 @@ async function handleUpdateRFP(rfpNumber, request, env) {
           await sendEmailNotification(env, {
             to: subEmail, type: 'approved', rfpNumber,
             subject: `RFP #${rfpNumber} has been approved`,
-            bodyText: 'Your request for payment has received final approval.',
+            bodyText: `Your request for payment has received final approval.${body.ap_batch ? ' A/P Batch: ' + body.ap_batch : ''}`,
             ctaLabel: 'View Request',
             ctaUrl: buildFormUrl(rfpNumber, oldHeader.url_token),
           });
