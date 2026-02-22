@@ -3,14 +3,14 @@
 <head>
     <!-- Open Graph / Link Preview -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Bondwood — Payment Management">
-    <meta property="og:description" content="Streamlined payment processing for school districts.">
-    <meta property="og:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png">
-    <meta property="og:url" content="https://bondwood-mvp-04.pages.dev">
+    <meta property="og:title" content="Bondwood — Contract Management">
+    <meta property="og:description" content="Centralized contract tracking and management for school districts.">
+    <meta property="og:image" content="https://bondwood-mvp-06.pages.dev/bondwood-logo-modern-dark.png">
+    <meta property="og:url" content="https://bondwood-mvp-06.pages.dev">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Bondwood — Payment Management">
-    <meta name="twitter:description" content="Streamlined payment processing for school districts.">
-    <meta name="twitter:image" content="https://bondwood-mvp-04.pages.dev/bondwood-logo-modern-dark.png">
+    <meta name="twitter:title" content="Bondwood — Contract Management">
+    <meta name="twitter:description" content="Centralized contract tracking and management for school districts.">
+    <meta name="twitter:image" content="https://bondwood-mvp-06.pages.dev/bondwood-logo-modern-dark.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management</title>
@@ -79,7 +79,6 @@
         body.dark-mode input, body.dark-mode select { background: var(--field-bg); color: var(--text-primary); border-color: var(--border-color); }
         body.dark-mode input[readonly] { background: var(--readonly-bg); color: var(--text-secondary); }
         body.dark-mode .user-detail-panel { background: var(--card-bg); border-color: var(--border-color); }
-        body.dark-mode .att-close-btn:hover { background: rgba(255,255,255,0.08); }
 
         /* ============ HAMBURGER MENU ============ */
         .hamburger-menu-item {
@@ -103,20 +102,13 @@
         #hamburgerMenu.dark-text #brandSelectorMenu { color: #000 !important; border-color: rgba(0,0,0,0.3) !important; background: rgba(0,0,0,0.08) !important; }
         #hamburgerMenu.dark-text #brandSelectorMenu option { color: #000; background: #fff; }
 
-        .bondwood-logo {
-            height: 100px; max-height: 100px; margin-top: -40px; margin-bottom: -40px;
-            object-fit: contain; display: block;
-        }
+        .bondwood-logo { height: 100px; max-height: 100px; margin-top: -40px; margin-bottom: -40px; object-fit: contain; display: block; }
 
         /* ============ TABLE ============ */
         .main-content { padding: 0; }
-        .module-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
-        }
+        .module-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
         .module-title { font-size: 1.75rem; font-weight: 700; font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; color: var(--text-primary); margin: 0; }
         .module-subtitle { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem; }
-
         .header-actions { display: flex; gap: 0.5rem; align-items: center; }
 
         .btn-primary {
@@ -134,10 +126,7 @@
         .btn-primary.danger { background: var(--negative-color); color: #fff; border-color: var(--negative-color); }
         .btn-primary.danger:hover { opacity: 0.88; }
 
-        .search-wrapper {
-            padding: 0 0 0.75rem 0; 
-            display: flex; gap: 0.5rem; align-items: center;
-        }
+        .search-wrapper { padding: 0 0 0.75rem 0; display: flex; gap: 0.5rem; align-items: center; }
         .search-input {
             width: 30%; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color);
             border-radius: 8px; font-family: inherit; font-size: 0.82rem;
@@ -163,7 +152,6 @@
         tbody tr { border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.12s ease; }
         tbody tr:last-child { border-bottom: none; }
         tbody tr:hover { background: var(--row-hover-bg, var(--bg-color)); }
-        tbody tr.selected { background: var(--pale-accent); }
         td { padding: 0.7rem 1rem; font-size: 0.82rem; vertical-align: middle; }
 
         .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; }
@@ -188,7 +176,6 @@
             font-size: 0.68rem; font-weight: 700; color: #fff;
             background: var(--secondary-hex); overflow: hidden;
         }
-        .user-avatar:empty { background: transparent; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-cell { display: flex; align-items: center; gap: 0.75rem; }
         .user-name { font-weight: 600; font-size: 0.84rem; color: var(--text-primary); }
@@ -203,17 +190,10 @@
             font-size: 0.62rem; font-weight: 700; font-family: 'Google Sans Flex', sans-serif;
             text-transform: uppercase; letter-spacing: 0.03em;
         }
-        .role-badge-submitter { background: #e8f0fe; color: #1a56db; }
-        .role-badge-accounts_payable { background: #fef3c7; color: #92400e; }
-        .role-badge-accountant { background: #d1fae5; color: #065f46; }
+        .role-badge-viewer { background: #e8f0fe; color: #1a56db; }
+        .role-badge-contract_manager { background: #fef3c7; color: #92400e; }
         .role-badge-admin { background: #f3e8ff; color: #6b21a8; }
         .role-badge-fallback { background: #f1f5f9; color: #475569; }
-        .role-crown {
-            display: inline-flex; align-items: flex-end; gap: 0.3rem;
-            font-size: 0.62rem; font-weight: 700; font-family: 'Google Sans Flex', sans-serif;
-            text-transform: uppercase; letter-spacing: 0.03em; color: #b8860b;
-        }
-        .role-crown svg { flex-shrink: 0; }
         .roles-cell { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 
         /* ============ SECTION HEADER ============ */
@@ -224,11 +204,8 @@
             font-family: 'Google Sans Flex', sans-serif;
         }
 
-        /* ============ USER DETAIL PANEL (Slide-out) ============ */
-        .detail-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 5000;
-        }
+        /* ============ USER DETAIL PANEL ============ */
+        .detail-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 5000; }
         .detail-overlay.open { display: block; }
         .user-detail-panel {
             position: fixed; top: 0; right: 0; width: 560px; max-width: 95vw; height: 100%;
@@ -240,27 +217,15 @@
         }
         .user-detail-panel.open { transform: translateX(0); visibility: visible; pointer-events: auto; transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), visibility 0s 0s; }
 
-        .detail-frozen {
-            flex-shrink: 0; background: var(--card-bg); z-index: 2; border-bottom: none;
-        }
-        .detail-scrollable {
-            flex: 1; overflow-y: auto; border-top: none;
-        }
+        .detail-frozen { flex-shrink: 0; background: var(--card-bg); z-index: 2; }
+        .detail-scrollable { flex: 1; overflow-y: auto; }
 
-        .detail-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1.25rem 1.5rem;
-        }
+        .detail-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; }
         .detail-header h3 { font-size: 1rem; font-weight: 700; font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; }
-        .detail-close {
-            background: none; border: none; cursor: pointer; padding: 0.3rem;
-            border-radius: 6px; color: var(--text-secondary); display: flex;
-        }
+        .detail-close { background: none; border: none; cursor: pointer; padding: 0.3rem; border-radius: 6px; color: var(--text-secondary); display: flex; }
         .detail-close:hover { background: var(--bg-color); color: var(--text-primary); }
 
-        .detail-profile {
-            padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem;
-        }
+        .detail-profile { padding: 1.5rem; display: flex; align-items: center; gap: 1.25rem; }
         .detail-avatar {
             width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
@@ -268,172 +233,26 @@
             background: var(--secondary-hex); overflow: hidden;
             border: 3px solid var(--border-color);
         }
-        .detail-avatar:empty { background: transparent; border-color: transparent; }
         .detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .detail-identity h4 { font-size: 1rem; font-weight: 700; font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; margin-bottom: 0.1rem; }
         .detail-identity .detail-email { font-size: 0.78rem; color: var(--text-secondary); }
         .detail-identity .detail-eid { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.1rem; }
 
         .detail-section { padding: 1.25rem 1.5rem; }
-        .detail-section-title {
-            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.75rem;
-        }
+        .detail-section-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 0.75rem; }
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-        .detail-field label {
-            font-size: 0.68rem; font-weight: 600; color: var(--text-secondary);
-            text-transform: uppercase; letter-spacing: 0.03em;
-        }
-        .detail-field .value {
-            font-size: 0.84rem; font-weight: 500; color: var(--text-primary); margin-top: 0.15rem;
-        }
+        .detail-field label { font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+        .detail-field .value { font-size: 0.84rem; font-weight: 500; color: var(--text-primary); margin-top: 0.15rem; }
         .detail-input {
-            width: 100%; padding: 0.3rem 0.5rem; border: 1px solid var(--border-color); border-radius: 6px;
-            font-size: 0.84rem; font-weight: 500; color: var(--text-primary); margin-top: 0.15rem;
-            background: var(--field-bg, var(--bg-color)); font-family: 'Google Sans Flex', sans-serif;
-            outline: none; box-sizing: border-box; transition: border-color 0.15s;
+            width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 0.82rem; font-family: 'Google Sans Flex', sans-serif;
+            background: var(--field-bg); color: var(--text-primary); outline: none;
+            transition: border-color 0.15s;
         }
         .detail-input:focus { border-color: var(--primary-hex); }
 
-        /* Role management in detail panel — pills */
-        .role-pill {
-            display: inline-flex; align-items: center; gap: 0.3rem;
-            padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
-        }
-        .role-pill-submitter { background: #e8f0fe; color: #1a56db; }
-        .role-pill-accounts_payable { background: #fef3c7; color: #92400e; }
-        .role-pill-accountant { background: #d1fae5; color: #065f46; }
-        .role-pill-admin { background: #f3e8ff; color: #6b21a8; }
-        .role-pill-fallback { background: #f1f5f9; color: #475569; }
-        .role-pill button {
-            background: none; border: none; cursor: pointer; padding: 0; line-height: 1;
-            font-size: 0.85rem; color: var(--text-secondary); transition: color 0.15s;
-        }
-        .role-pill button:hover { color: var(--negative-color); }
-        .detail-crown {
-            display: inline-flex; align-items: flex-end; gap: 0.35rem;
-            font-size: 0.75rem; font-weight: 600; color: #b8860b;
-        }
-        .detail-crown svg { flex-shrink: 0; }
-
-        /* RFP mini-table in detail panel */
-        .detail-rfp-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 0.5rem; }
-        .detail-rfp-table th {
-            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; color: #ffffff; text-align: left;
-            padding: 0.4rem 0.5rem; border: none;
-            position: static; background: var(--primary-hex);
-        }
-        .detail-rfp-table th:first-child { border-radius: 8px 0 0 0; }
-        .detail-rfp-table th:last-child { border-radius: 0 8px 0 0; }
-        .detail-rfp-table td {
-            font-size: 0.78rem; padding: 0.4rem 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .detail-rfp-table tbody tr { cursor: pointer; transition: background 0.1s; }
-        .detail-rfp-table tbody tr:hover { background: color-mix(in srgb, var(--primary-hex) 6%, transparent); }
-
-        /* ============ RFP PREVIEW MODAL ============ */
-        .rfp-preview-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); z-index: 7000;
-            align-items: center; justify-content: center;
-        }
-        .rfp-preview-overlay.open { display: flex; }
-        .rfp-preview-card {
-            background: var(--card-bg); border-radius: 12px; width: 1050px; max-width: 96vw;
-            max-height: 88vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25);
-        }
-        .rfp-preview-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1rem 1.25rem; border-bottom: none;
-        }
-        .rfp-preview-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; margin: 0; }
-        .rfp-preview-body { padding: 0 1.25rem 1.25rem; }
-        .preview-grid {
-            display: grid; grid-template-columns: 1fr 1fr 1fr;
-            gap: 0; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
-        }
-        .preview-grid .pg-cell { padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border-color); }
-        .preview-grid .pg-cell:nth-last-child(-n+3) { border-bottom: none; }
-        .preview-grid .pg-cell .pg-label {
-            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
-            color: var(--text-secondary); font-family: 'Google Sans Flex', sans-serif; font-weight: 600; margin-bottom: 0.2rem;
-        }
-        .preview-grid .pg-cell .pg-value { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
-        .preview-grid-2col { grid-template-columns: 1fr 1fr; }
-        .preview-grid-2col .pg-cell:nth-last-child(-n+2) { border-bottom: none; }
-        .preview-grid-2col .pg-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--border-color); }
-        .preview-line-items { margin-top: 1rem; overflow-x: auto; }
-        .preview-line-items h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Google Sans Flex', sans-serif; }
-        .preview-line-items table { width: 100%; min-width: 750px; border-collapse: separate; border-spacing: 0; font-size: 0.8rem; }
-        .preview-line-items th { text-align: left; padding: 0.4rem 0.6rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; color: #ffffff; font-family: 'Google Sans Flex', sans-serif; font-weight: 600; border: none; position: static; background: var(--primary-hex); }
-        .preview-line-items th:first-child { border-radius: 8px 0 0 0; }
-        .preview-line-items th:last-child { border-radius: 0 8px 0 0; }
-        .preview-line-items td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
-        .preview-total-row { display: flex; justify-content: flex-end; gap: 1.5rem; padding: 0.6rem 0.6rem 0; font-size: 0.85rem; font-weight: 600; }
-        .preview-total-row .total-label { color: var(--text-secondary); }
-        .preview-total-row .total-value { color: var(--text-primary); }
-        .rfp-preview-footer { display: flex; justify-content: flex-start; padding: 1rem 1.25rem; }
-        .rfp-preview-footer a {
-            display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem;
-            background: var(--primary-hex); color: #ffffff; border-radius: 8px;
-            font-size: 0.8rem; font-weight: 600; font-family: 'Google Sans Flex', sans-serif;
-            text-decoration: none; transition: opacity 0.15s;
-        }
-        .rfp-preview-footer a:hover { opacity: 0.85; }
-        .att-row { transition: background 0.15s ease; }
-        .att-row:hover { background: var(--row-hover-bg, rgba(0,0,0,0.06)) !important; }
-        .detail-rfp-table tbody tr:hover { background: var(--row-hover-bg); }
-        .detail-rfp-empty { font-size: 0.8rem; color: var(--text-secondary); padding: 1rem 0; text-align: center; }
-        .rg-pill {
-            display: inline-flex; align-items: center; gap: 0.3rem;
-            padding: 0.25rem 0.55rem; border-radius: 99px;
-            font-size: 0.72rem; font-weight: 600; font-family: 'Google Sans Flex', sans-serif;
-            background: color-mix(in srgb, var(--primary-hex) 8%, var(--bg-color));
-            color: var(--text-primary); border: 1px solid var(--primary-hex);
-        }
-        .rg-pill-x {
-            background: none; border: none; cursor: pointer; padding: 0; margin: 0;
-            color: var(--text-secondary); display: flex; align-items: center; transition: color 0.15s;
-        }
-        .rg-pill-x:hover { color: var(--negative-color); }
-        .rg-search-item {
-            padding: 0.5rem 0.75rem; cursor: pointer; font-size: 0.8rem;
-            font-family: 'Google Sans Flex', sans-serif; color: var(--text-primary);
-            border-bottom: 1px solid var(--border-color); transition: background 0.1s;
-        }
-        .rg-search-item:last-child { border-bottom: none; }
-        .rg-search-item:hover { background: color-mix(in srgb, var(--primary-hex) 8%, transparent); }
-        .rg-search-item .rg-search-sub { font-size: 0.68rem; color: var(--text-secondary); margin-top: 0.1rem; }
-
-        /* ============ ROLE MODAL ============ */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); z-index: 6000;
-            align-items: center; justify-content: center;
-        }
-        .modal-overlay.open { display: flex; }
-        .modal-card {
-            background: var(--card-bg); border-radius: 12px; width: 420px; max-width: 90vw;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
-        }
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
-        }
-        .modal-header h3 { font-size: 0.95rem; font-weight: 700; font-family: 'Cal Sans', 'Google Sans Flex', sans-serif; letter-spacing: 0.5px; }
-        .modal-body { padding: 1.25rem; }
-        .modal-footer {
-            display: flex; justify-content: flex-end; gap: 0.5rem;
-            padding: 1rem 1.25rem; border-top: 1px solid var(--border-color);
-        }
-
         /* ============ STATUS BADGE ============ */
-        .status-badge {
-            display: inline-flex; align-items: center; gap: 0.3rem;
-            padding: 3px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600;
-        }
+        .status-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 3px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
         .status-badge.active { background: rgba(43,109,81,0.1); color: var(--positive-color); }
         .status-badge.inactive { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
 
@@ -442,10 +261,7 @@
         .ownership-text { color: #6b7280; font-size: 0.8rem; font-weight: 500; display: flex; justify-content: center; align-items: center; gap: 0.75rem; font-family: 'Google Sans Flex', sans-serif; }
 
         /* ============ LOADING ============ */
-        .loading-spinner {
-            display: flex; align-items: center; justify-content: center; padding: 3rem;
-            color: var(--text-secondary); font-size: 0.85rem; gap: 0.5rem;
-        }
+        .loading-spinner { display: flex; align-items: center; justify-content: center; padding: 3rem; color: var(--text-secondary); font-size: 0.85rem; gap: 0.5rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .spinner-icon { width: 20px; height: 20px; border: 2px solid var(--border-color); border-top-color: var(--secondary-hex); border-radius: 50%; animation: spin 0.7s linear infinite; }
 
@@ -459,29 +275,9 @@
         .toast.show { opacity: 1; }
         .toast.success { background: var(--positive-color); color: #fff; }
         .toast.error { background: var(--negative-color); color: #fff; }
-        /* ============ CUSTOM SELECT ============ */
-        .cs-wrap { position: relative; display: inline-block; }
-        .cs-display { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #ffffff; color: #000000; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; white-space: nowrap; user-select: none; }
-        .cs-display:hover { border-color: var(--text-secondary); }
-        .cs-text { overflow: hidden; text-overflow: ellipsis; }
-        .cs-arrow { width: 12px; height: 12px; flex-shrink: 0; transition: transform 0.15s; }
-        .cs-wrap.open .cs-arrow { transform: rotate(180deg); }
-        .cs-options { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; display: none; overflow-y: auto; max-height: 260px; padding: 4px 0; }
-        .cs-wrap.open .cs-options { display: block; }
-        .cs-option { padding: 0.45rem 0.75rem; cursor: pointer; font-family: 'Google Sans Flex', sans-serif; color: #000000; white-space: nowrap; border-radius: 4px; margin: 0 4px; }
-        .cs-option:hover { background: color-mix(in srgb, var(--primary-hex) 10%, transparent); }
-        .cs-option.selected { font-weight: 600; background: color-mix(in srgb, var(--primary-hex) 14%, transparent); }
-        body.dark-mode .cs-display { background: #1a1a1a; color: #ffffff; border-color: var(--border-color); }
-        body.dark-mode .cs-options { background: #1a1a1a; border-color: #333; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
-        body.dark-mode .cs-option { color: #ffffff; }
-        body.dark-mode .cs-option:hover { background: rgba(255,255,255,0.08); }
-        body.dark-mode .cs-option.selected { background: rgba(255,255,255,0.12); }
-        .header-actions .cs-display { padding: 0.45rem 0.75rem; font-size: 0.78rem; font-weight: 600; border-radius: 8px; }
-
     </style>
 
     <script>
-        // Instant brand restore to prevent flash of default colors
         (function() {
             var p = localStorage.getItem('bondwood-brand-primary');
             var s = localStorage.getItem('bondwood-brand-secondary');
@@ -516,12 +312,10 @@
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Navigation</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
                     <a class="hamburger-menu-item" href="index.html">
-                        
                         Dashboard
                     </a>
-                    <a class="hamburger-menu-item" href="rfp-form.html">
-                        
-                        New Request
+                    <a class="hamburger-menu-item" href="contract-form.html">
+                        New Contract
                     </a>
                 </div>
             </div>
@@ -530,16 +324,10 @@
                 <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">Settings</div>
                 <div style="display:flex;flex-direction:column;gap:0.35rem;">
                     <a class="hamburger-menu-item" href="account.html">
-                        
                         My Account
                     </a>
                     <a id="userMgmtMenuItem" class="hamburger-menu-item active" href="users.html" style="display:none;">
-                        
                         User Management
-                    </a>
-                    <a id="dataMgmtMenuItem" class="hamburger-menu-item" href="data-management.html" style="display:none;">
-                        
-                        Data Management
                     </a>
                 </div>
             </div>
@@ -565,7 +353,7 @@
                 <button id="hamburgerBtn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:0.25rem;margin-left:-0.5rem;margin-top:0.1rem;color:#fff;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;letter-spacing:0.5px;font-weight:700;font-size:1.75rem;white-space:nowrap;">Payment Management</h1>
+                <h1 id="bannerTitle" style="line-height:1.1;color:#fff;font-family:'Cal Sans','Google Sans Flex',sans-serif;letter-spacing:0.5px;font-weight:700;font-size:1.75rem;white-space:nowrap;">Contract Management</h1>
             </div>
         </div>
         <div id="bannerAccent" style="height:4px;background:var(--secondary-hex, #0728eb);margin:0 -2rem;"></div>
@@ -586,6 +374,9 @@
                     </select>
                     <select id="roleFilter" onchange="applyFilters()" style="padding:0.45rem 0.75rem;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;font-size:0.78rem;font-weight:600;background:var(--card-bg);color:var(--text-primary);cursor:pointer;">
                         <option value="all">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="contract_manager">Contract Manager</option>
+                        <option value="viewer">Viewer</option>
                     </select>
                 </div>
             </header>
@@ -640,560 +431,171 @@
             </div>
         </div>
         <div class="detail-scrollable">
-
-        <!-- Account Info Section -->
-        <div class="detail-section">
-            <div class="detail-section-title">Account Information</div>
-            <div class="detail-grid">
-                <div class="detail-field"><label>Department</label><input type="text" id="detailDept" class="detail-input" value="" placeholder="—"></div>
-                <div class="detail-field"><label>Title</label><input type="text" id="detailJobTitle" class="detail-input" value="" placeholder="—"></div>
-                <div class="detail-field"><label>Phone</label><input type="text" id="detailPhone" class="detail-input" value="" placeholder="—"></div>
-                <div class="detail-field">
-                    <label>Status</label>
-                    <div class="value" id="detailStatus">—</div>
+            <!-- Account Info -->
+            <div class="detail-section">
+                <div class="detail-section-title">Account Information</div>
+                <div class="detail-grid">
+                    <div class="detail-field"><label>Department</label><input type="text" id="detailDept" class="detail-input" value="" placeholder="—"></div>
+                    <div class="detail-field"><label>Title</label><input type="text" id="detailJobTitle" class="detail-input" value="" placeholder="—"></div>
+                    <div class="detail-field"><label>Phone</label><input type="text" id="detailPhone" class="detail-input" value="" placeholder="—"></div>
+                    <div class="detail-field"><label>Status</label><div class="value" id="detailStatus">—</div></div>
                 </div>
-            </div>
-            <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;" id="detailStatusActions">
-                <button class="btn-primary accent" id="btnSaveUserDetails" onclick="saveUserDetails()" style="font-size:0.75rem;display:none;">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
-                    Save Changes
-                </button>
-                <button class="btn-primary danger" id="btnDeactivate" onclick="toggleUserStatus()" style="font-size:0.75rem;">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-                    Deactivate Account
-                </button>
-                <button class="btn-primary accent" id="btnImpersonate" onclick="impersonateFromDetail()" style="font-size:0.75rem;">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Impersonate
-                </button>
-            </div>
-        </div>
-
-        <!-- Roles Section -->
-        <div class="detail-section">
-            <div class="detail-section-title">Role Management</div>
-            <div id="detailRolePills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
-            <div style="position:relative;" id="roleSearchWrapper">
-                <input type="text" id="roleSearchInput" placeholder="Add role..." autocomplete="off"
-                    style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.78rem;font-family:'Google Sans Flex',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
-                    oninput="filterRoleDropdown()" onfocus="filterRoleDropdown()">
-                <div id="roleDropdown" style="display:none;position:absolute;top:100%;right:0;min-width:100%;max-height:160px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
-            </div>
-        </div>
-
-        <!-- Restriction Groups Section -->
-        <div class="detail-section" id="detailRgSection" style="padding-bottom:1rem;">
-            <div class="detail-section-title">Restriction Groups</div>
-            <div id="detailRgPills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
-            <div style="position:relative;" id="rgSearchWrapper">
-                <input type="text" id="rgSearchInput" placeholder="Search by group name or budget code..." autocomplete="off"
-                    style="width:100%;padding:0.45rem 0.7rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.8rem;font-family:'Google Sans Flex',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
-                    oninput="filterRgResults()" onfocus="filterRgResults()">
-                <div id="rgSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
-            </div>
-        </div>
-
-        <!-- RFPs Section -->
-        <div class="detail-section" style="flex:1;">
-            <div class="detail-section-title">Submitted Requests <span id="detailRfpCount" style="font-weight:400;color:var(--text-secondary);"></span></div>
-            <div id="detailRfps">
-                <div class="detail-rfp-empty">No requests found</div>
-            </div>
-        </div>
-        </div><!-- end detail-scrollable -->
-    </div>
-
-    <!-- ============ RFP PREVIEW MODAL ============ -->
-    <div class="rfp-preview-overlay" id="rfpPreviewOverlay" onclick="if(event.target===this)closeRfpPreview()">
-        <div class="rfp-preview-card">
-            <div class="rfp-preview-header">
-                <h3>Request Details</h3>
-                <div style="display:flex;align-items:center;gap:0.5rem;">
-                    <span id="rfpPreviewBadge"></span>
-                    <button onclick="closeRfpPreview()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:0.25rem;">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-primary accent" id="btnSaveUserDetails" onclick="saveUserDetails()" style="font-size:0.75rem;display:none;">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                        Save Changes
+                    </button>
+                    <button class="btn-primary danger" id="btnDeactivate" onclick="toggleUserStatus()" style="font-size:0.75rem;">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                        Deactivate Account
                     </button>
                 </div>
             </div>
-            <div class="rfp-preview-body" id="rfpPreviewBody">
-                <div class="detail-rfp-empty">Loading...</div>
-            </div>
-            <div class="rfp-preview-footer" id="rfpPreviewFooter" style="display:none;">
-                <a id="rfpPreviewOpenLink" href="#" target="_blank">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    Open Request for Payment Form
-                </a>
+
+            <!-- Roles -->
+            <div class="detail-section">
+                <div class="detail-section-title">Role Management</div>
+                <div id="detailRolePills" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.5rem;"></div>
+                <div style="position:relative;">
+                    <input type="text" id="roleSearchInput" placeholder="Add role..." autocomplete="off"
+                        style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.78rem;font-family:'Google Sans Flex',sans-serif;background:var(--field-bg,var(--bg-color));color:var(--text-primary);box-sizing:border-box;outline:none;"
+                        oninput="filterRoleDropdown()" onfocus="filterRoleDropdown()">
+                    <div id="roleDropdown" style="display:none;position:absolute;top:100%;right:0;min-width:100%;max-height:160px;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-top:none;border-radius:0 0 8px 8px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ============ FOOTER ============ -->
-    <div class="footer">
+    <!-- Footer -->
+    <footer class="footer">
         <div class="ownership-text">
-            <span>POWERED BY BONDWOOD</span>
+            <img src="bondwood-logo-modern-dark.png" alt="Bondwood" style="height:18px;width:auto;opacity:0.5;">
+            Bondwood &copy; 2025
         </div>
-    </div>
+    </footer>
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
-        /* ============ CUSTOM SELECT COMPONENT ============ */
-        function initCustomSelect(sel) {
-            if (!sel || sel.dataset.csInit) return;
-            sel.dataset.csInit = '1';
-            sel.style.display = 'none';
-
-            const wrap = document.createElement('div');
-            wrap.className = 'cs-wrap';
-
-            const display = document.createElement('div');
-            display.className = 'cs-display';
-            // Copy sizing from original select
-            const cs = getComputedStyle(sel);
-            display.style.padding = "0.45rem 0.75rem";
-            display.style.fontSize = cs.fontSize || "0.85rem";
-            display.style.fontWeight = cs.fontWeight || "500";
-            display.style.borderRadius = cs.borderRadius || "6px";
-            
-            display.innerHTML = '<span class="cs-text"></span><svg class="cs-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
-
-            const optionsDiv = document.createElement('div');
-            optionsDiv.className = 'cs-options';
-            optionsDiv.style.fontSize = cs.fontSize || '0.85rem';
-
-            function buildOptions() {
-                optionsDiv.innerHTML = '';
-                Array.from(sel.options).forEach(function(opt) {
-                    const div = document.createElement('div');
-                    div.className = 'cs-option' + (opt.value === sel.value ? ' selected' : '');
-                    div.textContent = opt.text;
-                    div.dataset.value = opt.value;
-                    div.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        sel.value = opt.value;
-                        sel.dispatchEvent(new Event("change", {bubbles:true}));
-                        if (sel.onchange) sel.onchange();
-                        syncDisplay();
-                        wrap.classList.remove('open');
-                    });
-                    optionsDiv.appendChild(div);
-                });
-            }
-
-            function syncDisplay() {
-                var selOpt = sel.options[sel.selectedIndex];
-                display.querySelector('.cs-text').textContent = selOpt ? selOpt.text : '';
-                optionsDiv.querySelectorAll('.cs-option').forEach(function(o) {
-                    o.classList.toggle('selected', o.dataset.value === sel.value);
-                });
-            }
-
-            buildOptions();
-            syncDisplay();
-
-            wrap.appendChild(display);
-            wrap.appendChild(optionsDiv);
-            sel.parentNode.insertBefore(wrap, sel);
-            wrap.appendChild(sel); // keep select inside wrapper for DOM traversal
-
-            display.addEventListener('click', function(e) {
-                e.stopPropagation();
-                document.querySelectorAll('.cs-wrap.open').forEach(function(w) { if (w !== wrap) w.classList.remove('open'); });
-                wrap.classList.toggle('open');
-            });
-
-            // Patch value setter to auto-sync display
-            var desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
-            Object.defineProperty(sel, 'value', {
-                set: function(v) { desc.set.call(this, v); syncDisplay(); },
-                get: function() { return desc.get.call(this); }
-            });
-
-            // Observe option changes (for dynamic selects)
-            new MutationObserver(function() { buildOptions(); syncDisplay(); }).observe(sel, { childList: true });
-
-            // Expose sync for external use
-            sel._csSyncDisplay = syncDisplay;
-            sel._csBuildOptions = function() { buildOptions(); syncDisplay(); };
-        }
-
-        // Global close handler
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.cs-wrap.open').forEach(function(w) { w.classList.remove('open'); });
-        });
-
-
-        /* ========================================
-           CONFIGURATION & STATE
-           ======================================== */
-        const API_BASE = 'https://bondwood-payment-management-api.bondwood.workers.dev';
-        let AVAILABLE_ROLES = [];
-        let ROLE_LABELS = {};
-        let ROLE_COLORS = ['#00babc', '#f57f2f', '#cb3694', '#4e59a5', '#00babc', '#2B6D51', '#d97706'];
-
+        const API_BASE = '';
         let allUsers = [];
         let filteredUsers = [];
-        let currentSort = { column: 'name', direction: 'asc' };
         let currentPage = 1;
-        const PAGE_SIZE = 50;
-        let selectedUser = null;
-        let detailOriginals = {};
-        let pendingRoles = [];
-        let pendingRgIds = [];
+        const PAGE_SIZE = 25;
+        let sortField = 'name';
+        let sortDir = 'asc';
         let currentUserEmail = '';
-        let currentUserName = '';
-        let currentUserRoles = [];
         let currentUserPermissions = {};
+        let selectedUser = null;
 
         /* ========================================
-           INIT
+           SAMPLE DATA
            ======================================== */
-        document.addEventListener('DOMContentLoaded', async () => {
-            initTheme();
-            loadBrandData();
-            await fetchCurrentUser();
-            loadThemePref();
-            await loadRoleDefinitions();
-            await loadUsers();
-            populateRoleFilter();
-            initCustomSelect(document.getElementById("statusFilter"));
-            initCustomSelect(document.getElementById("roleFilter"));
-        });
-
-        async function loadRoleDefinitions() {
-            try {
-                const resp = await fetch(`${API_BASE}/api/role-definitions`);
-                if (!resp.ok) throw new Error('Failed to load roles');
-                const data = await resp.json();
-                const isSuperUser = currentUserRoles.includes('super_user');
-
-                AVAILABLE_ROLES = [];
-                ROLE_LABELS = {};
-
-                for (const role of (data.roles || [])) {
-                    // Hide super_user from non-super_users
-                    if (role.role_name === 'super_user' && !isSuperUser) continue;
-                    AVAILABLE_ROLES.push(role.role_name);
-                    // Format label: "super_user" → "Super User", "admin" → "Admin"
-                    ROLE_LABELS[role.role_name] = role.role_name
-                        .split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                }
-                console.log('[ROLES] Loaded:', AVAILABLE_ROLES);
-            } catch (e) {
-                console.warn('[ROLES] Failed to load role definitions:', e);
-                // Fallback
-                AVAILABLE_ROLES = ['user', 'submitter', 'admin'];
-                ROLE_LABELS = { user: 'User', submitter: 'Submitter', admin: 'Admin' };
-            }
-        }
-
-        function populateRoleFilter() {
-            const select = document.getElementById('roleFilter');
-            if (!select) return;
-            select.innerHTML = '<option value="all">All Roles</option>' +
-                AVAILABLE_ROLES.map(r => `<option value="${r}">${ROLE_LABELS[r] || r}</option>`).join('');
-        }
-
-        function showDeactivatedScreen() {
-            document.body.innerHTML = '';
-            document.body.style.cssText = 'margin:0;padding:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0e0e12;font-family:Inter,sans-serif;';
-            document.body.innerHTML = `
-                <div style="text-align:center;max-width:440px;padding:2rem;">
-                    <div style="display:inline-flex;align-items:center;gap:0.6rem;margin-bottom:2rem;">
-                        <div style="width:36px;height:36px;border-radius:8px;background:#ef4444;display:flex;align-items:center;justify-content:center;">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                        </div>
-                        <span style="font-size:0.75rem;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:0.08em;">Account Deactivated</span>
-                    </div>
-                    <h1 style="font-size:2rem;font-weight:900;line-height:1.2;margin:0 0 1rem;letter-spacing:-0.03em;color:#fff;">Your access has been suspended</h1>
-                    <p style="font-size:0.88rem;color:#666;line-height:1.8;margin:0;">An administrator has deactivated your account. You will not be able to submit or view requests until your account is restored.</p>
-                </div>
-            `;
-        }
-
-        async function fetchCurrentUser() {
-            try {
-                let resp = await fetch('/api/me');
-                let ct = resp.headers.get('content-type') || '';
-
-                // Check first response for deactivation before retry
-                if (resp.status === 403 && ct.includes('application/json')) {
-                    const data = await resp.json();
-                    if (data.error === 'account_deactivated') { showDeactivatedScreen(); return; }
-                }
-
-                if (!resp.ok || !ct.includes('application/json')) {
-                    resp = await fetch(`${API_BASE}/api/me`);
-                    ct = resp.headers.get('content-type') || '';
-                }
-                if (!ct.includes('application/json')) return;
-                const user = await resp.json();
-                if (user.error === 'account_deactivated') { showDeactivatedScreen(); return; }
-                if (!resp.ok || user.error) return;
-                currentUserEmail = user.email || '';
-                currentUserName = [user.first_name || user.firstName, user.last_name || user.lastName].filter(Boolean).join(' ') || user.email || '';
-                currentUserRoles = user.roles || [];
-                currentUserPermissions = user.permissions || {};
-
-                // Enrich with Worker permissions if needed
-                if (!currentUserPermissions.can_manage_users && currentUserEmail) {
-                    try {
-                        const enrichResp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(currentUserEmail)}`);
-                        if (enrichResp.ok) {
-                            const enriched = await enrichResp.json();
-                            if (!enriched.error) {
-                                currentUserRoles = enriched.roles || currentUserRoles;
-                                currentUserPermissions = enriched.permissions || currentUserPermissions;
-                            }
-                        }
-                    } catch (e) {}
-                }
-
-                // Gate admin menu items
-                const um = document.getElementById('userMgmtMenuItem');
-                const dm = document.getElementById('dataMgmtMenuItem');
-                if (um) um.style.display = currentUserPermissions.can_manage_users ? '' : 'none';
-                if (dm) dm.style.display = currentUserPermissions.can_manage_vendors ? '' : 'none';
-
-                console.log('[AUTH] User:', currentUserEmail, 'Roles:', currentUserRoles);
-            } catch (e) {
-                console.warn('[AUTH] Could not verify user:', e);
-            }
+        function getSampleUsers() {
+            return [
+                { id: 1, first_name: 'Jane', last_name: 'Smith', email: 'jane.smith@district.edu', status: 'active', roles: ['admin', 'contract_manager'], department: 'Administration', title: 'CFO', employee_id: 'EMP-001' },
+                { id: 2, first_name: 'Mike', last_name: 'Johnson', email: 'mike.j@district.edu', status: 'active', roles: ['contract_manager'], department: 'Operations', title: 'Operations Manager', employee_id: 'EMP-012' },
+                { id: 3, first_name: 'Sarah', last_name: 'Williams', email: 'sarah.w@district.edu', status: 'active', roles: ['viewer'], department: 'IT', title: 'IT Coordinator', employee_id: 'EMP-025' },
+                { id: 4, first_name: 'David', last_name: 'Brown', email: 'david.b@district.edu', status: 'inactive', roles: ['viewer'], department: 'Curriculum', title: 'Curriculum Director', employee_id: 'EMP-033' },
+                { id: 5, first_name: 'Lisa', last_name: 'Davis', email: 'lisa.d@district.edu', status: 'active', roles: ['contract_manager'], department: 'Facilities', title: 'Facilities Manager', employee_id: 'EMP-041' },
+            ];
         }
 
         /* ========================================
-           LOAD USERS
+           DATA
            ======================================== */
-        const avatarCache = {}; // email → { status: 'loading'|'loaded'|'failed', src: url }
-
         async function loadUsers() {
-            try {
-                const resp = await fetch(`${API_BASE}/api/users`);
-                if (!resp.ok) throw new Error('Failed to load users');
-                const data = await resp.json();
-                allUsers = data.users || data || [];
-                // Start preloading all profile pictures immediately
-                preloadAllAvatars(allUsers);
-                applyFilters();
-            } catch (e) {
-                console.error('[USERS] Load error:', e);
-                document.getElementById('usersBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">Failed to load users. The /api/users endpoint may need to be deployed.</td></tr>';
-            }
+            return getSampleUsers();
         }
 
-        function preloadAllAvatars(users) {
-            const ts = Date.now();
-            users.forEach(u => {
-                if (!u.profile_picture_key || avatarCache[u.email]) return;
-                avatarCache[u.email] = { status: 'loading', src: null };
-                const url = `${API_BASE}/api/profile/picture/${encodeURIComponent(u.email)}?t=${ts}`;
-                const img = new Image();
-                img.onload = () => {
-                    avatarCache[u.email] = { status: 'loaded', src: url };
-                    // Update table avatar if visible
-                    const emailKey = encodeURIComponent(u.email || '');
-                    const avatarEl = document.getElementById('avatar-' + emailKey);
-                    if (avatarEl) {
-                        avatarEl.innerHTML = `<img src="${url}" alt="">`;
-                    }
-                    // Update detail avatar if this user is selected
-                    if (selectedUser && selectedUser.email === u.email) {
-                        const detailAv = document.getElementById('detailAvatar');
-                        if (detailAv) detailAv.innerHTML = `<img src="${url}" alt="">`;
-                    }
-                };
-                img.onerror = () => {
-                    avatarCache[u.email] = { status: 'failed', src: null };
-                    // Show initials as fallback
-                    const emailKey = encodeURIComponent(u.email || '');
-                    const avatarEl = document.getElementById('avatar-' + emailKey);
-                    if (avatarEl && !avatarEl.querySelector('img')) {
-                        const initials = ((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '');
-                        avatarEl.textContent = initials.toUpperCase() || '?';
-                    }
-                };
-                img.src = url;
-            });
-        }
-
-        /* ========================================
-           FILTER & SORT
-           ======================================== */
         function applyFilters() {
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const roleFilter = document.getElementById('roleFilter').value;
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const statusVal = document.getElementById('statusFilter').value;
+            const roleVal = document.getElementById('roleFilter').value;
 
             filteredUsers = allUsers.filter(u => {
-                const fullName = ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase();
-                const email = (u.email || '').toLowerCase();
-                const eid = (u.user_id || '').toString();
-                const matchSearch = !query || fullName.includes(query) || email.includes(query) || eid.includes(query);
-
-                const isActive = u.status !== 'inactive';
-                const matchStatus = statusFilter === 'all' || (statusFilter === 'active' && isActive) || (statusFilter === 'inactive' && !isActive);
-
-                const roles = u.roles || [];
-                const matchRole = roleFilter === 'all' || roles.includes(roleFilter);
-
-                return matchSearch && matchStatus && matchRole;
+                if (statusVal !== 'all' && u.status !== statusVal) return false;
+                if (roleVal !== 'all' && !u.roles.includes(roleVal)) return false;
+                if (query) {
+                    const s = [u.first_name, u.last_name, u.email, u.employee_id, u.department].join(' ').toLowerCase();
+                    if (!s.includes(query)) return false;
+                }
+                return true;
             });
 
-            applySorting();
             currentPage = 1;
-            renderTable();
+            sortAndRender();
         }
 
-        function applySorting() {
-            const dir = currentSort.direction === 'asc' ? 1 : -1;
+        function sortUsers(field) {
+            if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            else { sortField = field; sortDir = 'asc'; }
+            sortAndRender();
+        }
+
+        function sortAndRender() {
             filteredUsers.sort((a, b) => {
                 let va, vb;
-                switch (currentSort.column) {
-                    case 'name':
-                        va = ((a.first_name || '') + ' ' + (a.last_name || '')).toLowerCase();
-                        vb = ((b.first_name || '') + ' ' + (b.last_name || '')).toLowerCase();
-                        break;
-                    case 'status':
-                        va = a.status === 'inactive' ? 1 : 0;
-                        vb = b.status === 'inactive' ? 1 : 0;
-                        break;
-                    case 'roles':
-                        va = (a.roles || []).length;
-                        vb = (b.roles || []).length;
-                        break;
-                    case 'department':
-                        va = (a.department || '').toLowerCase();
-                        vb = (b.department || '').toLowerCase();
-                        break;
-                    case 'title':
-                        va = (a.title || '').toLowerCase();
-                        vb = (b.title || '').toLowerCase();
-                        break;
-                    default:
-                        va = ''; vb = '';
-                }
-                if (va < vb) return -dir;
-                if (va > vb) return dir;
+                if (sortField === 'name') { va = (a.last_name + a.first_name).toLowerCase(); vb = (b.last_name + b.first_name).toLowerCase(); }
+                else if (sortField === 'roles') { va = (a.roles || []).join(','); vb = (b.roles || []).join(','); }
+                else { va = (a[sortField] || '').toString().toLowerCase(); vb = (b[sortField] || '').toString().toLowerCase(); }
+                if (va < vb) return sortDir === 'asc' ? -1 : 1;
+                if (va > vb) return sortDir === 'asc' ? 1 : -1;
                 return 0;
             });
-        }
-
-        function sortUsers(column) {
-            if (currentSort.column === column) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.column = column;
-                currentSort.direction = 'asc';
-            }
-            applySorting();
+            document.querySelectorAll('th span[id^="sort-"]').forEach(s => s.textContent = '');
+            const ind = document.getElementById('sort-' + sortField);
+            if (ind) ind.textContent = sortDir === 'asc' ? ' ▲' : ' ▼';
             renderTable();
-            updateSortIndicators();
         }
 
-        function updateSortIndicators() {
-            ['name', 'status', 'roles', 'department', 'title'].forEach(col => {
-                const el = document.getElementById('sort-' + col);
-                if (el) el.textContent = currentSort.column === col ? (currentSort.direction === 'asc' ? '▲' : '▼') : '';
-            });
-        }
-
-        /* ========================================
-           RENDER TABLE
-           ======================================== */
         function renderTable() {
-            const start = (currentPage - 1) * PAGE_SIZE;
-            const end = Math.min(start + PAGE_SIZE, filteredUsers.length);
-            const page = filteredUsers.slice(start, end);
-
             const tbody = document.getElementById('usersBody');
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const page = filteredUsers.slice(start, start + PAGE_SIZE);
+
             if (page.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-secondary);">No users found</td></tr>';
-                document.getElementById('userCount').textContent = `${filteredUsers.length} users`;
-                renderPagination();
+                document.getElementById('paginationInfo').textContent = '0 users';
+                document.getElementById('paginationControls').innerHTML = '';
                 return;
             }
 
-            tbody.innerHTML = page.map(u => {
-                const name = ((u.first_name || '') + ' ' + (u.last_name || '')).trim() || 'Unknown';
+            let html = '';
+            page.forEach(u => {
                 const initials = ((u.first_name || '')[0] || '') + ((u.last_name || '')[0] || '');
-                const email = u.email || '—';
-                const isActive = u.status !== 'inactive';
-                const roles = u.roles || [];
-                const dept = u.department || '—';
-                const title = u.title || '—';
-                const emailKey = encodeURIComponent(u.email || '');
+                const statusClass = u.status === 'active' ? 'status-active' : 'status-inactive';
+                const statusDot = u.status === 'active' ? '●' : '○';
+                const rolesHtml = (u.roles || []).map(r => {
+                    const cls = 'role-badge-' + r;
+                    const label = r.replace(/_/g, ' ');
+                    return `<span class="role-badge ${cls}">${escHtml(label)}</span>`;
+                }).join('');
 
-                const roleBadges = roles.length > 0
-                    ? roles.map(r => {
-                        if (r === 'super_user') return `<span class="role-crown"><svg viewBox="0 0 24 24" width="24" height="24" fill="#daa520" stroke="none"><path d="M2.5 18.5l2-9 5.5 4 2-7 2 7 5.5-4 2 9h-19z"/><rect x="2.5" y="18.5" width="19" height="2.5" rx="1" fill="#daa520"/></svg>Super User</span>`;
-                        const cls = ['submitter','accounts_payable','accountant','admin'].includes(r) ? r : 'fallback';
-                        return `<span class="role-badge role-badge-${cls}">${ROLE_LABELS[r] || r}</span>`;
-                    }).join('')
-                    : '<span style="font-size:0.72rem;color:var(--text-secondary);">No roles</span>';
-
-                // Avatar: cached image → show immediately; loading → blank; no pic or failed → initials
-                let avatarContent;
-                const cached = avatarCache[u.email];
-                if (cached && cached.status === 'loaded') {
-                    avatarContent = `<img src="${cached.src}" alt="">`;
-                } else if (u.profile_picture_key && (!cached || cached.status === 'loading')) {
-                    avatarContent = ''; // blank while loading
-                } else {
-                    avatarContent = initials.toUpperCase() || '?';
-                }
-
-                return `<tr onclick="openDetail('${emailKey}')">
-                    <td>
-                        <div class="user-cell">
-                            <div class="user-avatar" id="avatar-${emailKey}">${avatarContent}</div>
-                            <div>
-                                <div class="user-name">${escHtml(name)}</div>
-                                <div class="user-email">${escHtml(email)}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-badge ${isActive ? 'active' : 'inactive'}">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">${isActive ? '<path d="M20 6L9 17l-5-5"/>' : '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>'}</svg>
-                            ${isActive ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td><div class="roles-cell">${roleBadges}</div></td>
-                    <td style="font-size:0.8rem;color:var(--text-secondary);">${escHtml(dept)}</td>
-                    <td style="font-size:0.8rem;color:var(--text-secondary);">${escHtml(title)}</td>
+                html += `<tr onclick="openDetail(${u.id})">
+                    <td><div class="user-cell"><div class="user-avatar">${escHtml(initials.toUpperCase())}</div><div><div class="user-name">${escHtml(u.first_name + ' ' + u.last_name)}</div><div class="user-email">${escHtml(u.email)}</div></div></div></td>
+                    <td><span class="${statusClass}">${statusDot} ${u.status === 'active' ? 'Active' : 'Inactive'}</span></td>
+                    <td><div class="roles-cell">${rolesHtml}</div></td>
+                    <td>${escHtml(u.department || '—')}</td>
+                    <td>${escHtml(u.title || '—')}</td>
                 </tr>`;
-            }).join('');
+            });
+            tbody.innerHTML = html;
 
-            document.getElementById('userCount').textContent = `${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''}`;
-            renderPagination();
+            const total = filteredUsers.length;
+            const totalPages = Math.ceil(total / PAGE_SIZE);
+            const end = Math.min(currentPage * PAGE_SIZE, total);
+            document.getElementById('paginationInfo').textContent = `${start + 1}–${end} of ${total} users`;
+            document.getElementById('userCount').textContent = `${total} user${total !== 1 ? 's' : ''}`;
+
+            let ctrl = `<button class="pagination-btn" onclick="goPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>&laquo;</button>`;
+            for (let i = 1; i <= totalPages; i++) ctrl += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+            ctrl += `<button class="pagination-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>&raquo;</button>`;
+            document.getElementById('paginationControls').innerHTML = ctrl;
         }
 
-        function renderPagination() {
-            const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
-            const start = (currentPage - 1) * PAGE_SIZE + 1;
-            const end = Math.min(currentPage * PAGE_SIZE, filteredUsers.length);
-
-            document.getElementById('paginationInfo').textContent = filteredUsers.length > 0
-                ? `${start} – ${end} of ${filteredUsers.length}`
-                : 'No results';
-
-            const controls = document.getElementById('paginationControls');
-            if (totalPages <= 1) { controls.innerHTML = ''; return; }
-
-            let html = `<button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
-            for (let p = 1; p <= totalPages; p++) {
-                if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2) {
-                    html += `<button class="pagination-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
-                } else if (Math.abs(p - currentPage) === 3) {
-                    html += '<button class="pagination-btn" disabled>…</button>';
-                }
-            }
-            html += `<button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
-            controls.innerHTML = html;
-        }
-
-        function goToPage(p) {
+        function goPage(p) {
             const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
             if (p < 1 || p > totalPages) return;
             currentPage = p;
@@ -1203,1154 +605,102 @@
         /* ========================================
            DETAIL PANEL
            ======================================== */
-        async function openDetail(emailKey) {
-            const email = decodeURIComponent(emailKey);
-            const user = allUsers.find(u => u.email === email);
-            if (!user) return;
-            selectedUser = user;
+        function openDetail(id) {
+            selectedUser = allUsers.find(u => u.id === id);
+            if (!selectedUser) return;
+            document.getElementById('detailName').textContent = selectedUser.first_name + ' ' + selectedUser.last_name;
+            document.getElementById('detailEmail').textContent = selectedUser.email;
+            document.getElementById('detailEid').textContent = selectedUser.employee_id || '';
+            const initials = ((selectedUser.first_name || '')[0] || '') + ((selectedUser.last_name || '')[0] || '');
+            document.getElementById('detailAvatar').innerHTML = `<span>${escHtml(initials.toUpperCase())}</span>`;
+            document.getElementById('detailDept').value = selectedUser.department || '';
+            document.getElementById('detailJobTitle').value = selectedUser.title || '';
+            document.getElementById('detailPhone').value = selectedUser.phone || '';
+            const statusBadge = selectedUser.status === 'active'
+                ? '<span class="status-badge active">● Active</span>'
+                : '<span class="status-badge inactive">○ Inactive</span>';
+            document.getElementById('detailStatus').innerHTML = statusBadge;
 
-            // Profile info
-            const name = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || 'Unknown';
-            const initials = ((user.first_name || '')[0] || '') + ((user.last_name || '')[0] || '');
-            document.getElementById('detailName').textContent = name;
-            document.getElementById('detailEmail').textContent = user.email || '—';
-            document.getElementById('detailEid').textContent = user.user_id ? 'Employee ID: E' + user.user_id : '';
-            document.getElementById('detailDept').value = user.department || '';
-            document.getElementById('detailJobTitle').value = user.title || '';
-            document.getElementById('detailPhone').value = user.phone_number || '';
-
-            // Track original values for change detection
-            detailOriginals = {
-                department: user.department || '',
-                title: user.title || '',
-                phone_number: user.phone_number || '',
-                roles: [...(user.roles || [])],
-            };
-            pendingRoles = [...(user.roles || [])];
-            document.getElementById('btnSaveUserDetails').style.display = 'none';
-
-            const isActive = user.status !== 'inactive';
-            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${isActive ? 'active' : 'inactive'}">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">${isActive ? '<path d="M20 6L9 17l-5-5"/>' : '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>'}</svg>
-                ${isActive ? 'Active' : 'Inactive'}
-            </span>`;
-
-            const btn = document.getElementById('btnDeactivate');
-            if (isActive) {
-                btn.className = 'btn-primary danger';
-                btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg> Deactivate Account';
-            } else {
-                btn.className = 'btn-primary green';
-                btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Activate Account';
-            }
-
-            // Profile picture — use cache for instant display
-            const avatarEl = document.getElementById('detailAvatar');
-            const cached = avatarCache[user.email];
-            if (cached && cached.status === 'loaded') {
-                avatarEl.innerHTML = `<img src="${cached.src}" alt="">`;
-            } else if (user.profile_picture_key && (!cached || cached.status === 'loading')) {
-                avatarEl.innerHTML = ''; // blank while loading, preloader will fill in
-            } else {
-                avatarEl.innerHTML = `<span>${initials.toUpperCase() || '?'}</span>`;
-            }
-
-            // Roles
-            renderRoleToggles(user);
-
-            // Restriction Groups — render toggles
-            renderRgToggles(user);
-
-            // Load RFPs for this user
-            loadUserRfps(user.email, name);
-
-            // Open panel
-            const overlay = document.getElementById('detailOverlay');
-            const panel = document.getElementById('detailPanel');
-            overlay.style.display = 'block';
-            panel.offsetHeight; // force reflow
-            panel.classList.add('open');
+            document.getElementById('detailOverlay').classList.add('open');
+            document.getElementById('detailPanel').classList.add('open');
         }
 
-        function hasUnsavedDetailChanges() {
-            if (!selectedUser) return false;
-            const dept = document.getElementById('detailDept').value.trim();
-            const title = document.getElementById('detailJobTitle').value.trim();
-            const phone = document.getElementById('detailPhone').value.trim();
-            const fieldsChanged = dept !== detailOriginals.department || title !== detailOriginals.title || phone !== detailOriginals.phone_number;
-            const origRoles = [...(detailOriginals.roles || [])].sort();
-            const curRoles = [...pendingRoles].sort();
-            const rolesChanged = origRoles.length !== curRoles.length || origRoles.some((r, i) => r !== curRoles[i]);
-            const origRgIds = [...(detailOriginals.rgIds || [])].sort();
-            const curRgIds = [...pendingRgIds].sort();
-            const rgsChanged = origRgIds.length !== curRgIds.length || origRgIds.some((id, i) => id !== curRgIds[i]);
-            return fieldsChanged || rolesChanged || rgsChanged;
+        function closeDetail() {
+            document.getElementById('detailOverlay').classList.remove('open');
+            document.getElementById('detailPanel').classList.remove('open');
         }
 
-        function closeDetail(force) {
-            if (!force && hasUnsavedDetailChanges()) {
-                showUnsavedWarning();
-                return;
-            }
-            const panel = document.getElementById('detailPanel');
-            const overlay = document.getElementById('detailOverlay');
-            panel.classList.remove('open');
-            overlay.style.display = 'none';
-            selectedUser = null;
-        }
-
-        function showUnsavedWarning() {
-            const existing = document.getElementById('unsavedModal');
-            if (existing) existing.remove();
-            const modal = document.createElement('div');
-            modal.id = 'unsavedModal';
-            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
-            modal.innerHTML = `
-                <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
-                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <div style="font-family:'Google Sans Flex',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">Unsaved Changes</div>
-                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">You have unsaved changes. Would you like to keep editing or leave without saving?</div>
-                    <div style="display:flex;gap:0.5rem;justify-content:center;">
-                        <button id="unsavedLeave" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;">Leave Without Saving</button>
-                        <button id="unsavedKeep" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:#fff;font-family:'Google Sans Flex',sans-serif;">Keep Editing</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-            document.getElementById('unsavedKeep').onclick = () => modal.remove();
-            document.getElementById('unsavedLeave').onclick = () => { modal.remove(); closeDetail(true); };
-        }
-
-        // Close detail panel on Esc key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const unsavedModal = document.getElementById('unsavedModal');
-                if (unsavedModal) { unsavedModal.remove(); return; }
-                if (selectedUser) closeDetail();
-            }
-        });
+        function saveUserDetails() { showToast('User details saved'); }
+        function toggleUserStatus() { showToast('Status toggled'); }
+        function filterRoleDropdown() { /* TODO */ }
 
         /* ========================================
-           ROLE MANAGEMENT
+           UTILITIES
            ======================================== */
-        function renderRoleToggles(user) {
-            const roles = pendingRoles;
-            const container = document.getElementById('detailRolePills');
-            const isSuperUser = currentUserRoles.includes('super_user');
-
-            if (!roles.length || (roles.length === 1 && roles[0] === 'user')) {
-                container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-secondary);font-style:italic;">Default user role</span>';
-            } else {
-                container.innerHTML = roles.filter(r => r !== 'user').map(role => {
-                    if (role === 'super_user') {
-                        const canRemove = isSuperUser;
-                        return `<span class="detail-crown">
-                            <svg viewBox="0 0 24 24" width="24" height="24" fill="#daa520" stroke="none"><path d="M2.5 18.5l2-9 5.5 4 2-7 2 7 5.5-4 2 9h-19z"/><rect x="2.5" y="18.5" width="19" height="2.5" rx="1" fill="#daa520"/></svg>
-                            Super User
-                            ${canRemove ? `<button onclick="removeRole('super_user')" title="Remove" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;font-size:0.85rem;color:var(--text-secondary);">&times;</button>` : ''}
-                        </span>`;
-                    }
-                    const cls = ['submitter','accounts_payable','accountant','admin'].includes(role) ? role : 'fallback';
-                    const canRemove = true;
-                    return `<span class="role-pill role-pill-${cls}">
-                        ${ROLE_LABELS[role] || role}
-                        ${canRemove ? `<button onclick="removeRole('${role}')" title="Remove">&times;</button>` : ''}
-                    </span>`;
-                }).join('');
-            }
-            document.getElementById('roleSearchInput').value = '';
-        }
-
-        function filterRoleDropdown() {
-            if (!selectedUser) return;
-            const q = document.getElementById('roleSearchInput').value.toLowerCase().trim();
-            const currentRoles = pendingRoles;
-            const isSuperUser = currentUserRoles.includes('super_user');
-
-            const available = AVAILABLE_ROLES.filter(r => {
-                if (r === 'user') return false;
-                if (currentRoles.includes(r)) return false;
-                if (r === 'super_user' && !isSuperUser) return false;
-                if (q && !(ROLE_LABELS[r] || r).toLowerCase().includes(q)) return false;
-                return true;
-            });
-
-            const drop = document.getElementById('roleDropdown');
-            if (!available.length) {
-                drop.innerHTML = '<div style="padding:0.5rem 0.65rem;font-size:0.75rem;color:var(--text-secondary);">No roles available</div>';
-            } else {
-                drop.innerHTML = available.map(r => `
-                    <div style="padding:0.4rem 0.65rem;font-size:0.78rem;cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--row-hover-bg)'" onmouseout="this.style.background=''" onclick="addRole('${r}')">
-                        ${ROLE_LABELS[r] || r}
-                    </div>
-                `).join('');
-            }
-            drop.style.display = 'block';
-        }
-
-        function addRole(role) {
-            if (!selectedUser) return;
-            pendingRoles.push(role);
-            if (pendingRoles.length > 1 && pendingRoles.includes('user')) {
-                pendingRoles = pendingRoles.filter(r => r !== 'user');
-            }
-            renderRoleToggles(selectedUser);
-            document.getElementById('roleDropdown').style.display = 'none';
-            checkDetailChanges();
-        }
-
-        function removeRole(role) {
-            if (!selectedUser) return;
-            pendingRoles = pendingRoles.filter(r => r !== role);
-            if (pendingRoles.length === 0) pendingRoles = ['user'];
-            renderRoleToggles(selectedUser);
-            checkDetailChanges();
-        }
-
-        // Close dropdowns on click outside
-        document.addEventListener('click', e => {
-            if (!e.target.closest('#roleSearchWrapper')) {
-                const d = document.getElementById('roleDropdown');
-                if (d) d.style.display = 'none';
-            }
-            if (!e.target.closest('#rgSearchWrapper')) {
-                const d = document.getElementById('rgSearchResults');
-                if (d) d.style.display = 'none';
-            }
-        });
-
-        /* ========================================
-           ACTIVATE / DEACTIVATE
-           ======================================== */
-        async function toggleUserStatus() {
-            if (!selectedUser) return;
-            const isActive = selectedUser.status !== 'inactive';
-            const newStatus = isActive ? 'inactive' : 'active';
-            const action = isActive ? 'deactivate' : 'activate';
-            const userName = ((selectedUser.first_name || '') + ' ' + (selectedUser.last_name || '')).trim();
-
-            // Show custom confirmation modal
-            const existing = document.getElementById('statusConfirmModal');
-            if (existing) existing.remove();
-
-            const modal = document.createElement('div');
-            modal.id = 'statusConfirmModal';
-            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(3px);';
-            const icon = isActive
-                ? '<svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--negative-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>'
-                : '<svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--positive-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>';
-            const actionColor = isActive ? 'var(--negative-color)' : 'var(--positive-color)';
-            const actionLabel = isActive ? 'Deactivate' : 'Activate';
-
-            modal.innerHTML = `
-                <div style="background:var(--card-bg);border-radius:14px;padding:2rem 2.5rem;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid var(--border-color);">
-                    ${icon}
-                    <div style="font-family:'Google Sans Flex',sans-serif;font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:0.5rem;">${actionLabel} Account</div>
-                    <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin-bottom:1.5rem;">Are you sure you want to ${action} <strong style="color:var(--text-primary);">${escHtml(userName)}</strong>?${isActive ? ' They will no longer be able to access the system.' : ''}</div>
-                    <div style="display:flex;gap:0.5rem;justify-content:center;">
-                        <button id="statusConfirmCancel" style="padding:0.5rem 1.25rem;border:1px solid var(--border-color);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:var(--card-bg);color:var(--text-primary);font-family:'Google Sans Flex',sans-serif;">Cancel</button>
-                        <button id="statusConfirmOk" style="padding:0.5rem 1.25rem;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;background:${actionColor};color:#fff;font-family:'Google Sans Flex',sans-serif;">${actionLabel}</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-            document.getElementById('statusConfirmCancel').onclick = () => modal.remove();
-            document.getElementById('statusConfirmOk').onclick = async () => {
-                modal.remove();
-                try {
-                    const resp = await fetch(`${API_BASE}/api/users/status`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: selectedUser.email, status: newStatus })
-                    });
-                    if (!resp.ok) throw new Error('Failed to update status');
-                    selectedUser.status = newStatus;
-                    showToast(`Account ${action}d`, 'success');
-                    openDetail(encodeURIComponent(selectedUser.email));
-                    renderTable();
-                } catch (e) {
-                    showToast('Failed to update status: ' + e.message, 'error');
-                }
-            };
-        }
-
-        function impersonateFromDetail() {
-            if (!selectedUser) return;
-            if (selectedUser.email.toLowerCase() === currentUserEmail) {
-                showToast('You cannot impersonate yourself', 'error');
-                return;
-            }
-            const name = ((selectedUser.first_name || '') + ' ' + (selectedUser.last_name || '')).trim();
-            sessionStorage.setItem('impersonateEmail', selectedUser.email.toLowerCase().trim());
-            sessionStorage.setItem('impersonateName', name);
-            window.location.href = 'index.html';
-        }
-
-        // Show/hide Save button when account info fields change
-        function checkDetailChanges() {
-            const dept = document.getElementById('detailDept').value.trim();
-            const title = document.getElementById('detailJobTitle').value.trim();
-            const phone = document.getElementById('detailPhone').value.trim();
-            const fieldsChanged = dept !== detailOriginals.department || title !== detailOriginals.title || phone !== detailOriginals.phone_number;
-
-            // Check roles
-            const origRoles = [...(detailOriginals.roles || [])].sort();
-            const curRoles = [...pendingRoles].sort();
-            const rolesChanged = origRoles.length !== curRoles.length || origRoles.some((r, i) => r !== curRoles[i]);
-
-            // Check RGs
-            const origRgIds = [...(detailOriginals.rgIds || [])].sort();
-            const curRgIds = [...pendingRgIds].sort();
-            const rgsChanged = origRgIds.length !== curRgIds.length || origRgIds.some((id, i) => id !== curRgIds[i]);
-
-            const changed = fieldsChanged || rolesChanged || rgsChanged;
-            document.getElementById('btnSaveUserDetails').style.display = changed ? 'inline-flex' : 'none';
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            ['detailDept', 'detailJobTitle', 'detailPhone'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener('input', checkDetailChanges);
-            });
-        });
-
-        async function saveUserDetails() {
-            if (!selectedUser) return;
-            const btn = document.getElementById('btnSaveUserDetails');
-            btn.disabled = true;
-            try {
-                const dept = document.getElementById('detailDept').value.trim();
-                const title = document.getElementById('detailJobTitle').value.trim();
-                const phone = document.getElementById('detailPhone').value.trim();
-
-                // Save profile fields
-                const resp = await fetch(`${API_BASE}/api/profile`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: selectedUser.email, department: dept, title: title, phone_number: phone })
-                });
-                if (!resp.ok) throw new Error('Failed to save profile');
-
-                // Save roles if changed
-                const origRoles = [...(detailOriginals.roles || [])].sort();
-                const curRoles = [...pendingRoles].sort();
-                const rolesChanged = origRoles.length !== curRoles.length || origRoles.some((r, i) => r !== curRoles[i]);
-                if (rolesChanged) {
-                    const rResp = await fetch(`${API_BASE}/api/users/roles`, {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: selectedUser.email, roles: pendingRoles })
-                    });
-                    if (!rResp.ok) throw new Error('Failed to save roles');
-                    selectedUser.roles = [...pendingRoles];
-                }
-
-                // Save restriction groups if changed
-                const origRgIds = [...(detailOriginals.rgIds || [])].sort();
-                const curRgIds = [...pendingRgIds].sort();
-                const rgsChanged = origRgIds.length !== curRgIds.length || origRgIds.some((id, i) => id !== curRgIds[i]);
-                if (rgsChanged) {
-                    const gResp = await fetch(`${API_BASE}/api/users/restriction-groups`, {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: selectedUser.email, group_ids: pendingRgIds })
-                    });
-                    if (!gResp.ok) throw new Error('Failed to save restriction groups');
-                    userAssignedRgIds = [...pendingRgIds];
-                }
-
-                // Update local state
-                selectedUser.department = dept;
-                selectedUser.title = title;
-                selectedUser.phone_number = phone;
-                detailOriginals = {
-                    department: dept, title: title, phone_number: phone,
-                    roles: [...pendingRoles],
-                    rgIds: [...pendingRgIds],
-                };
-                btn.style.display = 'none';
-                showToast('User details saved', 'success');
-                renderTable();
-            } catch (e) {
-                showToast('Failed to save: ' + e.message, 'error');
-            }
-            btn.disabled = false;
+        function escHtml(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.className = 'toast ' + (type || 'success');
+            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
         }
 
         /* ========================================
-           LOAD USER RFPs
+           BRAND / THEME
            ======================================== */
-        async function loadUserRfps(email, userName) {
-            const container = document.getElementById('detailRfps');
-            container.innerHTML = '<div class="loading-spinner" style="padding:1rem;"><div class="spinner-icon"></div> Loading requests...</div>';
-
-            try {
-                // Use admin email for auth (canViewAll), filter by target user's submitter_id
-                const targetId = selectedUser ? 'E' + (selectedUser.user_id || '') : '';
-                const targetEmail = email || '';
-                const resp = await fetch(`${API_BASE}/api/rfps?email=${encodeURIComponent(currentUserEmail)}&for_submitter_id=${encodeURIComponent(targetId)}&for_submitter_email=${encodeURIComponent(targetEmail)}`);
-                if (!resp.ok) throw new Error('Failed to load RFPs');
-                const data = await resp.json();
-                const userRfps = data.rfps || data || [];
-
-                document.getElementById('detailRfpCount').textContent = `(${userRfps.length})`;
-
-                if (userRfps.length === 0) {
-                    container.innerHTML = '<div class="detail-rfp-empty">No requests found for this user</div>';
-                    return;
-                }
-
-                // Sort by RFP number descending
-                userRfps.sort((a, b) => (b.rfp_number || 0) - (a.rfp_number || 0));
-
-                container.innerHTML = `<table class="detail-rfp-table">
-                    <thead><tr>
-                        <th>RFP #</th>
-                        <th>Status</th>
-                        <th>Vendor</th>
-                        <th style="text-align:right;">Amount</th>
-                        <th>Date</th>
-                    </tr></thead>
-                    <tbody>${userRfps.slice(0, 50).map(r => {
-                        const status = (r.status || 'draft').replace(/-/g, ' ');
-                        const statusColor = r.status === 'approved' ? 'var(--positive-color)' :
-                                           r.status === 'rejected' ? 'var(--negative-color)' :
-                                           'var(--text-secondary)';
-                        return `<tr onclick="openRfpPreview(${r.rfp_number})">
-                            <td style="font-weight:600;">${r.rfp_number || '—'}</td>
-                            <td style="color:${statusColor};font-weight:600;text-transform:capitalize;font-size:0.75rem;">${status}</td>
-                            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.vendor_name || '—')}</td>
-                            <td style="text-align:right;font-weight:600;">$${formatAmount(r.total_amount || r.amount || 0)}</td>
-                            <td style="font-size:0.75rem;color:var(--text-secondary);">${r.submission_date || '—'}</td>
-                        </tr>`;
-                    }).join('')}</tbody>
-                </table>`;
-                if (userRfps.length > 50) {
-                    container.innerHTML += `<div style="text-align:center;padding:0.5rem;font-size:0.75rem;color:var(--text-secondary);">Showing 50 of ${userRfps.length} requests</div>`;
-                }
-            } catch (e) {
-                container.innerHTML = '<div class="detail-rfp-empty">Unable to load requests</div>';
-            }
+        function needsDarkText(hex) {
+            if (!hex || hex.length < 7) return false;
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
         }
 
-        /* ========================================
-           RFP PREVIEW MODAL
-           ======================================== */
-        function formatCurrency(val) {
-            const n = parseFloat(val) || 0;
-            return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        function formatDate(d) {
-            if (!d) return '—';
-            try {
-                const dt = new Date(d);
-                return dt.toLocaleDateString('en-US');
-            } catch (e) { return d; }
-        }
-
-        function formatStatus(s) {
-            if (!s) return 'Draft';
-            return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        }
-
-        function statusBadgeColor(s) {
-            if (s === 'approved') return 'background:rgba(22,163,74,0.12);color:#15803d;';
-            if (s === 'rejected') return 'background:rgba(250,5,15,0.12);color:#FA050F;';
-            if (s === 'submitted' || s === 'accounting-review' || s === 'ap-review') return 'background:rgba(59,130,246,0.12);color:#2563eb;';
-            return 'background:var(--bg-color);color:var(--text-secondary);';
-        }
-
-        function linkifyText(text) {
-            if (!text) return text;
-            return text.replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--primary-hex);text-decoration:underline;word-break:break-all;">$1</a>');
-        }
-
-        function formatAuditTimestamp(isoStr) {
-            if (!isoStr) return '—';
-            try {
-                const d = new Date(isoStr);
-                if (isNaN(d.getTime())) return isoStr;
-                return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() + ' ' +
-                    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-            } catch (e) { return isoStr; }
-        }
-
-        function toggleAuditLog(id) {
-            const el = document.getElementById(id);
-            const chevron = document.getElementById(id + '_chevron');
-            const printBtn = document.getElementById(id + '_print');
-            if (!el) return;
-            const isHidden = el.style.display === 'none';
-            el.style.display = isHidden ? 'block' : 'none';
-            if (chevron) chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
-            if (printBtn) printBtn.style.display = isHidden ? 'inline-flex' : 'none';
-        }
-
-        let previewRfpNumber = null;
-
-        async function openRfpPreview(rfpNumber) {
-            const overlay = document.getElementById('rfpPreviewOverlay');
-            const body = document.getElementById('rfpPreviewBody');
-            const badge = document.getElementById('rfpPreviewBadge');
-            const footer = document.getElementById('rfpPreviewFooter');
-            const openLink = document.getElementById('rfpPreviewOpenLink');
-
-            previewRfpNumber = rfpNumber;
-            body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">Loading...</div>';
-            footer.style.display = 'none';
-            badge.innerHTML = '';
-            overlay.classList.add('open');
-
-            try {
-                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}`);
-                if (!resp.ok) throw new Error('Failed to load');
-                const data = await resp.json();
-
-                const h = data.header || data;
-                const lineItems = data.lineItems || [];
-                const mileageTrips = data.mileageTrips || [];
-                const auditLogs = data.auditLogs || [];
-                const status = h.status || 'draft';
-
-                badge.innerHTML = `<span style="display:inline-block;padding:0.2rem 0.65rem;border-radius:99px;font-size:0.68rem;font-weight:700;font-family:'Google Sans Flex',sans-serif;text-transform:capitalize;${statusBadgeColor(status)}">${formatStatus(status)}</span>`;
-
-                // Line items HTML
-                let total = 0;
-                let itemsHtml = lineItems.map((item, i) => {
-                    const amt = parseFloat(item.total) || 0;
-                    total += amt;
-                    return `<tr>
-                        <td>${item.line_number || i + 1}</td>
-                        <td>${escHtml(item.description || '—')}</td>
-                        <td>${escHtml(item.invoice_number || '—')}</td>
-                        <td style="text-align:center;">${item.budget_code || '—'}</td>
-                        <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
-                        <td style="text-align:right;">${formatCurrency(amt)}</td>
-                    </tr>`;
-                }).join('');
-
-                mileageTrips.forEach((trip, i) => {
-                    const amt = parseFloat(trip.amount) || 0;
-                    total += amt;
-                    itemsHtml += `<tr>
-                        <td>${lineItems.length + i + 1}</td>
-                        <td>BUSINESS MILEAGE<br><span style="font-size:0.75rem;color:var(--text-secondary);">${escHtml(trip.from_location || '')} → ${escHtml(trip.to_location || '')} (${trip.miles || 0} mi)</span></td>
-                        <td>—</td>
-                        <td style="text-align:center;">${trip.budget_code || '—'}</td>
-                        <td style="text-align:center;">${trip.account_code || '—'}</td>
-                        <td style="text-align:right;">${formatCurrency(amt)}</td>
-                    </tr>`;
-                });
-
-                if (!itemsHtml) itemsHtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:1rem;">No line items</td></tr>';
-
-                const displayTotal = total || h.total_amount || 0;
-                const daysOpen = h.submission_date ? Math.max(0, Math.floor((Date.now() - new Date(h.submission_date).getTime()) / 86400000)) : 0;
-                const isReimb = (h.request_type || '').toLowerCase().includes('reimb');
-                const reimbVendor = isReimb ? ('EE' + (h.submitter_id || '').replace(/^E/i, '') + ' EMPLOYEE REIMBURSEMENT') : '';
-
-                // Notes section (collapsible, with add-note input)
-                const notesArr = data.notes || [];
-                const notesContent = notesArr.length > 0 ? notesArr : (data.description ? [{ note_text: data.description, author_name: h.submitter_name || 'Unknown', created_at: null }] : []);
-                const notesId = 'notes_' + rfpNumber;
-                const noteItems = notesContent.map(n => {
-                    const author = (n.author_name || n.author_email || 'Unknown').replace(/</g, '&lt;');
-                    const date = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
-                    const text = (n.note_text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    return `<div style="padding:0.6rem 0.75rem;border-bottom:1px solid var(--border-color);">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
-                            <span style="font-size:0.75rem;font-weight:600;color:var(--primary-hex);">${author}</span>
-                            <span style="font-size:0.7rem;color:var(--text-secondary);">${date}</span>
-                        </div>
-                        <div style="font-size:0.85rem;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${text}</div>
-                    </div>`;
-                }).join('');
-                const notesDefaultOpen = notesContent.length > 0;
-                const notesHtml = `
-                <div style="margin-top:1rem;">
-                    <button onclick="toggleAuditLog('${notesId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);width:100%;text-align:left;font-family:'Google Sans Flex',sans-serif;">
-                        <svg id="${notesId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(${notesDefaultOpen ? '0' : '-90'}deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
-                        Notes <span style="font-weight:400;color:var(--text-secondary);font-size:0.8rem;margin-left:0.3rem;">(${notesContent.length})</span>
-                    </button>
-                    <div id="${notesId}" style="display:${notesDefaultOpen ? 'block' : 'none'};margin-top:0.4rem;">
-                        <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
-                            ${noteItems}
-                            <div style="padding:0.5rem 0.75rem;">
-                                <div style="display:flex;gap:0.5rem;align-items:flex-end;">
-                                    <textarea id="previewNoteInput" placeholder="Add a note..." rows="2" style="flex:1;padding:0.5rem 0.65rem;border:1px solid var(--border-color);border-radius:6px;font-size:0.82rem;font-family:'Google Sans Flex',sans-serif;background:var(--card-bg);color:var(--text-primary);resize:vertical;min-height:38px;line-height:1.4;"></textarea>
-                                    <button onclick="postNoteFromPreview('${rfpNumber}')" style="padding:0.45rem 0.85rem;border:none;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;background:var(--primary-hex);color:var(--accent-text-color);font-family:'Google Sans Flex',sans-serif;white-space:nowrap;height:38px;">Post</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-
-                // Audit Log (collapsible, collapsed by default)
-                const auditEntries = auditLogs.map(log => ({
-                    text: log.description,
-                    timestamp: log.created_at ? formatAuditTimestamp(log.created_at) : (log.performed_at ? formatAuditTimestamp(log.performed_at) : '—'),
-                }));
-                const auditId = 'audit_' + rfpNumber;
-                let auditHtml = '';
-                if (auditEntries.length > 0) {
-                    auditHtml = `
-                    <div style="margin-top:1rem;">
-                        <div style="display:flex;align-items:center;gap:0.4rem;">
-                            <button onclick="toggleAuditLog('${auditId}')" style="display:flex;align-items:center;gap:0.4rem;background:none;border:none;cursor:pointer;padding:0;font-size:0.9rem;font-weight:700;color:var(--text-primary);text-align:left;font-family:'Google Sans Flex',sans-serif;">
-                                <svg id="${auditId}_chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" style="transition:transform 0.2s ease;transform:rotate(-90deg);flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
-                                Audit Log
-                                <span style="font-size:0.7rem;font-weight:500;color:var(--text-secondary);margin-left:0.25rem;">(${auditEntries.length})</span>
-                            </button>
-                        </div>
-                        <div id="${auditId}" style="display:none;margin-top:0.4rem;">
-                            <div style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
-                                ${auditEntries.map((entry, i) => `
-                                    <div style="display:flex;gap:0.75rem;padding:0.6rem 0.85rem;${i < auditEntries.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}align-items:flex-start;">
-                                        <span style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);min-width:18px;text-align:right;padding-top:1px;">${i + 1}.</span>
-                                        <div style="flex:1;">
-                                            <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.5;">${linkifyText(entry.text)}</div>
-                                            <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.15rem;">${entry.timestamp}</div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>`;
-                }
-
-                // Attachments
-                let attachHtml = '';
-                try {
-                    const attResp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/attachments`);
-                    const attData = await attResp.json();
-                    const files = attData.attachments || [];
-                    if (files.length > 0) {
-                        attachHtml = `<div style="margin-top:1.25rem;">
-                            <h4 style="font-size:0.9rem;font-weight:700;margin:0 0 0.5rem 0;font-family:'Google Sans Flex',sans-serif;">Attachments (${files.length})</h4>
-                            ${files.map(f => {
-                                const fname = f.filename || f.name || f.key || 'File';
-                                const ext = fname.split('.').pop().toLowerCase();
-                                const pngTypes = ['pdf','xlsx','xls','csv','docx','doc','html','png','jpg','jpeg','zip'];
-                                const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : (ext === 'jpg') ? 'jpeg' : ext;
-                                let iconHtml;
-                                if (pngTypes.includes(ext)) {
-                                    iconHtml = `<img src="icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">`;
-                                } else {
-                                    const bg = '#718096';
-                                    const label = ext.toUpperCase().substring(0, 4);
-                                    iconHtml = `<svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="24" height="28" rx="2" fill="${bg}"/><text x="16" y="27" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" font-family="system-ui">${label}</text></svg>`;
-                                }
-                                const sizeStr = f.size ? (f.size < 1048576 ? (f.size / 1024).toFixed(1) + ' KB' : (f.size / 1048576).toFixed(1) + ' MB') : '';
-                                const fileUrl = `${API_BASE}/api/attachments/${encodeURIComponent(f.key)}`;
-                                return `<a class="att-row" href="${fileUrl}" data-url="${fileUrl}" data-name="${escHtml(fname)}" data-ext="${ext}" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.4rem;cursor:pointer;text-decoration:none;color:inherit;">
-                                    ${iconHtml}
-                                    <div style="flex:1;min-width:0;">
-                                        <div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(fname)}</div>
-                                        ${sizeStr ? `<div style="font-size:0.7rem;color:var(--text-secondary);">${sizeStr}</div>` : ''}
-                                    </div>
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                </a>`;
-                            }).join('')}
-                        </div>`;
-                    }
-                } catch (e) {}
-
-                body.innerHTML = `
-                    <div class="preview-grid">
-                        <div class="pg-cell"><div class="pg-label">RFP No.</div><div class="pg-value" style="font-weight:700;">${rfpNumber}</div></div>
-                        <div class="pg-cell"><div class="pg-label">Submitted</div><div class="pg-value">${formatDate(h.submission_date)}</div></div>
-                        <div class="pg-cell"><div class="pg-label">Days Open</div><div class="pg-value">${daysOpen}d</div></div>
-                        <div class="pg-cell"><div class="pg-label">Submitter</div><div class="pg-value">${escHtml(h.submitter_name || '—')}</div></div>
-                        <div class="pg-cell"><div class="pg-label">Assigned To</div><div class="pg-value">${escHtml(h.assigned_to || '—')}</div></div>
-                        <div class="pg-cell"><div class="pg-label">Total</div><div class="pg-value" style="color:var(--positive-color);font-weight:600;">${formatCurrency(displayTotal)}</div></div>
-                    </div>
-                    <div class="preview-grid preview-grid-2col">
-                        <div class="pg-cell"><div class="pg-label">${isReimb ? 'Employee' : 'Vendor'}</div><div class="pg-value">${isReimb ? escHtml(reimbVendor) : escHtml(h.vendor_name || '—')}</div></div>
-                        <div class="pg-cell"><div class="pg-label">Type</div><div class="pg-value">${isReimb ? 'Employee Reimbursement' : 'Vendor Payment'}</div></div>
-                    </div>
-                    <div class="preview-line-items">
-                        <h4>Line Items</h4>
-                        <table>
-                            <thead><tr><th style="width:30px;">#</th><th>Description</th><th style="width:100px;">Invoice #</th><th style="width:115px;text-align:center;">Budget Code</th><th style="width:75px;text-align:center;">Account</th><th style="text-align:right;width:90px;">Amount</th></tr></thead>
-                            <tbody>${itemsHtml}</tbody>
-                        </table>
-                        <div class="preview-total-row">
-                            <span class="total-label">Total:</span>
-                            <span class="total-value">${formatCurrency(displayTotal)}</span>
-                        </div>
-                    </div>
-                    <div id="rpPreviewAttachments">${attachHtml}</div>
-                    ${notesHtml}
-                    ${auditHtml}
-                `;
-
-                openLink.href = `rfp-form.html?id=${rfpNumber}`;
-                footer.style.display = '';
-
-                // Attach blob popup handlers to attachment rows
-                document.querySelectorAll('#rpPreviewAttachments .att-row').forEach(function(row) {
-                    row.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        handleAttachmentClick(row.dataset.url, row.dataset.name, row.dataset.ext);
-                    });
-                });
-            } catch (e) {
-                body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-secondary);">Failed to load request details</div>';
-            }
-        }
-
-        async function handleAttachmentClick(url, name, ext) {
-            var isPdf = ext === 'pdf';
-            var isImage = (ext === 'png' || ext === 'jpg' || ext === 'jpeg');
-            if (isPdf || isImage) {
-                var w = 900, h = 700;
-                var popLeft = (screen.width - w) / 2;
-                var popTop = (screen.height - h) / 2;
-                var features = 'width=' + w + ',height=' + h + ',left=' + popLeft + ',top=' + popTop + ',menubar=no,toolbar=no,location=no,status=no,scrollbars=yes';
-                var popup = window.open('', '_blank', features);
-                if (popup) {
-                    popup.document.write('<html><head><title>' + name + '</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#f0f0f0;font-family:sans-serif;color:#666;">Loading…</body></html>');
-                }
-                try {
-                    var resp = await fetch(url);
-                    var blob = await resp.blob();
-                    var blobUrl = URL.createObjectURL(blob);
-                    if (popup && !popup.closed) {
-                        var doc = popup.document;
-                        doc.open();
-                        if (isPdf) {
-                            doc.write('<html><head><title>' + name + '</title><style>body{margin:0;overflow:hidden;}</style></head><body><iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe></body></html>');
-                        } else {
-                            doc.write('<html><head><title>' + name + '</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a1a;}</style></head><body><img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;"></body></html>');
-                        }
-                        doc.close();
-                    } else {
-                        window.location.href = blobUrl;
-                    }
-                } catch (e) {
-                    if (popup && !popup.closed) popup.location.href = url;
-                    else window.open(url, '_blank');
-                }
-            } else {
-                var a = document.createElement('a');
-                a.href = url; a.download = name;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            }
-        }
-
-        async function postNoteFromPreview(rfpNumber) {
-            const input = document.getElementById('previewNoteInput');
-            if (!input) return;
-            const text = input.value.trim();
-            if (!text) return;
-            const btn = input.nextElementSibling;
-            btn.disabled = true;
-            btn.textContent = '...';
-            try {
-                const resp = await fetch(`${API_BASE}/api/rfps/${rfpNumber}/notes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        note_text: text,
-                        author_name: currentUserName || 'Unknown',
-                        author_email: currentUserEmail
-                    })
-                });
-                if (!resp.ok) throw new Error('Failed to post note');
-                input.value = '';
-                openRfpPreview(rfpNumber);
-            } catch (e) {
-                alert('Failed to post note: ' + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Post';
-            }
-        }
-
-        function closeRfpPreview() {
-            document.getElementById('rfpPreviewOverlay').classList.remove('open');
-        }
-
-        /* ========================================
-           RESTRICTION GROUP SEARCH + PILLS
-           ======================================== */
-        let allRestrictionGroups = null;
-        let userAssignedRgIds = [];
-
-        async function loadAllRestrictionGroups() {
-            if (allRestrictionGroups !== null) return allRestrictionGroups;
-            try {
-                const resp = await fetch(`${API_BASE}/api/restriction-groups`);
-                if (resp.ok) {
-                    const data = await resp.json();
-                    allRestrictionGroups = data.groups || data || [];
-                } else {
-                    allRestrictionGroups = [];
-                }
-            } catch (e) { allRestrictionGroups = []; }
-            return allRestrictionGroups;
-        }
-
-        async function renderRgToggles(user) {
-            const pillsEl = document.getElementById('detailRgPills');
-            const searchInput = document.getElementById('rgSearchInput');
-            pillsEl.innerHTML = '';
-            searchInput.value = '';
-            document.getElementById('rgSearchResults').style.display = 'none';
-
-            await loadAllRestrictionGroups();
-
-            // Get user's current assignments
-            userAssignedRgIds = [];
-            try {
-                const resp = await fetch(`${API_BASE}/api/me?email=${encodeURIComponent(user.email)}`);
-                if (resp.ok) {
-                    const data = await resp.json();
-                    userAssignedRgIds = (data.restriction_groups || []).map(g => g.id);
-                }
-            } catch (e) {}
-
-            pendingRgIds = [...userAssignedRgIds];
-            detailOriginals.rgIds = [...userAssignedRgIds];
-            renderRgPills();
-        }
-
-        function renderRgPills() {
-            const pillsEl = document.getElementById('detailRgPills');
-            if (pendingRgIds.length === 0) {
-                pillsEl.innerHTML = '<span style="font-size:0.78rem;color:var(--text-secondary);">None assigned</span>';
-                return;
-            }
-            const groups = allRestrictionGroups || [];
-            pillsEl.innerHTML = pendingRgIds.map(id => {
-                const g = groups.find(gr => gr.id === id);
-                const name = g ? escHtml(g.name) : `Group #${id}`;
-                return `<span class="rg-pill">${name}<button class="rg-pill-x" onclick="removeRgFromUser(${id})" title="Remove"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>`;
-            }).join('');
-        }
-
-        function filterRgResults() {
-            const query = document.getElementById('rgSearchInput').value.toLowerCase().trim();
-            const resultsEl = document.getElementById('rgSearchResults');
-            const groups = allRestrictionGroups || [];
-
-            if (!query) {
-                // Show all unassigned groups
-                const unassigned = groups.filter(g => !pendingRgIds.includes(g.id));
-                if (unassigned.length === 0) {
-                    resultsEl.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.78rem;color:var(--text-secondary);">All groups assigned</div>';
-                } else {
-                    resultsEl.innerHTML = unassigned.map(g => rgResultItem(g)).join('');
-                }
-                resultsEl.style.display = '';
-                setTimeout(() => {
-                    const wrapper = document.getElementById('rgSearchWrapper');
-                    if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 50);
-                return;
-            }
-
-            // Search by name or budget rule codes
-            const matches = groups.filter(g => {
-                if (pendingRgIds.includes(g.id)) return false;
-                if ((g.name || '').toLowerCase().includes(query)) return true;
-                // Search budget rules
-                const rules = g.budget_rules || [];
-                return rules.some(r =>
-                    (r.fund || '').toLowerCase().includes(query) ||
-                    (r.organization || '').toLowerCase().includes(query) ||
-                    (r.program || '').toLowerCase().includes(query) ||
-                    (r.finance || '').toLowerCase().includes(query) ||
-                    (r.course || '').toLowerCase().includes(query)
-                );
-            });
-
-            if (matches.length === 0) {
-                resultsEl.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.78rem;color:var(--text-secondary);">No matching groups</div>';
-            } else {
-                resultsEl.innerHTML = matches.map(g => rgResultItem(g)).join('');
-            }
-            resultsEl.style.display = '';
-            // Scroll panel so dropdown is visible
-            setTimeout(() => {
-                const wrapper = document.getElementById('rgSearchWrapper');
-                if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 50);
-        }
-
-        function rgResultItem(g) {
-            const rules = g.budget_rules || [];
-            let sub = '';
-            if (rules.length > 0) {
-                const r = rules[0];
-                const parts = [r.fund, r.organization, r.program, r.finance, r.course].filter(Boolean);
-                sub = parts.join('-');
-                if (rules.length > 1) sub += ` (+${rules.length - 1} more)`;
-            }
-            return `<div class="rg-search-item" onclick="addRgToUser(${g.id})">
-                <div style="font-weight:600;">${escHtml(g.name)}</div>
-                ${sub ? `<div class="rg-search-sub">${escHtml(sub)}</div>` : ''}
-            </div>`;
-        }
-
-        function addRgToUser(groupId) {
-            if (!selectedUser) return;
-            if (pendingRgIds.includes(groupId)) return;
-            pendingRgIds.push(groupId);
-            renderRgPills();
-            document.getElementById('rgSearchInput').value = '';
-            document.getElementById('rgSearchResults').style.display = 'none';
-            checkDetailChanges();
-        }
-
-        function removeRgFromUser(groupId) {
-            if (!selectedUser) return;
-            pendingRgIds = pendingRgIds.filter(id => id !== groupId);
-            renderRgPills();
-            checkDetailChanges();
-        }
-
-        // Close search results when clicking outside
-        document.addEventListener('click', function(e) {
-            const wrapper = document.getElementById('rgSearchWrapper');
-            if (wrapper && !wrapper.contains(e.target)) {
-                document.getElementById('rgSearchResults').style.display = 'none';
-            }
-        });
-
-        /* ========================================
-           BRAND / DARK MODE (matches dashboard)
-           ======================================== */
-        let brandDistrictData = [];
-
-        async function loadBrandData(retries = 2) {
-            try {
-                let response = await fetch(`${API_BASE}/api/districts`);
-                if (!response.ok) {
-                    console.warn('Brand API returned', response.status);
-                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 3000); }
-                    return;
-                }
-                const raw = await response.json();
-                const data = Array.isArray(raw) ? raw : (raw.data || raw.results || raw.items || []);
-                if (!data.length) {
-                    console.warn('Brand API returned empty data');
-                    if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
-                    return;
-                }
-                brandDistrictData = data.filter(d => d.District_Name && d.Primary_Hex);
-
-                const memberOrgDistricts = {};
-                data.forEach(item => {
-                    if (item.Member_Org) {
-                        if (!memberOrgDistricts[item.Member_Org]) memberOrgDistricts[item.Member_Org] = [];
-                        memberOrgDistricts[item.Member_Org].push(Number(item.District_Number));
-                    }
-                });
-                const amsdNumbers = memberOrgDistricts['AMSD'] || [];
-
-                const amsdDistricts = brandDistrictData.filter(d => amsdNumbers.includes(Number(d.District_Number)));
-                const otherDistricts = brandDistrictData.filter(d => !amsdNumbers.includes(Number(d.District_Number)));
-                amsdDistricts.sort((a, b) => Number(a.District_Number) - Number(b.District_Number));
-                otherDistricts.sort((a, b) => (a.District_Name || '').localeCompare(b.District_Name || ''));
-
-                const menuSelect = document.getElementById('brandSelectorMenu');
-                const hiddenSelect = document.getElementById('brandSelector');
-
-                while (menuSelect.options.length > 1) menuSelect.remove(1);
-                while (hiddenSelect.options.length > 1) hiddenSelect.remove(1);
-
-                function addOption(d, select) {
-                    const opt = new Option(`${d.District_Name} (${d.District_Number})`, d.District_Number);
-                    let sec = d.Secondary_Hex || d.Primary_Hex;
-                    if (sec.toLowerCase() === '#000000' || sec.toLowerCase() === '#ffffff') sec = d.Primary_Hex;
-                    opt.dataset.primaryHex = d.Primary_Hex;
-                    opt.dataset.secondaryHex = sec;
-                    select.appendChild(opt);
-                }
-
-                amsdDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
-
-                const sep1 = document.createElement('option');
-                sep1.disabled = true;
-                sep1.textContent = '───────────────';
-                menuSelect.appendChild(sep1);
-                const sep2 = sep1.cloneNode(true);
-                hiddenSelect.appendChild(sep2);
-
-                otherDistricts.forEach(d => { addOption(d, menuSelect); addOption(d, hiddenSelect); });
-
-                // Restore brand from localStorage
-                const brandParam = localStorage.getItem('bondwood-brand');
-                if (brandParam) {
-                    for (let i = 0; i < menuSelect.options.length; i++) {
-                        if (String(menuSelect.options[i].value) === String(brandParam)) {
-                            menuSelect.selectedIndex = i;
-                            hiddenSelect.value = brandParam;
-                            updateBrandColorsFromMenu();
-                            break;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn('Brand data load failed:', e);
-                if (retries > 0) { setTimeout(() => loadBrandData(retries - 1), 2000); }
+        function loadBrandData() {
+            const savedPrimary = localStorage.getItem('bondwood-brand-primary');
+            const savedSecondary = localStorage.getItem('bondwood-brand-secondary');
+            const savedBrand = localStorage.getItem('bondwood-brand');
+            if (savedPrimary) {
+                document.documentElement.style.setProperty('--primary-hex', savedPrimary);
+                document.documentElement.style.setProperty('--secondary-hex', savedSecondary || savedPrimary);
+                updateHamburgerMenuColors(savedPrimary, savedSecondary);
+                if (savedBrand) { const logo = document.getElementById('bannerLogo'); if (logo) { const img = new Image(); img.onload = () => { logo.src = 'district-logos/' + savedBrand + '.png'; }; img.onerror = () => { logo.src = 'bondwood-logo-modern-dark.png'; }; img.src = 'district-logos/' + savedBrand + '.png'; } }
             }
         }
 
         function updateBrandColorsFromMenu() {
             const sel = document.getElementById('brandSelectorMenu');
             const opt = sel.options[sel.selectedIndex];
-            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
-        }
-
-        function updateBrandColors() {
-            const sel = document.getElementById('brandSelector');
-            const opt = sel.options[sel.selectedIndex];
-            applyBrand(opt.dataset.primaryHex, opt.dataset.secondaryHex, opt.value);
-        }
-
-        function needsDarkText(hex) {
-            if (!hex) return false;
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
-            const isYellowish = r > 200 && g > 180 && b < 100;
-            const isBrightGreen = g > 200 && r > 150 && b < 100;
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            return isYellowish || isBrightGreen || luminance > 0.85;
-        }
-
-        function hexToRgba(hex, alpha) {
-            if (!hex || hex.length < 7) return `rgba(100,100,100,${alpha})`;
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r},${g},${b},${alpha})`;
-        }
-
-        function applyBrand(primaryHex, secondaryHex, districtNumber) {
-            const banner = document.getElementById('headerBanner');
-            const accent = document.getElementById('bannerAccent');
-            const logo = document.getElementById('bannerLogo');
-            const title = document.getElementById('bannerTitle');
-            const hamburgerBtn = document.getElementById('hamburgerBtn');
-
-            if (!primaryHex) {
-                banner.style.background = '#000000';
-                accent.style.background = '#0728eb';
-                logo.src = 'bondwood-logo-modern-dark.png';
-                logo.style.display = 'block';
+            if (!opt || !opt.value) {
                 document.documentElement.style.setProperty('--primary-hex', '#000000');
                 document.documentElement.style.setProperty('--secondary-hex', '#0728eb');
-                document.documentElement.style.setProperty('--row-hover-bg', hexToRgba('#0728eb', 0.08));
-                if (title) title.style.color = '#fff';
-                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
+                localStorage.removeItem('bondwood-brand'); localStorage.removeItem('bondwood-brand-primary'); localStorage.removeItem('bondwood-brand-secondary');
                 updateHamburgerMenuColors('#000000', '#0728eb');
-                localStorage.removeItem('bondwood-brand');
-                localStorage.removeItem('bondwood-brand-primary');
-                localStorage.removeItem('bondwood-brand-secondary');
+                const logo = document.getElementById('bannerLogo'); if (logo) logo.src = 'bondwood-logo-modern-dark.png';
                 return;
             }
-
-            if (districtNumber === '6') primaryHex = '#121517';
-            if (districtNumber === '111') primaryHex = '#181e21';
-            if (districtNumber === '277') primaryHex = '#DA2B1F';
-
-            banner.style.background = primaryHex;
-            accent.style.background = secondaryHex || primaryHex;
-            document.documentElement.style.setProperty('--primary-hex', primaryHex);
-            document.documentElement.style.setProperty('--secondary-hex', secondaryHex || primaryHex);
-            const hoverColor = (secondaryHex && secondaryHex !== '#000000' && secondaryHex !== '#000') ? secondaryHex : primaryHex;
-            document.documentElement.style.setProperty('--row-hover-bg', hexToRgba(hoverColor, 0.08));
-
-            if (needsDarkText(primaryHex)) {
-                if (title) title.style.color = '#000000';
-                if (hamburgerBtn) hamburgerBtn.style.color = '#000000';
-            } else {
-                if (title) title.style.color = '#fff';
-                if (hamburgerBtn) hamburgerBtn.style.color = '#fff';
-            }
-
-            if (districtNumber) {
-                const logoPath = `district-logos/${districtNumber}.png`;
-                const preloadImg = new Image();
-                logo.dataset.pendingLogo = logoPath;
-                logo.style.display = 'none';
-                preloadImg.onload = function() {
-                    if (logo.dataset.pendingLogo === logoPath) {
-                        logo.src = logoPath;
-                        logo.style.display = 'block';
-                        delete logo.dataset.pendingLogo;
-                    }
-                };
-                preloadImg.onerror = function() {
-                    if (logo.dataset.pendingLogo === logoPath) {
-                        logo.src = 'bondwood-logo-modern-dark.png';
-                        logo.style.display = 'block';
-                        delete logo.dataset.pendingLogo;
-                    }
-                };
-                preloadImg.src = logoPath;
-            }
-
-            updateHamburgerMenuColors(primaryHex, secondaryHex);
-
-            if (districtNumber) {
-                localStorage.setItem('bondwood-brand', districtNumber);
-                localStorage.setItem('bondwood-brand-primary', primaryHex);
-                localStorage.setItem('bondwood-brand-secondary', secondaryHex || primaryHex);
-            }
+            const primary = opt.dataset.primary || '#000000';
+            const secondary = opt.dataset.secondary || primary;
+            document.documentElement.style.setProperty('--primary-hex', primary);
+            document.documentElement.style.setProperty('--secondary-hex', secondary);
+            localStorage.setItem('bondwood-brand', opt.value);
+            localStorage.setItem('bondwood-brand-primary', primary);
+            localStorage.setItem('bondwood-brand-secondary', secondary);
+            updateHamburgerMenuColors(primary, secondary);
         }
 
         function updateHamburgerMenuColors(primaryHex, secondaryHex) {
             const menu = document.getElementById('hamburgerMenu');
             if (!menu) return;
-
             let menuColor = primaryHex || '#000000';
             let highlightHover, highlightActive;
-
             let r, g, b;
-            if (menuColor.startsWith('#') && menuColor.length >= 7) {
-                r = parseInt(menuColor.slice(1, 3), 16);
-                g = parseInt(menuColor.slice(3, 5), 16);
-                b = parseInt(menuColor.slice(5, 7), 16);
-            }
-
+            if (menuColor.startsWith('#') && menuColor.length >= 7) { r = parseInt(menuColor.slice(1, 3), 16); g = parseInt(menuColor.slice(3, 5), 16); b = parseInt(menuColor.slice(5, 7), 16); }
             if (r !== undefined && !isNaN(r)) {
-                if (needsDarkText(menuColor)) {
-                    menu.classList.add('dark-text');
-                } else {
-                    menu.classList.remove('dark-text');
-                }
-
+                if (needsDarkText(menuColor)) menu.classList.add('dark-text'); else menu.classList.remove('dark-text');
                 if (secondaryHex && secondaryHex.startsWith('#') && secondaryHex.length >= 7) {
-                    const sr = parseInt(secondaryHex.slice(1, 3), 16);
-                    const sg = parseInt(secondaryHex.slice(3, 5), 16);
-                    const sb = parseInt(secondaryHex.slice(5, 7), 16);
-                    if (!isNaN(sr) && !isNaN(sg) && !isNaN(sb)) {
-                        highlightHover = `rgba(${sr}, ${sg}, ${sb}, 0.25)`;
-                        highlightActive = `rgba(${sr}, ${sg}, ${sb}, 0.40)`;
-                    }
+                    const sr = parseInt(secondaryHex.slice(1, 3), 16), sg = parseInt(secondaryHex.slice(3, 5), 16), sb = parseInt(secondaryHex.slice(5, 7), 16);
+                    if (!isNaN(sr)) { highlightHover = `rgba(${sr},${sg},${sb},0.25)`; highlightActive = `rgba(${sr},${sg},${sb},0.40)`; }
                 }
-                if (!highlightHover) {
-                    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                    if (luminance > 0.5) {
-                        highlightHover = 'rgba(0, 0, 0, 0.10)';
-                        highlightActive = 'rgba(0, 0, 0, 0.18)';
-                    } else {
-                        highlightHover = 'rgba(255, 255, 255, 0.15)';
-                        highlightActive = 'rgba(255, 255, 255, 0.25)';
-                    }
-                }
-            } else {
-                menu.classList.remove('dark-text');
-                highlightHover = 'rgba(255, 255, 255, 0.15)';
-                highlightActive = 'rgba(255, 255, 255, 0.25)';
-            }
-
+                if (!highlightHover) { const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255; highlightHover = lum > 0.5 ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.15)'; highlightActive = lum > 0.5 ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.25)'; }
+            } else { menu.classList.remove('dark-text'); highlightHover = 'rgba(255,255,255,0.15)'; highlightActive = 'rgba(255,255,255,0.25)'; }
             menu.style.background = menuColor;
             menu.style.setProperty('--menu-highlight-hover', highlightHover);
             menu.style.setProperty('--menu-highlight-active', highlightActive);
@@ -2381,10 +731,7 @@
                 const resp = await fetch(`${API_BASE}/api/me/prefs?email=${encodeURIComponent(currentUserEmail)}`);
                 if (!resp.ok) return;
                 const data = await resp.json();
-                if (data.prefs && data.prefs.theme) {
-                    localStorage.setItem('theme', data.prefs.theme);
-                    applyTheme(data.prefs.theme);
-                }
+                if (data.prefs && data.prefs.theme) { localStorage.setItem('theme', data.prefs.theme); applyTheme(data.prefs.theme); }
             } catch (e) { console.warn('[PREFS] Failed to load theme:', e); }
         }
 
@@ -2394,46 +741,48 @@
         function toggleHamburgerMenu() {
             const menu = document.getElementById('hamburgerMenu');
             const overlay = document.getElementById('hamburgerOverlay');
-            if (menu.classList.contains('open')) {
-                closeHamburgerMenu();
-            } else {
-                menu.style.display = 'block';
-                overlay.style.display = 'block';
-                menu.offsetHeight; // force reflow
-                menu.classList.add('open');
-                menu.style.transform = 'translateX(0)';
+            if (menu.classList.contains('open')) { closeHamburgerMenu(); } else {
+                menu.style.display = 'block'; overlay.style.display = 'block'; menu.offsetHeight;
+                menu.classList.add('open'); menu.style.transform = 'translateX(0)';
             }
         }
-
         function closeHamburgerMenu() {
             const menu = document.getElementById('hamburgerMenu');
             const overlay = document.getElementById('hamburgerOverlay');
-            menu.style.transform = 'translateX(-100%)';
-            menu.classList.remove('open');
+            menu.style.transform = 'translateX(-100%)'; menu.classList.remove('open');
             setTimeout(() => { menu.style.display = 'none'; overlay.style.display = 'none'; }, 200);
         }
 
         /* ========================================
-           UTILITIES
+           INIT
            ======================================== */
-        function escHtml(str) {
-            const d = document.createElement('div');
-            d.textContent = str;
-            return d.innerHTML;
+        async function fetchCurrentUser() {
+            try {
+                const resp = await fetch(`${API_BASE}/api/me`, { credentials: 'include' });
+                if (!resp.ok) return;
+                const user = await resp.json();
+                currentUserEmail = user.email || '';
+                currentUserPermissions = user.permissions || {};
+            } catch (e) { console.warn('[AUTH] Could not fetch user:', e); }
         }
 
-        function formatAmount(val) {
-            const n = parseFloat(val) || 0;
-            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
+        window.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            loadBrandData();
 
-        function showToast(msg, type) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = 'toast ' + (type || 'success');
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
-        }
+            await fetchCurrentUser();
+
+            if (currentUserPermissions.can_manage_users) {
+                const um = document.getElementById('userMgmtMenuItem');
+                if (um) um.style.display = '';
+            }
+
+            await loadThemePref();
+
+            allUsers = await loadUsers();
+            filteredUsers = [...allUsers];
+            sortAndRender();
+        });
     </script>
 </body>
 </html>

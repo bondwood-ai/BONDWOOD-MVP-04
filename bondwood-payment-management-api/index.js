@@ -2824,6 +2824,28 @@ async function handleMigrate(env) {
     'ALTER TABLE vendor_data ADD COLUMN vendor_notes TEXT DEFAULT \'[]\'',
     'ALTER TABLE dashboard_data ADD COLUMN url_token TEXT',
     'ALTER TABLE mileage_trips ADD COLUMN round_trip INTEGER DEFAULT 0',
+    `CREATE TABLE IF NOT EXISTS contract_data (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      contract_number TEXT NOT NULL,
+      vendor_number TEXT,
+      vendor_name TEXT,
+      contract_description TEXT,
+      contract_type TEXT,
+      contract_status TEXT DEFAULT 'active',
+      contract_start_date TEXT,
+      contract_end_date TEXT,
+      original_amount REAL DEFAULT 0,
+      contract_amount REAL DEFAULT 0,
+      renewal_type TEXT,
+      insurance_required INTEGER DEFAULT 0,
+      board_approval_date TEXT,
+      contract_contacts TEXT DEFAULT '[]',
+      contract_amendments TEXT DEFAULT '[]',
+      notes TEXT,
+      created_by TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    )`,
   ];
 
   const results = [];
@@ -4107,6 +4129,24 @@ async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyTe
             tripCount = mt[0]?.cnt || 0;
           } catch (e) {}
 
+          // Fetch actual line items for detail table
+          let lineItems = [];
+          try {
+            const { results: liRows } = await env.DB.prepare(
+              'SELECT description, budget_code, total FROM form_data WHERE rfp_number = ? AND line_number < 9000 ORDER BY line_number'
+            ).bind(rfpNumber).all();
+            lineItems = liRows || [];
+          } catch (e) {}
+
+          // Fetch mileage trips for detail table
+          let mileageTrips = [];
+          try {
+            const { results: mtRows } = await env.DB.prepare(
+              'SELECT from_location, to_location, budget_code, amount FROM mileage_trips WHERE rfp_number = ? ORDER BY trip_number'
+            ).bind(rfpNumber).all();
+            mileageTrips = mtRows || [];
+          } catch (e) {}
+
           rfpData = {
             submitter: h.submitter_name || '',
             submitterId: h.submitter_id || '',
@@ -4117,6 +4157,8 @@ async function sendEmailNotification(env, { to, type, rfpNumber, subject, bodyTe
             lineItemCount: fd.cnt || 0,
             tripCount,
             hasSecondary: !!(h.restriction_group_id),
+            lineItems,
+            mileageTrips,
           };
         }
       } catch (e) {
@@ -4210,6 +4252,62 @@ function buildEmailProgressDots(status, hasSecondary) {
   return html;
 }
 
+function buildEmailLineItemsTable(lineItems, mileageTrips, totalAmount) {
+  const items = [];
+
+  // Add regular line items
+  if (lineItems && lineItems.length) {
+    for (const li of lineItems) {
+      items.push({
+        description: li.description || '—',
+        budgetCode: li.budget_code || '—',
+        amount: li.total || 0,
+      });
+    }
+  }
+
+  // Add mileage trips
+  if (mileageTrips && mileageTrips.length) {
+    for (const trip of mileageTrips) {
+      const from = trip.from_location || '';
+      const to = trip.to_location || '';
+      items.push({
+        description: from && to ? `${from} \u2192 ${to}` : (from || to || 'Mileage Trip'),
+        budgetCode: trip.budget_code || '—',
+        amount: trip.amount || 0,
+      });
+    }
+  }
+
+  if (!items.length) return '';
+
+  const fmt = (v) => '$' + parseFloat(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  let rows = '';
+  for (const item of items) {
+    rows += `<tr>
+      <td style="padding:10px 14px;font-size:12px;color:#333;font-family:${EMAIL_FONT};border-bottom:1px solid #eee;">${item.description}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#555;font-family:${EMAIL_FONT};border-bottom:1px solid #eee;text-align:center;">${item.budgetCode}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#333;font-family:${EMAIL_FONT};border-bottom:1px solid #eee;text-align:right;">${fmt(item.amount)}</td>
+    </tr>`;
+  }
+
+  return `<tr><td style="background:#ffffff;padding:0 28px 16px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
+      <tr style="background:${EMAIL_PRIMARY};">
+        <td style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;font-family:${EMAIL_FONT};">Description</td>
+        <td style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;font-family:${EMAIL_FONT};text-align:center;">Budget Code</td>
+        <td style="padding:10px 14px;font-size:11px;color:#fff;font-weight:700;font-family:${EMAIL_FONT};text-align:right;">Amount</td>
+      </tr>
+      ${rows}
+      <tr style="background:#f8f8f8;">
+        <td colspan="2" style="padding:10px 14px;font-size:12px;color:#333;font-weight:700;font-family:${EMAIL_FONT};text-align:right;">Total</td>
+        <td style="padding:10px 14px;font-size:14px;color:${EMAIL_PRIMARY};font-weight:700;font-family:${EMAIL_FONT};text-align:right;">${fmt(totalAmount)}</td>
+      </tr>
+    </table>
+  </td></tr>`;
+}
+
 function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl, rfpData }) {
   const d = rfpData || {};
   const hasData = !!(d.submitter || d.totalAmount);
@@ -4219,16 +4317,17 @@ function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl, rfpDat
 
   // Build items description
   let itemsLine = '';
-  if (d.tripCount > 0 && d.lineItemCount > d.tripCount) {
-    // Has both line items and mileage
-    const regularItems = d.lineItemCount - (d.tripCount > 0 ? 1 : 0); // subtract consolidated mileage row(s)
+  if (d.tripCount > 0 && d.lineItemCount > 0) {
     itemsLine = `${d.tripCount} mileage trip${d.tripCount > 1 ? 's' : ''}`;
-    if (regularItems > 0) itemsLine += `, ${regularItems} line item${regularItems > 1 ? 's' : ''}`;
+    itemsLine += `, ${d.lineItemCount} line item${d.lineItemCount > 1 ? 's' : ''}`;
   } else if (d.tripCount > 0) {
     itemsLine = `${d.tripCount} mileage trip${d.tripCount > 1 ? 's' : ''}`;
   } else if (d.lineItemCount > 0) {
     itemsLine = `${d.lineItemCount} line item${d.lineItemCount > 1 ? 's' : ''}`;
   }
+
+  // Build line items detail table
+  const lineItemsDetailTable = buildEmailLineItemsTable(d.lineItems || [], d.mileageTrips || [], d.totalAmount || 0);
 
   const progressDots = d.status ? buildEmailProgressDots(d.status, d.hasSecondary) : '';
 
@@ -4299,6 +4398,8 @@ function buildEmailHtml({ subject, bodyText, rfpNumber, ctaLabel, ctaUrl, rfpDat
           ${rfpNumber ? '<p style="margin:12px 0 0;font-size:13px;color:#666;font-family:' + EMAIL_FONT + ';">RFP #<strong>' + rfpNumber + '</strong></p>' : ''}
         </td></tr>
         `}
+
+        ${lineItemsDetailTable}
 
         <!-- CTA Button -->
         ${ctaUrl ? `<tr><td style="background:#ffffff;padding:8px 28px 24px;text-align:center;">
