@@ -915,13 +915,18 @@ async function handleListVendorAttachments(vendorNumber, env) {
   if (!env.BUCKET) return json({ error: 'R2 bucket not configured', attachments: [], count: 0 }, 500);
   const prefix = `vendor/${vendorNumber}/`;
   const listed = await env.BUCKET.list({ prefix });
-  const files = listed.objects.map(obj => ({
-    key: obj.key,
-    name: obj.customMetadata?.originalName || obj.key.split('/').pop(),
-    size: obj.size,
-    uploaded: obj.uploaded,
-    uploadedBy: obj.customMetadata?.uploadedBy || 'unknown',
-  }));
+  const files = listed.objects.map(obj => {
+    let displayName = obj.key.split('/').pop();
+    const tsMatch = displayName.match(/^\d{10,}_(.+)$/);
+    if (tsMatch) displayName = tsMatch[1];
+    return {
+      key: obj.key,
+      name: obj.customMetadata?.originalName || displayName,
+      size: obj.size,
+      uploaded: obj.uploaded,
+      uploadedBy: obj.customMetadata?.uploadedBy || 'unknown',
+    };
+  });
   return json({ attachments: files, count: files.length });
 }
 
@@ -3175,14 +3180,20 @@ async function handleListAttachments(rfpNumber, env) {
   const prefix = `rfp/${rfpNumber}/`;
   const listed = await env.BUCKET.list({ prefix });
 
-  const files = listed.objects.map(obj => ({
-    key: obj.key,
-    name: obj.customMetadata?.originalName || obj.key.split('/').pop(),
-    size: obj.size,
-    contentType: obj.httpMetadata?.contentType || 'application/octet-stream',
-    uploaded: obj.uploaded?.toISOString() || null,
-    uploadedBy: obj.customMetadata?.uploadedBy || null,
-  }));
+  const files = listed.objects.map(obj => {
+    let displayName = obj.key.split('/').pop();
+    // Strip the timestamp prefix (e.g. "1771792326985_filename.pdf" → "filename.pdf")
+    const tsMatch = displayName.match(/^\d{10,}_(.+)$/);
+    if (tsMatch) displayName = tsMatch[1];
+    return {
+      key: obj.key,
+      name: obj.customMetadata?.originalName || displayName,
+      size: obj.size,
+      contentType: obj.httpMetadata?.contentType || 'application/octet-stream',
+      uploaded: obj.uploaded?.toISOString() || null,
+      uploadedBy: obj.customMetadata?.uploadedBy || null,
+    };
+  });
 
   return json({ attachments: files, count: files.length });
 }
@@ -3270,7 +3281,10 @@ async function handleDownloadAttachment(key, env) {
     return json({ error: 'Attachment not found' }, 404);
   }
 
-  const originalName = object.customMetadata?.originalName || key.split('/').pop();
+  let fallbackName = key.split('/').pop();
+  const tsMatch = fallbackName.match(/^\d{10,}_(.+)$/);
+  if (tsMatch) fallbackName = tsMatch[1];
+  const originalName = object.customMetadata?.originalName || fallbackName;
   const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
 
   // For PDFs and images, allow inline viewing; otherwise force download
