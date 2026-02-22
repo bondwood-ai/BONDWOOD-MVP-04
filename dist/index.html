@@ -2562,9 +2562,12 @@
             lineItems.forEach((item, i) => {
                 const amt = item.total || 0;
                 total += amt;
+                const fullDesc = item.description || '—';
+                const truncDesc = fullDesc.length > 50 ? fullDesc.substring(0, 50) + '…' : fullDesc;
+                const descTitle = fullDesc.length > 50 ? ` title="${fullDesc.replace(/"/g, '&quot;')}"` : '';
                 lineItemsHtml += `<tr>
                     <td>${item.line_number || i + 1}</td>
-                    <td>${item.description || '—'}</td>
+                    <td${descTitle} style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:${fullDesc.length > 50 ? 'help' : 'default'};">${truncDesc}</td>
                     ${isVendor ? `<td>${item.invoice_number || '—'}</td>` : ''}
                     <td style="text-align:center;">${item.budget_code || '—'}</td>
                     <td style="text-align:center;">${item.account_code || item.object || '—'}</td>
