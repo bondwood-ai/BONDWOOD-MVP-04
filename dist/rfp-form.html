@@ -2780,14 +2780,34 @@
                         const amtCol = pickCol(a => a.isAllNumeric && a.hasDecimals);
                         const invDateCol = pickCol(a => a.looksLikeDate);
                         const vendorCol = pickCol(a => a.looksLikeVendor && !a.hasDecimals);
-                        const invCol = pickCol(a => a.hasLetters && a.avgLen < 30);
+
+                        // Among remaining unused columns with letters, the shorter one is likely invoice #,
+                        // the longer one is likely description
+                        let invCol = -1;
                         let descCol = -1;
-                        let maxAvgLen = 0;
+                        const textCols = [];
                         for (let i = 0; i < colCount; i++) {
                             if (used.has(i)) continue;
-                            if (colAnalysis[i].avgLen > maxAvgLen) { maxAvgLen = colAnalysis[i].avgLen; descCol = i; }
+                            if (colAnalysis[i].hasLetters) textCols.push(i);
                         }
-                        if (descCol >= 0) used.add(descCol);
+                        if (textCols.length >= 2) {
+                            // Sort by avgLen ascending — shortest is invoice, longest is description
+                            textCols.sort((a, b) => colAnalysis[a].avgLen - colAnalysis[b].avgLen);
+                            invCol = textCols[0]; used.add(invCol);
+                            descCol = textCols[textCols.length - 1]; used.add(descCol);
+                        } else if (textCols.length === 1) {
+                            descCol = textCols[0]; used.add(descCol);
+                        }
+
+                        // If descCol wasn't found among letter-columns, pick remaining col with max avgLen
+                        if (descCol < 0) {
+                            let maxAvgLen = 0;
+                            for (let i = 0; i < colCount; i++) {
+                                if (used.has(i)) continue;
+                                if (colAnalysis[i].avgLen > maxAvgLen) { maxAvgLen = colAnalysis[i].avgLen; descCol = i; }
+                            }
+                            if (descCol >= 0) used.add(descCol);
+                        }
 
                         console.log('[IMPORT] Smart mapping → vendor:', vendorCol, 'desc:', descCol, 'inv:', invCol, 'invDate:', invDateCol, 'bc:', bcCol, 'acct:', acctCol, 'amt:', amtCol);
 
