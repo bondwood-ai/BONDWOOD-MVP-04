@@ -1359,7 +1359,19 @@ async function handleCreateRFP(request, env) {
     return json({ error: 'Sequence rfp_no not found. Run POST /api/migrate first.' }, 500);
   }
 
-  const nextRfp = seqRows[0].value;
+  let nextRfp = seqRows[0].value;
+
+  // Safety: ensure we never reuse a deleted RFP number
+  const { results: maxRows } = await env.DB.prepare(
+    'SELECT MAX(rfp_number) as max_num FROM dashboard_data'
+  ).all();
+  const maxExisting = maxRows[0]?.max_num || 0;
+  if (nextRfp <= maxExisting) {
+    nextRfp = maxExisting + 1;
+    await env.DB.prepare(
+      "UPDATE sequences SET value = ? WHERE name = 'rfp_no'"
+    ).bind(nextRfp).run();
+  }
 
   const status = body.status || 'draft';
   const submissionDate = body.submission_date || new Date().toISOString().split('T')[0];
