@@ -2163,7 +2163,7 @@ function buildAuditEntries(oldHeader, oldItems, oldTrips, body, newItems, newTri
   if (body.vendor_name && body.vendor_name !== (oldHeader.vendor_name || '')) {
     entries.push({ action: 'field-changed', description: `${p} changed vendor to <strong>${body.vendor_name}</strong>` });
   }
-  if (body.description !== undefined && body.description !== (oldHeader.description || '')) {
+  if (body.description !== undefined && (body.description || '') !== (oldHeader.description || '')) {
     entries.push({ action: 'field-changed', description: `${p} updated the description` });
   }
   if (body.assigned_to && body.assigned_to !== (oldHeader.assigned_to || '') && !statusChanging) {
