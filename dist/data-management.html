@@ -2142,8 +2142,12 @@
                                 const pngTypes = ['pdf','xlsx','xls','csv','docx','doc','html','png','jpg','jpeg','zip'];
                                 const imgFile = (ext === 'xls') ? 'xlsx' : (ext === 'doc') ? 'docx' : (ext === 'jpg') ? 'jpeg' : ext;
                                 let iconHtml;
+                                const colorMap = { pdf: '#E53E3E', xlsx: '#38A169', xls: '#38A169', csv: '#38A169', docx: '#3182CE', doc: '#3182CE', html: '#DD6B20', png: '#805AD5', jpg: '#805AD5', jpeg: '#805AD5', zip: '#718096' };
                                 if (pngTypes.includes(ext)) {
-                                    iconHtml = `<img src="icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">`;
+                                    const bg = colorMap[ext] || '#718096';
+                                    const label = ext.toUpperCase().substring(0, 4);
+                                    const fallbackSvg = `<svg viewBox=&quot;0 0 32 32&quot; width=&quot;36&quot; height=&quot;36&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><rect x=&quot;4&quot; y=&quot;2&quot; width=&quot;24&quot; height=&quot;28&quot; rx=&quot;2&quot; fill=&quot;${bg}&quot;/><text x=&quot;16&quot; y=&quot;20&quot; text-anchor=&quot;middle&quot; fill=&quot;#fff&quot; font-size=&quot;7&quot; font-weight=&quot;700&quot; font-family=&quot;system-ui&quot;>${label}</text></svg>`;
+                                    iconHtml = `<img src="icons/${imgFile}.png" alt="${ext.toUpperCase()}" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;" onerror="this.outerHTML='${fallbackSvg}'">`;
                                 } else {
                                     const bg = '#718096';
                                     const label = ext.toUpperCase().substring(0, 4);
