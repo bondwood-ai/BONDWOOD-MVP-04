@@ -343,6 +343,11 @@ export default {
         return handleMileageCalculate(request, env);
       }
 
+      // ── Google Places Autocomplete ──
+      if (path === '/api/places/autocomplete' && method === 'GET') {
+        return handlePlacesAutocomplete(url, env);
+      }
+
       // ── Seed Dummy Data ──
       if (path === '/api/seed-dummy' && method === 'POST') {
         return handleSeedDummy(request, env);
@@ -3854,6 +3859,42 @@ async function handleMileageCalculate(request, env) {
     });
   } catch (e) {
     return json({ error: 'Failed to calculate distance', detail: e.message }, 500);
+  }
+}
+
+
+/* ========================================
+   GOOGLE PLACES AUTOCOMPLETE
+   ======================================== */
+async function handlePlacesAutocomplete(url, env) {
+  const input = url.searchParams.get('input');
+  if (!input || input.length < 3) {
+    return json({ predictions: [] });
+  }
+
+  const apiKey = env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return json({ error: 'Google Maps API key not configured' }, 500);
+  }
+
+  try {
+    const params = new URLSearchParams({
+      input,
+      types: 'geocode',
+      components: 'country:us',
+      key: apiKey,
+    });
+    const resp = await fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?${params}`);
+    const data = await resp.json();
+    return json({
+      status: data.status,
+      predictions: (data.predictions || []).map(p => ({
+        description: p.description,
+        place_id: p.place_id,
+      })),
+    });
+  } catch (e) {
+    return json({ predictions: [], error: e.message }, 500);
   }
 }
 
