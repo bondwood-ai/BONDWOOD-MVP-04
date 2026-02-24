@@ -675,7 +675,21 @@ async function handleSavePrefs(request, env) {
   if (!email) return json({ error: 'No email' }, 400);
 
   const body = await request.json();
-  const prefsJson = JSON.stringify(body.prefs || {});
+  const incoming = body.prefs || {};
+
+  // Load existing prefs and merge so we don't clobber other keys
+  let existing = {};
+  try {
+    const results = await env.DB.prepare(
+      'SELECT preferences FROM user_data WHERE LOWER(user_email) = ?'
+    ).bind(email).all();
+    if (results.results && results.results.length > 0 && results.results[0].preferences) {
+      existing = JSON.parse(results.results[0].preferences) || {};
+    }
+  } catch (e) {}
+
+  const merged = { ...existing, ...incoming };
+  const prefsJson = JSON.stringify(merged);
 
   await env.DB.prepare(
     'UPDATE user_data SET preferences = ? WHERE LOWER(user_email) = ?'
