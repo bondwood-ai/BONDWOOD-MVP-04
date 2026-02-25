@@ -304,6 +304,9 @@ export default {
       if (path === '/api/users' && method === 'GET') {
         return handleGetUsers(env);
       }
+      if (path === '/api/users' && method === 'POST') {
+        return handleCreateUser(request, env);
+      }
       if (path === '/api/users/status' && method === 'PUT') {
         return handleUpdateUserStatus(request, env);
       }
@@ -708,7 +711,7 @@ async function handleGetVendors(env, url) {
   const offset = (page - 1) * limit;
 
   const { results } = await env.DB.prepare(
-    'SELECT vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip FROM vendor_data ORDER BY vendor_name LIMIT ? OFFSET ?'
+    'SELECT vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip, vendor_status FROM vendor_data ORDER BY vendor_name LIMIT ? OFFSET ?'
   ).bind(limit, offset).all();
 
   const { results: countResult } = await env.DB.prepare('SELECT COUNT(*) as total FROM vendor_data').all();
@@ -742,7 +745,7 @@ async function handleGetBudgetCodes(env, url) {
    ======================================== */
 async function handleCreateVendor(request, env) {
   const body = await request.json();
-  const { vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip } = body;
+  const { vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip, vendor_status } = body;
 
   if (!vendor_name || !vendor_number) {
     return json({ error: 'vendor_name and vendor_number are required' }, 400);
@@ -758,7 +761,7 @@ async function handleCreateVendor(request, env) {
   }
 
   await env.DB.prepare(
-    'INSERT INTO vendor_data (vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip) VALUES (?, ?, ?, ?, ?, ?)'
+    'INSERT INTO vendor_data (vendor_name, vendor_number, vendor_address, vendor_city, vendor_state, vendor_zip, vendor_status) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ).bind(
     vendor_name.trim(),
     vendor_number.trim(),
@@ -766,6 +769,7 @@ async function handleCreateVendor(request, env) {
     vendor_city?.trim() || null,
     vendor_state?.trim() || null,
     vendor_zip?.trim() || null,
+    vendor_status?.trim() || 'active',
   ).run();
 
   return json({ message: 'Vendor created', vendor_number: vendor_number.trim() }, 201);
@@ -848,18 +852,19 @@ async function handleDeleteBudgetCode(request, env) {
    ======================================== */
 async function handleUpdateVendor(request, env) {
   const body = await request.json();
-  const { vendor_number, vendor_name, vendor_address, vendor_city, vendor_state, vendor_zip } = body;
+  const { vendor_number, vendor_name, vendor_address, vendor_city, vendor_state, vendor_zip, vendor_status } = body;
 
   if (!vendor_number) return json({ error: 'vendor_number is required' }, 400);
 
   await env.DB.prepare(
-    'UPDATE vendor_data SET vendor_name = ?, vendor_address = ?, vendor_city = ?, vendor_state = ?, vendor_zip = ? WHERE vendor_number = ?'
+    'UPDATE vendor_data SET vendor_name = ?, vendor_address = ?, vendor_city = ?, vendor_state = ?, vendor_zip = ?, vendor_status = ? WHERE vendor_number = ?'
   ).bind(
     vendor_name?.trim() || '',
     vendor_address?.trim() || null,
     vendor_city?.trim() || null,
     vendor_state?.trim() || null,
     vendor_zip?.trim() || null,
+    vendor_status?.trim() || 'active',
     vendor_number.trim(),
   ).run();
 
@@ -3516,6 +3521,40 @@ async function handleGetUsers(env) {
   });
 
   return json({ users: merged, total: merged.length });
+}
+
+/* ========================================
+   USER MANAGEMENT – CREATE USER
+   ======================================== */
+async function handleCreateUser(request, env) {
+  const body = await request.json();
+  const { user_id, email, first_name, last_name } = body;
+
+  if (!email || !first_name || !last_name || !user_id) {
+    return json({ error: 'user_id, email, first_name, and last_name are required' }, 400);
+  }
+
+  const emailLower = email.toLowerCase().trim();
+
+  // Check if user already exists
+  const existing = await env.DB.prepare(
+    'SELECT user_id FROM user_data WHERE LOWER(user_email) = ?'
+  ).bind(emailLower).first();
+
+  if (existing) {
+    return json({ error: 'A user with this email already exists' }, 409);
+  }
+
+  const finalUserId = parseInt(user_id, 10);
+  if (isNaN(finalUserId)) {
+    return json({ error: 'user_id must be a number' }, 400);
+  }
+
+  await env.DB.prepare(
+    'INSERT INTO user_data (user_id, user_email, user_first_name, user_last_name, user_roles, status) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(finalUserId, emailLower, first_name.trim(), last_name.trim(), '["user"]', 'active').run();
+
+  return json({ message: 'User created', user_id: finalUserId, email: emailLower }, 201);
 }
 
 
